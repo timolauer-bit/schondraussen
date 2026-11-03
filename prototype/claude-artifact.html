@@ -1,0 +1,1973 @@
+<title>Schondraussen.de</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: oben die Listenleiste (Kalender, Autor:innen, Künstler:innen, Filme, Serien); darunter links die Einträge der gewählten Liste, rechts die Details. */
+:root {
+  --bg: #edf0f3;
+  --surface: #f9fafb;
+  --ink: #131d27;
+  --muted: #566574;
+  --line: #cbd3db;
+  --accent: #2b47d6;
+  --accent-ink: #ffffff;
+  --accent-soft: #e1e6fb;
+  --danger: #a3261f;
+  --frame: #000;
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141a; --surface: #151d25; --ink: #e5ebf0; --muted: #93a1ae; --line: #27343f;
+    --accent: #8ea2ff; --accent-ink: #0e141a; --accent-soft: #1d2748; --danger: #ff8a80; --frame: #e5ebf0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141a; --surface: #151d25; --ink: #e5ebf0; --muted: #93a1ae; --line: #27343f;
+  --accent: #8ea2ff; --accent-ink: #0e141a; --accent-soft: #1d2748; --danger: #ff8a80; --frame: #e5ebf0;
+  color-scheme: dark;
+}
+
+:root[data-skin="light"] {
+  --bg: #edf0f3; --surface: #f9fafb; --ink: #131d27; --muted: #566574; --line: #cbd3db;
+  --accent: #2b47d6; --accent-ink: #ffffff; --accent-soft: #e1e6fb; --danger: #a3261f; --frame: #000000;
+  color-scheme: light;
+}
+:root[data-skin="dark"] {
+  --bg: #0e141a; --surface: #151d25; --ink: #e5ebf0; --muted: #93a1ae; --line: #27343f;
+  --accent: #8ea2ff; --accent-ink: #0e141a; --accent-soft: #1d2748; --danger: #ff8a80; --frame: #e5ebf0;
+  color-scheme: dark;
+}
+:root[data-skin="paper"] {
+  --bg: #f3ead6; --surface: #fbf6e9; --ink: #2b2218; --muted: #6b5b44; --line: #d6c6a3;
+  --accent: #a23f1c; --accent-ink: #ffffff; --accent-soft: #f0dcc7; --danger: #9b2226; --frame: #2b2218; --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  color-scheme: light;
+}
+:root[data-skin="cinema"] {
+  --bg: #0b0b10; --surface: #15151d; --ink: #f2ede0; --muted: #aaa492; --line: #2e2c38;
+  --accent: #e8b830; --accent-ink: #1a1400; --accent-soft: #2b2511; --danger: #ff8a80; --frame: #f2ede0;
+  color-scheme: dark;
+}
+:root[data-skin="mint"] {
+  --bg: #e6f2ee; --surface: #f4faf7; --ink: #0f2e28; --muted: #46665d; --line: #bcd8cf;
+  --accent: #0c7560; --accent-ink: #ffffff; --accent-soft: #d0ebe2; --danger: #a3261f; --frame: #0f2e28;
+  color-scheme: light;
+}
+:root[data-skin="eighties"] {
+  --bg: #160a2e; --surface: #211146; --ink: #f7ecff; --muted: #baa5df; --line: #43287a;
+  --accent: #ff4fb0; --accent-ink: #1a0630; --accent-soft: #3b1657; --danger: #ffb05c; --frame: #2de2ff;
+  color-scheme: dark;
+}
+:root[data-skin="eighties"] body { background-image: linear-gradient(180deg, #160a2e 0%, #2a1050 100%); background-attachment: fixed; }
+:root[data-skin="eighties"] h1 { text-shadow: 0 0 14px rgba(255, 79, 176, .6); }
+:root[data-skin="eighties"] .nav[aria-current="page"] { border-bottom-color: #2de2ff; box-shadow: 0 4px 10px -5px #2de2ff; }
+:root[data-skin="eighties"] .btn:not(.ghost):not(:disabled) { box-shadow: 0 0 12px rgba(255, 79, 176, .45); }
+.nav.rg { margin-left: auto; }
+.logv { border-top: 1px solid var(--line); padding: 14px 0; }
+.logv h3 { margin: 0 0 6px; font: 650 16px var(--font-display); }
+.logv h3 small { font: 500 12px var(--font-mono); color: var(--muted); margin-left: 8px; }
+.logv ul { margin: 0; padding-left: 20px; }
+.logv li { margin: 3px 0; }
+.nav.support { position: relative; }
+.badge { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--danger); color: var(--bg); font: 700 11px/18px var(--font-body); text-align: center; vertical-align: 2px; font-variant-numeric: tabular-nums; }
+.supgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 12px; }
+.supgrid.admin2 { grid-template-columns: 260px minmax(0, 1fr); }
+@media (max-width: 760px) { .supgrid.admin2 { grid-template-columns: minmax(0, 1fr); } }
+.supthreads { display: grid; gap: 4px; align-content: start; max-height: 520px; overflow-y: auto; }
+.thr { display: grid; gap: 2px; text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px 10px; }
+.thr[aria-current="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.thr .t1 { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 14px; }
+.thr .t2 { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat { display: grid; gap: 10px; min-width: 0; align-content: start; }
+.chatlog { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; min-height: 240px; max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.bub { max-width: 78%; padding: 8px 12px; border-radius: 14px; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 14.5px; }
+.bub.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
+.bub.them { align-self: flex-start; background: var(--accent-soft); color: var(--ink); border-bottom-left-radius: 4px; }
+.ticks { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 8px; background: var(--surface); color: var(--muted); font: 700 11px/16px var(--font-body); letter-spacing: -2px; opacity: 1; }
+.ticks.seen { color: #2f8cf0; }
+.bub small { display: block; font: 500 10.5px var(--font-mono); opacity: .75; margin-top: 3px; white-space: normal; }
+.chatform { display: flex; gap: 8px; align-items: flex-end; }
+.chatform textarea { flex: 1; min-width: 0; resize: vertical; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 9px 11px; font: inherit; }
+.skins { display: flex; flex-wrap: wrap; gap: 10px; }
+.skin { display: grid; gap: 6px; justify-items: start; text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 10px 12px; min-width: 130px; }
+.skin[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.skin .dots { display: flex; gap: 4px; }
+.skin .dots i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(128,128,128,.45); display: block; }
+.skin b { font-weight: 600; font-size: 14px; }
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 28px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: max(1180px, calc((100vw + 1180px) / 2)); margin: 0 auto; display: grid; gap: 22px; }
+.masthead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; }
+.masthead h1 { font-family: var(--font-display); font-weight: 750; font-size: clamp(30px, 5vw, 44px); line-height: 1.02; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.masthead p { margin: 6px 0 0; color: var(--muted); max-width: 52ch; }
+.who { font: 500 12px var(--font-mono); letter-spacing: .04em; color: var(--muted); min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 6px 10px; text-align: left; }
+.whobox { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.ver { position: relative; font: 500 12px var(--font-mono); letter-spacing: .04em; color: var(--muted); background: transparent; border: 0; padding: 0 11px 0 10px; text-align: right; cursor: pointer; }
+.ver:disabled { cursor: default; }
+.ver:not(:disabled):hover, .ver[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.ver .badge { position: absolute; right: -6px; bottom: -12px; margin: 0; min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; padding: 0 4px; }
+.who:not(:disabled):hover { border-color: var(--accent); color: var(--ink); }
+.who:disabled { cursor: default; border-color: transparent; padding-left: 0; }
+
+.topbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0 24px; border-bottom: 1px solid var(--line); overflow: visible; position: sticky; top: 0; z-index: 30; background: var(--bg); padding-top: 10px; }
+@media (max-width: 760px) { .topbar { gap: 0 14px; } .nav { font-size: 15px; } }
+.nav { border: 0; background: transparent; padding: 10px 0 12px; font: 650 17px var(--font-display); color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.nav:hover { color: var(--ink); }
+.nav[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.nav small { font: 500 11px var(--font-mono); margin-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.rel .acts { flex-direction: column; align-items: stretch; text-align: center; min-width: 176px; }
+.pill { font-size: 13px; font-weight: 600; color: var(--accent); background: transparent; border: 1px solid var(--accent); border-radius: 6px; padding: 5px 10px; white-space: nowrap; }
+.pill:hover { background: var(--accent-soft); }
+.pill[aria-pressed="true"] { background: var(--accent-soft); }
+.pillset { display: flex; align-items: center; gap: 6px; }
+.pillset .pill { flex: 1; cursor: default; }
+.pillset .tick { color: var(--accent); font: 700 15px/1 var(--font-body); }
+.untick { width: 24px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font: 600 16px/1 var(--font-body); cursor: pointer; }
+.untick:hover, .untick:focus-visible { color: var(--danger); border-color: var(--danger); }
+.previewbar { margin: 12px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.warnbox { grid-column: 1 / -1; border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 12px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 0; }
+
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.cfgpanel { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 16px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: end; }
+.cfgpanel .hint { grid-column: 1 / -1; }
+.cfgsep { grid-column: 1 / -1; border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field span { font-size: 13px; color: var(--muted); }
+.add input, .field input, .field select { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 9px 11px; }
+.add { display: flex; gap: 8px; align-items: center; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 6px; padding: 9px 14px; font-weight: 600; white-space: nowrap; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+.btn.warn { border-color: var(--danger); color: var(--danger); background: transparent; }
+.msg { min-height: 20px; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.msg.err { color: var(--danger); }
+.hint { color: var(--muted); font-size: 14px; margin: 0; }
+.prov { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 4px; }
+.plbl { font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.pchip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+.pchip b { font-weight: 600; }
+.pnone { color: var(--muted); font-size: 13px; }
+textarea { font: inherit; color: inherit; }
+.impwrap { grid-column: 1 / -1; }
+.sortf { margin-bottom: 10px; }
+.sortf select { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 9px 11px; height: 43px; font: inherit; }
+#welcome b { font-weight: 700; }
+.admin { grid-column: 1 / -1; display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 4px; }
+.admin[hidden], .owner[hidden] { display: none; }
+.adm { display: grid; gap: 0; }
+.arow { display: grid; grid-template-columns: minmax(0, 30%) minmax(0, 38%) minmax(0, 1fr); gap: 6px 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.arow .nm2 { font-weight: 600; overflow-wrap: anywhere; }
+.arow .meta { color: var(--muted); font: 500 12px var(--font-mono); }
+.arow .acts2 { display: flex; flex-wrap: wrap; gap: 6px; }
+.tier { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 12px; margin-left: 6px; }
+@media (max-width: 700px) { .arow { grid-template-columns: 1fr; } }
+.imp { display: grid; gap: 10px; margin-top: 12px; min-width: 0; }
+.imp textarea { width: 100%; min-height: 120px; resize: vertical; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 9px 11px; }
+.imp input[type="file"] { max-width: 100%; min-width: 0; font-size: 13px; }
+.fillbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; }
+
+.layout { display: grid; gap: 32px 48px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .layout.has-rail { grid-template-columns: 320px minmax(0, 1fr); } }
+.rail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; min-width: 0; border: 1px solid var(--frame); border-radius: 14px; padding: 16px; }
+@media (min-width: 900px) {
+  .rail {
+    position: sticky; top: calc(var(--tbh, 52px) + 12px + env(safe-area-inset-top, 0px));
+    max-height: min(calc(100vh - var(--tbh, 52px) - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 760px);
+    max-height: min(calc(100dvh - var(--tbh, 52px) - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 760px);
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; align-content: start;
+  }
+}
+@media (max-width: 899px) { #list { max-height: 45vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; } }
+.srch { margin-bottom: 10px; }
+.srch input { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 9px 11px; font: inherit; -webkit-appearance: none; appearance: none; }
+.srch input:focus-visible { outline-offset: -2px; }
+.label { font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+
+.list { display: grid; gap: 2px; }
+.row-btn { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; text-align: left; border: 0; background: transparent; padding: 10px 10px; border-radius: 6px; border-left: 3px solid transparent; }
+.row-btn:hover { background: var(--accent-soft); }
+.row-btn[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+.row-btn .nm { font-weight: 600; overflow-wrap: anywhere; }
+.row-btn .tp { grid-column: 1; font: 500 11px var(--font-mono); letter-spacing: .04em; color: var(--muted); }
+.row-btn .ct { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 500 12px var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+
+.main { min-width: 0; }
+.note { font-size: 13px; color: var(--muted); margin: 0 0 18px; max-width: 70ch; }
+
+.month { margin-bottom: 28px; }
+.month h3 { font: 700 22px var(--font-display); letter-spacing: -0.01em; margin: 0 0 4px; text-transform: capitalize; }
+.ovrow { display: flex; gap: 14px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; white-space: nowrap; }
+.ovd { flex: 0 0 120px; color: var(--muted, inherit); }
+.ovt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rel { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 8px 16px; align-items: start; padding: 14px 0; border-top: 1px solid var(--line); }
+.rel.wide { grid-template-columns: 128px minmax(0, 1fr) auto; }
+.day { font: 700 32px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.dow { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.day.soft { font: 500 13px/1.3 var(--font-mono); color: var(--muted); }
+.ttl { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.gobtn { margin-left: 8px; width: 24px; height: 22px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font: 600 13px/1 var(--font-body); vertical-align: 1px; cursor: pointer; }
+.months { margin: 6px 0 22px; }
+.mgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px 22px; }
+.mon h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.mcal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px 0; text-align: center; }
+.mcal .wd { font-size: 11px; color: var(--muted); padding-bottom: 2px; }
+.mcal .dc { display: flex; align-items: center; justify-content: center; height: 30px; font-size: 12px; }
+.mcal .pie { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; }
+.mcal .pn { display: inline-flex; align-items: center; justify-content: center; }
+.mcal .pie .pn { width: 20px; height: 20px; border-radius: 50%; background: var(--surface); color: var(--ink); font-weight: 600; }
+.mcal .plain { color: var(--muted); }
+.mcal .today .plain { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.simrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.simrow .ttl { font-size: 15px; }
+.simhave { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.similar { margin-top: 8px; }
+.namelink { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: none; }
+.namelink:hover, .namelink:focus-visible { color: var(--accent); }
+.gobtn:hover, .gobtn:focus-visible { color: var(--ink); border-color: var(--ink); }
+.sub { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.sub b { font-weight: 500; color: var(--ink); }
+.sub.line2 { color: var(--ink); }
+.soon { font: 500 12px var(--font-mono); color: var(--accent); }
+.go { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid var(--accent); border-radius: 6px; padding: 5px 10px; white-space: nowrap; }
+.go:hover { background: var(--accent-soft); }
+@media (max-width: 560px) {
+  .rel { grid-template-columns: 56px minmax(0, 1fr); }
+  .rel.wide { grid-template-columns: 100px minmax(0, 1fr); }
+  .rel.wide .day { font-size: 24px; }
+  .rel .acts { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; min-width: 0; }
+}
+
+.card { border-top: 2px solid var(--ink); padding-top: 14px; }
+.card-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-start; justify-content: space-between; }
+.card h2 { font: 700 30px/1.1 var(--font-display); letter-spacing: -0.015em; margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
+.card .meta { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.card .sum { margin: 12px 0 18px; max-width: 70ch; }
+.card h3.sec { font: 700 18px var(--font-display); margin: 22px 0 2px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.work { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 4px 14px; padding: 10px 0; border-top: 1px solid var(--line); align-items: baseline; }
+.work .yr { font: 500 13px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .work { grid-template-columns: 44px minmax(0, 1fr); } .work .go, .work .stat { grid-column: 2; justify-self: start; } }
+.state { color: var(--muted); padding: 12px 0; }
+details.season { border-top: 1px solid var(--line); padding: 10px 0 6px; }
+details.season summary { cursor: pointer; font: 650 16px var(--font-display); }
+details.season[open] summary { margin-bottom: 6px; }
+.work .stat { font: 500 12px var(--font-mono); white-space: nowrap; }
+.season-foot { padding: 10px 0 4px; border-top: 1px solid var(--line); }
+footer a { color: var(--accent); }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+
+.empty { border-top: 2px solid var(--ink); padding-top: 16px; max-width: 62ch; }
+.empty h2 { font: 700 26px/1.15 var(--font-display); margin: 0 0 8px; text-wrap: balance; }
+.empty p { margin: 0 0 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+.chip:hover { border-color: var(--accent); }
+.infopanel > .intro, .infopanel > .hint, .infopanel > .infosec { width: 90%; max-width: 1000px; box-sizing: border-box; }
+@media (max-width: 700px) { .infopanel > .intro, .infopanel > .hint, .infopanel > .infosec { width: 100%; } }
+.intro { margin: 4px 0 18px; }
+.intro p { margin: 0 0 10px; line-height: 1.55; }
+.intro .lead { font: 600 18px/1.45 var(--font-display); }
+.intro .muted { color: var(--muted); font-size: 14.5px; }
+.infosec { border-top: 1px solid var(--line); padding: 14px 0 4px; }
+.infosec h3 { margin: 0 0 8px; font: 650 17px var(--font-display); }
+.infosec h4 { margin: 10px 0 2px; font: 650 15px var(--font-display); }
+.infosec p { margin: 4px 0; font-size: 14.5px; }
+.infosec ul { margin: 0; padding-left: 20px; font-size: 14.5px; }
+.infosec li { margin: 5px 0; }
+.infocat { margin-bottom: 8px; }
+.infosec a { color: var(--accent); text-underline-offset: 2px; }
+.backlink { border: 0; background: transparent; color: var(--muted); font: 600 13px var(--font-body); padding: 0 0 8px; cursor: pointer; }
+.backlink:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.ovtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 10px 0 22px; }
+.ovtile { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 14px 16px; }
+.ovnum { font: 700 34px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.ovlbl { font-size: 14px; margin-top: 4px; }
+.ovnote { font: 500 11px var(--font-mono); color: var(--muted); margin-top: 6px; }
+.overview .hint { margin-top: 14px; }
+.datanote { margin: 8px 0 0; font-size: 12.5px; }
+.chips.stack { flex-direction: column; align-items: flex-start; }
+.chips.stack .chip { text-align: left; }
+.chip small { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 13px; display: grid; gap: 6px; max-width: 80ch; }
+footer p { margin: 0; }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <h1>Schondraussen.de</h1>
+      <p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p>
+    </div>
+    <div class="whobox">
+      <button class="who" id="who" type="button" aria-expanded="false" aria-controls="cfgpanel" disabled>Nicht angemeldet</button>
+      <button class="ver" id="ver" type="button" disabled></button>
+    </div>
+  </header>
+
+  <div class="warnbox previewbar" id="previewbar" hidden>
+    <b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. Im Kontakt-Chat schreibst du in diesem Modus als Nutzer, die Nachricht landet in einer Unterhaltung mit dir selbst.
+    <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button>
+  </div>
+
+  <section class="warnbox" id="locked" hidden><b>Dein Zugang zu dieser Seite wurde beendet.</b> Deine Daten wurden gelöscht. Bei Fragen wende dich an den Betreiber.</section>
+
+  <section class="warnbox" id="welcome" hidden>
+    <b>Willkommen bei Schondraussen.de!</b> Lege deine Autor:innen, Künstler:innen, Filme und Serien an und behalte ihre Neuerscheinungen im Blick.
+    Damit die Seite für alle schnell bleibt, sind pro Liste höchstens <span class="maxn">100</span> Einträge möglich. Wenn du die Grenze erreichst, lösche bitte zuerst nicht mehr benötigte Einträge, bevor du neue hinzufügst.
+    <div class="add" style="margin-top:8px"><button class="btn small" id="welcomeOk" type="button">Verstanden</button></div>
+  </section>
+
+  <section class="warnbox" id="welcome2" hidden>
+    <b>Möchtest du mit Beispielen starten?</b> Ich kann in jede Kategorie (Autor:innen, Künstler:innen, Filme, Serien) bis zu 10 Beispieleinträge für dich anlegen, damit du sofort siehst, wie Kalender und Übersicht aussehen. Du kannst sie jederzeit wieder löschen.
+    <div class="add" style="margin-top:8px"><button class="btn small" id="sampleYes" type="button">Ja, Beispiele anlegen</button> <button class="btn small ghost" id="sampleNo" type="button">Nein, leer starten</button></div>
+    <p class="msg" id="sampleMsg" role="status"></p>
+  </section>
+
+  <nav class="topbar" id="topbar" aria-label="Listen"></nav>
+
+  <section class="cfgpanel" id="adminpanel" hidden aria-label="Admin">
+    <h2 class="sec" style="grid-column:1/-1;margin:0">Admin</h2>
+    <label class="field owner" hidden><span>Amazon-Partner-ID (gilt für alle Nutzer)</span>
+      <input id="tag" type="text" maxlength="64" placeholder="deinname-21" spellcheck="false" autocapitalize="off"></label>
+    <label class="field owner" hidden><span>Amazon-Shop (gilt für alle Nutzer)</span>
+      <select id="domain">
+        <option value="amazon.de">amazon.de</option>
+        <option value="amazon.fr">amazon.fr</option>
+        <option value="amazon.it">amazon.it</option>
+        <option value="amazon.es">amazon.es</option>
+        <option value="amazon.co.uk">amazon.co.uk</option>
+        <option value="amazon.com">amazon.com</option>
+      </select></label>
+    <p class="hint owner" hidden>Die Partner-ID und der Shop werden in alle Amazon-Links aller Nutzer eingebaut. Für amazon.de brauchst du eine ID aus dem deutschen PartnerNet.</p>
+    <div class="add"><button class="btn" id="saveadm" type="button">Speichern</button><span class="msg" id="admsaveMsg" role="status" style="margin:0"></span></div>
+    <section class="admin owner" id="admin" hidden aria-label="Nutzerverwaltung">
+      <h3 class="sec">Nutzerverwaltung</h3>
+      <p class="hint">Hier siehst du, wer die Seite nutzt. „Entfernen“ löscht die Daten der Person beim nächsten Besuch und sperrt ihr Konto in dieser Seite. Wer gar nicht mehr hinein soll, muss zusätzlich im Teilen-Menü der Seite entfernt werden.</p>
+      <div id="admList" class="adm"></div>
+      <h3 class="sec">Gesperrte E-Mail-Adressen</h3>
+      <div id="blkList" class="adm"></div>
+      <form class="add" id="blkForm" autocomplete="off"><input id="blkMail" type="email" maxlength="120" aria-label="E-Mail-Adresse sperren" placeholder="Adresse sperren"><button class="btn small" type="submit">Sperren</button></form>
+      <p class="msg" id="admMsg" role="status"></p>
+      <h3 class="sec">Ansicht prüfen</h3>
+      <p class="hint">Zeigt dir die Seite so, wie sie ein normaler Nutzer sieht, ohne Admin-Funktionen. Zurück geht es über den Hinweis oben auf der Seite.</p>
+      <p><button class="btn ghost small" id="previewOn" type="button">Als normaler Nutzer ansehen</button></p>
+    </section>
+  </section>
+
+  <section class="cfgpanel" id="cfgpanel" hidden aria-label="Einstellungen">
+    <div class="impwrap" id="skinwrap">
+      <p class="label">Oberfläche</p>
+      <div class="skins" id="skins" role="group" aria-label="Oberfläche wählen"></div>
+    </div>
+    <label class="field"><span>Ort für Kinos (Stadt oder PLZ)</span>
+      <input id="city" type="text" maxlength="60" placeholder="z. B. Köln" autocomplete="address-level2"></label>
+    <label class="field"><span>E-Mail-Adresse für Benachrichtigungen</span>
+      <input id="email" type="email" maxlength="120" placeholder="du@beispiel.de" autocomplete="email" spellcheck="false" autocapitalize="off"></label>
+    <div class="add"><button class="btn" id="savecfg" type="button">Speichern</button><span class="msg" id="cfgmsg" role="status" style="margin:0"></span></div>
+    <hr class="cfgsep">
+    <div class="add" style="grid-column:1/-1;flex-wrap:wrap"><button class="btn ghost small" id="sampleAgain" type="button">Beispieleinträge hinzufügen</button><button class="btn ghost small" id="sampleDel" type="button">Beispieleinträge entfernen</button><span class="msg" id="sampleAgainMsg" role="status" style="margin:0"></span></div>
+    <p class="hint">Legt bis zu 10 Beispieleinträge je Kategorie an. Was schon auf deiner Liste steht, wird nicht doppelt angelegt. „Entfernen“ löscht nur die Einträge, die auf diesem Weg angelegt wurden, eigene bleiben.</p>
+    <hr class="cfgsep">
+    <div class="impwrap">
+      <button class="btn ghost small" id="impToggle" type="button" aria-expanded="false" aria-controls="impPanel">Künstlerliste importieren</button>
+        <div class="imp" id="impPanel" hidden>
+          <p class="hint">Füge Namen von Künstler:innen ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text), zum Beispiel einen Export aus Spotify. Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern.</p>
+          <input id="impFile" type="file" accept=".json,.csv,.txt,text/plain,application/json,text/csv" aria-label="Datei laden">
+          <textarea id="impText" rows="6" aria-label="Namen, einer pro Zeile" placeholder="Radiohead&#10;Blind Guardian&#10;Nightwish"></textarea>
+          <div class="add"><button class="btn" id="impGo" type="button">Importieren</button><span class="msg" id="impMsg" role="status" style="margin:0"></span></div>
+        </div>
+    </div>
+    <p class="hint">Der Administrator dieser Seite sieht deine E-Mail-Adresse, die Zahl deiner Einträge und wann du zuletzt hier warst. Deine Einträge selbst bleiben privat.</p>
+    <p class="warnbox">Diese Seite kann selbst keine E-Mails verschicken. Deine Adresse und die vorgemerkten Benachrichtigungen werden privat gespeichert, damit ein Versand-Dienst sie später nutzen kann. Bis dahin kommt noch keine Mail an.</p>
+  </section>
+
+  <section class="support infopanel" id="infopanel" hidden aria-label="Info">
+    <h2 class="sec">Info</h2>
+    <div class="intro">
+      <p class="lead">Du bist hier richtig, wenn du irgendwann angefangen hast zu arbeiten und einfach keine Zeit mehr hast, deinen Lieblingskünstler:innen, Autor:innen oder Serien zu folgen. Wenn du überrascht feststellst, dass die Band deiner Jugend schon vor zwei Jahren ein neues Album veröffentlicht hat.</p>
+      <p>Schondraussen.de hilft dir dabei, ganz ohne viel Schnickschnack: Du legst fest, wem du folgst, und die Seite soll dir eine Mail schicken (später auch Benachrichtigungen), sobald es etwas Neues gibt. So behältst du den Überblick und bestimmst selbst, was dich wirklich erreicht.</p>
+      <p class="muted">Aktuell ist die Seite noch im Testmodus, Mails werden noch nicht verschickt. Aber wer weiß …</p>
+    </div>
+
+    <section class="infosec">
+      <h3>Zum Testen</h3>
+      <p>Trage bitte möglichst unterschiedliche Künstler:innen, Autor:innen, Filme und Serien ein, am besten auch solche mit angekündigten Neuerscheinungen. So sehen wir, wo die Angaben stimmen und wo etwas fehlt. Hier einige Beispiele mit Terminen, die ich am 02.11.2026 nachgeschlagen habe (Termine können sich noch ändern):</p>
+      <ul>
+        <li><b>Künstler:innen:</b> Bullet For My Valentine (achtes Album, erscheint im Januar 2027, laut <a href="https://www.impericon.com/de/blogs/magazine/bullet-for-my-valentine-new-album-set-for-january-2027-release" target="_blank" rel="noopener noreferrer">Impericon</a> angekündigt im Mai 2026). Dazu Grave Digger: Das Album „Faces of Pain“ erscheint am 15.01.2027, wurde laut <a href="https://blabbermouth.net/news/grave-digger-to-release-new-album-faces-of-pain-in-january-2027" target="_blank" rel="noopener noreferrer">Blabbermouth</a> aber erst im September 2026 angekündigt. Claude kennt es vermutlich nicht, ein guter Test für die Lücke im Wissen. Und „Pain“ als mehrdeutiger Name, bei dem Vorschläge zur Auswahl erscheinen.</li>
+        <li><b>Autor:innen:</b> Stephen King (sehr viele Bücher, dazu „Mehr Werke laden“ ausprobieren), T. Kingfisher (nächster Roman „A Devil of a Crime“ für Mai 2027 angekündigt, laut <a href="https://bookriot.com/?p=652326" target="_blank" rel="noopener noreferrer">Book Riot</a>), Sebastian Fitzek als deutscher Autor und Terry Pratchett als abgeschlossenes Werk.</li>
+        <li><b>Filme:</b> „Asterix und das Königreich Nubien“ (Kinostart 03.12.2026), „Avengers: Doomsday“ (16.12.2026), „Dune: Part 3“ (17.12.2026) und „Jumanji 3“ (23.12.2026), laut <a href="https://www.kino.de/filme/jahre/2026/dezember/" target="_blank" rel="noopener noreferrer">kino.de</a>.</li>
+        <li><b>Serien:</b> „Wednesday“ (neue Staffel für 2027 erwartet, ohne genauen Termin) und eine abgeschlossene Serie wie „Stranger Things“. Folgen und Anbieter sind bisher nur beim Admin gefüllt.</li>
+      </ul>
+      <p>Ob kommende Termine erscheinen, hängt von Claudes Wissen bis Ende Juni 2026 ab. Dass bei manchen Einträgen nichts steht oder etwas fehlt, ist also kein Fehler deinerseits und genau das, was ich wissen möchte. Schau außerdem, ob der Kalender die Termine zeigt, ob die Mail-Vormerkung (Haken und ×) funktioniert und ob die Seite auf deinem Handy gut aussieht. Fällt dir etwas auf, schreib mir über „Kontakt“.</p>
+    </section>
+
+    <section class="infosec">
+      <h3>Wann werden Einträge erneuert?</h3>
+      <div class="infocat"><p><b>Jetzt:</b> Nur auf Knopfdruck. Beim Hinzufügen eines Eintrags, bei „Aktualisieren“ und bei „Mehr Werke laden“ fragt die Seite Claude. Danach bleibt ein Eintrag so, wie er zuletzt geladen wurde. Das Datum steht als „Stand“ am Eintrag. Neue Ankündigungen nach Ende Juni 2026 kennt Claude nicht.</p>
+      <p><b>Mit Server:</b> Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf.</p></div>
+    </section>
+
+    <section class="infosec">
+      <h3>Quellen je Kategorie</h3>
+      <p class="hint">Wie aktuell die Angaben sind, woher sie kommen und was sich ändert, wenn die Seite auf einen eigenen Server umzieht. Stand: 02.11.2026.</p>
+      <div class="infocat"><h4>Autor:innen</h4>
+        <p><b>Jetzt:</b> Claudes Wissen (Stand Ende Juni 2026) für Bücher und angekündigte Termine.</p>
+        <p><b>Mit Server:</b> <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> und <a href="https://books.google.com" target="_blank" rel="noopener noreferrer">Google Books</a> mit aktuellen Daten.</p></div>
+      <div class="infocat"><h4>Künstler:innen</h4>
+        <p><b>Jetzt:</b> Claudes Wissen (Stand Ende Juni 2026) für Alben und angekündigte Termine.</p>
+        <p><b>Mit Server:</b> <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank.</p></div>
+      <div class="infocat"><h4>Filme</h4>
+        <p><b>Jetzt:</b> Claudes Wissen für Filme und Reihen. Kinostarts und Kinos am Ort kommen von <a href="https://www.filmstarts.de" target="_blank" rel="noopener noreferrer">Filmstarts</a>, derzeit aber nur bei den Einträgen des Admins und von Hand nachgetragen.</p>
+        <p><b>Mit Server:</b> <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a> für die Filmdaten (für die kommerzielle Nutzung ist eine Lizenz nötig). Bei den Kinostarts muss vorher geklärt werden, ob <a href="https://www.filmstarts.de" target="_blank" rel="noopener noreferrer">Filmstarts</a> sie für die Seite freigibt, denn das Auslesen ist nur für den privaten Gebrauch gedacht.</p></div>
+      <div class="infocat"><h4>Serien</h4>
+        <p><b>Jetzt:</b> Claudes Wissen für die Staffeln. Folgen und Sendetermine kommen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>), die Streaminganbieter von <a href="https://www.justwatch.com" target="_blank" rel="noopener noreferrer">JustWatch</a>, beides derzeit nur bei den Einträgen des Admins und von Hand nachgetragen.</p>
+        <p><b>Mit Server:</b> <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> für alle Nutzer live. Für die Streaminganbieter muss noch eine geeignete Quelle samt Lizenz gewählt werden.</p></div>
+      <div class="infocat"><h4>Amazon-Links</h4>
+        <p><b>Jetzt und mit Server:</b> Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Das bleibt so. Eine Provision gibt es nur bei qualifizierten Käufen.</p></div>
+    </section>
+
+    <section class="infosec">
+      <h3>Was ändert sich beim Umzug auf einen Server?</h3>
+      <ul>
+        <li>Alle Einträge werden alle 12 Stunden automatisch erneuert, nicht nur auf Knopfdruck.</li>
+        <li>Die Daten kommen aus echten Datenbanken und sind nicht mehr auf Claudes Wissensstand (Ende Juni 2026) begrenzt.</li>
+        <li>Streaminganbieter, Folgen und Kinotermine gibt es für alle Nutzer, nicht nur für den Admin.</li>
+        <li>Die Mail-Benachrichtigungen werden wirklich verschickt, mit Bestätigung per Link und Abmelde-Link.</li>
+        <li>Anmeldung, Sperren, Entfernen von Nutzern und das Limit von 100 Einträgen werden auf dem Server durchgesetzt und nicht erst beim nächsten Besuch im Browser.</li>
+      </ul>
+    </section>
+
+    <section class="infosec">
+      <h3>Server-Funktionen, die hier noch nicht gehen</h3>
+      <ul>
+        <li><b>Mails senden:</b> „Mail bei Neuem“ und „Mail zum Termin“ merken nur vor. Eine Seite in Claude kann selbst keine Mails verschicken.</li>
+        <li><b>Automatische Erneuerung alle 12 Stunden:</b> Dafür braucht es einen Dienst, der im Hintergrund läuft. Eine Seite läuft nur, solange sie geöffnet ist.</li>
+        <li><b>Echte Datenquellen für alle:</b> MusicBrainz, Open Library, TMDB und Co. kann die Seite nicht selbst abfragen. Das blockt die Sicherheitsregel der Seite.</li>
+        <li><b>Kinoprogramm, Folgen und Streaminganbieter für alle Nutzer:</b> Ohne eigene Abfragen werden sie nur beim Admin von Hand ergänzt.</li>
+        <li><b>Tourdaten und Konzerte in deinem Umkreis:</b> Die Daten von <a href="https://www.eventim.de" target="_blank" rel="noopener noreferrer">Eventim</a> gibt es nur über ein Partnerprogramm. Das Thema ist vorerst zurückgestellt.</li>
+        <li><b>Spotify-Anbindung:</b> Die Künstlerliste (z. B. von <a href="https://www.spotify.com/de/" target="_blank" rel="noopener noreferrer">Spotify</a>) wird stattdessen über Einfügen oder eine Datei importiert, nicht über eine Kontoverbindung.</li>
+        <li><b>Amazon-Ergebnisse nach Sprache filtern:</b> Dafür gibt es keinen prüfbaren Filter, die Version wurde zurückgenommen. Auf einem Server wäre eine offizielle Amazon-Schnittstelle möglich.</li>
+        <li><b>Benachrichtigung über neue Kontakt-Nachrichten:</b> Die rote Zahl zeigt sie nur, solange die Seite offen ist. Eine Mail oder Meldung aufs Handy gäbe es erst mit einem Server.</li>
+        <li><b>Verbindliche Sperren und Limits:</b> Ein entfernter Nutzer oder eine gesperrte E-Mail-Adresse greift hier erst beim nächsten Besuch im Browser. Ein Ausschluss von der Seite selbst geht nur über das Teilen-Menü.</li>
+      </ul>
+    </section>
+
+    <section class="infosec">
+      <h3>To-Do / Ideen</h3>
+      <ul>
+        <li><b>Weitere Shops als Alternative zu Amazon:</b> Zur Auswahl stehen, wo man ein Buch, Album oder einen Film kaufen möchte.</li>
+        <li><b>Mehr Auswahl und Einschränkungen im Kalender:</b> Zum Beispiel nach Kategorie, Zeitraum oder Eintrag filtern.</li>
+        <li><b>Gesehene Folgen abhaken:</b> Bei Serien in der Folgenübersicht markieren können, was man schon gesehen hat.</li>
+        <li><b>Kalender-Abo (.ics):</b> Ein privater Link, den man in Google, Apple oder Outlook abonniert und der sich mit den Terminen von selbst aktualisiert, für alles oder nur für einzelne Kategorien und Einträge. Braucht den eigenen Server.</li>
+      </ul>
+    </section>
+  </section>
+
+  <section class="support" id="logpanel" hidden aria-label="Versionsverlauf">
+    <h2 class="sec">Versionsverlauf</h2>
+    <p class="hint">Was sich in welcher Version geändert hat.</p>
+    <div id="logList"></div>
+  </section>
+
+  <section class="support" id="supportpanel" hidden aria-label="Kontakt">
+    <h2 class="sec">Kontakt</h2>
+    <p class="hint" id="supHint"></p>
+    <div class="supgrid" id="supGrid">
+      <aside class="supthreads" id="supThreads" hidden aria-label="Unterhaltungen"></aside>
+      <div class="chat">
+        <div class="chatlog" id="chatLog" role="log" aria-live="polite"></div>
+        <form class="chatform" id="chatForm" autocomplete="off">
+          <textarea id="chatIn" rows="2" maxlength="1000" aria-label="Nachricht" placeholder="Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)"></textarea>
+          <button class="btn" type="submit">Senden</button>
+        </form>
+        <p class="msg" id="chatMsg" role="status"></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="layout" id="layout">
+    <aside class="rail" id="rail" hidden>
+      <section aria-labelledby="addlbl">
+        <p class="label" id="addlbl">Neu hinzufügen</p>
+        <form class="add" id="addform" autocomplete="off">
+          <input id="q" type="text" maxlength="80" aria-label="Name" placeholder="Name eingeben">
+          <button class="btn" id="addbtn" type="submit">Hinzufügen</button>
+        </form>
+        <p class="msg" id="msg" role="status"></p>
+        <!-- HINWEIS-DATENSTAND: nach dem Umzug auf einen echten Server entfernen -->
+        <p class="hint datanote" id="datanote">Hinweis: Die Angaben stammen von Claude und sind nur bis Ende Juni 2026 aktuell. Nach dem Umzug auf einen echten Server sollen die Ergebnisse besser werden.</p>
+      </section>
+      <section aria-labelledby="listlbl">
+        <p class="label" id="listlbl">Liste</p>
+        <label class="field sortf"><span>Sortieren nach</span>
+          <select id="sortSel" aria-label="Sortierung der Liste">
+            <option value="alpha">Alphabetisch</option>
+            <option value="works">Anzahl Werke</option>
+            <option value="last">Letzte Veröffentlichung</option>
+            <option value="next">Nächste Veröffentlichung</option>
+          </select></label>
+        <label class="field sortf"><span>Genre</span>
+          <select id="genreSel" aria-label="Nach Genre filtern"><option value="">Alle Genres</option></select></label>
+        <label class="field srch"><span>Suchen</span>
+          <input id="srch" type="search" maxlength="80" aria-label="Einträge durchsuchen" placeholder="Liste filtern"></label>
+        <div id="fillbar"></div>
+        <div id="genrebar"></div>
+        <div class="list" id="list"></div>
+      </section>
+    </aside>
+
+    <main class="main" id="content"><p class="state pulse">Lade deine Liste …</p></main>
+  </div>
+
+  <footer>
+    <p>Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links mit Partner-ID sind Werbelinks; für dich ändert sich der Preis nicht.</p>
+    <p>Werke und Termine kommen aus Claudes Wissen (Stand Mitte 2026), nicht aus einer Live-Datenbank. Neuere Ankündigungen können fehlen, Termine bitte vor dem Kauf prüfen. Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (CC BY-SA 4.0).</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var TYPES = {
+    author: { label: 'Autor:in', plural: 'Autor:innen', ph: 'z. B. Terry Pratchett', idx: 'stripbooks' },
+    artist: { label: 'Künstler:in', plural: 'Künstler:innen', ph: 'z. B. Radiohead', idx: 'music' },
+    film:   { label: 'Film', plural: 'Filme', ph: 'z. B. Dune', idx: 'video' },
+    series: { label: 'Serie', plural: 'Serien', ph: 'z. B. Severance', idx: 'video' }
+  };
+  var ORDER = ['author', 'artist', 'film', 'series'];
+  var GENRES = {
+    author: ['Fantasy', 'Science-Fiction', 'Horror', 'Krimi', 'Thriller', 'Mystery', 'Historischer Roman', 'Liebesroman', 'Abenteuer', 'Dystopie', 'Humor & Satire', 'Jugendbuch', 'Kinderbuch', 'Klassiker', 'Gegenwartsliteratur', 'Biografie', 'Sachbuch', 'Western', 'Lyrik', 'Graphic Novel'],
+    artist: ['Rock', 'Hard Rock', 'Heavy Metal', 'Power Metal', 'Death Metal', 'Black Metal', 'Gothic & Dark Wave', 'Mittelalter & Folk Rock', 'Punk', 'Alternative & Indie', 'Pop', 'Elektronik', 'Hip-Hop', 'Folk & Singer-Songwriter', 'Blues', 'Jazz', 'Klassik & Soundtrack', 'Country', 'Reggae & Ska', 'Soul & R&B'],
+    film: ['Action', 'Abenteuer', 'Animation', 'Anime', 'Komödie', 'Drama', 'Fantasy', 'Science-Fiction', 'Horror', 'Thriller', 'Krimi', 'Kriegsfilm', 'Western', 'Dokumentarfilm', 'Familienfilm', 'Musical', 'Romanze', 'Biografie', 'Mystery', 'Superhelden'],
+    series: ['Drama', 'Comedy', 'Krimi', 'Thriller', 'Science-Fiction', 'Fantasy', 'Mystery', 'Horror', 'Action & Abenteuer', 'Anime', 'Animation', 'Dokumentation', 'Historie', 'Krieg', 'Western', 'Romanze', 'Familie', 'Reality', 'Superhelden', 'Satire']
+  };
+  var EXAMPLES = { author: 'Terry Pratchett', artist: 'Radiohead', film: 'Dune', series: 'Severance' };
+
+  var S = {
+    db: null, sample: null, uid: null, name: '', coll: null, profile: null,
+    entries: [], alerts: {}, acoll: null, settings: { tag: '', domain: 'amazon.de', email: '', city: '' }, site: { tag: '', domain: 'amazon.de' }, isOwner: false, realOwner: false, preview: false, info: false, members: [], blocked: [], names: {}, admConfirm: null, sort: {}, support: false, sup: { meta: null, msgs: [], threads: [], sel: null, selMsgs: [], last: 0, unsubUser: null, unsubSel: null, confirm: false },  locked: false, pdata: {}, userCap: null, alertsReady: false, lastSyncKey: '', visitAt: '', siteExists: null, legacy: null,
+    cat: 'cal', sel: null, loading: {}, simLoading: {}, genre: {}, genreBusy: false, confirm: null, ready: false, busy: false,
+    filter: '', fill: { running: false, stop: false, done: 0, total: 0 }
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function h(tag, attrs) {
+    var el = document.createElement(tag), k, v;
+    attrs = attrs || {};
+    for (k in attrs) {
+      v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k.indexOf('on') === 0) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = [].concat(arguments[i]);
+      for (var j = 0; j < kids.length; j++) {
+        var c = kids[j];
+        if (c == null || c === false) continue;
+        el.append(c.nodeType ? c : document.createTextNode(String(c)));
+      }
+    }
+    return el;
+  }
+
+  /* ---------- Amazon ---------- */
+  function amazonUrl(entry, title) {
+    var d = S.site.domain || 'amazon.de';
+    var t = TYPES[entry.type] || TYPES.film;
+    var term = [title, (entry.type === 'author' || entry.type === 'artist') ? entry.name : ''].filter(Boolean).join(' ');
+    var idx = t.idx;
+    if (idx === 'music') idx = d === 'amazon.com' ? 'music' : 'popular';
+    else if (idx === 'video') idx = d === 'amazon.com' ? 'movies-tv' : 'dvd';
+    var url = 'https://www.' + d + '/s?k=' + encodeURIComponent(term) + '&i=' + idx;
+    if (S.site.tag) url += '&tag=' + encodeURIComponent(S.site.tag);
+    return url;
+  }
+  function amazonLink(entry, title) {
+    return h('a', { class: 'go', href: amazonUrl(entry, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon');
+  }
+
+  /* ---------- Datum ---------- */
+  var MONTH = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
+  var MSHORT = new Intl.DateTimeFormat('de-DE', { month: 'short' });
+  var WDAY = new Intl.DateTimeFormat('de-DE', { weekday: 'short' });
+  var LONG = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  function today0() { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function isoToday() { var n = today0(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); }
+  function parseDate(s) {
+    var m = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(String(s || '').trim());
+    if (!m) return null;
+    var y = +m[1], mo = m[2] ? +m[2] : 0, d = m[3] ? +m[3] : 0;
+    if (mo > 12 || d > 31) return null;
+    if (d) { var dt = new Date(y, mo - 1, d); return { prec: 'day', y: y, m: mo, d: d, start: dt, end: dt, sort: dt.getTime() }; }
+    if (mo) { var st = new Date(y, mo - 1, 1), en = new Date(y, mo, 0); return { prec: 'month', y: y, m: mo, start: st, end: en, sort: en.getTime() }; }
+    return { prec: 'year', y: y, start: new Date(y, 0, 1), end: new Date(y, 11, 31), sort: new Date(y, 11, 31).getTime() };
+  }
+
+  function openP(s) {
+    if (String(s || '').trim()) return null;
+    var f = new Date(9999, 11, 31);
+    return { prec: 'none', y: 9999, start: f, end: f, sort: f.getTime() };
+  }
+
+  /* ---------- Hilfen ---------- */
+  function byName(a, b) { return String(a.name || a.query).localeCompare(String(b.name || b.query), 'de'); }
+  var MAX_PER_LIST = 100;
+  function limitFor() { return MAX_PER_LIST; }
+  function countOf(type) { return S.entries.filter(function (e) { return e.type === type; }).length; }
+  function limitMsg(type) { return 'Du hast die Grenze von ' + MAX_PER_LIST + ' Einträgen für ' + TYPES[type].plural + ' erreicht. Bitte lösche zuerst einige Einträge, bevor du neue hinzufügst. Danke für dein Verständnis!'; }
+  function lastRelease(e) {
+    var now = today0(), best = null;
+    function take(d) { var p = parseDate(d); if (p && p.start <= now && (!best || p.sort > best.sort)) best = p; }
+    (e.works || []).forEach(function (w) { if (w.year) take(String(w.year)); });
+    (e.upcoming || []).forEach(function (u) { take(u.date); });
+    (e.episodes || []).forEach(function (x) { take(x.d); });
+    (e.cinema || []).forEach(function (c) { take(c.date); });
+    return best;
+  }
+  function nextRelease(e) {
+    var up = upcomingOf(e); if (!up.length) return null;
+    return up.reduce(function (a, b) { return a.p.sort <= b.p.sort ? a : b; }).p;
+  }
+  function fmtP(p) { return !p ? '' : p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? MONTH.format(p.start) : p.prec === 'none' ? 'offen' : String(p.y); }
+  function sortedEntries(type) {
+    var mode = S.sort[type] || 'alpha', es = entriesOf(type);
+    if (mode === 'alpha') return es;
+    var keyed = es.map(function (e) {
+      if (mode === 'works') return { e: e, k: (e.works || []).length };
+      if (mode === 'last') { var l = lastRelease(e); return { e: e, k: l ? l.sort : null, p: l }; }
+      var n = nextRelease(e); return { e: e, k: n ? n.sort : null, p: n };
+    });
+    keyed.sort(function (a, b) {
+      if (a.k == null && b.k == null) return 0;
+      if (a.k == null) return 1; if (b.k == null) return -1;
+      return mode === 'next' ? a.k - b.k : b.k - a.k;
+    });
+    return keyed.map(function (x) { x.e._sortp = x.p || null; return x.e; });
+  }
+  function entriesOf(type) { return S.entries.filter(function (e) { return e.type === type; }).sort(byName); }
+  function theatersOf(e) {
+    var t = e.theaters, c = (S.settings.city || '').trim().toLowerCase();
+    if (!t || !c || !t.city || String(t.city).trim().toLowerCase() !== c || !(t.list || []).length) return null;
+    return t;
+  }
+  function upcomingOf(e) {
+    var now = today0(), out = [];
+    var cin = e.cinema || [], rep = {}, th = theatersOf(e);
+    cin.forEach(function (c) { if (c.replaces) rep[c.replaces] = 1; var p = parseDate(c.date); if (p && p.end >= now) out.push({ e: e, p: p, u: { title: c.title, date: c.date, kind: 'Kinostart', note: 'Deutschland' + (th ? ' · läuft in ' + th.list.map(function (k) { return k.name; }).join(', ') : ''), az: c.title } }); });
+    (e.upcoming || []).forEach(function (u) { if (rep[u.title]) return; var p = parseDate(u.date) || openP(u.date); if (p && p.end >= now) out.push({ e: e, u: u, p: p }); });
+    var haveT = {};
+    out.forEach(function (o) { haveT[String(o.u.title).toLowerCase()] = 1; });
+    (e.works || []).forEach(function (w) {
+      var yr = Number(w && w.year);
+      if (e.type === 'series' || !(yr > now.getFullYear()) || haveT[String(w.title).toLowerCase()]) return;
+      var p = parseDate(String(yr));
+      if (p) out.push({ e: e, p: p, u: { title: w.title, date: String(yr), kind: w.kind || '', note: w.note || '' } });
+    });
+    (e.episodes || []).forEach(function (x) {
+      var p = parseDate(x.d);
+      if (p && p.end >= now) out.push({ e: e, p: p, u: { title: 'S' + x.s + 'E' + x.n + (x.t ? ' · ' + x.t : ''), date: x.d, kind: 'Folge', note: '', az: (e.name || e.query) + ' Staffel ' + x.s } });
+    });
+    return out;
+  }
+  function say(text, isErr) { var m = $('msg'); m.textContent = text || ''; m.className = 'msg' + (isErr ? ' err' : ''); }
+
+  /* ---------- Benachrichtigungen (nur vormerken, kein Versand) ---------- */
+  function hashStr(s) { var x = 5381; for (var i = 0; i < s.length; i++) x = ((x * 33) ^ s.charCodeAt(i)) >>> 0; return x.toString(36); }
+  function releaseId(e, u) { return 'r_' + e.id + '_' + hashStr(u.title + '|' + u.date); }
+  function followId(e) { return 'f_' + e.id; }
+  function needEmail() {
+    if (S.settings.email) return false;
+    var p = $('cfgpanel'); setCfg(true);
+    $('cfgmsg').textContent = 'Trage zuerst deine E-Mail-Adresse ein.'; $('cfgmsg').className = 'msg err';
+    $('email').focus(); p.scrollIntoView({ block: 'nearest' });
+    return true;
+  }
+  async function toggleAlert(id, data) {
+    if (needEmail() || !S.acoll) return;
+    var ref = S.acoll.doc(id);
+    try { if (S.alerts[id]) await ref.delete(); else await ref.set(data); }
+    catch (err) { say('Vormerken nicht möglich. Dafür brauchst du Mitwirken-Rechte auf dieser Seite.', true); }
+  }
+  function pillSet(on, textOn, textOff, title, toggle) {
+    var main = h('button', { class: 'pill', type: 'button', 'aria-pressed': String(on), title: title, onclick: function () { if (!on) toggle(); } }, on ? textOn : textOff);
+    if (!on) return main;
+    return h('span', { class: 'pillset on' },
+      h('span', { class: 'tick', 'aria-hidden': 'true' }, '\u2713'),
+      main,
+      h('button', { class: 'untick', type: 'button', title: 'Vormerkung zurücknehmen', 'aria-label': 'Vormerkung zurücknehmen: ' + textOn, onclick: toggle }, '\u00d7'));
+  }
+  function releaseBtn(it) {
+    var id = releaseId(it.e, it.u), on = !!S.alerts[id];
+    return pillSet(on, 'Termin-Mail vorgemerkt', 'Mail zum Termin', 'Mail zum Erscheinungstag vormerken. Der Versand ist noch nicht eingerichtet.',
+      function () { toggleAlert(id, { kind: 'release', entryId: it.e.id, entryName: it.e.name || it.e.query, type: it.e.type, title: it.u.title, date: it.u.date }); });
+  }
+  function followBtn(e) {
+    var id = followId(e), on = !!S.alerts[id];
+    return pillSet(on, 'Neuheiten-Mail vorgemerkt', 'Mail bei Neuem', 'Mail vormerken, sobald zu ' + (e.name || e.query) + ' Neues erscheint. Der Versand ist noch nicht eingerichtet.',
+      function () { toggleAlert(id, { kind: 'follow', entryId: e.id, entryName: e.name || e.query, type: e.type }); });
+  }
+
+  /* ---------- Rendering ---------- */
+  function syncBarH() { var b = $('topbar'); if (b && b.offsetHeight) document.documentElement.style.setProperty('--tbh', b.offsetHeight + 'px'); }
+  window.addEventListener('resize', syncBarH);
+  function renderNav() {
+    var bar = $('topbar'); bar.textContent = '';
+    function btn(key, text, count) {
+      return h('button', { class: 'nav', type: 'button', 'aria-current': S.cat === key && !S.support && !S.log && !S.info && !S.adm && $('cfgpanel').hidden ? 'page' : null, onclick: function () { selectCat(key); } },
+        text, count ? h('small', null, String(count)) : null);
+    }
+    var total = 0;
+    S.entries.forEach(function (e) { total += upcomingOf(e).length; });
+    bar.append(btn('cal', 'Kalender', total));
+    ORDER.forEach(function (k) { bar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
+    if (S.db && S.uid) {
+      var n = supportBadge();
+      var rg = ' rg';
+      if (S.isOwner) { bar.append(h('button', { class: 'nav adminnav' + rg, type: 'button', 'aria-current': S.adm && $('cfgpanel').hidden ? 'page' : null, onclick: toggleAdm }, 'Admin')); rg = ''; }
+      bar.append(h('button', { class: 'nav settings' + rg, type: 'button', 'aria-current': $('cfgpanel').hidden ? null : 'page', onclick: toggleCfg }, 'Einstellungen'));
+      bar.append(h('button', { class: 'nav info', type: 'button', 'aria-current': S.info && $('cfgpanel').hidden ? 'page' : null, onclick: toggleInfo }, 'Info'));
+      bar.append(h('button', { class: 'nav support', type: 'button', 'aria-current': S.support && $('cfgpanel').hidden ? 'page' : null, onclick: toggleSupport },
+        'Kontakt', n ? h('span', { class: 'badge', 'aria-label': n + ' ungelesen' }, n > 99 ? '99+' : String(n)) : null));
+    }
+    syncBarH();
+  }
+  function applyView() {
+    var cfgOpen = !$('cfgpanel').hidden;
+    $('adminpanel').hidden = cfgOpen || !S.adm || !S.isOwner;
+    $('layout').hidden = cfgOpen || S.support || !!S.log || !!S.info || (!!S.adm && !!S.isOwner);
+    $('supportpanel').hidden = cfgOpen || !S.support;
+    $('logpanel').hidden = cfgOpen || !S.log;
+    $('infopanel').hidden = cfgOpen || !S.info;
+  }
+  function updateWho() {
+    var open = !$('cfgpanel').hidden, w = $('who');
+    w.textContent = S.uid ? 'Angemeldet' + (S.name ? ' als ' + S.name : '') : 'Nicht angemeldet';
+    w.disabled = true;
+    renderVer();
+    w.setAttribute('aria-expanded', String(open));
+  }
+  function setCfg(open) {
+    $('cfgpanel').hidden = !open;
+    if (open) { S.support = false; S.log = false; S.info = false; S.adm = false; }
+    applyView();
+    updateWho(); renderNav();
+    renderWelcome();
+    if (open) window.scrollTo(0, 0);
+  }
+  function toggleCfg() {
+    setCfg($('cfgpanel').hidden);
+    if (!$('cfgpanel').hidden) $('email').focus();
+  }
+
+  function selectCat(key) {
+    S.support = false; S.log = false; S.info = false; S.adm = false; $('cfgpanel').hidden = true; updateWho(); S.cat = key; S.sel = null; S.confirm = null; S.filter = ''; $('srch').value = ''; say('');
+    if (key !== 'cal') $('q').placeholder = TYPES[key].ph;
+    renderAll();
+  }
+
+  function renderGenreSel(es) {
+    var sel = $('genreSel'), list = GENRES[S.cat] || [], cur = S.genre[S.cat] || '';
+    sel.textContent = '';
+    sel.append(h('option', { value: '' }, 'Alle Genres'));
+    list.forEach(function (g) {
+      var n = es.filter(function (e) { return (e.genres || []).indexOf(g) >= 0; }).length;
+      sel.append(h('option', { value: g }, g + ' (' + n + ')'));
+    });
+    sel.value = cur;
+    var box = $('genrebar'); box.textContent = '';
+    var miss = es.filter(function (e) { return e.status === 'ok' && !Array.isArray(e.genres); });
+    if (S.genreBusy) box.append(h('p', { class: 'hint pulse' }, 'Genres werden ermittelt …'));
+    else if (miss.length && S.sample) box.append(h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { assignGenres(S.cat); } }, 'Genres ermitteln (' + miss.length + ')')));
+  }
+  async function assignGenres(cat) {
+    if (!S.sample || S.genreBusy || !S.coll) return;
+    var list = GENRES[cat], miss = entriesOf(cat).filter(function (e) { return e.status === 'ok' && !Array.isArray(e.genres); });
+    S.genreBusy = true; renderRail();
+    try {
+      for (var i = 0; i < miss.length; i += 25) {
+        var batch = miss.slice(i, i + 25);
+        var prompt = 'Du bist ein Datenassistent für eine Medien-Merkliste. Ordne jedem Eintrag (' + (TYPES[cat] ? TYPES[cat].label : cat) + ') bis zu 3 passende Genres zu. Erlaubt sind NUR diese Genres, genau in dieser Schreibweise: ' + list.join(' | ') + '.\n' +
+          'Einträge:\n' + batch.map(function (e) { return e.name || e.query; }).join('\n') + '\n' +
+          'Antworte ausschließlich mit JSON: {"items": [{"name": "Name wie oben", "genres": ["...", "..."]}]}. Passt kein erlaubtes Genre, nimm eine leere Liste.';
+        var data = await S.sample.json(prompt, { modelTier: 'default', cache: false });
+        bumpLoads();
+        var byN = {};
+        (data && Array.isArray(data.items) ? data.items : []).forEach(function (x) { if (x && x.name) byN[String(x.name).toLowerCase()] = x.genres; });
+        for (var j = 0; j < batch.length; j++) {
+          var g = byN[String(batch[j].name || batch[j].query).toLowerCase()];
+          if (!Array.isArray(g)) continue;
+          var clean = g.filter(function (v) { return list.indexOf(v) >= 0; }).filter(function (v, k, a) { return a.indexOf(v) === k; }).slice(0, 3);
+          await S.coll.doc(batch[j].id).update({ genres: clean });
+        }
+      }
+    } catch (err) {
+      var code = err && err.code;
+      if (code === 'rate_limited') say('Gerade zu viele Abfragen. Versuche es in ein paar Minuten noch einmal.', true);
+      else if (code !== 'cancelled') say('Die Genres konnten nicht ermittelt werden.', true);
+    } finally { S.genreBusy = false; renderAll(); }
+  }
+  function renderRail() {
+    var rail = $('rail'), layout = $('layout');
+    var show = S.cat !== 'cal' && S.db;
+    rail.hidden = !show;
+    layout.className = 'layout' + (show ? ' has-rail' : '');
+    if (!show) return;
+    var t = TYPES[S.cat], es = sortedEntries(S.cat), box = $('list');
+    var cnt = countOf(S.cat);
+    $('listlbl').textContent = t.plural + ' · ' + cnt + ' / ' + MAX_PER_LIST;
+    $('sortSel').value = S.sort[S.cat] || 'alpha';
+    box.textContent = '';
+    renderFillbar(es);
+    renderGenreSel(es);
+    if (!es.length) { box.append(h('p', { class: 'hint' }, S.ready ? 'Noch keine ' + t.plural + ' auf der Liste.' : 'Lade …')); return; }
+    var gq = S.genre[S.cat] || '';
+    if (gq) es = es.filter(function (e) { return (e.genres || []).indexOf(gq) >= 0; });
+    var fq = (S.filter || '').trim().toLowerCase();
+    if (fq) es = es.filter(function (e) { return ((e.name || '') + ' ' + (e.query || '')).toLowerCase().indexOf(fq) >= 0; });
+    if (!es.length) { box.append(h('p', { class: 'hint' }, S.filter.trim() ? 'Keine Treffer für „' + S.filter.trim() + '“.' : 'Keine Einträge im Genre „' + gq + '“.')); return; }
+    es.forEach(function (e) {
+      var n = upcomingOf(e).length;
+      box.append(h('button', { class: 'row-btn', type: 'button', 'aria-current': String(S.sel === e.id), onclick: function () { S.sel = e.id; S.confirm = null; renderRail(); renderContent(); } },
+        h('span', { class: 'nm' }, e.name || e.query),
+        h('span', { class: 'tp' }, S.loading[e.id] ? 'sucht …' : ((S.sort[S.cat] === 'last' || S.sort[S.cat] === 'next') ? (e._sortp ? (S.sort[S.cat] === 'last' ? 'zuletzt ' : 'nächste ') + fmtP(e._sortp) : 'keine Angabe') : ((e.status === 'unknown' ? 'nicht gefunden' : e.status === 'new' ? 'noch ohne Daten' : e.status === 'error' ? 'Abfrage fehlgeschlagen' : worksLine(e))))),
+        n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null));
+    });
+  }
+
+  function nameLink(e) {
+    var n = e.name || e.query;
+    return h('button', { class: 'namelink', type: 'button', title: 'Seite von ' + n + ' öffnen', onclick: function () { selectCat(e.type); S.sel = e.id; renderAll(); } }, n);
+  }
+  function relRow(it, now, cal) {
+    var p = it.p, left;
+    if (p.prec === 'day') left = h('div', null, h('div', { class: 'day' }, cal ? String(p.d) : p.d + '. ' + MSHORT.format(p.start).replace('.', '')), h('div', { class: 'dow' }, WDAY.format(p.start).replace('.', '') + (cal ? '' : ' ' + p.y)));
+    else if (p.prec === 'month') left = h('div', { class: 'day soft' }, cal ? 'Tag offen' : MONTH.format(p.start));
+    else if (p.prec === 'none') left = h('div', { class: 'day soft' }, 'offen');
+    else left = h('div', { class: 'day soft' }, String(p.y));
+    var diff = Math.round((p.start - now) / 864e5);
+    var soon = p.prec === 'day' && diff <= 60 ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : '';
+    var sub = h('div', { class: 'sub' }, h('b', null, it.e.name || it.e.query), it.u.kind ? ' · ' + it.u.kind : '', it.u.note ? ' · ' + it.u.note : '');
+    return h('div', { class: 'rel' + (cal ? '' : ' wide') }, left,
+      cal
+        ? h('div', null, h('div', { class: 'ttl' }, nameLink(it.e)),
+            h('div', { class: 'sub line2' }, it.u.title + (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : '')),
+            soon ? h('div', { class: 'soon' }, soon) : null)
+        : h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
+      cal ? null : h('div', { class: 'acts' }, amazonLink(it.e, it.u.az || it.u.title), releaseBtn(it), followBtn(it.e)));
+  }
+  function groupByMonth(items, now) {
+    var groups = {}, order = [], wrap = h('div', null);
+    items.forEach(function (it) {
+      var key = (it.p.prec === 'year' || it.p.prec === 'none') ? 'later' : it.p.y + '-' + String(it.p.m).padStart(2, '0');
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(it);
+    });
+    order.sort(function (a, b) { if (a === 'later') return 1; if (b === 'later') return -1; return a < b ? -1 : 1; });
+    order.forEach(function (key) {
+      var list = groups[key];
+      list.sort(function (a, b) { return a.p.sort - b.p.sort || String(a.u.title).localeCompare(String(b.u.title), 'de'); });
+      var sec = h('section', { class: 'month' }, h('h3', null, key === 'later' ? 'Termin noch offen' : MONTH.format(list[0].p.start)));
+      list.forEach(function (it) { sec.append(relRow(it, now, true)); });
+      wrap.append(sec);
+    });
+    return wrap;
+  }
+
+  var CATCOL = { author: '#e08a2e', artist: '#1fa59a', film: '#8a5cf0', series: '#e0507a' };
+  function renderMonths(items, now) {
+    var byDay = {};
+    items.forEach(function (it) {
+      if (it.p.prec !== 'day') return;
+      var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {} });
+      o.n++; o.cats[it.e.type] = 1;
+    });
+    var box = h('section', { class: 'months', 'aria-label': 'Monatsübersicht' });
+    var legend = h('div', { class: 'legend' }, ORDER.map(function (k) { return h('span', null, h('i', { style: 'background:' + CATCOL[k] }), TYPES[k].plural); }));
+    var grid = h('div', { class: 'mgrid' });
+    for (var mi = 0; mi < 4; mi++) {
+      var first = new Date(now.getFullYear(), now.getMonth() + mi, 1), y = first.getFullYear(), m = first.getMonth() + 1;
+      var days = new Date(y, m, 0).getDate(), lead = (first.getDay() + 6) % 7;
+      var cal = h('div', { class: 'mcal' }, ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(function (d) { return h('div', { class: 'wd' }, d); }));
+      for (var b = 0; b < lead; b++) cal.append(h('div', { class: 'dc' }));
+      for (var d = 1; d <= days; d++) {
+        var o = byDay[y + '-' + m + '-' + d], isToday = y === now.getFullYear() && m === now.getMonth() + 1 && d === now.getDate();
+        var cell = h('div', { class: 'dc' + (isToday ? ' today' : '') });
+        if (o) {
+          var cats = ORDER.filter(function (k) { return o.cats[k]; }), step = 100 / cats.length;
+          var stops = cats.map(function (k, i) { return CATCOL[k] + ' ' + (i * step) + '% ' + ((i + 1) * step) + '%'; }).join(', ');
+          cell.append(h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', title: o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') }, h('span', { class: 'pn' }, String(d))));
+        } else cell.append(h('span', { class: 'pn plain' }, String(d)));
+        cal.append(cell);
+      }
+      grid.append(h('div', { class: 'mon' }, h('h3', null, MONTH.format(first)), cal));
+    }
+    box.append(grid, legend);
+    return box;
+  }
+  function renderCalendar() {
+    var now = today0(), items = [];
+    S.entries.forEach(function (e) { items = items.concat(upcomingOf(e)); });
+    var wrap = h('div', null);
+    wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Quelle ist Claudes Wissensstand, nicht der Handel.'));
+    if (!S.entries.length) {
+      wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'),
+        h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'),
+        h('div', { class: 'chips' }, ORDER.map(function (k) {
+          return h('button', { class: 'chip', type: 'button', onclick: function () { selectCat(k); $('q').value = EXAMPLES[k]; $('q').focus(); } }, h('small', null, TYPES[k].label), EXAMPLES[k]);
+        }))));
+      return wrap;
+    }
+    if (!items.length) {
+      wrap.append(h('p', { class: 'state' }, Object.keys(S.loading).length ? 'Claude sucht noch nach Terminen …' : 'Keine angekündigten Termine bekannt. In den Listen kannst du einen Eintrag aktualisieren, um neu nachzufragen.'));
+      return wrap;
+    }
+    wrap.append(renderMonths(items, now));
+    wrap.append(groupByMonth(items, now));
+    return wrap;
+  }
+
+  var TV_STATUS = { 'Running': 'läuft', 'Ended': 'beendet', 'In Development': 'in Planung', 'To Be Determined': 'offen' };
+  function renderEpisodes(e) {
+    var now = today0(), box = h('div', null), by = {};
+    box.append(h('h3', { class: 'sec' }, 'Staffeln und Folgen'));
+    box.append(h('p', { class: 'note' }, 'Folgen und Sendetermine von ',
+      h('a', { href: e.tvmazeId ? 'https://www.tvmaze.com/shows/' + e.tvmazeId : 'https://www.tvmaze.com', target: '_blank', rel: 'noopener noreferrer' }, 'TVmaze'),
+      e.tvAt ? ', Stand ' + LONG.format(new Date(e.tvAt)) : '',
+      e.tvStatus ? '. Serienstatus: ' + (TV_STATUS[e.tvStatus] || e.tvStatus) : '',
+      '. Zum Aktualisieren bitte Claude im Chat darum bitten.'));
+    (e.episodes || []).forEach(function (x) { (by[x.s] = by[x.s] || []).push(x); });
+    Object.keys(by).map(Number).sort(function (a, b) { return a - b; }).forEach(function (sn) {
+      var eps = by[sn].slice().sort(function (a, b) { return a.n - b.n; }), fut = 0;
+      eps.forEach(function (x) { var p = parseDate(x.d); if (p && p.end >= now) fut++; });
+      var past = eps.length - fut, live = fut > 0;
+      var state = !live ? 'abgeschlossen' : past === 0 ? 'startet bald' : 'läuft gerade';
+      var det = h('details', { class: 'season', open: live ? true : null },
+        h('summary', null, 'Staffel ' + sn, h('span', { class: 'sub' }, ' · ' + eps.length + ' Folgen · '), h('span', { class: live ? 'soon' : 'sub' }, state)));
+      eps.forEach(function (x) {
+        var p = parseDate(x.d), isFut = !!p && p.end >= now, diff = p ? Math.round((p.start - now) / 864e5) : 0;
+        var when = p ? WDAY.format(p.start).replace('.', '') + ', ' + LONG.format(p.start) : 'Datum offen';
+        var stat = isFut ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : 'gezeigt';
+        det.append(h('div', { class: 'work' },
+          h('div', { class: 'yr' }, 'E' + x.n),
+          h('div', null, h('div', { class: 'ttl' }, x.t || 'Titel noch offen'), h('div', { class: 'sub' }, when)),
+          h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
+      });
+      det.append(h('div', { class: 'season-foot' }, amazonLink(e, (e.name || e.query) + ' Staffel ' + sn)));
+      box.append(det);
+    });
+    return box;
+  }
+
+  function hasEntry(type, name) {
+    var low = String(name || '').toLowerCase();
+    return S.entries.some(function (x) { return x.type === type && (String(x.name).toLowerCase() === low || String(x.query).toLowerCase() === low); });
+  }
+  function renderSimilar(e) {
+    var t = TYPES[e.type] || {}, sec = h('section', { class: 'similar' });
+    sec.append(h('h3', { class: 'sec' }, 'Ähnliche ' + t.plural));
+    var list = e.similar || null, busy = !!S.simLoading[e.id];
+    if (busy) { sec.append(h('p', { class: 'state pulse' }, 'Claude sucht Vorschläge …')); return sec; }
+    if (!list) {
+      sec.append(h('p', { class: 'hint' }, 'Lass dir Vorschläge zeigen, was dir noch gefallen könnte. Die Liste kommt von Claude und kann Lücken haben.'));
+      sec.append(h('p', null, h('button', { class: 'btn ghost small', type: 'button', disabled: !S.sample, onclick: function () { loadSimilar(e); } }, 'Vorschläge laden')));
+      return sec;
+    }
+    if (!list.length) sec.append(h('p', { class: 'state' }, 'Keine Vorschläge gefunden.'));
+    list.forEach(function (x) {
+      var have = hasEntry(e.type, x.name);
+      sec.append(h('div', { class: 'simrow' },
+        h('div', null, h('div', { class: 'ttl' }, x.name), x.note ? h('div', { class: 'sub' }, x.note) : null),
+        have ? h('span', { class: 'simhave' }, '\u2713 auf deiner Liste')
+             : h('button', { class: 'btn ghost small', type: 'button', onclick: function () { addEntry(e.type, x.name, true); } }, 'Hinzufügen')));
+    });
+    sec.append(h('p', null, h('button', { class: 'btn ghost small', type: 'button', disabled: !S.sample, onclick: function () { loadSimilar(e); } }, 'Neue Vorschläge')));
+    return sec;
+  }
+  async function loadSimilar(e) {
+    if (!S.sample || S.simLoading[e.id] || !S.coll) return;
+    S.simLoading[e.id] = true; renderContent();
+    var label = TYPES[e.type] ? TYPES[e.type].label : e.type;
+    var known = S.entries.filter(function (x) { return x.type === e.type; }).map(function (x) { return x.name || x.query; });
+    var prompt = 'Du bist ein Datenassistent für eine Medien-Merkliste. Heute ist der ' + isoToday() + '.\n' +
+      'Nenne 8 reale, ähnliche Vorschläge zu "' + (e.name || e.query) + '" (' + label + '), die jemandem gefallen könnten, der diese Art von Medium mag. Gleiche Art wie die Vorlage (' + label + '). ' +
+      'Nenne nicht "' + (e.name || e.query) + '" selbst und keinen dieser bereits vorhandenen Einträge: ' + known.join(' | ') + '.\n' +
+      'Nur real existierende Namen in der offiziellen Schreibweise, nichts erfinden. "note": kurz auf Deutsch, was sie verbindet (höchstens 90 Zeichen). ' +
+      'Antworte ausschließlich mit JSON: {"similar": [{"name": "...", "note": "..."}]}';
+    try {
+      var data = await S.sample.json(prompt, { modelTier: 'default', cache: false });
+      var low = String(e.name || e.query).toLowerCase(), seen = {};
+      var out = (data && Array.isArray(data.similar) ? data.similar : []).slice(0, 12).map(function (x) { return { name: str(x && x.name, 120), note: str(x && x.note, 100) }; })
+        .filter(function (x) { var k = x.name.toLowerCase(); if (!x.name || k === low || seen[k]) return false; seen[k] = 1; return true; }).slice(0, 8);
+      bumpLoads();
+      await S.coll.doc(e.id).update({ similar: out, similarAt: new Date().toISOString() });
+    } catch (err) {
+      var code = err && err.code;
+      if (code === 'rate_limited') say('Gerade zu viele Abfragen. Versuche es in ein paar Minuten noch einmal.', true);
+      else if (code !== 'cancelled') say('Die Vorschläge konnten nicht geladen werden.', true);
+    } finally { delete S.simLoading[e.id]; renderAll(); }
+  }
+  function renderEntry(e) {
+    var t = TYPES[e.type] || {}, busy = !!S.loading[e.id], now = today0();
+    var stamp = e.fetchedAt && e.status === 'ok' ? 'Stand ' + LONG.format(new Date(e.fetchedAt)) : '';
+    var card = h('article', { class: 'card' });
+    var actions = h('div', { class: 'actions' },
+      followBtn(e),      h('button', { class: 'btn ghost small', type: 'button', disabled: busy || !S.sample, onclick: function () { loadData(e); } }, busy ? 'Sucht …' : 'Aktualisieren'),
+      S.confirm === e.id
+        ? [h('button', { class: 'btn warn small', type: 'button', onclick: function () { removeEntry(e); } }, 'Wirklich entfernen'),
+           h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.confirm = null; renderContent(); } }, 'Abbrechen')]
+        : h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.confirm = e.id; renderContent(); } }, 'Entfernen'));
+    card.append(h('div', { class: 'card-head' },
+      h('div', null, h('h2', null, e.name || e.query), h('div', { class: 'meta' }, [t.label, stamp].filter(Boolean).join(' · '))),
+      actions));
+    if (busy) { card.append(h('p', { class: 'state pulse' }, 'Claude sucht Werke und Termine …')); return card; }
+    if (e.status === 'unknown') {
+      var cs = e.candidates || [];
+      card.append(h('p', { class: 'state' }, 'Zu „' + e.query + '“ habe ich keinen eindeutigen Treffer gefunden.' + (cs.length ? ' Meintest du:' : ' Entferne den Eintrag und versuche eine genauere Schreibweise.')));
+      if (cs.length) card.append(h('div', { class: 'chips stack' }, cs.map(function (c) {
+        return h('button', { class: 'chip', type: 'button', onclick: function () { pickCandidate(e, c.name, c.hint); } }, h('small', null, c.hint || ' '), c.name);
+      })));
+      return card;
+    }
+    if (e.status === 'error') { card.append(h('p', { class: 'state' }, 'Die Abfrage hat nicht geklappt. Tippe auf „Aktualisieren“, um es noch einmal zu versuchen.')); return card; }
+    if (e.status === 'new') { card.append(h('p', { class: 'state' }, 'Noch keine Daten geladen. Tippe auf „Aktualisieren“.')); return card; }
+    if (e.summary) card.append(h('p', { class: 'sum' }, e.summary));
+    var up = upcomingOf(e).sort(function (a, b) { return a.p.sort - b.p.sort; });
+    if (e.type === 'series') card.append(renderProviders(e));
+    if (e.type === 'film') card.append(renderCinema(e));
+    card.append(h('h3', { class: 'sec' }, 'Kommende Veröffentlichungen'));
+    if (up.length) up.forEach(function (it) { card.append(relRow(it, now)); });
+    else card.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.'));
+    if (e.type === 'series' && (e.episodes || []).length) { card.append(renderEpisodes(e)); card.append(renderSimilar(e)); return card; }
+    card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : 'Bekannte Werke'));
+    var works = (e.works || []).slice().sort(function (a, b) { return (a.year || 9999) - (b.year || 9999); });
+    if (!works.length) card.append(h('p', { class: 'state' }, 'Keine Werke gefunden.'));
+    else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, ((e.type === 'author' || e.type === 'artist') && Number(e.totalWorks) > 0 ? worksLine(e, true) : works.length + ' Werke') + '. Fehlt etwas? Mit „Mehr Werke laden“ fragt Claude gezielt nach weiteren.'));
+    works.forEach(function (w) {
+      card.append(h('div', { class: 'work' },
+        h('div', { class: 'yr' }, w.year || '–'),
+        h('div', null, h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null),
+        amazonLink(e, w.title)));
+    });
+    if (works.length && e.type !== 'series') card.append(h('p', null, h('button', { class: 'btn ghost small', type: 'button', disabled: !S.sample || !!S.loading[e.id], onclick: function () { loadMoreWorks(e); } }, S.loading[e.id] ? 'Sucht …' : 'Mehr Werke laden')));
+    card.append(renderSimilar(e));
+    return card;
+  }
+
+  function renderContent() {
+    var box = $('content'); box.textContent = '';
+    if (!S.ready) { box.append(h('p', { class: 'state pulse' }, 'Lade deine Liste …')); return; }
+    if (!S.db) {
+      box.append(h('div', { class: 'empty' }, h('h2', null, 'Zum Speichern brauchst du ein Claude-Konto'),
+        h('p', null, 'Deine Listen liegen privat in deinem Zugang. Öffne diese Seite angemeldet in Claude, dann kannst du Einträge anlegen.')));
+      return;
+    }
+    if (S.cat === 'cal') { box.append(renderCalendar()); return; }
+    var es = entriesOf(S.cat), t = TYPES[S.cat];
+    if (!es.length) {
+      box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural),
+        h('p', null, 'Gib links einen Namen ein. Claude sucht dann Werke und angekündigte Neuerscheinungen heraus.'),
+        h('div', { class: 'chips' }, h('button', { class: 'chip', type: 'button', onclick: function () { $('q').value = EXAMPLES[S.cat]; $('q').focus(); } }, h('small', null, 'Beispiel'), EXAMPLES[S.cat]))));
+      return;
+    }
+    var cur = es.filter(function (e) { return e.id === S.sel; })[0];
+    if (!cur) { box.append(renderOverview(S.cat)); return; }
+    box.append(h('button', { class: 'backlink', type: 'button', onclick: function () { S.sel = null; S.confirm = null; renderRail(); renderContent(); } }, '\u2190 Übersicht ' + t.plural));
+    box.append(renderEntry(cur));
+  }
+  function fmtN(n) { try { return Number(n).toLocaleString('de-DE'); } catch (_) { return String(n); } }
+  function renderOverview(cat) {
+    var t = TYPES[cat], es = sortedEntries(cat), wrap = h('div', { class: 'overview' });
+    var works = 0, ups = 0, eps = 0, epsKnown = 0, tot = 0, totKnown = 0;
+    es.forEach(function (e) {
+      works += (e.works || []).length; ups += upcomingOf(e).length;
+      var ne = (e.episodes || []).length; eps += ne; if (ne) epsKnown++;
+      var tw = Number(e.totalWorks); if (tw > 0) { tot += tw; totKnown++; }
+    });
+    var tiles = [];
+    if (cat === 'author') { tiles = [['Autor:innen', es.length], ['Bücher in deiner Liste', works], ['Bücher insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben'], ['Kommende Veröffentlichungen', ups]]; }
+    else if (cat === 'artist') { tiles = [['Künstler:innen', es.length], ['Alben in deiner Liste', works], ['Alben insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben'], ['Kommende Veröffentlichungen', ups]]; }
+    else if (cat === 'film') { tiles = [['Filme', es.length], ['Filme und Teile der Reihen', works], ['Kommende Starts', ups]]; }
+    else { tiles = [['Serien', es.length], ['Staffeln', works], ['Folgen gesamt', eps, epsKnown ? 'Folgenliste bei ' + epsKnown + ' von ' + es.length : 'noch keine Folgenlisten'], ['Kommende Termine', ups]]; }
+    wrap.append(h('h2', { class: 'sec' }, 'Übersicht ' + t.plural));
+    wrap.append(h('div', { class: 'ovtiles' }, tiles.map(function (x) {
+      return h('div', { class: 'ovtile' }, h('div', { class: 'ovnum' }, fmtN(x[1])), h('div', { class: 'ovlbl' }, x[0]), x[2] ? h('div', { class: 'ovnote' }, x[2]) : null);
+    })));
+    var now = today0(), all = [];
+    es.forEach(function (e) { all = all.concat(upcomingOf(e)); });
+    all.sort(function (x, y) { return x.p.sort - y.p.sort || String(x.u.title).localeCompare(String(y.u.title), 'de'); });
+    wrap.append(h('h3', { class: 'sec' }, 'Kommende Veröffentlichungen' + (all.length > 10 ? ' (die nächsten 10 von ' + all.length + ')' : '')));
+    if (!all.length) wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.'));
+    all.slice(0, 10).forEach(function (it) {
+      var p = it.p, d = p.prec === 'day' ? p.d + '. ' + MSHORT.format(p.start).replace('.', '') + ' ' + p.y : p.prec === 'month' ? MONTH.format(p.start) : p.prec === 'none' ? 'Datum offen' : String(p.y);
+      wrap.append(h('div', { class: 'ovrow' }, h('span', { class: 'ovd' }, d), h('span', { class: 'ovt' }, h('b', null, nameLink(it.e)), ' – ' + it.u.title + (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : ''))));
+    });
+    wrap.append(h('p', { class: 'hint' }, 'Wähle links einen Eintrag, um Werke und Termine zu sehen.'));
+    return wrap;
+  }
+
+  var PKIND = { flatrate: 'Abo', buy: 'Kaufen', rent: 'Leihen' };
+  function renderProviders(e) {
+    var ps = e.providers || [], box = h('div', { class: 'prov' }, h('span', { class: 'plbl' }, 'Läuft bei'));
+    if (!ps.length) { box.append(h('span', { class: 'pnone' }, 'noch keine Anbieterdaten')); return box; }
+    ps.forEach(function (x) {
+      box.append(h('span', { class: 'pchip', title: PKIND[x.kind] || '' }, h('b', null, x.name), x.seasons ? ' · ' + x.seasons : '', x.kind && x.kind !== 'flatrate' ? ' · ' + (PKIND[x.kind] || x.kind) : ''));
+    });
+    if (e.providersAt) box.append(h('span', { class: 'pnone' }, 'Stand ' + LONG.format(new Date(e.providersAt)) + ', Deutschland, Quelle JustWatch'));
+    return box;
+  }
+
+  function renderCinema(e) {
+    var cs = e.cinema || [], box = h('div', { class: 'prov' }, h('span', { class: 'plbl' }, 'Kinostart (Deutschland)'));
+    if (!cs.length) { box.append(h('span', { class: 'pnone' }, 'noch keine Termine von Filmstarts')); return box; }
+    cs.forEach(function (c) {
+      var p = parseDate(c.date), d = p ? (p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? MONTH.format(p.start) : String(p.y)) : c.date;
+      box.append(h('span', { class: 'pchip' }, h('b', null, c.title), ' · ' + d));
+    });
+    var th = theatersOf(e), city = (S.settings.city || '').trim();
+    if (th) box.append(h('span', { class: 'pnone' }, 'Läuft in ' + th.city + ': '), h('span', null, th.list.map(function (k) { return k.name; }).join(', ')), h('span', { class: 'pnone' }, th.at ? '(Stand ' + LONG.format(new Date(th.at)) + ')' : ''));
+    else box.append(h('span', { class: 'pnone' }, city ? 'Kinos in ' + city + ': noch keine Daten (erst kurz vor Start verfügbar)' : 'Trage in den Einstellungen deinen Ort ein, um Kinos zu sehen.'));
+    var src = cs[0].url;
+    box.append(h('span', { class: 'pnone' }, e.cinemaAt ? 'Stand ' + LONG.format(new Date(e.cinemaAt)) + ', Quelle ' : 'Quelle ', src ? h('a', { href: src, target: '_blank', rel: 'noopener' }, 'Filmstarts') : 'Filmstarts'));
+    return box;
+  }
+
+  function renderCfgInputs() {
+    if (document.activeElement !== $('email')) $('email').value = S.settings.email || '';    if (document.activeElement !== $('tag')) $('tag').value = S.site.tag || '';
+    if (document.activeElement !== $('city')) $('city').value = S.settings.city || '';
+    if (document.activeElement !== $('domain')) $('domain').value = S.site.domain || 'amazon.de';
+    document.querySelectorAll('.owner').forEach(function (n) { n.hidden = !S.isOwner; });
+    $('previewbar').hidden = !S.preview;
+  }
+  function setPreview(on) {
+    if (!S.realOwner) return;
+    S.preview = !!on; S.isOwner = S.realOwner && !on;
+    S.support = false; S.log = false; S.info = false; S.adm = false; S.sup.sel = null; S.sup.selMsgs = [];
+    if (S.sup.unsubSel) { try { S.sup.unsubSel(); } catch (_) {} S.sup.unsubSel = null; }
+    $('cfgpanel').hidden = true; updateWho();
+    renderAll(); window.scrollTo(0, 0);
+  }
+  function renderAll() {
+    if (S.locked) { showLocked(); return; }
+    applyView(); renderNav(); renderRail(); renderContent(); renderCfgInputs(); renderAdmin(); renderWelcome(); renderSupport(); renderLog(); renderVer(); scheduleSync();
+  }
+  var SKINS = [
+    { id: 'light', name: 'Hell', dots: ['#edf0f3', '#2b47d6', '#131d27'] },
+    { id: 'dark', name: 'Dunkel', dots: ['#0e141a', '#8ea2ff', '#e5ebf0'] },
+    { id: 'paper', name: 'Papier', dots: ['#f3ead6', '#a23f1c', '#2b2218'] },
+    { id: 'cinema', name: 'Kino', dots: ['#0b0b10', '#e8b830', '#f2ede0'] },
+    { id: 'mint', name: 'Minze', dots: ['#e6f2ee', '#0c7560', '#0f2e28'] },
+    { id: 'eighties', name: '80er', dots: ['#160a2e', '#ff4fb0', '#2de2ff'] }
+  ];
+  function applySkin(id) {
+    var root = document.documentElement;
+    if (id && SKINS.some(function (k) { return k.id === id; })) root.setAttribute('data-skin', id); else root.removeAttribute('data-skin');
+    try { if (id) localStorage.setItem('rr-skin', id); else localStorage.removeItem('rr-skin'); } catch (_) {}
+    renderSkins();
+  }
+  function renderSkins() {
+    var box = $('skins'), cur = document.documentElement.getAttribute('data-skin') || '';
+    box.textContent = '';
+    [{ id: '', name: 'System', dots: ['#edf0f3', '#2b47d6', '#0e141a'] }].concat(SKINS).forEach(function (k) {
+      box.append(h('button', { class: 'skin', type: 'button', 'aria-pressed': String(cur === k.id), onclick: function () { chooseSkin(k.id); } },
+        h('span', { class: 'dots' }, k.dots.map(function (c) { var i = h('i'); i.style.background = c; return i; })), h('b', null, k.name)));
+    });
+  }
+  function chooseSkin(id) {
+    applySkin(id);
+    S.pdata.skin = id;
+    if (S.profile) S.profile.set(Object.assign({}, S.pdata)).catch(function () {});
+  }
+  function renderWelcome() {
+    $('welcome').hidden = !(S.db && S.pdataReady && !S.pdata.welcomed && !S.locked) || !$('cfgpanel').hidden;
+    $('welcome2').hidden = !(S.db && S.pdataReady && S.ready && S.pdata.welcomed && !S.pdata.sampleAsked && !S.entries.length && !S.locked) || !$('cfgpanel').hidden;
+  }
+  async function removeSamples() {
+    var b = $('sampleDel'), m = $('sampleAgainMsg'), list = S.entries.filter(function (e) { return e.sample; });
+    if (!list.length) { m.textContent = 'Es sind keine Beispieleinträge vorhanden.'; m.className = 'msg'; return; }
+    if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Wirklich ' + list.length + ' entfernen?'; setTimeout(function () { b.dataset.sure = ''; b.textContent = 'Beispieleinträge entfernen'; }, 6000); return; }
+    b.dataset.sure = ''; b.textContent = 'Beispieleinträge entfernen'; b.disabled = true;
+    try {
+      for (var i = 0; i < list.length; i++) {
+        var ids = Object.keys(S.alerts).filter(function (k) { return S.alerts[k].entryId === list[i].id; });
+        for (var j = 0; j < ids.length; j++) await S.acoll.doc(ids[j]).delete();
+        await S.coll.doc(list[i].id).delete();
+        if (S.sel === list[i].id) S.sel = null;
+      }
+      m.textContent = list.length + ' Beispieleinträge entfernt.'; m.className = 'msg';
+    } catch (err) { m.textContent = 'Entfernen hat nicht geklappt.'; m.className = 'msg err'; }
+    b.disabled = false; renderAll();
+  }
+  async function loadSamples(yes, again) {
+    var m = $(again ? 'sampleAgainMsg' : 'sampleMsg'), btns = again ? [$('sampleAgain')] : [$('sampleYes'), $('sampleNo')];
+    m.textContent = again ? 'Einen Moment …' : ''; m.className = 'msg';
+    btns.forEach(function (b) { b.disabled = true; });
+    var n = 0;
+    try {
+      if (yes) {
+        var types = ['author', 'artist', 'film', 'series'], t0 = Date.now(), added = { author: 0, artist: 0, film: 0, series: 0 };
+        for (var i = 0; i < types.length; i++) {
+          var snap = await S.db.doc('config/samples-' + types[i]).get();
+          var items = snap.exists ? ((snap.data() || {}).items || []) : [];
+          for (var j = 0; j < items.length && j < 10; j++) {
+            var low = String(items[j].name || items[j].query || '').toLowerCase();
+            if (S.entries.some(function (e) { return e.type === types[i] && (String(e.name).toLowerCase() === low || String(e.query).toLowerCase() === low); })) continue;
+            if (countOf(types[i]) + added[types[i]] >= limitFor()) break;
+            added[types[i]]++;
+            var it = Object.assign({}, items[j], { addedAt: new Date(t0 + n).toISOString(), sample: true });
+            await S.coll.doc().set(it); n++;
+          }
+        }
+      }
+      S.pdata.sampleAsked = true;
+      await S.profile.set(Object.assign({}, S.pdata));
+      m.textContent = '';
+    } catch (err) {
+      btns.forEach(function (b) { b.disabled = false; });
+      m.textContent = 'Das hat nicht geklappt. Bitte versuche es noch einmal.'; m.className = 'msg err'; return;
+    }
+    btns.forEach(function (b) { b.disabled = false; });
+    renderAll();
+    if (again) { $('sampleAgainMsg').textContent = n ? n + ' Beispieleinträge angelegt.' : 'Alle Beispiele stehen schon auf deiner Liste.'; $('sampleAgainMsg').className = 'msg'; }
+    else if (n) say(n + ' Beispieleinträge angelegt.');
+  }
+  function showLocked() {
+    ['topbar', 'layout', 'cfgpanel'].forEach(function (i) { $(i).hidden = true; });
+    $('locked').hidden = false; $('who').hidden = true;
+  }
+
+  /* ---------- Daten ---------- */
+  function str(v, n) { return typeof v === 'string' ? v.trim().slice(0, n || 160) : ''; }
+  function sanitize(d) {
+    d = d && typeof d === 'object' ? d : {};
+    var works = (Array.isArray(d.works) ? d.works : []).slice(0, 80).map(function (w) {
+      var y = Number(w && w.year);
+      return { title: str(w && w.title), year: y > 1000 && y < 2200 ? Math.round(y) : null, kind: str(w && w.kind, 40), note: str(w && w.note, 120) };
+    }).filter(function (w) { return w.title; });
+    var up = (Array.isArray(d.upcoming) ? d.upcoming : []).slice(0, 12).map(function (u) {
+      return { title: str(u && u.title), date: str(u && u.date, 10), kind: str(u && u.kind, 40), note: str(u && u.note, 120) };
+    }).filter(function (u) { return u.title && (parseDate(u.date) || !u.date); });
+    var cands = (Array.isArray(d.candidates) ? d.candidates : []).slice(0, 6).map(function (c) {
+      return { name: str(c && c.name, 120), hint: str(c && c.hint, 80) };
+    }).filter(function (c) { return c.name; });
+    var tot = Number(d.total);
+    var gen = Array.isArray(d.genres) ? d.genres.filter(function (v) { return typeof v === 'string'; }).map(function (v) { return v.trim(); }).slice(0, 6) : [];
+    return { genres: gen, name: str(d.name, 120), summary: str(d.summary, 280), works: works, upcoming: up, candidates: cands, total: tot >= 1 && tot < 1000 ? Math.round(tot) : null };
+  }
+  function buildPrompt(e) {
+    var what = {
+      author: 'Autor:in. "works": möglichst alle veröffentlichten Bücher (Romane, Erzählbände, wichtige Sachbücher), jeweils als einzelner Titel in der in Deutschland üblichen Ausgabe, mit Jahr der Erstveröffentlichung; bei Pseudonymen auch diese (höchstens 70, lieber vollständig als nur die bekanntesten). "upcoming": angekündigte neue Bücher.',
+      artist: 'Musiker:in oder Band. "works": möglichst alle Studioalben, dazu wichtige EPs und Live-Alben (höchstens 40, lieber vollständig als nur die bekanntesten). "upcoming": angekündigte Alben oder EPs.',
+      film: 'Film. "works": nur echte Filme (Kinofilme, Fernsehfilme, Animationsfilme, auch Anime-Filme): der Film selbst plus Vorgänger, Fortsetzungen und verwandte Filme der Reihe (höchstens 20). Keine Romane, Bücher, Comics, Graphic Novels, Manga, Videospiele oder Serienfolgen. "upcoming": angekündigte Fortsetzungen oder Neuveröffentlichungen.',
+      series: 'Serie. "works": alle Staffeln, jeweils als "<Serientitel> – Staffel N" mit dem Jahr des Starts (höchstens 25). "upcoming": angekündigte neue Staffeln oder Specials.'
+    }[e.type];
+    return 'Du bist ein Datenassistent für eine Medien-Merkliste. Heute ist der ' + isoToday() + '.\n' +
+      'Eingabe des Nutzers: "' + e.query + '". Art: ' + what + '\n' +
+      'Antworte ausschließlich mit einem JSON-Objekt dieser Form:\n' +
+      '{"name": "offizielle Schreibweise oder null, wenn nicht eindeutig erkennbar", "total": Zahl oder null, ' +
+      '"candidates": [{"name": "offizielle Schreibweise", "hint": "kurzer Zusatz zur Unterscheidung, z. B. Genre, Land oder Erscheinungsjahr"}], "summary": "ein Satz auf Deutsch", ' +
+      '"works": [{"title": "...", "year": 1999, "kind": "z. B. Roman, Album, Staffel", "note": "kurz, optional"}], ' +
+      '"upcoming": [{"title": "...", "date": "YYYY-MM-DD oder YYYY-MM oder YYYY, leer lassen wenn das Erscheinen angekündigt ist, der Termin aber noch nicht feststeht", "kind": "...", "note": "..."}], "genres": ["..."]}\n' +
+      '"genres": bis zu 3 Genres, NUR aus dieser Liste und genau so geschrieben: ' + (GENRES[e.type] || []).join(' | ') + ' (passt keines, leere Liste). ' +
+      '"total" nur für Autor:innen und Musiker:innen: die ungefähre Gesamtzahl der offiziell veröffentlichten Bücher (Romane, Erzählbände, Sachbücher, ohne Neuauflagen) bzw. Studioalben; bei Unsicherheit null. ' +
+      'Regeln: Noch nicht erschienene, aber angekündigte Titel gehören nur nach "upcoming" (Datum als YYYY-MM oder YYYY, wenn der Tag noch unbekannt ist), nie nach "works". Ist "name" null, nenne in "candidates" bis zu 5 reale, wahrscheinliche Treffer, den wahrscheinlichsten zuerst (auch bei Tippfehlern oder unvollständigen Namen); ist "name" gesetzt, ist "candidates" eine leere Liste. Nenne nur reale Werke. In "upcoming" nur Veröffentlichungen, die nach heute liegen und die du als angekündigt kennst; im Zweifel eine leere Liste. ' +
+      'Steht in der Eingabe hinter dem Namen ein Zusatz in Klammern, ist genau dieser Act, dieses Werk oder diese Person gemeint: Setze dann "name" auf die offizielle Schreibweise ohne den Zusatz, lass "candidates" leer und liefere die Daten dazu. ' +
+      'Erfinde keine Termine. Dein Wissen endet Mitte 2026. Titel in der Sprache, in der sie in Deutschland erhältlich sind.';
+  }
+
+  function bumpLoads() {
+    if (!S.profile) return;
+    S.pdata.loads = Number(S.pdata.loads || 0) + 1;
+    S.profile.set(Object.assign({}, S.pdata)).catch(function () {});
+  }
+  async function pickCandidate(e, name, hint) {
+    if (!S.coll || S.loading[e.id]) return;
+    var q = hint ? name + ' (' + hint + ')' : name;
+    try {
+      await S.coll.doc(e.id).set({ type: e.type, query: q, name: '', summary: '', works: [], upcoming: [], status: 'new', addedAt: e.addedAt || new Date().toISOString() });
+    } catch (_) { say('Das hat nicht geklappt.', true); return; }
+    loadData({ id: e.id, type: e.type, query: q, addedAt: e.addedAt, pick: name });
+  }
+  async function loadData(e) {
+    if (!S.sample || S.loading[e.id]) return;
+    S.loading[e.id] = true; renderAll();
+    var ref = S.coll.doc(e.id), now = new Date().toISOString();
+    try {
+      var data = await S.sample.json(buildPrompt(e), { modelTier: (e.type === 'author' || e.type === 'artist') ? 'complex' : 'default', cache: false });
+      var c = sanitize(data);
+      if (!c.name && e.pick) c.name = e.pick;
+      bumpLoads();
+      if (!c.name) await ref.set({ type: e.type, query: e.query, name: '', summary: '', works: [], upcoming: [], candidates: c.candidates, status: 'unknown', fetchedAt: now, addedAt: e.addedAt || now });
+      else await ref.set(Object.assign({ type: e.type, query: e.query, name: c.name, summary: c.summary, works: c.works, upcoming: c.upcoming, episodes: e.episodes || [], tvmazeId: e.tvmazeId || null, tvStatus: e.tvStatus || '', tvAt: e.tvAt || '', providers: e.providers || [], providersAt: e.providersAt || '', cinema: e.cinema || [], cinemaAt: e.cinemaAt || '', theaters: e.theaters || null, totalWorks: c.total || null, status: 'ok', fetchedAt: now, addedAt: e.addedAt || now }, e.similar ? { similar: e.similar, similarAt: e.similarAt || '' } : {}, e.sample ? { sample: true } : {}, { genres: c.genres.length || !Array.isArray(e.genres) ? c.genres.filter(function (v) { return (GENRES[e.type] || []).indexOf(v) >= 0; }).slice(0, 3) : e.genres }));
+    } catch (err) {
+      var code = err && err.code;
+      if (code === 'not_granted' || code === 'sampling_disabled' || code === 'not_declared') { S.sample = null; say('Die Abfrage bei Claude wurde nicht erlaubt. Ohne sie bleiben die Daten leer.', true); }
+      else if (code === 'rate_limited') { S.fill.stop = true; say('Gerade zu viele Abfragen. Versuche es in ein paar Minuten noch einmal.', true); }
+      else if (code !== 'cancelled') say('Die Abfrage hat nicht geklappt. Du kannst sie über „Aktualisieren“ erneut starten.', true);
+      try { if (code !== 'not_granted') await ref.update({ status: 'error', fetchedAt: now }); } catch (_) {}
+    } finally {
+      delete S.loading[e.id]; renderAll();
+    }
+  }
+
+  function worksLine(e, long) {
+    var n = (e.works || []).length, unit = e.type === 'author' ? 'Büchern' : e.type === 'artist' ? 'Alben' : 'Werken';
+    var t = Number(e.totalWorks);
+    if ((e.type === 'author' || e.type === 'artist') && t > 0) return long ? n + ' von ca. ' + t + ' offiziellen ' + unit + ' aufgelistet' : n + ' von ca. ' + t + ' ' + unit;
+    return n + ' Werke';
+  }
+  function normTitle(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim(); }
+  async function loadMoreWorks(e) {
+    if (!S.sample || S.loading[e.id] || !S.coll) return;
+    S.loading[e.id] = true; renderAll();
+    var ref = S.coll.doc(e.id), known = (e.works || []).map(function (w) { return w.title; });
+    var what = { author: 'Bücher (Romane, Erzählbände, Sachbücher, auch unter Pseudonym)', artist: 'Alben (Studioalben, EPs, wichtige Live-Alben)', film: 'Filme oder Teile der Reihe' }[e.type] || 'Werke';
+    var prompt = 'Du bist ein Datenassistent für eine Medien-Merkliste. Heute ist der ' + isoToday() + '.\n' +
+      'Es geht um: "' + (e.name || e.query) + '" (' + (TYPES[e.type] ? TYPES[e.type].label : e.type) + '). Bereits bekannt sind diese Titel:\n' + known.join(' | ') + '\n' +
+      'Nenne weitere ' + what + (e.type === 'film' ? ' (nur echte Filme, auch Anime-Filme; keine Romane, Comics, Graphic Novels, Manga oder Spiele)' : '') + ', die in dieser Liste FEHLEN (höchstens 40). Nenne keinen Titel, der schon in der Liste steht, auch nicht in anderer Schreibweise. Nur reale Werke, nichts erfinden. Titel in der in Deutschland üblichen Schreibweise.\n' +
+      'Gib zusätzlich in "total" die ungefähre Gesamtzahl der offiziell veröffentlichten Bücher bzw. Studioalben an (Zahl, bei Unsicherheit null). ' +
+      'Antworte ausschließlich mit JSON: {"total": 60, "works": [{"title": "...", "year": 1999, "kind": "z. B. Roman, Album", "note": "kurz, optional"}]}';
+    try {
+      var data = await S.sample.json(prompt, { modelTier: 'complex', cache: false });
+      bumpLoads();
+      var add = sanitize({ works: data && data.works }).works;
+      var seen = {}; (e.works || []).forEach(function (w) { seen[normTitle(w.title)] = 1; });
+      var fresh = add.filter(function (w) { var k = normTitle(w.title); if (!k || seen[k]) return false; seen[k] = 1; return true; });
+      var up2 = { works: (e.works || []).concat(fresh).slice(0, 120) };
+      var tt = sanitize({ total: data && data.total }).total; if (tt) up2.totalWorks = tt;
+      await ref.update(up2);
+      say(fresh.length ? fresh.length + ' weitere Werke ergänzt.' : 'Claude kennt keine weiteren Werke.');
+    } catch (err) {
+      var code = err && err.code;
+      if (code === 'not_granted' || code === 'sampling_disabled' || code === 'not_declared') { S.sample = null; say('Die Abfrage bei Claude wurde nicht erlaubt.', true); }
+      else if (code === 'rate_limited') say('Gerade zu viele Abfragen. Versuche es in ein paar Minuten noch einmal.', true);
+      else if (code !== 'cancelled') say('Die Abfrage hat nicht geklappt.', true);
+    } finally { delete S.loading[e.id]; renderAll(); }
+  }
+
+  /* ---------- Import ---------- */
+  function cleanName(x) { return String(x == null ? '' : x).replace(/^\s*[-*•·]\s+/, '').replace(/^\s*\d+[.)]\s+/, '').replace(/\s+/g, ' ').trim(); }
+  function namesFromJson(j) {
+    var out = [];
+    function take(v) {
+      if (typeof v === 'string') out.push(v);
+      else if (v && typeof v === 'object') {
+        var n = v.name || v.artistName || v.artist;
+        if (typeof n === 'string') out.push(n); else if (n && typeof n.name === 'string') out.push(n.name);
+      }
+    }
+    if (Array.isArray(j)) { j.forEach(take); return out; }
+    if (j && typeof j === 'object') {
+      var a = j.artists;
+      if (a && !Array.isArray(a) && Array.isArray(a.items)) a = a.items;
+      if (!Array.isArray(a)) a = j.followedArtists || j.items;
+      if (Array.isArray(a)) a.forEach(take);
+      if (!out.length) {
+        var seen = {};
+        [].concat(Array.isArray(j.tracks) ? j.tracks : [], Array.isArray(j.albums) ? j.albums : []).forEach(function (t) {
+          var n = t && typeof t.artist === 'string' ? t.artist : '';
+          if (n && !seen[n]) { seen[n] = 1; out.push(n); }
+        });
+        if (out.length) out.fromTracks = true;
+      }
+    }
+    return out;
+  }
+  function csvRow(line) {
+    var out = [], cur = '', q = false;
+    for (var i = 0; i < line.length; i++) {
+      var c = line[i];
+      if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else if (c === '"') q = true;
+      else if (c === ',') { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+    out.push(cur); return out;
+  }
+  function parseNames(text, fname) {
+    var t = String(text || '').replace(/^﻿/, '').trim();
+    if (!t) return [];
+    if (/^[\[{]/.test(t)) { try { return namesFromJson(JSON.parse(t)); } catch (e) {} }
+    var lines = t.split(/\r?\n/);
+    var head = csvRow(lines[0]);
+    var ai = -1;
+    head.forEach(function (c, i) { if (ai < 0 && /artist/i.test(c)) ai = i; });
+    if (/\.csv$/i.test(fname || '') || (ai >= 0 && head.length > 1)) {
+      var idx = ai >= 0 ? ai : 0, seen = {}, out = [];
+      lines.slice(/artist|name/i.test(lines[0]) ? 1 : 0).forEach(function (l) {
+        (csvRow(l)[idx] || '').split(';').forEach(function (n) { n = cleanName(n); if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } });
+      });
+      return out;
+    }
+    return lines.map(cleanName).filter(Boolean);
+  }
+  function impSay(text, isErr) { var m = $('impMsg'); m.textContent = text || ''; m.className = 'msg' + (isErr ? ' err' : ''); }
+
+  async function doImport() {
+    var type = 'artist';
+    if (!type || !S.db) { impSay('Zum Importieren musst du angemeldet sein.', true); return; }
+    var seen = {}, names = [];
+    $('impText').value.split(/\r?\n/).map(cleanName).filter(Boolean).forEach(function (n) {
+      n = n.slice(0, 80); var k = n.toLowerCase();
+      if (!seen[k]) { seen[k] = 1; names.push(n); }
+    });
+    if (!names.length) { impSay('Keine Namen gefunden.', true); return; }
+    var capped = names.length > 200; if (capped) names = names.slice(0, 200);
+    var have = {};
+    S.entries.forEach(function (e) { if (e.type === type) { have[String(e.query).toLowerCase()] = 1; have[String(e.name).toLowerCase()] = 1; } });
+    var fresh = names.filter(function (n) { return !have[n.toLowerCase()]; });
+    var dupes = names.length - fresh.length, room = limitFor() - countOf(type), cut = 0;
+    if (fresh.length > room) { cut = fresh.length - Math.max(room, 0); fresh = fresh.slice(0, Math.max(room, 0)); }
+    S.busy = true; $('impGo').disabled = true;
+    var ok = 0, failed = false;
+    try {
+      for (var i = 0; i < fresh.length; i++) {
+        await S.coll.doc().set({ type: type, query: fresh[i], name: '', summary: '', works: [], upcoming: [], status: 'new', addedAt: new Date().toISOString() });
+        ok++;
+        if (i % 5 === 0) impSay('Lege an: ' + ok + ' von ' + fresh.length + ' …');
+      }
+    } catch (err) { failed = true; }
+    S.busy = false; $('impGo').disabled = false;
+    impSay(ok + ' hinzugefügt' + (dupes ? ', ' + dupes + ' schon vorhanden' : '') + '.' + (capped ? ' Es werden höchstens 200 Namen auf einmal importiert.' : '') + (cut ? ' ' + cut + ' Namen wurden nicht übernommen, weil pro Liste höchstens ' + MAX_PER_LIST + ' Einträge möglich sind. Bitte lösche zuerst einige Künstler:innen und importiere den Rest danach noch einmal.' : '') +
+      (failed ? ' Der Import wurde unterbrochen, Speichern nicht möglich.' : (ok ? ' Gehe zurück zu den Künstler:innen und lade dort die Daten.' : '')), failed);
+    if (!failed) { $('impText').value = ''; $('impFile').value = ''; }
+    renderAll();
+  }
+
+  async function fillMissing() {
+    if (S.fill.running || !S.sample) return;
+    var todo = entriesOf(S.cat).filter(function (e) { return e.status === 'new' || e.status === 'error'; });
+    if (!todo.length) return;
+    S.fill = { running: true, stop: false, done: 0, total: todo.length };
+    renderRail();
+    for (var i = 0; i < todo.length; i++) {
+      if (S.fill.stop || !S.sample) break;
+      await loadData(todo[i]);
+      S.fill.done++; renderRail();
+    }
+    S.fill.running = false; renderRail();
+  }
+  function renderFillbar(es) {
+    var box = $('fillbar'); box.textContent = '';
+    var missing = es.filter(function (e) { return e.status === 'new' || e.status === 'error'; }).length;
+    if (S.fill.running) {
+      box.append(h('div', { class: 'fillbar' }, h('span', { class: 'hint' }, 'Lädt ' + S.fill.done + ' von ' + S.fill.total + ' …'),
+        h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.fill.stop = true; } }, 'Stopp')));
+    } else if (missing && S.sample) {
+      box.append(h('div', { class: 'fillbar' },
+        h('button', { class: 'btn small', type: 'button', onclick: fillMissing }, 'Daten für ' + missing + (missing === 1 ? ' Eintrag' : ' Einträge') + ' laden'),
+        h('span', { class: 'hint' }, 'Jede Abfrage nutzt dein Claude-Kontingent.')));
+    }
+  }
+
+  async function addEntry(type, query, stay) {
+    if (!S.db) { say('Zum Speichern musst du angemeldet sein.', true); return; }
+    var dupe = S.entries.some(function (e) { return e.type === type && (String(e.query).toLowerCase() === query.toLowerCase() || String(e.name).toLowerCase() === query.toLowerCase()); });
+    if (dupe) { say('„' + query + '“ steht schon auf der Liste.', true); return; }
+    if (countOf(type) >= limitFor()) { say(limitMsg(type), true); return; }
+    var ref = S.coll.doc();
+    var entry = { id: ref.id, type: type, query: query, name: '', summary: '', works: [], upcoming: [], status: 'new', addedAt: new Date().toISOString() };
+    try {
+      await ref.set({ type: type, query: query, name: '', summary: '', works: [], upcoming: [], status: 'new', addedAt: entry.addedAt });
+    } catch (err) {
+      say('Speichern nicht möglich. Dafür brauchst du Mitwirken-Rechte auf dieser Seite.', true); return;
+    }
+    say('');
+    if (!stay) { S.sel = ref.id; S.confirm = null; }
+    renderAll();
+    if (S.sample) await loadData(entry); else say('Die Abfrage bei Claude ist hier nicht verfügbar.', true);
+  }
+
+  async function removeEntry(e) {
+    S.confirm = null;
+    try {
+      var ids = Object.keys(S.alerts).filter(function (k) { return S.alerts[k].entryId === e.id; });
+      for (var i = 0; i < ids.length; i++) await S.acoll.doc(ids[i]).delete();
+      await S.coll.doc(e.id).delete();
+      if (S.sel === e.id) S.sel = null;
+    } catch (err) { say('Entfernen hat nicht geklappt.', true); }
+    renderAll();
+  }
+
+  async function saveSettings() {
+    var email = $('email').value.trim(), city = $('city').value.trim(), m = $('cfgmsg');    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { m.textContent = 'Das sieht nicht wie eine E-Mail-Adresse aus.'; m.className = 'msg err'; return; }
+    if (!S.profile) { m.textContent = 'Zum Speichern anmelden.'; m.className = 'msg err'; return; }
+    if (email && await isBlockedMail(email)) { m.textContent = 'Diese E-Mail-Adresse ist gesperrt.'; m.className = 'msg err'; return; }
+    try {
+      S.pdata = Object.assign({}, S.pdata, { email: email, city: city });
+      await S.profile.set(Object.assign({}, S.pdata));
+      S.settings = { tag: '', domain: '', email: email, city: city };
+      m.textContent = 'Gespeichert.'; m.className = 'msg';
+      renderAll();
+    } catch (err) { m.textContent = 'Speichern nicht möglich.'; m.className = 'msg err'; }
+  }
+
+  async function saveAdmin() {
+    var tag = $('tag').value.trim(), domain = $('domain').value, m = $('admsaveMsg');
+    if (!S.isOwner || !S.db) return;
+    if (!/^[A-Za-z0-9._-]{0,64}$/.test(tag)) { m.textContent = 'Nur Buchstaben, Ziffern, Punkt, Bindestrich.'; m.className = 'msg err'; return; }
+    try {
+      await S.db.doc('config/site').set({ tag: tag, domain: domain });
+      S.site = { tag: tag, domain: domain }; S.siteExists = true;
+      m.textContent = tag ? 'Gespeichert.' : 'Gespeichert. Ohne Amazon-ID entsteht keine Provision.'; m.className = 'msg';
+      renderAll();
+    } catch (err) { m.textContent = 'Speichern nicht möglich.'; m.className = 'msg err'; }
+  }
+
+  /* ---------- Start ---------- */
+  $('saveadm').addEventListener('click', saveAdmin);
+  $('savecfg').addEventListener('click', saveSettings);
+  $('chatForm').addEventListener('submit', sendChat);
+  $('chatIn').addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); sendChat(); } });
+  $('genreSel').addEventListener('change', function () { S.genre[S.cat] = this.value; renderRail(); });
+  $('sortSel').addEventListener('change', function () { S.sort[S.cat] = this.value; renderRail(); });
+  $('sampleYes').addEventListener('click', function () { loadSamples(true); });
+  $('sampleNo').addEventListener('click', function () { loadSamples(false); });
+  $('sampleDel').addEventListener('click', removeSamples);
+  $('sampleAgain').addEventListener('click', function () { loadSamples(true, true); });
+  $('welcomeOk').addEventListener('click', function () {
+    S.pdata.welcomed = true; $('welcome').hidden = true;
+    if (S.profile) S.profile.set(Object.assign({}, S.pdata)).catch(function () {});
+  });
+  $('blkForm').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var m = $('blkMail').value.trim();
+    if (!S.isOwner || !S.db) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m)) { admSay('Das sieht nicht wie eine E-Mail-Adresse aus.', true); return; }
+    try { await blockMail(m); $('blkMail').value = ''; admSay('Gesperrt.'); } catch (_) { admSay('Das hat nicht geklappt.', true); }
+  });
+  $('impToggle').addEventListener('click', function () {
+    var p = $('impPanel'); p.hidden = !p.hidden; $('impToggle').setAttribute('aria-expanded', String(!p.hidden));
+    if (!p.hidden) $('impText').focus();
+  });
+  $('impGo').addEventListener('click', doImport);
+  $('impFile').addEventListener('change', async function (ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { impSay('Die Datei ist größer als 5 MB.', true); return; }
+    try {
+      var names = parseNames(await f.text(), f.name);
+      if (!names.length) { impSay('In der Datei habe ich keine Namen gefunden.', true); return; }
+      $('impText').value = names.join('\n');
+      impSay(names.length + ' Namen erkannt' + (names.fromTracks ? ' (aus gespeicherten Titeln, keine gefolgten Künstler in der Datei)' : '') + '. Prüfe die Liste und tippe auf Importieren.');
+    } catch (err) { impSay('Die Datei konnte nicht gelesen werden.', true); }
+  });
+  $('who').addEventListener('click', function () { toggleCfg(); });
+  $('ver').addEventListener('click', function () { toggleLog(); });
+  $('previewOn').addEventListener('click', function () { setPreview(true); });
+  $('previewOff').addEventListener('click', function () { setPreview(false); });
+  $('srch').addEventListener('input', function () { S.filter = this.value; renderRail(); });
+  $('addform').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    if (S.cat === 'cal') return;
+    var q = $('q').value.trim();
+    if (!q) { say('Gib erst einen Namen ein.', true); $('q').focus(); return; }
+    if (S.busy) return;
+    S.busy = true; $('addbtn').disabled = true;
+    $('q').value = '';
+    try { await addEntry(S.cat, q); } finally { S.busy = false; $('addbtn').disabled = false; }
+  });
+
+  try { var sk0 = localStorage.getItem('rr-skin'); if (sk0) document.documentElement.setAttribute('data-skin', sk0); } catch (_) {}
+  renderSkins();
+  renderAll();
+
+  function use(n) {
+    try { return window.claude && window.claude.use ? window.claude.use(n).catch(function () { return null; }) : Promise.resolve(null); }
+    catch (_) { return Promise.resolve(null); }
+  }
+  /* ---------- Mehrere Nutzer: Verzeichnis, Verwaltung, Sperren ---------- */
+  async function mailHash(m) {
+    m = String(m || '').trim().toLowerCase();
+    try {
+      var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(m));
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    } catch (_) { return 'h' + hashStr(m); }
+  }
+  async function isBlockedMail(m) {
+    if (!m || !S.db) return false;
+    try { var snap = await S.db.doc('blocked/' + await mailHash(m)).get(); return !!snap.exists; } catch (_) { return false; }
+  }
+  var syncTimer = null;
+  function scheduleSync() {
+    if (!S.db || !S.uid || !S.ready || S.locked || !S.pdataReady || !S.alertsReady) return;
+    clearTimeout(syncTimer); syncTimer = setTimeout(syncMember, 1500);
+  }
+  async function syncMember() {
+    if (!S.db || S.locked) return;
+    if (!S.visitAt) S.visitAt = new Date().toISOString();
+    var now = S.visitAt, first = S.pdata.firstSeen || now;
+    var rec = { email: S.settings.email || '', entries: S.entries.length, alerts: Object.keys(S.alerts).length, loads: Number(S.pdata.loads || 0), firstSeen: first, lastSeen: now };
+    var key = JSON.stringify(rec);
+    if (key === S.lastSyncKey) return;
+    S.lastSyncKey = key;
+    try {
+      await S.db.doc('members/' + S.uid).set(rec);
+      if (!S.pdata.firstSeen) { S.pdata.firstSeen = first; await S.profile.set(Object.assign({}, S.pdata)); }
+    } catch (_) {}
+  }
+  async function lockdown() {
+    if (S.locked) return;
+    for (var w = 0; w < 30 && !(S.ready && S.alertsReady); w++) await new Promise(function (r) { setTimeout(r, 100); });
+    S.locked = true;
+    try {
+      var eids = S.entries.map(function (x) { return x.id; }), aids = Object.keys(S.alerts);
+      try { (await S.coll.get()).docs.forEach(function (d) { if (eids.indexOf(d.id) < 0) eids.push(d.id); }); } catch (_) {}
+      try { (await S.acoll.get()).docs.forEach(function (d) { if (aids.indexOf(d.id) < 0) aids.push(d.id); }); } catch (_) {}
+      for (var i = 0; i < eids.length; i++) await S.coll.doc(eids[i]).delete();
+      for (var j = 0; j < aids.length; j++) await S.acoll.doc(aids[j]).delete();
+      await S.profile.delete();
+      await S.db.doc('members/' + S.uid).delete();
+    } catch (_) {}
+    showLocked();
+  }
+  function tierOf(m) {
+    var sc = Number(m.entries || 0) + Number(m.loads || 0) / 2;
+    return sc >= 40 ? 'hoch' : sc >= 10 ? 'mittel' : 'gering';
+  }
+  function fmtTs(t) { try { return t ? LONG.format(new Date(t)) + ' ' + new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '–'; } catch (_) { return '–'; } }
+  function admSay(t, err) { var m = $('admMsg'); m.textContent = t || ''; m.className = 'msg' + (err ? ' err' : ''); }
+  async function removeUser(id, email, block) {
+    try {
+      await S.db.doc('moderation/' + id).set({ status: 'removed', at: new Date().toISOString() });
+      await S.db.doc('members/' + id).delete();
+      if (block && email) await blockMail(email);
+      S.admConfirm = null; admSay('Entfernt' + (block && email ? ' und E-Mail-Adresse gesperrt' : '') + '. Die Daten werden beim nächsten Besuch der Person gelöscht.');
+    } catch (_) { admSay('Das hat nicht geklappt.', true); }
+    renderAdmin();
+  }
+  async function blockMail(email) {
+    var hsh = await mailHash(email), at = new Date().toISOString();
+    await S.db.doc('blocked/' + hsh).set({ at: at });
+    await S.db.doc('blockedlist/' + hsh).set({ email: String(email).trim().toLowerCase(), at: at });
+  }
+  async function unblock(hsh) {
+    try { await S.db.doc('blocked/' + hsh).delete(); await S.db.doc('blockedlist/' + hsh).delete(); admSay('Freigegeben.'); } catch (_) { admSay('Das hat nicht geklappt.', true); }
+  }
+  async function loadNames(ids) {
+    if (!S.userCap || !ids.length) return;
+    try { var ps = await S.userCap.profiles(ids); ids.forEach(function (i) { S.names[i] = (ps[i] && ps[i].name) || ''; }); renderAdmin(); renderSupport(); } catch (_) {}
+  }
+  function renderAdmin() {
+    var box = $('admin'); box.hidden = !S.isOwner; if (!S.isOwner) return;
+    var list = $('admList'); list.textContent = '';
+    var ms = S.members.slice().sort(function (a, b) { return String(b.lastSeen || '').localeCompare(String(a.lastSeen || '')); });
+    if (!ms.length) list.append(h('p', { class: 'hint' }, 'Noch keine Nutzer.'));
+    ms.forEach(function (m) {
+      var self = m.id === S.uid, conf = S.admConfirm && S.admConfirm.id === m.id;
+      list.append(h('div', { class: 'arow' },
+        h('div', null, h('div', { class: 'nm2' }, (S.names[m.id] || 'Nutzer') + (self ? ' (du)' : ''), h('span', { class: 'tier', title: 'Einschätzung aus Einträgen und Abfragen' }, tierOf(m))),
+          h('div', { class: 'meta' }, m.email || 'keine E-Mail')),
+        h('div', { class: 'meta' }, (m.entries || 0) + ' Einträge · ' + (m.alerts || 0) + ' Mails vorgemerkt · ' + (m.loads || 0) + ' Abfragen', h('br'), 'zuletzt ' + fmtTs(m.lastSeen) + ' · seit ' + fmtTs(m.firstSeen).slice(0, 10)),
+        self ? h('div') : conf
+          ? h('div', { class: 'acts2' }, h('button', { class: 'btn small', type: 'button', onclick: function () { removeUser(m.id, m.email, S.admConfirm.block); } }, S.admConfirm.block ? 'Wirklich entfernen und sperren' : 'Wirklich entfernen'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.admConfirm = null; renderAdmin(); } }, 'Abbrechen'))
+          : h('div', { class: 'acts2' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.admConfirm = { id: m.id, block: false }; renderAdmin(); } }, 'Entfernen'),
+              m.email ? h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.admConfirm = { id: m.id, block: true }; renderAdmin(); } }, 'Entfernen und E-Mail sperren') : null)));
+    });
+    var bl = $('blkList'); bl.textContent = '';
+    if (!S.blocked.length) bl.append(h('p', { class: 'hint' }, 'Keine gesperrten Adressen.'));
+    S.blocked.forEach(function (b) {
+      bl.append(h('div', { class: 'arow' }, h('div', { class: 'nm2' }, b.email), h('div', { class: 'meta' }, 'seit ' + fmtTs(b.at).slice(0, 10)),
+        h('div', { class: 'acts2' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { unblock(b.id); } }, 'Freigeben'))));
+    });
+  }
+  /* ---------- Support-Chat ---------- */
+  function supportBadge() {
+    if (S.isOwner) return S.sup.threads.reduce(function (a, t) { return a + (Number(t.adminUnread) || 0); }, 0);
+    return S.sup.meta ? Number(S.sup.meta.userUnread) || 0 : 0;
+  }
+  var CHANGELOG = [
+    { v: 4, d: '03.11.2026', t: [
+      'Die obere Leiste mit den Reitern bleibt beim Scrollen samt Trennlinie oben stehen',
+      'Kalender: Vor der Terminliste zeigt eine Monatsübersicht den aktuellen und die nächsten 3 Monate. Tage mit Veröffentlichungen haben eine Kreismarkierung wie ein Tortendiagramm, je Kategorie in einer eigenen Farbe',
+      'Info, To-Do / Ideen: Kalender-Abo (.ics) als Idee ergänzt',
+      'Linke Leiste: neuer Filter „Genre\u201c mit den 20 wichtigsten Genres je Kategorie und Anzahl der Einträge; neue Einträge bekommen ihre Genres automatisch, für vorhandene gibt es den Button „Genres ermitteln\u201c',
+      'Neu auf jeder Eintragsseite unten: „Ähnliche Autor:innen/Künstler:innen/Filme/Serien\u201c mit Vorschlägen von Claude (Button „Vorschläge laden\u201c), jeder Vorschlag lässt sich mit einem Klick zur Liste hinzufügen',
+      'Neuer Reiter „Admin\u201c (nur für den Betreiber) links von „Einstellungen\u201c: Amazon-Partner-ID und Shop, Nutzerverwaltung, gesperrte E-Mail-Adressen und „Als normaler Nutzer ansehen\u201c sind aus den Einstellungen dorthin umgezogen',
+      'Info: Hinweiszeile zu Aktualität, Quellen und Serverumzug steht jetzt unter „Quellen je Kategorie\u201c',
+      'Titel mit künftigem Jahr (z. B. Godzilla x Kong: Supernova, 2027) erscheinen jetzt auch bei den kommenden Veröffentlichungen in Kalender und Übersichten, wenn nur das Jahr oder Monat und Jahr bekannt ist',
+      'Angekündigte Veröffentlichungen ohne bekanntes Datum (z. B. Godzilla Minus Zero) werden jetzt mit „offen\u201c im Kalender und in den Übersichten angezeigt, ganz am Ende der Liste; vorhandene Einträge mit „Aktualisieren\u201c neu laden',
+      'Filme: Die Abfrage liefert nur noch echte Filme (auch Anime-Filme), keine Romane, Comics oder Graphic Novels mehr; bestehende Einträge wie Godzilla mit „Aktualisieren\u201c neu laden',
+      'Kommende Veröffentlichungen (Übersicht und Kalender): Der Name von Autor:in, Künstler:in, Film oder Serie ist anklickbar und öffnet die Seite; die Pfeil-Buttons im Kalender entfallen',
+      'Info: neuer Abschnitt „To-Do / Ideen\u201c mit den Punkten: weitere Shops als Alternative zu Amazon, mehr Auswahl im Kalender, gesehene Folgen abhaken',
+      'Einstellungen: Buttons „Beispieleinträge hinzufügen\u201c (später nachholen, ohne Doppelte) und „Beispieleinträge entfernen\u201c (löscht nur die Beispiele, eigene Einträge bleiben)',
+      'Neu angemeldete Nutzer ohne Einträge werden nach dem Willkommenstext gefragt, ob sie Beispieleinträge möchten (Ja/Nein); bei Ja werden je Kategorie bis zu 10 Einträge angelegt'
+    ] },
+    { v: 3, d: '02.11.2026', t: [
+      'Die Seite heißt jetzt Schondraussen.de (Titel, Überschrift, Willkommenstext und Info)',
+      'Ein Klick auf eine Kategorie öffnet jetzt eine Übersicht mit Statistiken (Anzahl der Einträge, Bücher, Alben, Filme, Staffeln und Folgen) und den nächsten 10 kommenden Veröffentlichungen (kompakt, eine Zeile je Eintrag) statt direkt den ersten Eintrag; ein Link führt von jedem Eintrag zurück',
+      'Info: einheitliche Textbreite, höchstens 90 % der Seite und 1000 Pixel',
+      'Info: Einleitungstext oben (für wen die Seite gedacht ist und wofür)',
+      'Info: Abschnitt „Zum Testen\u201c mit Hinweisen und geprüften Beispielen (Alben, Bücher, Filme, Serien) für möglichst verschiedene Einträge',
+      'Neue Oberfläche „80er\u201c (Neon-Pink und Cyan auf Dunkelviolett) in den Einstellungen',
+      'Info: Quellen sind jetzt mit Links zu den jeweiligen Seiten versehen',
+      'Neuer Reiter „Info\u201c zwischen „Einstellungen\u201c und „Kontakt\u201c: wann Einträge erneuert werden, welche Quellen genutzt werden, was sich beim Umzug auf einen Server ändert und welche Server-Funktionen hier noch nicht gehen',
+      'Nur Admin: In den Einstellungen gibt es „Als normaler Nutzer ansehen\u201c, um die Seite so zu prüfen, wie andere sie sehen',
+      'Versionsnummer zählt nur noch täglich hoch, die Änderungen eines Tages stehen gesammelt in einer Liste',
+      'Hinweis unter „Neu hinzufügen\u201c: Daten sind nur bis Ende Juni 2026 aktuell, bessere Ergebnisse nach dem Umzug auf einen echten Server',
+      'Sortierauswahl in der linken Leiste hat dieselbe Größe wie das Suchfeld',
+      'Autor:innen und Künstler:innen: Angabe, wie viele offizielle Bücher bzw. Alben es ungefähr insgesamt gibt (z. B. „12 von ca. 65 Büchern\u201c)',
+      'Autor:innen und Künstler:innen: deutlich mehr Werke pro Eintrag (bis zu 70 bzw. 40 statt 12) und neuer Button „Mehr Werke laden\u201c für fehlende Titel',
+      'Meintest-du-Vorschläge: Die Auswahl wird jetzt gespeichert (der Zusatz wie „Band von …\u201c wird mit abgefragt), die Vorschläge stehen untereinander',
+      'Nutzerverwaltung: Spalten in festen Prozentbreiten, damit die Einträge in allen Zeilen bündig sind',
+      'Versionsverlauf für alle: Die Versionsnummer oben rechts öffnet ihn, eine rote Zahl zeigt neue Änderungen seit dem letzten Besuch',
+      'Linke Leiste ohne „· Mail\u201c-Hinweis',
+      'Kontakt-Chat: Haken wie bei WhatsApp (gesendet, zugestellt, gelesen in Blau)',
+      'Einstellungen öffnen sich wie die anderen Bereiche im Hauptfenster und stehen als Button in der oberen Leiste neben „Kontakt\u201c',
+      'Suchfeld in der linken Leiste unter der Sortierauswahl',
+      '„Mail bei Neuem\u201c und „Mail zum Termin\u201c: Haken links, × zum Zurücknehmen'
+    ] },
+    { v: 2, d: '23.10.2026', t: [
+      'Support-Chat mit Button in der oberen Leiste (später in „Kontakt\u201c umbenannt), roter Zahl für Ungelesenes und Unterhaltungsliste für den Admin',
+      'Obere Leiste ohne Scrollbalken, sie bricht bei Platzmangel um',
+      'Kalender: Buttons rechts entfernt, kleiner Pfeil-Button hinter dem Titel öffnet die Seite des Eintrags'
+    ] },
+    { v: 1, d: 'bis 22.10.2026', base: true, t: [
+      'Kalender und Suche, Serien mit Streaminganbietern, Kinostarttermine und Kinos am Ort',
+      'Einstellungen als eigene Ansicht, Rahmen um die linke Leiste',
+      'Mehrere Nutzer mit Anmeldung, deiner Partner-ID in allen Links und Admin-Übersicht',
+      'Meintest-du-Vorschläge, Limit von 100 pro Liste, Sortierung der linken Leiste',
+      'Farbvarianten und schmalere Seitenränder'
+    ] }
+  ];
+
+  var LATEST = CHANGELOG[0].v;
+  var LOGTOTAL = CHANGELOG.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
+  function logBadge() {
+    var seen = S.pdata && S.pdata.seenCount;
+    if (typeof seen !== 'number') return 0;
+    return Math.max(0, LOGTOTAL - seen);
+  }
+  function renderVer() {
+    var v = $('ver'), n = logBadge();
+    v.textContent = 'Version ' + LATEST;
+    if (n) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
+    v.disabled = !S.uid; v.setAttribute('aria-pressed', String(!!S.log));
+    v.title = 'Versionsverlauf' + (n ? ': ' + n + ' neue Änderung' + (n === 1 ? '' : 'en') : '');
+  }
+  function writeSeen() {
+    if (!S.profile || !S.pdataReady || !S.pdata || S.pdata.seenCount === LOGTOTAL) return;
+    S.profile.set(Object.assign({}, S.pdata, { seenCount: LOGTOTAL })).catch(function () {});
+  }
+  function ensureSeen() {
+    if (S.pdata && typeof S.pdata.seenCount !== 'number') writeSeen();
+  }
+  function toggleLog() {
+    S.log = !S.log;
+    if (S.log) { S.support = false; S.info = false; S.adm = false; $('cfgpanel').hidden = true; updateWho(); writeSeen(); }
+    renderAll();
+  }
+  function renderLog() {
+    if (!S.log) return;
+    var box = $('logList'); box.textContent = '';
+    CHANGELOG.forEach(function (c) {
+      box.append(h('div', { class: 'logv' }, h('h3', null, 'Version ' + c.v, h('small', null, c.d)), h('ul', null, c.t.map(function (x) { return h('li', null, x); }))));
+    });
+  }
+  function toggleAdm() {
+    if (!S.isOwner) return;
+    S.adm = !S.adm;
+    if (S.adm) { S.support = false; S.log = false; S.info = false; $('cfgpanel').hidden = true; updateWho(); window.scrollTo(0, 0); }
+    renderAll();
+  }
+  function toggleInfo() {
+    S.info = !S.info;
+    if (S.info) { S.support = false; S.log = false; S.adm = false; $('cfgpanel').hidden = true; updateWho(); window.scrollTo(0, 0); }
+    renderAll();
+  }
+  function toggleSupport() {
+    S.support = !S.support; if (S.support) { S.log = false; S.info = false; S.adm = false; }
+    if (S.support) { $('cfgpanel').hidden = true; updateWho(); markSupportRead(); }
+    renderAll();
+  }
+  function patchDoc(ref, data, exists) {
+    return exists ? ref.update(data) : ref.set(data);
+  }
+  function stampOf(meta) { var n = new Date().toISOString(), l = String((meta && meta.lastAt) || ''); return l > n ? l : n; }
+  function markSupportRead() {
+    if (!S.db || !S.uid) return;
+    if (S.isOwner) {
+      var t = S.sup.threads.filter(function (x) { return x.id === S.sup.sel; })[0];
+      if (t && (Number(t.adminUnread) > 0 || String(t.lastAt || '') > String(t.adminReadAt || ''))) { var st = stampOf(t); S.db.doc('support/' + t.id).update({ adminUnread: 0, adminReadAt: st, adminVisitAt: st }).catch(function () {}); }
+    } else if (S.sup.meta && (Number(S.sup.meta.userUnread) > 0 || String(S.sup.meta.lastAt || '') > String(S.sup.meta.userReadAt || ''))) {
+      var su = stampOf(S.sup.meta); S.db.doc('support/' + S.uid).update({ userUnread: 0, userReadAt: su, userVisitAt: su }).catch(function () {});
+    }
+  }
+  /* Zustellung: Wer die Seite offen hat oder neu besucht, bekommt die letzte Nachricht des anderen als "zugestellt" gestempelt. */
+  function stampVisits() {
+    if (!S.db || !S.uid) return;
+    if (S.isOwner) {
+      S.sup.threads.forEach(function (t) {
+        if (t.lastFrom === 'user' && String(t.lastAt || '') > String(t.adminVisitAt || '')) S.db.doc('support/' + t.id).update({ adminVisitAt: stampOf(t) }).catch(function () {});
+      });
+    } else {
+      var m = S.sup.meta;
+      if (m && m.lastFrom === 'admin' && String(m.lastAt || '') > String(m.userVisitAt || '')) S.db.doc('support/' + S.uid).update({ userVisitAt: stampOf(m) }).catch(function () {});
+    }
+  }
+  function ticksFor(m, meta) {
+    var owner = S.isOwner, at = String(m.at || '');
+    var visit = String((meta && (owner ? meta.userVisitAt : meta.adminVisitAt)) || ''), read = String((meta && (owner ? meta.userReadAt : meta.adminReadAt)) || '');
+    var seen = read >= at && read !== '', got = seen || (visit >= at && visit !== '');
+    return h('span', { class: 'ticks' + (seen ? ' seen' : ''), role: 'img', 'aria-label': seen ? 'gelesen' : got ? 'zugestellt' : 'gesendet', title: seen ? 'Gelesen' : got ? 'Zugestellt' : 'Gesendet' }, got ? '\u2713\u2713' : '\u2713');
+  }
+  function fmtChat(t) {
+    try { var d = new Date(t), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; }
+  }
+  function openUserThread() {
+    if (S.sup.unsubUser || !S.db || S.isOwner) return;
+    S.sup.unsubUser = S.db.collection('support/' + S.uid + '/messages').onSnapshot(function (snap) {
+      S.sup.msgs = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+      if (S.support) markSupportRead();
+      renderSupport();
+    }, function () {});
+  }
+  function selectThread(id) {
+    if (S.sup.unsubSel) { try { S.sup.unsubSel(); } catch (_) {} S.sup.unsubSel = null; }
+    S.sup.sel = id; S.sup.selMsgs = []; S.sup.confirm = false;
+    if (id) S.sup.unsubSel = S.db.collection('support/' + id + '/messages').onSnapshot(function (snap) {
+      S.sup.selMsgs = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+      markSupportRead(); renderSupport();
+    }, function () {});
+    markSupportRead(); renderSupport();
+  }
+  function renderSupport() {
+    if (!S.db || !S.uid) return;
+    var owner = S.isOwner;
+    if (S.support && !owner) openUserThread();
+    if (!S.support) return;
+    $('supGrid').className = 'supgrid' + (owner ? ' admin2' : '');
+    $('supThreads').hidden = !owner;
+    $('supHint').textContent = owner ? 'Hier siehst du die Nachrichten deiner Nutzer und kannst antworten.' : 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.';
+    var msgs;
+    if (owner) {
+      var box = $('supThreads'); box.textContent = '';
+      var ths = S.sup.threads.slice().sort(function (a, b) { return String(b.lastAt || '').localeCompare(String(a.lastAt || '')); });
+      if (!ths.length) box.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
+      ths.forEach(function (t) {
+        var m = S.members.filter(function (x) { return x.id === t.id; })[0];
+        box.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel === t.id), onclick: function () { selectThread(t.id); } },
+          h('span', { class: 't1' }, h('span', null, S.names[t.id] || (m && m.email) || 'Nutzer'), Number(t.adminUnread) > 0 ? h('span', { class: 'badge' }, String(t.adminUnread)) : null),
+          h('span', { class: 't2' }, (t.lastFrom === 'admin' ? 'Du: ' : '') + (t.lastText || ''))));
+      });
+      if (!S.sup.sel && ths.length) { S.sup.sel = ths[0].id; selectThread(ths[0].id); return; }
+      if (ths.length) loadNames(ths.map(function (t) { return t.id; }).filter(function (i) { return !(i in S.names); }));
+      msgs = S.sup.selMsgs;
+    } else msgs = S.sup.msgs;
+    var tmeta = owner ? S.sup.threads.filter(function (t) { return t.id === S.sup.sel; })[0] : S.sup.meta;
+    var log = $('chatLog'), atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 40;
+    log.textContent = '';
+    msgs.slice().sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); }).slice(-200).forEach(function (m) {
+      var mine = owner ? m.from === 'admin' : m.from === 'user';
+      log.append(h('div', { class: 'bub ' + (mine ? 'me' : 'them') }, String(m.text || ''), h('small', null, (m.from === 'admin' ? 'Admin' : 'Nutzer') + ' · ' + fmtChat(m.at), mine ? ticksFor(m, tmeta) : null)));
+    });
+    if (!msgs.length) log.append(h('p', { class: 'hint' }, owner ? (S.sup.sel ? 'Noch keine Nachrichten in dieser Unterhaltung.' : 'Wähle links eine Unterhaltung.') : 'Noch keine Nachrichten. Schreib einfach los.'));
+    if (atEnd) log.scrollTop = log.scrollHeight;
+    $('chatForm').hidden = owner && !S.sup.sel;
+  }
+  async function sendChat(ev) {
+    if (ev) ev.preventDefault();
+    var inp = $('chatIn'), text = inp.value.trim(), m = $('chatMsg');
+    if (!text || !S.db) return;
+    if (Date.now() - S.sup.last < 1500) { m.textContent = 'Bitte einen Moment warten.'; m.className = 'msg err'; return; }
+    var owner = S.isOwner, tid = owner ? S.sup.sel : S.uid;
+    if (!tid) return;
+    S.sup.last = Date.now(); text = text.slice(0, 1000);
+    var now = new Date().toISOString(), meta = owner ? S.sup.threads.filter(function (t) { return t.id === tid; })[0] : S.sup.meta;
+    try {
+      await S.db.collection('support/' + tid + '/messages').doc().set({ from: owner ? 'admin' : 'user', text: text, at: now });
+      var upd = owner ? { lastAt: now, lastFrom: 'admin', lastText: text.slice(0, 80), userUnread: (Number(meta && meta.userUnread) || 0) + 1, adminUnread: 0 }
+                      : { lastAt: now, lastFrom: 'user', lastText: text.slice(0, 80), adminUnread: (Number(meta && meta.adminUnread) || 0) + 1, userUnread: 0 };
+      await patchDoc(S.db.doc('support/' + tid), upd, !!meta);
+      inp.value = ''; m.textContent = '';
+    } catch (_) { m.textContent = 'Senden hat nicht geklappt.'; m.className = 'msg err'; }
+  }
+  function maybeMigrate() {
+    if (!S.realOwner || S.siteExists !== false || !S.legacy || !S.db) return;
+    var l = S.legacy; S.legacy = null; S.siteExists = true; S.site = l;
+    S.db.doc('config/site').set({ tag: l.tag, domain: l.domain }).catch(function () {});
+  }
+  (async function init() {
+    var res = await Promise.all([use('db'), use('user'), use('sample')]);
+    var db = res[0], user = res[1];
+    S.sample = res[2];
+    if (user) { try { var me = await user.me(); S.uid = me.id; S.name = me.name; S.userCap = user; } catch (_) {} try { S.realOwner = !!(await user.isOwner()); S.isOwner = S.realOwner; } catch (_) {} }
+    updateWho();
+    if (db && S.uid) {
+      S.db = db;
+      S.profile = db.doc('data/users/' + S.uid + '/profile');
+      S.coll = S.profile.collection('entries');
+      S.acoll = S.profile.collection('alerts');
+      S.acoll.onSnapshot(function (snap) {
+        var m = {};
+        snap.docs.forEach(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; m[d.id] = o; });
+        S.alerts = m; S.alertsReady = true; renderAll();
+      }, function () {});
+      db.doc('moderation/' + S.uid).onSnapshot(function (snap) {
+        if (snap.exists && (snap.data() || {}).status === 'removed') lockdown();
+      }, function () {});
+      {
+        db.doc('support/' + S.uid).onSnapshot(function (snap) {
+          S.sup.meta = snap.exists ? Object.assign({}, snap.data() || {}) : null;
+          stampVisits();
+          if (S.support) markSupportRead();
+          renderAll();
+        }, function () {});
+      }
+      if (S.realOwner) {
+        db.collection('support').onSnapshot(function (snap) {
+          S.sup.threads = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+          stampVisits(); renderAll();
+        }, function () {});
+        db.collection('members').onSnapshot(function (snap) {
+          S.members = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+          loadNames(S.members.map(function (x) { return x.id; })); renderAdmin();
+        }, function () {});
+        db.collection('blockedlist').onSnapshot(function (snap) {
+          S.blocked = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; }); renderAdmin();
+        }, function () {});
+      }
+      S.profile.onSnapshot(function (snap) {
+        S.pdataReady = true;
+        if (snap.exists) { var d = snap.data() || {}; S.pdata = Object.assign({}, d); if (typeof d.skin === 'string' && (d.skin || document.documentElement.hasAttribute('data-skin'))) applySkin(d.skin); S.settings = { tag: '', domain: '', email: String(d.email || ''), city: String(d.city || '') }; S.legacy = d.tag ? { tag: String(d.tag), domain: String(d.domain || 'amazon.de') } : null; }
+        if (snap.exists) ensureSeen();
+        if (S.settings.email && !S.mailChecked) { S.mailChecked = true; isBlockedMail(S.settings.email).then(function (b) { if (b) lockdown(); }); }
+        maybeMigrate(); renderAll();
+      }, function () {});
+      db.doc('config/site').onSnapshot(function (snap) {
+        S.siteExists = !!snap.exists;
+        if (snap.exists) { var c = snap.data() || {}; S.site = { tag: String(c.tag || ''), domain: String(c.domain || 'amazon.de') }; }
+        maybeMigrate(); renderAll();
+      }, function () {});
+      S.coll.onSnapshot(function (snap) {
+        S.entries = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+        S.ready = true; renderAll();
+      }, function () { S.ready = true; renderAll(); });
+      setTimeout(function () { if (!S.ready) { S.ready = true; renderAll(); } }, 4000);
+    } else { S.ready = true; renderAll(); }
+  })();
+})();
+</script>

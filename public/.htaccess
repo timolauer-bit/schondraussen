@@ -1,0 +1,9 @@
+# Zugangsdaten und Interna nie ausliefern
+<FilesMatch "^(config\.php|config\.example\.php|\.ftp-deploy-sync-state\.json)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes
+# HTTPS erzwingen
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
