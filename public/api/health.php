@@ -9,6 +9,13 @@ if (is_file($file)) {
     try {
         $pdo = new PDO('mysql:host=' . $cfg['db']['host'] . ';dbname=' . $cfg['db']['name'] . ';charset=utf8mb4', $cfg['db']['user'], $cfg['db']['pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $out['db'] = true;
-    } catch (Throwable $e) { $out['db_error'] = 'Verbindung fehlgeschlagen'; }
+    } catch (Throwable $e) {
+        $c = (string) $e->getCode();
+        $hint = ['1045' => 'Benutzer oder Passwort falsch', '1044' => 'Benutzer hat keinen Zugriff auf diese Datenbank', '1049' => 'Datenbankname existiert nicht', '2002' => 'Host nicht erreichbar oder falsch', '2006' => 'Server hat die Verbindung beendet'];
+        $out['db_error'] = 'Verbindung fehlgeschlagen';
+        $out['db_code'] = $c;
+        $out['db_hinweis'] = $hint[$c] ?? 'unbekannt';
+        $out['config_keys'] = array_keys(is_array($cfg['db'] ?? null) ? $cfg['db'] : []);
+    }
 }
 echo json_encode($out, JSON_PRETTY_PRINT);
