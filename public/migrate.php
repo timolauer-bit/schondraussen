@@ -29,6 +29,19 @@ $M = [
   "ALTER TABLE users ADD COLUMN approved_at DATETIME NULL",
   "UPDATE users SET approved_at=NOW() WHERE role='admin'",
  ],
+  '003_notify' => [
+  "ALTER TABLE users ADD COLUMN notify TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN unsub_token CHAR(40) NULL, ADD UNIQUE KEY uq_unsub (unsub_token)",
+  "CREATE TABLE IF NOT EXISTS notified (
+     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     user_id INT UNSIGNED NOT NULL,
+     subject_id INT UNSIGNED NOT NULL,
+     key_hash CHAR(40) NOT NULL UNIQUE,
+     kind ENUM('new','soon') NOT NULL,
+     sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     KEY idx_user_subject (user_id, subject_id),
+     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

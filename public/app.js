@@ -189,10 +189,15 @@
   /* ---------- Einstellungen ---------- */
   function settings() {
     view.innerHTML = '<div class="main"><div class="label" style="margin-bottom:6px">Konto</div><p>' + esc(S.email) + ' · Mitglied Nr. ' + S.id + (S.admin ? ' · Admin' : '') + '</p>' +
+      '<div class="label" style="margin:22px 0 8px">Benachrichtigungen</div><p class="hint" style="margin-bottom:10px">Du bekommst eine Mail, wenn bei deinen Einträgen neue Termine angekündigt werden und wenn ein Termin in den nächsten 7 Tagen ansteht.</p>' +
+      '<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="ntf"' + (S.notify ? ' checked' : '') + '> E-Mail-Benachrichtigungen einschalten</label>' +
+      '<p style="margin:10px 0 0"><button class="btn ghost small" id="tm" type="button">Testmail an mich senden</button> <span class="msg" id="tmmsg"></span></p>' +
       '<div class="label" style="margin:22px 0 8px">Aussehen</div><div class="skins">' + SKINS.map(function (k) {
         return '<button class="skin" data-s="' + k[0] + '" aria-pressed="' + ((S.skin || 'auto') === k[0]) + '"><span class="dots">' + k[2].map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('') + '</span><b>' + k[1] + '</b></button>';
       }).join('') + '</div><p style="margin-top:24px"><button class="btn ghost" id="lo2" type="button">Abmelden</button></p></div>';
     view.querySelectorAll('.skin').forEach(function (b) { b.onclick = function () { setSkin(b.dataset.s); post('/api/data.php?a=skin', { skin: b.dataset.s }); settings(); }; });
+    document.getElementById('ntf').onchange = function () { S.notify = this.checked; post('/api/data.php?a=notify', { on: this.checked }); };
+    document.getElementById('tm').onclick = function () { var m = document.getElementById('tmmsg'); m.className = 'msg'; m.textContent = 'Sende …'; post('/api/data.php?a=testmail').then(function (r) { m.className = 'msg' + (r.ok ? '' : ' err'); m.textContent = r.msg || r.error || ''; }); };
     document.getElementById('lo2').onclick = function () { post('/api/auth.php?a=logout').then(function () { location.reload(); }); };
   }
 

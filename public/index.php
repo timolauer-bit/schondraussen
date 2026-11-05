@@ -39,7 +39,7 @@ h3{margin:18px 0 6px;font-size:15px}
   <div id="appview"></div>
   <footer><p>Testbetrieb – die Seite ist noch nicht öffentlich.</p><p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p></footer>
 </div>
-<script>window.SD = <?= json_encode(['admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'skin' => $skin ?: 'auto']) ?>;</script>
+<script>window.SD = <?= json_encode(['admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1]) ?>;</script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
 <main>

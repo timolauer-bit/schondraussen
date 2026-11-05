@@ -30,6 +30,19 @@ if ($a === 'skin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('UPDATE users SET skin=? WHERE id=?')->execute([$sk, $u['id']]);
     json_out(['ok' => true]);
 }
+if ($a === 'notify' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $on = !empty(body()['on']) ? 1 : 0;
+    $pdo->prepare('UPDATE users SET notify=? WHERE id=?')->execute([$on, $u['id']]);
+    json_out(['ok' => true, 'on' => $on]);
+}
+if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/../lib/notify.php';
+    start_session();
+    if (time() - (int) ($_SESSION['testmail'] ?? 0) < 120) json_out(['ok' => false, 'msg' => 'Bitte kurz warten, bevor du erneut eine Testmail schickst.']);
+    $_SESSION['testmail'] = time();
+    $ok = send_user_mail($pdo, $u, 'Schondraussen.de: Testmail', "Hallo,\n\ndas ist eine Testmail. Wenn du sie siehst, funktionieren die Benachrichtigungen.\n");
+    json_out(['ok' => $ok, 'msg' => $ok ? 'Testmail ist unterwegs. Schau auch im Spam-Ordner nach.' : 'Der Mailversand ist fehlgeschlagen.']);
+}
 $TYPES = ['author', 'artist', 'film', 'series'];
 if ($a === 'search') {
     $type = $_GET['type'] ?? ''; $q = trim((string) ($_GET['q'] ?? ''));

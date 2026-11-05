@@ -2,6 +2,7 @@
 // Aufruf per Cron (alle 12 Stunden): /api/cron.php?token=<cron_token>
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/sources.php';
+require __DIR__ . '/../lib/notify.php';
 header('Content-Type: text/plain; charset=utf-8');
 $tok = (string) cfg('cron_token', '');
 if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { http_response_code(403); exit("Token fehlt oder falsch.\n"); }
@@ -13,3 +14,4 @@ foreach ([['series', 15], ['artist', 12], ['author', 10]] as [$t, $lim])
 $ok = 0; $fail = 0;
 foreach ($ids as $id) { $r = refresh_subject($pdo, (int) $id); $r['ok'] ? $ok++ : $fail++; usleep(400000); }
 echo "Aktualisiert: $ok, fehlgeschlagen: $fail, geprüft: " . count($ids) . "\n";
+try { [$m, $f] = run_digests($pdo); echo "Mails: $m versendet, $f fehlgeschlagen\n"; } catch (Throwable $e) { echo "Mails: übersprungen (" . $e->getMessage() . ")\n"; }
