@@ -23,6 +23,7 @@ jobs:
           set ftp:passive-mode true
           set net:max-retries 3
           set net:timeout 30
-          mirror -R --verbose --parallel=1 --exclude config.php --exclude-glob .git* ./public "$FTP_DIR"
+          cd "$FTP_DIR"
+          mirror -R --verbose --parallel=1 --exclude config.php --exclude-glob .git* ./public .
           bye
           EOF
