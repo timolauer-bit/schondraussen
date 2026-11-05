@@ -8,18 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Per FTP auf den Webspace laden
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: lftp installieren
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+      - name: Per FTPS auf den Webspace laden
         env:
-          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: ./public/
-          server-dir: ${{ secrets.FTP_DIR }}
-          exclude: |
-            **/config.php
-            **/.git*
-            **/.git*/**
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.FTP_DIR }}
+        run: |
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ftp:passive-mode true
+          set net:max-retries 3
+          set net:timeout 30
+          mirror -R --verbose --parallel=1 --exclude config.php --exclude-glob .git* ./public "$FTP_DIR"
+          bye
+          EOF
