@@ -36,7 +36,7 @@ h3{margin:18px 0 6px;font-size:15px}
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php else: ?>
   <div id="app" class="card" style="max-width:none">
-    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><span class="muted"><?= htmlspecialchars($u['email']) ?><?= $u['role'] === 'admin' ? ' (Admin)' : '' ?></span><button id="logout" type="button" class="ghost">Abmelden</button></div>
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><span class="muted"><?= htmlspecialchars($u['email']) ?><?= $u['role'] === 'admin' ? ' (Admin)' : '' ?> · Mitglied Nr. <?= (int) $u['id'] ?></span><button id="logout" type="button" class="ghost">Abmelden</button></div>
     <nav id="tabs"></nav><div id="view"></div>
   </div>
 <?php endif; ?>
@@ -144,7 +144,7 @@ h3{margin:18px 0 6px;font-size:15px}
         var l = r.users || []; pend = l.filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; tabs();
         view.innerHTML = l.map(function (x) {
           var ok = x.role === 'admin' || x.approved_at, me = x.id == r.me;
-          return '<div class="it" style="cursor:default;align-items:flex-start"><span><b>' + esc(x.email) + '</b>' + (x.role === 'admin' ? ' <span class="chip">Admin</span>' : '') +
+          return '<div class="it" style="cursor:default;align-items:flex-start"><span><span class="muted">Nr. ' + x.id + '</span> <b>' + esc(x.email) + '</b>' + (x.role === 'admin' ? ' <span class="chip">Admin</span>' : '') +
             '<br><span class="muted">' + (ok ? 'Freigeschaltet' : '<b style="color:var(--accent)">Wartet auf Freischaltung</b>') + (x.email_verified_at ? '' : ' · E-Mail nicht bestätigt') +
             ' · ' + x.entries + ' Einträge · registriert ' + esc((x.created_at || '').slice(0, 10)) + '</span>' +
             (me ? '' : '<div class="row2">' + (ok ? (x.role === 'admin' ? '' : '<button class="ghost" data-a="revoke" data-id="' + x.id + '">Sperren</button>') : '<button data-a="approve" data-id="' + x.id + '" style="padding:6px 12px;font-size:14px">Freischalten</button>') +
