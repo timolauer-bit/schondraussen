@@ -117,7 +117,7 @@ h3{margin:18px 0 6px;font-size:15px}
       document.getElementById('addbtn').onclick = addForm;
     }
     function addForm() {
-      var box = document.getElementById('addbox'), label = { author: 'Autor:in', artist: 'Künstler:in / Band', film: 'Film', series: 'Serie' }[cat], live = cat === 'series' || cat === 'artist';
+      var box = document.getElementById('addbox'), label = { author: 'Autor:in', artist: 'Künstler:in / Band', film: 'Film', series: 'Serie' }[cat], live = cat !== 'film';
       box.innerHTML = '<form id="addf" style="display:flex;gap:6px;margin-bottom:8px"><input id="addq" placeholder="' + label + ' suchen oder eingeben" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit"><button style="margin:0;padding:8px 14px">' + (live ? 'Suchen' : 'Hinzufügen') + '</button></form><div id="addres"></div>';
       var q = document.getElementById('addq'); q.focus();
       function add(name, ext) {
@@ -176,8 +176,8 @@ h3{margin:18px 0 6px;font-size:15px}
         var h = '<div style="display:flex;justify-content:space-between"><button class="ghost" id="back">← Zurück</button><button class="ghost danger" id="rm">Aus meiner Liste entfernen</button></div><h2 style="margin:14px 0 4px">' + esc(e.name) + '</h2>' +
           (e.genres || []).map(function (g) { return '<span class="chip">' + esc(g) + '</span>'; }).join('') +
           (e.summary ? '<p>' + esc(e.summary) + '</p>' : '');
-        if (!e.fetched_at || ((e.type === 'series' || e.type === 'artist') && !r.works.length && !r.releases.length)) h += '<p class="muted" id="st">Daten werden geladen …</p>';
-        else if (e.type !== 'series' && e.type !== 'artist') h += '<p class="muted">Für diese Kategorie wird die Datenquelle noch angebunden.</p>';
+        if (e.type !== 'film' && !e.fetched_at) h += '<p class="muted" id="st">Daten werden geladen …</p>';
+        else if (e.type === 'film') h += '<p class="muted">Für diese Kategorie wird die Datenquelle noch angebunden.</p>';
         h += '<h3>Kommende Termine</h3>' + (r.releases.length ? r.releases.map(function (x) { return '<div><span class="d">' + fd(x.release_date) + '</span>' + esc(x.title) + '</div>'; }).join('') : '<p class="muted">Keine bekannt.</p>');
         h += '<h3>Werke</h3>' + (r.works.length ? r.works.map(function (x) { return '<div><span class="d">' + esc(x.year || '') + '</span>' + esc(x.title) + (x.note ? ' <span class="muted">· ' + esc(x.note) + '</span>' : '') + '</div>'; }).join('') : '<p class="muted">Noch keine.</p>');
         view.innerHTML = h;
@@ -186,7 +186,7 @@ h3{margin:18px 0 6px;font-size:15px}
           fetch('/api/data.php?a=remove&id=' + id, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(function () { load(function () { cat === 'cal' ? calendar() : show(); }); });
         };
         document.getElementById('back').onclick = function () { cat === 'cal' ? calendar() : show(); };
-        if (document.getElementById('st') || ((e.type === 'series' || e.type === 'artist') && !e.fetched_at)) {
+        if (document.getElementById('st')) {
           fetch('/api/data.php?a=refresh&id=' + id, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
             .then(function (x) { return x.json(); }).then(function (x) {
               if (x.ok) { load(function () { entry(id); }); } else { var st = document.getElementById('st'); if (st) st.textContent = x.msg || x.error; }

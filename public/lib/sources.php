@@ -24,9 +24,16 @@ function tvmaze_fetch(string $name, ?int $id = null): ?array {
 
 // Aktualisiert einen Titel in der Datenbank. Gibt ['ok'=>bool,'msg'=>string] zurück.
 function refresh_subject(PDO $pdo, int $sid): array {
+    $r = refresh_subject_run($pdo, $sid);
+    // Auch bei Misserfolg Zeitpunkt merken, damit nicht bei jedem Aufruf und jedem Cron-Lauf neu versucht wird.
+    if (empty($r['ok'])) $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]);
+    return $r;
+}
+function refresh_subject_run(PDO $pdo, int $sid): array {
     $s = $pdo->prepare('SELECT * FROM subjects WHERE id=?'); $s->execute([$sid]); $sub = $s->fetch();
     if (!$sub) return ['ok' => false, 'msg' => 'Titel nicht gefunden'];
     if ($sub['type'] === 'artist') return musicbrainz_refresh($pdo, $sub);
+    if ($sub['type'] === 'author') return openlibrary_refresh($pdo, $sub);
     if ($sub['type'] !== 'series') {
         $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]);
         return ['ok' => false, 'msg' => 'Für diese Kategorie ist die Datenquelle noch nicht angebunden.'];
@@ -128,4 +135,52 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     return ['ok' => true, 'msg' => count($works) . ' Alben, ' . count($rel) . ' kommende Veröffentlichungen'];
+}
+
+// Open Library (Autor:innen). Kommende Bücher liefert diese Quelle kaum; dafür kommt später eine zweite.
+function openlibrary_refresh(PDO $pdo, array $sub): array {
+    $sid = (int) $sub['id'];
+    $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    $summary = $sub['summary'];
+    if (empty($ext['olid'])) {
+        $r = http_json('https://openlibrary.org/search/authors.json?limit=10&q=' . rawurlencode($sub['name']));
+        $best = null;
+        foreach (($r['docs'] ?? []) as $d) {
+            if (mb_strtolower($d['name'] ?? '') !== mb_strtolower($sub['name'])) continue;
+            if (!$best || ($d['work_count'] ?? 0) > ($best['work_count'] ?? 0)) $best = $d;
+        }
+        if (!$best) return ['ok' => false, 'msg' => 'Bei Open Library nicht eindeutig gefunden.'];
+        $ext['olid'] = $best['key'];
+        $bits = [];
+        if (!empty($best['birth_date'])) $bits[] = 'geboren ' . $best['birth_date'];
+        if (!empty($best['top_work'])) $bits[] = 'bekannt für „' . $best['top_work'] . '“';
+        $summary = implode(' · ', $bits);
+    }
+    $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year&sort=new&author=' . rawurlencode($ext['olid']));
+    if (!$r) {
+        $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year&sort=new&q=author_key:' . rawurlencode($ext['olid']));
+    }
+    if (!$r) return ['ok' => false, 'msg' => 'Open Library nicht erreichbar.'];
+    $seen = []; $works = []; $rel = []; $y = (int) date('Y');
+    foreach (($r['docs'] ?? []) as $d) {
+        $t = trim((string) ($d['title'] ?? '')); if ($t === '') continue;
+        $k = mb_strtolower($t); if (isset($seen[$k])) continue; $seen[$k] = 1;
+        $yr = (int) ($d['first_publish_year'] ?? 0);
+        if ($yr > $y) $rel[] = [$t, (string) $yr, 'Buch'];
+        else $works[] = [$t, $yr ?: null, 'Buch'];
+    }
+    usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
+            ->execute([json_encode($ext), $summary, $sub['genres'] ?: '[]', (int) ($r['numFound'] ?? count($works)), $sid]);
+        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
+        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
+        foreach (array_slice($works, 0, 200) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        $q = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
+        foreach (array_slice($rel, 0, 20) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        $pdo->commit();
+    } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt'];
 }

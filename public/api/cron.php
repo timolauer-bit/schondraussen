@@ -8,7 +8,7 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 set_time_limit(110);
 $pdo = db();
 $ids = [];
-foreach ([['series', 15], ['artist', 15]] as [$t, $lim])
+foreach ([['series', 15], ['artist', 12], ['author', 10]] as [$t, $lim])
     foreach ($pdo->query("SELECT id FROM subjects WHERE type='$t' AND (fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 11 HOUR) ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT $lim")->fetchAll(PDO::FETCH_COLUMN) as $i) $ids[] = $i;
 $ok = 0; $fail = 0;
 foreach ($ids as $id) { $r = refresh_subject($pdo, (int) $id); $r['ok'] ? $ok++ : $fail++; usleep(400000); }

@@ -37,6 +37,12 @@ if ($a === 'search') {
             $h = array_filter([$x['disambiguation'] ?? '', $x['area']['name'] ?? '', !empty($x['life-span']['begin']) ? 'seit ' . substr($x['life-span']['begin'], 0, 4) : '']);
             $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['mbid' => $x['id']]]; }
     }
+    elseif ($type === 'author') {
+        $r = http_json('https://openlibrary.org/search/authors.json?limit=8&q=' . rawurlencode($q)) ?? [];
+        foreach (($r['docs'] ?? []) as $x) {
+            $h = array_filter([!empty($x['top_work']) ? '„' . $x['top_work'] . '“' : '', !empty($x['work_count']) ? $x['work_count'] . ' Werke' : '', $x['birth_date'] ?? '']);
+            $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['olid' => $x['key']]]; }
+    }
     json_out(['results' => $out]);
 }
 if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -45,7 +51,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries WHERE user_id=?'); $n->execute([$u['id']]);
     if ((int) $n->fetchColumn() >= 500) json_out(['error' => 'Die Liste ist voll (500 Einträge).'], 422);
     $ext = [];
-    foreach (['tvmaze' => 'int', 'mbid' => 'str'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]);
+    foreach (['tvmaze' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
     $sid = (int) $pdo->lastInsertId();
     if ($ext) { // Kennung ergänzen, falls der Titel bisher keine hat
