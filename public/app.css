@@ -115,11 +115,11 @@ footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font
 .month .rel .ttl{font-size:14.5px}.month .rel .sub{font-size:13px}.month h3{font-size:19px}
 
 /* ---- Kopf, Version, Kalender, Übersicht, Info, Kontakt (aus der Claude-Version) ---- */
-.whobox{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
+.whobox{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:0}
 .who{display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:transparent}
-.ver{position:relative;font:500 12px var(--font-mono);letter-spacing:.04em;color:var(--muted);background:transparent;border:0;padding:0 11px 0 10px;text-align:right}
-.ver:hover,.ver[aria-pressed=true]{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-.ver .badge{position:absolute;right:-6px;bottom:-12px;margin:0;min-width:16px;height:16px;line-height:16px;font-size:10px;padding:0 4px}
+.ver{position:relative;font:500 12px var(--font-mono);letter-spacing:.04em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;text-align:right;cursor:pointer}
+.ver:hover,.ver[aria-pressed=true]{color:var(--ink);border-color:var(--accent)}
+.ver .badge{position:absolute;right:-6px;top:-8px;margin:0;min-width:16px;height:16px;line-height:16px;font-size:10px;padding:0 4px}
 .ico{display:inline-flex;margin-right:8px}.ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .who .ico{margin:0}
 .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:2px}
