@@ -106,13 +106,36 @@ h3{margin:18px 0 6px;font-size:15px}
       if (cat === 'cal') return calendar();
       if (cat === 'users') return users();
       var l = all.filter(function (e) { return e.type === cat; });
-      if (!l.length) { view.innerHTML = '<p class="muted">Hier ist noch nichts.</p>'; return; }
-      view.innerHTML = l.map(function (e) {
+      var head = '<div style="margin-bottom:8px"><button class="ghost" id="addbtn">+ Hinzufügen</button></div><div id="addbox"></div>';
+      if (!l.length) head += '<p class="muted">Hier ist noch nichts.</p>';
+      view.innerHTML = head + l.map(function (e) {
         return '<div class="it" data-id="' + e.id + '"><span><b>' + esc(e.name) + '</b><br><span class="muted">' +
           (e.fetched_at ? (e.next_date ? 'Nächster Termin: ' + fd(e.next_date) : (e.works ? e.works + ' Werke' : 'Keine Termine')) : 'Noch nicht geladen') +
           '</span></span>' + (e.next_date ? '<span class="dot">' + e.upcoming + '</span>' : '') + '</div>';
       }).join('');
       view.querySelectorAll('.it').forEach(function (x) { x.onclick = function () { entry(x.dataset.id); }; });
+      document.getElementById('addbtn').onclick = addForm;
+    }
+    function addForm() {
+      var box = document.getElementById('addbox'), label = { author: 'Autor:in', artist: 'Künstler:in / Band', film: 'Film', series: 'Serie' }[cat], live = cat === 'series' || cat === 'artist';
+      box.innerHTML = '<form id="addf" style="display:flex;gap:6px;margin-bottom:8px"><input id="addq" placeholder="' + label + ' suchen oder eingeben" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit"><button style="margin:0;padding:8px 14px">' + (live ? 'Suchen' : 'Hinzufügen') + '</button></form><div id="addres"></div>';
+      var q = document.getElementById('addq'); q.focus();
+      function add(name, ext) {
+        fetch('/api/data.php?a=add', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: cat, name: name, ext: ext || {} }) })
+          .then(function (r) { return r.json(); }).then(function (r) { if (r.ok) load(function () { entry(r.id); }); else document.getElementById('addres').innerHTML = '<p class="err">' + esc(r.error) + '</p>'; });
+      }
+      document.getElementById('addf').onsubmit = function (ev) {
+        ev.preventDefault(); var v = q.value.trim(); if (v.length < 2) return;
+        var res = document.getElementById('addres');
+        if (!live) return add(v);
+        res.innerHTML = '<p class="muted">Suche …</p>';
+        get('a=search&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) {
+          var l = r.results || [];
+          res.innerHTML = l.map(function (x, i) { return '<div class="it" data-i="' + i + '"><span><b>' + esc(x.name) + '</b><br><span class="muted">' + esc(x.hint) + '</span></span><span class="muted">+</span></div>'; }).join('') +
+            '<div class="it" data-i="-1"><span class="muted">„' + esc(v) + '“ trotzdem so hinzufügen</span></div>';
+          res.querySelectorAll('.it').forEach(function (n) { n.onclick = function () { var i = +n.dataset.i; i < 0 ? add(v) : add(l[i].name, l[i].ext); }; });
+        });
+      };
     }
     function adm(a, id) { return fetch('/api/admin.php?a=' + a, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }).then(function (r) { return r.json(); }); }
     function users() {
@@ -150,7 +173,7 @@ h3{margin:18px 0 6px;font-size:15px}
       get('a=entry&id=' + id).then(function (r) {
         if (!r.entry) { view.innerHTML = '<p class="err">' + esc(r.error) + '</p>'; return; }
         var e = r.entry;
-        var h = '<button class="ghost" id="back">← Zurück</button><h2 style="margin:14px 0 4px">' + esc(e.name) + '</h2>' +
+        var h = '<div style="display:flex;justify-content:space-between"><button class="ghost" id="back">← Zurück</button><button class="ghost danger" id="rm">Aus meiner Liste entfernen</button></div><h2 style="margin:14px 0 4px">' + esc(e.name) + '</h2>' +
           (e.genres || []).map(function (g) { return '<span class="chip">' + esc(g) + '</span>'; }).join('') +
           (e.summary ? '<p>' + esc(e.summary) + '</p>' : '');
         if (!e.fetched_at || ((e.type === 'series' || e.type === 'artist') && !r.works.length && !r.releases.length)) h += '<p class="muted" id="st">Daten werden geladen …</p>';
@@ -158,6 +181,10 @@ h3{margin:18px 0 6px;font-size:15px}
         h += '<h3>Kommende Termine</h3>' + (r.releases.length ? r.releases.map(function (x) { return '<div><span class="d">' + fd(x.release_date) + '</span>' + esc(x.title) + '</div>'; }).join('') : '<p class="muted">Keine bekannt.</p>');
         h += '<h3>Werke</h3>' + (r.works.length ? r.works.map(function (x) { return '<div><span class="d">' + esc(x.year || '') + '</span>' + esc(x.title) + (x.note ? ' <span class="muted">· ' + esc(x.note) + '</span>' : '') + '</div>'; }).join('') : '<p class="muted">Noch keine.</p>');
         view.innerHTML = h;
+        document.getElementById('rm').onclick = function () {
+          if (!confirm('„' + e.name + '“ aus deiner Liste entfernen?')) return;
+          fetch('/api/data.php?a=remove&id=' + id, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(function () { load(function () { cat === 'cal' ? calendar() : show(); }); });
+        };
         document.getElementById('back').onclick = function () { cat === 'cal' ? calendar() : show(); };
         if (document.getElementById('st') || ((e.type === 'series' || e.type === 'artist') && !e.fetched_at)) {
           fetch('/api/data.php?a=refresh&id=' + id, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })

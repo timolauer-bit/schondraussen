@@ -22,6 +22,39 @@ if ($a === 'calendar') {
     $s->execute([$u['id']]);
     json_out(['releases' => $s->fetchAll()]);
 }
+$TYPES = ['author', 'artist', 'film', 'series'];
+if ($a === 'search') {
+    $type = $_GET['type'] ?? ''; $q = trim((string) ($_GET['q'] ?? ''));
+    if (!in_array($type, $TYPES, true) || mb_strlen($q) < 2) json_out(['results' => []]);
+    $out = [];
+    if ($type === 'series') {
+        $r = http_json('https://api.tvmaze.com/search/shows?q=' . rawurlencode($q)) ?? [];
+        foreach (array_slice($r, 0, 8) as $x) { $s = $x['show'] ?? []; if (empty($s['name'])) continue;
+            $out[] = ['name' => $s['name'], 'hint' => trim(substr((string) ($s['premiered'] ?? ''), 0, 4) . ' ' . implode(', ', array_slice($s['genres'] ?? [], 0, 2))), 'ext' => ['tvmaze' => (int) $s['id']]]; }
+    } elseif ($type === 'artist') {
+        $r = http_json('https://musicbrainz.org/ws/2/artist/?fmt=json&limit=8&query=' . rawurlencode($q)) ?? [];
+        foreach (($r['artists'] ?? []) as $x) {
+            $h = array_filter([$x['disambiguation'] ?? '', $x['area']['name'] ?? '', !empty($x['life-span']['begin']) ? 'seit ' . substr($x['life-span']['begin'], 0, 4) : '']);
+            $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['mbid' => $x['id']]]; }
+    }
+    json_out(['results' => $out]);
+}
+if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $b = body(); $type = $b['type'] ?? ''; $name = trim(preg_replace('/\s+/', ' ', (string) ($b['name'] ?? '')));
+    if (!in_array($type, $TYPES, true) || $name === '' || mb_strlen($name) > 190) json_out(['error' => 'Bitte einen Namen eingeben.'], 422);
+    $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries WHERE user_id=?'); $n->execute([$u['id']]);
+    if ((int) $n->fetchColumn() >= 500) json_out(['error' => 'Die Liste ist voll (500 Einträge).'], 422);
+    $ext = [];
+    foreach (['tvmaze' => 'int', 'mbid' => 'str'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]);
+    $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
+    $sid = (int) $pdo->lastInsertId();
+    if ($ext) { // Kennung ergänzen, falls der Titel bisher keine hat
+        $c = $pdo->prepare('SELECT external_ids FROM subjects WHERE id=?'); $c->execute([$sid]); $old = json_decode((string) $c->fetchColumn(), true) ?: [];
+        if (!$old) $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($ext), $sid]);
+    }
+    $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)')->execute([$u['id'], $sid]);
+    json_out(['ok' => true, 'id' => $sid, 'type' => $type]);
+}
 // Ab hier: ein Titel, nur wenn er in der eigenen Liste steht
 $id = (int) ($_GET['id'] ?? (body()['id'] ?? 0));
 $own = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $own->execute([$u['id'], $id]);
@@ -32,6 +65,10 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $t = $f->fetchColumn();
     if ($t && time() - strtotime($t) < 600) json_out(['ok' => true, 'msg' => 'Wurde gerade erst aktualisiert.']);
     json_out(refresh_subject($pdo, $id));
+}
+if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND subject_id=?')->execute([$u['id'], $id]);
+    json_out(['ok' => true]);
 }
 if ($a === 'entry') {
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at FROM subjects WHERE id=?'); $s->execute([$id]);
