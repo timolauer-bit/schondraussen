@@ -24,7 +24,7 @@
     refresh: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8M3 3v5h5M3 12a9 9 0 0 0 15 6.7L21 16M21 21v-5h-5"/></svg>'
   };
 
-  var S = { epTried: {}, view: 'cal', cat: 'cal', sel: null, entries: [], rels: [], site: { tag: '', domain: 'amazon.de' }, ready: false, filter: '', sort: {}, genre: {}, confirm: null, menuFor: null,
+  var S = { relink: null, epTried: {}, view: 'cal', cat: 'cal', sel: null, entries: [], rels: [], site: { tag: '', domain: 'amazon.de' }, ready: false, filter: '', sort: {}, genre: {}, confirm: null, menuFor: null,
     unread: 0, pend: 0, adding: false, sugg: null, msg: '', msgErr: false, notify: D.notify, skin: D.skin === 'auto' ? '' : (D.skin || ''), sup: { sel: null, threads: [] } };
   var $ = function (id) { return document.getElementById(id); };
   var topbar = $('topbar'), mainEl = root, supTimer = null;
@@ -267,10 +267,13 @@
       h('button', { class: 'btn ghost small', id: 'rfr', type: 'button', onclick: function () { refresh(cur); } }, ico(ICONS.refresh), 'Aktualisieren'),
       S.confirm === e.id ? [h('button', { class: 'btn warn small', type: 'button', onclick: function () { api('/api/data.php?a=remove&id=' + e.id, {}).then(function () { S.sel = null; S.confirm = null; load(); }); } }, 'Wirklich entfernen'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.confirm = null; content(); } }, 'Abbrechen')]
         : [h('button', { class: 'btn ghost small more', type: 'button', title: 'Weitere Aktionen', 'aria-label': 'Weitere Aktionen', 'aria-expanded': String(S.menuFor === e.id), onclick: function () { S.menuFor = S.menuFor === e.id ? null : e.id; content(); } }, '…'),
+           S.menuFor === e.id && e.type !== 'film' ? h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.menuFor = null; S.relink = e.id; content(); } }, 'Treffer ändern') : null,
            S.menuFor === e.id ? h('button', { class: 'btn warn small', type: 'button', onclick: function () { S.menuFor = null; S.confirm = e.id; content(); } }, 'Entfernen') : null]);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp' }, stamp) : null);
     var gch = (e.genres || []).length ? h('div', { class: 'gchips' }, e.genres.map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));
+    if (S.relink === e.id) card.append(relinkBox(cur, e));
+    else if (e.fetched_at && e.type !== 'film' && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ', h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
     if (!e.fetched_at && e.type !== 'film') { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
     if (e.type === 'film') card.append(h('p', { class: 'state' }, 'Für Filme wird die Datenquelle noch angebunden. Der Eintrag steht schon auf deiner Liste.'));
     if (e.summary) card.append(h('p', { class: 'sum' }, e.summary));
@@ -284,6 +287,22 @@
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
     r.works.forEach(function (w) { card.append(h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), amazonLink(e, w.title))); });
     return card;
+  }
+  function relinkBox(cur, e) {
+    var box = h('div', { class: 'cfgpanel', style: 'margin:14px 0' }), inp = h('input', { type: 'text', maxlength: '80', placeholder: 'Anderer Titel oder Schreibweise', value: '' }), res = h('div', { class: 'suggest wide2' });
+    function pick(x) { res.textContent = ''; res.append(h('p', { class: 'hint pulse' }, 'Lade Daten …')); api('/api/data.php?a=relink&id=' + e.id, { ext: x.ext }).then(function (r) { S.relink = null; load(function () { nav(); if ($('list')) { filt(); rows(); } content(); }); if (!r.ok) say(r.msg || 'Das hat nicht geklappt.', true); }); }
+    function search() {
+      var v = inp.value.trim(); if (v.length < 2) return; res.textContent = ''; res.append(h('p', { class: 'hint pulse' }, 'Suche …'));
+      api('/api/data.php?a=search&type=' + e.type + '&q=' + encodeURIComponent(v)).then(function (r) {
+        res.textContent = ''; var l = r.results || []; res.append(h('p', { class: 'hint' }, l.length ? 'Welcher Treffer ist gemeint?' : 'Keine Treffer.'));
+        l.forEach(function (x) { res.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { pick(x); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
+      });
+    }
+    inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); search(); } });
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Treffer ändern'), h('p', { class: 'hint' }, 'Suche nach dem passenden Titel, zum Beispiel mit dem englischen Namen. Der Name in deiner Liste bleibt, die Daten kommen vom gewählten Treffer.')),
+      h('div', { class: 'add wide2' }, inp, h('button', { class: 'btn', type: 'button', onclick: search }, 'Suchen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { S.relink = null; content(); } }, 'Abbrechen')), res);
+    setTimeout(function () { inp.focus(); }, 0);
+    return box;
   }
   var TVS = { 'Running': 'läuft', 'Ended': 'beendet', 'In Development': 'in Planung', 'To Be Determined': 'offen' };
   function renderEpisodes(e, eps) {

@@ -98,6 +98,13 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($t && time() - strtotime($t) < 600) json_out(['ok' => true, 'msg' => 'Wurde gerade erst aktualisiert.']);
     json_out(refresh_subject($pdo, $id));
 }
+if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $b = body(); $ext = [];
+    foreach (['tvmaze' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    if (!$ext) json_out(['ok' => false, 'msg' => 'Kein Treffer gewählt.']);
+    $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
+    json_out(refresh_subject($pdo, $id));
+}
 if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND subject_id=?')->execute([$u['id'], $id]);
     json_out(['ok' => true]);
