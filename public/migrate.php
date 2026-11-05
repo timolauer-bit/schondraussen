@@ -55,6 +55,18 @@ $M = [
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "CREATE TABLE IF NOT EXISTS site_settings (k VARCHAR(40) PRIMARY KEY, v VARCHAR(200) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '005_episodes' => [
+  "CREATE TABLE IF NOT EXISTS episodes (
+     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     subject_id INT UNSIGNED NOT NULL,
+     season SMALLINT UNSIGNED NOT NULL,
+     number SMALLINT UNSIGNED NOT NULL,
+     title VARCHAR(255) NULL,
+     airdate VARCHAR(10) NULL,
+     KEY idx_ep (subject_id, season, number),
+     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

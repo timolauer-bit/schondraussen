@@ -42,9 +42,10 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     $show = tvmaze_fetch($sub['name'], isset($ext['tvmaze']) ? (int) $ext['tvmaze'] : null);
     if (!$show || empty($show['id'])) return ['ok' => false, 'msg' => 'Bei TVmaze nicht gefunden oder nicht erreichbar.'];
     $eps = $show['_embedded']['episodes'] ?? [];
-    $seasons = []; $today = date('Y-m-d'); $rel = [];
+    $seasons = []; $today = date('Y-m-d'); $rel = []; $epRows = [];
     foreach ($eps as $e) {
         $n = (int) ($e['season'] ?? 0); if ($n < 1) continue;
+        $epRows[] = [$n, (int) ($e['number'] ?? 0), mb_substr((string) ($e['name'] ?? ''), 0, 255), (string) ($e['airdate'] ?? '')];
         $seasons[$n] = $seasons[$n] ?? ['n' => 0, 'first' => null];
         $seasons[$n]['n']++;
         $d = $e['airdate'] ?? '';
@@ -53,7 +54,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     }
     $pdo->beginTransaction();
     try {
-        $ext['tvmaze'] = (int) $show['id'];
+        $ext['tvmaze'] = (int) $show['id']; $ext['tv_status'] = (string) ($show['status'] ?? '');
         $genres = $show['genres'] ?? [];
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
             ->execute([json_encode($ext), clean_text($show['summary'] ?? ''), json_encode($genres, JSON_UNESCAPED_UNICODE), count($seasons), $sid]);
@@ -66,6 +67,11 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
         foreach (array_slice($rel, 0, 60) as $x) $r->execute([$sid, $x[0], $x[1], $x[2], null]);
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    try { // Folgenliste (Tabelle kann in älteren Ständen fehlen)
+        $pdo->prepare('DELETE FROM episodes WHERE subject_id=?')->execute([$sid]);
+        $q = $pdo->prepare('INSERT INTO episodes (subject_id,season,number,title,airdate) VALUES (?,?,?,?,?)');
+        foreach (array_slice($epRows, 0, 1500) as $x) $q->execute([$sid, $x[0], $x[1], $x[2] ?: null, $x[3] ?: null]);
+    } catch (Throwable $e) {}
     return ['ok' => true, 'msg' => count($seasons) . ' Staffeln, ' . count($rel) . ' kommende Folgen'];
 }
 

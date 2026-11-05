@@ -103,10 +103,13 @@ if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     json_out(['ok' => true]);
 }
 if ($a === 'entry') {
-    $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at FROM subjects WHERE id=?'); $s->execute([$id]);
+    $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
     $e = $s->fetch(); $e['genres'] = json_decode($e['genres'] ?: '[]', true);
+    $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; unset($e['external_ids']);
+    $eps = [];
+    if ($e['type'] === 'series') { try { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); $eps = $q->fetchAll(); } catch (Throwable $t) {} }
     $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);
     $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
-    json_out(['entry' => $e, 'works' => $w->fetchAll(), 'releases' => $r->fetchAll()]);
+    json_out(['entry' => $e, 'works' => $w->fetchAll(), 'releases' => $r->fetchAll(), 'episodes' => $eps]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);
