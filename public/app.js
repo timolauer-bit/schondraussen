@@ -35,8 +35,8 @@
   function nav() {
     var h = '<button class="nav" data-c="cal" ' + (cat === 'cal' ? 'aria-current="page"' : '') + '>' + ico('cal') + 'Kalender</button>';
     CATS.forEach(function (c) {
-      var n = all.filter(function (e) { return e.type === c[0]; }).length, up = all.filter(function (e) { return e.type === c[0] && e.next_date; }).length;
-      h += '<button class="nav" data-c="' + c[0] + '" ' + (cat === c[0] ? 'aria-current="page"' : '') + '>' + ico(c[0]) + c[1] + '<small>' + n + '</small>' + (up ? '<span class="badge">' + up + '</span>' : '') + '</button>';
+      var n = all.filter(function (e) { return e.type === c[0]; }).length;
+      h += '<button class="nav" data-c="' + c[0] + '" ' + (cat === c[0] ? 'aria-current="page"' : '') + '>' + ico(c[0]) + c[1] + '<small>' + n + '</small>' + '</button>';
     });
     if (S.admin) h += '<button class="nav rg" data-c="users" ' + (cat === 'users' ? 'aria-current="page"' : '') + '>Nutzer' + (pend ? '<span class="badge">' + pend + '</span>' : '') + '</button>';
     h += '<button class="nav' + (S.admin ? '' : ' rg') + '" data-c="set" ' + (cat === 'set' ? 'aria-current="page"' : '') + '>Einstellungen</button>';
