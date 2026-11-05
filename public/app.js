@@ -22,8 +22,8 @@
   function fd(d) { if (!d) return 'Termin offen'; var p = parts(d); return p.n === 3 ? p.d + '.' + p.m + '.' + p.y : p.n === 2 ? MON[+p.m - 1] + ' ' + p.y : d; }
   function dayBox(d) {
     var p = parts(d);
-    if (p.n === 3) { var w = new Date(+p.y, +p.m - 1, +p.d).getDay(); return '<div class="day">' + +p.d + '</div><div class="dow">' + DOW[w] + '</div>'; }
-    return '<div class="day soft">' + esc(d ? fd(d) : 'Termin offen') + '</div>';
+    if (p.n === 3) { var w = new Date(+p.y, +p.m - 1, +p.d).getDay(); return '<div><div class="day">' + +p.d + '</div><div class="dow">' + DOW[w] + '</div></div>'; }
+    return '<div><div class="day soft">' + esc(d ? fd(d) : 'Termin offen') + '</div></div>';
   }
   function get(qs) { return fetch('/api/data.php?' + qs, { credentials: 'same-origin' }).then(function (r) { return r.json(); }); }
   function post(url, data) { return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}) }).then(function (r) { return r.json(); }); }
