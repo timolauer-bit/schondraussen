@@ -7,7 +7,9 @@ $tok = (string) cfg('cron_token', '');
 if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { http_response_code(403); exit("Token fehlt oder falsch.\n"); }
 set_time_limit(110);
 $pdo = db();
-$ids = $pdo->query("SELECT id FROM subjects WHERE type='series' AND (fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 11 HOUR) ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT 25")->fetchAll(PDO::FETCH_COLUMN);
+$ids = [];
+foreach ([['series', 15], ['artist', 15]] as [$t, $lim])
+    foreach ($pdo->query("SELECT id FROM subjects WHERE type='$t' AND (fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 11 HOUR) ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT $lim")->fetchAll(PDO::FETCH_COLUMN) as $i) $ids[] = $i;
 $ok = 0; $fail = 0;
 foreach ($ids as $id) { $r = refresh_subject($pdo, (int) $id); $r['ok'] ? $ok++ : $fail++; usleep(400000); }
 echo "Aktualisiert: $ok, fehlgeschlagen: $fail, geprüft: " . count($ids) . "\n";

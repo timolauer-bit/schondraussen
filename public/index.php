@@ -121,13 +121,13 @@ h3{margin:18px 0 6px;font-size:15px}
         var h = '<button class="ghost" id="back">← Zurück</button><h2 style="margin:14px 0 4px">' + esc(e.name) + '</h2>' +
           (e.genres || []).map(function (g) { return '<span class="chip">' + esc(g) + '</span>'; }).join('') +
           (e.summary ? '<p>' + esc(e.summary) + '</p>' : '');
-        if (!e.fetched_at || (e.type === 'series' && !r.works.length && !r.releases.length)) h += '<p class="muted" id="st">Daten werden geladen …</p>';
-        else if (e.type !== 'series') h += '<p class="muted">Für diese Kategorie wird die Datenquelle noch angebunden.</p>';
+        if (!e.fetched_at || ((e.type === 'series' || e.type === 'artist') && !r.works.length && !r.releases.length)) h += '<p class="muted" id="st">Daten werden geladen …</p>';
+        else if (e.type !== 'series' && e.type !== 'artist') h += '<p class="muted">Für diese Kategorie wird die Datenquelle noch angebunden.</p>';
         h += '<h3>Kommende Termine</h3>' + (r.releases.length ? r.releases.map(function (x) { return '<div><span class="d">' + fd(x.release_date) + '</span>' + esc(x.title) + '</div>'; }).join('') : '<p class="muted">Keine bekannt.</p>');
         h += '<h3>Werke</h3>' + (r.works.length ? r.works.map(function (x) { return '<div><span class="d">' + esc(x.year || '') + '</span>' + esc(x.title) + (x.note ? ' <span class="muted">· ' + esc(x.note) + '</span>' : '') + '</div>'; }).join('') : '<p class="muted">Noch keine.</p>');
         view.innerHTML = h;
         document.getElementById('back').onclick = function () { cat === 'cal' ? calendar() : show(); };
-        if (document.getElementById('st') || (e.type === 'series' && !e.fetched_at)) {
+        if (document.getElementById('st') || ((e.type === 'series' || e.type === 'artist') && !e.fetched_at)) {
           fetch('/api/data.php?a=refresh&id=' + id, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
             .then(function (x) { return x.json(); }).then(function (x) {
               if (x.ok) { load(function () { entry(id); }); } else { var st = document.getElementById('st'); if (st) st.textContent = x.msg || x.error; }
