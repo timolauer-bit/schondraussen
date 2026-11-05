@@ -7,13 +7,15 @@ if (empty($u['approved'])) json_out(['error' => 'Dein Konto wartet auf Freischal
 $pdo = db(); $a = $_GET['a'] ?? '';
 
 if ($a === 'list') {
-    $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.fetched_at,
+    $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
         (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
         (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming
         FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? ORDER BY s.name");
     $s->execute([$u['id']]);
-    json_out(['entries' => $s->fetchAll()]);
+    $rows = $s->fetchAll();
+    foreach ($rows as &$r) { $r['genres'] = json_decode($r['genres'] ?: '[]', true) ?: []; }
+    json_out(['entries' => $rows]);
 }
 if ($a === 'calendar') {
     $s = $pdo->prepare("SELECT r.id,r.title,r.release_date,r.kind,s.id AS subject_id,s.name,s.type

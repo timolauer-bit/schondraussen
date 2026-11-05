@@ -41,7 +41,7 @@
     if (S.admin) h += '<button class="nav rg" data-c="users" ' + (cat === 'users' ? 'aria-current="page"' : '') + '>Nutzer' + (pend ? '<span class="badge">' + pend + '</span>' : '') + '</button>';
     h += '<button class="nav' + (S.admin ? '' : ' rg') + '" data-c="set" ' + (cat === 'set' ? 'aria-current="page"' : '') + '>Einstellungen</button>';
     topbar.innerHTML = h;
-    topbar.querySelectorAll('.nav').forEach(function (b) { b.onclick = function () { cat = b.dataset.c; sel = null; adding = false; q = ''; render(); }; });
+    topbar.querySelectorAll('.nav').forEach(function (b) { b.onclick = function () { cat = b.dataset.c; sel = null; adding = false; q = ''; genre = ''; pop = false; render(); }; });
   }
   function render() { nav(); if (cat === 'cal') return calendar(); if (cat === 'users') return users(); if (cat === 'set') return settings(); listView(); }
 
@@ -53,24 +53,44 @@
     else c.sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); });
     return c;
   }
+  var genre = '', pop = false;
+  var SORTS = [['name', 'A–Z'], ['next', 'Nächster Termin zuerst'], ['count', 'Meiste Termine zuerst']];
+  function genreList() {
+    var s = {}; all.filter(function (e) { return e.type === cat; }).forEach(function (e) { (e.genres || []).forEach(function (g) { s[g] = (s[g] || 0) + 1; }); });
+    return Object.keys(s).sort(function (a, b) { return s[b] - s[a] || a.localeCompare(b, 'de'); }).slice(0, 40);
+  }
   function listView() {
     var plural = CATS.filter(function (c) { return c[0] === cat; })[0];
-    view.innerHTML = '<div class="layout has-rail"><aside class="rail cat-' + cat + '"><div class="label">' + plural[1] + '</div><div class="railtools">' +
-      '<input type="search" id="q" placeholder="Suchen …" value="' + esc(q) + '" aria-label="Suchen"><div class="tools2"><select id="srt" aria-label="Sortieren"><option value="name">A–Z</option><option value="next">Nächster Termin</option><option value="count">Meiste Termine</option></select>' +
-      '<button class="btn small" id="addbtn" type="button">+ Neu</button></div><div id="addbox"></div></div><div class="list" id="list"></div></aside><section class="main" id="main"></section></div>';
-    document.getElementById('srt').value = sort;
+    view.innerHTML = '<div class="layout has-rail"><aside class="rail" id="rail" data-cat="' + cat + '" style="--cc:var(--c-' + cat + ')"><div class="label">' + plural[1] + '</div>' +
+      '<div><div class="srchrow"><input type="search" id="q" placeholder="Suchen …" value="' + esc(q) + '" aria-label="Suchen"><button class="filtbtn" id="filtbtn" type="button" aria-label="Filtern und sortieren" aria-expanded="false">' +
+      '<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="fbadge" id="fbadge" hidden></span></button><div class="filtpop" id="filtpop" hidden></div></div><div class="fchips" id="fchips" style="margin-top:8px"></div></div>' +
+      '<div class="addrow"><button class="btn small" id="addbtn" type="button">+ ' + plural[2] + ' hinzufügen</button></div><div id="addbox"></div><div class="list" id="list"></div></aside><section class="main" id="main"></section></div>';
     document.getElementById('q').oninput = function () { q = this.value; rows(); };
-    document.getElementById('srt').onchange = function () { sort = this.value; rows(); };
+    document.getElementById('filtbtn').onclick = function (ev) { ev.stopPropagation(); pop = !pop; filt(); };
     document.getElementById('addbtn').onclick = function () { adding = !adding; addForm(); };
-    rows(); mainPane(); if (adding) addForm();
+    document.getElementById('filtpop').onclick = function (ev) { ev.stopPropagation(); };
+    document.addEventListener('click', function () { if (pop) { pop = false; filt(); } });
+    filt(); rows(); mainPane(); if (adding) addForm();
+  }
+  function filt() {
+    var p = document.getElementById('filtpop'); if (!p) return;
+    var n = (sort !== 'name' ? 1 : 0) + (genre ? 1 : 0), gs = genreList();
+    var bd = document.getElementById('fbadge'); bd.hidden = !n; bd.textContent = n;
+    document.getElementById('filtbtn').setAttribute('aria-expanded', pop);
+    document.getElementById('fchips').innerHTML = (sort !== 'name' ? '<span class="fchip">' + esc(SORTS.filter(function (s) { return s[0] === sort; })[0][1]) + '</span>' : '') + (genre ? '<span class="fchip">' + esc(genre) + '</span>' : '');
+    p.hidden = !pop; if (!pop) return;
+    p.innerHTML = '<div class="label">Sortieren</div>' + SORTS.map(function (s) { return '<button type="button" class="fopt" data-s="' + s[0] + '" aria-pressed="' + (sort === s[0]) + '">' + s[1] + '</button>'; }).join('') +
+      (gs.length ? '<div class="label">Genre</div><select id="gsel" aria-label="Genre"><option value="">Alle Genres</option>' + gs.map(function (g) { return '<option' + (g === genre ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join('') + '</select>' : '');
+    p.querySelectorAll('.fopt').forEach(function (b) { b.onclick = function () { sort = b.dataset.s; filt(); rows(); }; });
+    var gsel = document.getElementById('gsel'); if (gsel) gsel.onchange = function () { genre = this.value; filt(); rows(); };
   }
   function rows() {
-    var l = sorted(all.filter(function (e) { return e.type === cat && (!q || e.name.toLowerCase().indexOf(q.toLowerCase()) >= 0); }));
+    var l = sorted(all.filter(function (e) { return e.type === cat && (!q || e.name.toLowerCase().indexOf(q.toLowerCase()) >= 0) && (!genre || (e.genres || []).indexOf(genre) >= 0); }));
     var box = document.getElementById('list');
-    if (!l.length) { box.innerHTML = '<p class="hint">' + (q ? 'Nichts gefunden.' : 'Noch nichts in dieser Liste.') + '</p>'; return; }
+    if (!l.length) { box.innerHTML = '<p class="hint">' + (q || genre ? 'Nichts gefunden.' : 'Noch nichts in dieser Liste.') + '</p>'; return; }
     box.innerHTML = l.map(function (e) {
-      var tp = !e.fetched_at ? 'noch nicht geladen' : e.next_date ? 'nächster Termin ' + fd(e.next_date) : e.works ? e.works + ' Werke' : 'keine Termine';
-      return '<button class="row-btn cat-' + e.type + '" data-id="' + e.id + '" ' + (sel == e.id ? 'aria-current="true"' : '') + '><span class="nm">' + esc(e.name) + '</span><span class="tp">' + esc(tp) + '</span>' + (e.next_date ? '<span class="ct badge">' + e.upcoming + '</span>' : '') + '</button>';
+      var tp = !e.fetched_at ? 'noch nicht geladen' : e.next_date ? 'nächster Termin ' + fd(e.next_date) : e.works ? e.works + (e.type === 'series' ? ' Staffeln' : ' Werke') : 'keine Termine';
+      return '<button class="row-btn" data-id="' + e.id + '" ' + (sel == e.id ? 'aria-current="true"' : '') + '><span class="nm">' + esc(e.name) + '</span><span class="tp">' + esc(tp) + '</span>' + (e.next_date ? '<span class="ct" title="Kommende Veröffentlichungen">' + e.upcoming + '</span>' : '') + '</button>';
     }).join('');
     box.querySelectorAll('.row-btn').forEach(function (b) { b.onclick = function () { sel = b.dataset.id; rows(); mainPane(); if (window.innerWidth < 900) document.getElementById('main').scrollIntoView({ behavior: 'smooth' }); }; });
   }
@@ -87,9 +107,10 @@
     m.innerHTML = '<p class="state">Lade …</p>';
     get('a=entry&id=' + id).then(function (r) {
       if (!r.entry) { m.innerHTML = '<p class="state msg err">' + esc(r.error) + '</p>'; return; }
-      var e = r.entry, h = '<article class="card cat-' + e.type + '"><div class="card-head"><div><h2>' + esc(e.name) + '</h2><div class="meta">' + ico(e.type) + typeLabel(e.type) +
-        (e.total_works ? ' · ' + e.total_works + (e.type === 'series' ? ' Staffeln' : ' Werke') : '') + '</div></div><div class="actions"><button class="btn warn small" id="rm" type="button">Aus meiner Liste entfernen</button></div></div>';
+      var e = r.entry, nw = e.total_works, h = '<article class="card cat-' + e.type + '" style="--cc:var(--c-' + e.type + ')"><div class="card-head"><div class="ch1"><div class="meta"><span class="mcat">' + ico(e.type) + typeLabel(e.type) + '</span>' +
+        (nw ? '<span class="mbadge">' + nw + (e.type === 'series' ? ' Staffeln' : ' Werke') + '</span>' : '') + (r.releases.length ? '<span class="mbadge">' + r.releases.length + ' kommend</span>' : '') + '</div><h2>' + esc(e.name) + '</h2>';
       if ((e.genres || []).length) h += '<div class="gchips">' + e.genres.map(function (g) { return '<span class="gchip">' + esc(g) + '</span>'; }).join('') + '</div>';
+      h += '</div><div class="actions"><button class="btn warn small" id="rm" type="button">Aus meiner Liste entfernen</button></div></div>';
       if (e.summary) h += '<p class="sum">' + esc(e.summary) + '</p>';
       if (!e.fetched_at && e.type !== 'film') h += '<p class="state pulse" id="st">Daten werden geladen …</p>';
       else if (e.type === 'film') h += '<p class="hint">Für Filme wird die Datenquelle noch angebunden.</p>';
