@@ -135,7 +135,7 @@
     else if (p.prec === 'month') left = h('div', { class: 'day soft' }, cal ? 'Tag offen' : MONTH.format(p.start));
     else if (p.prec === 'none') left = h('div', { class: 'day soft' }, 'offen'); else left = h('div', { class: 'day soft' }, String(p.y));
     var diff = Math.round((p.start - now) / 864e5), soon = p.prec === 'day' && diff <= 60 && diff >= 0 ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : '';
-    var sub = h('div', { class: 'sub' }, h('b', null, it.e.name), it.u.kind ? ' · ' + it.u.kind : '', it.u.note ? ' · ' + it.u.note : '');
+    var sub = h('div', { class: 'sub' }, h('b', null, it.e.name), it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '', it.u.note ? ' · ' + it.u.note : '');
     return h('div', { class: 'rel' + (cal ? '' : ' wide hasacts') }, left,
       cal ? h('div', null, h('div', { class: 'ttl' }, nameLink(it.e)), h('div', { class: 'sub line2' }, it.u.title + (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : '')), soon ? h('div', { class: 'soon' }, soon) : null)
           : h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
