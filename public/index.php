@@ -33,13 +33,19 @@ h3{margin:18px 0 6px;font-size:15px}
 </head><body>
 <?php if ($app): ?>
 <div class="wrap">
-  <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort.</p></div>
-  <span class="who">Mitglied Nr. <?= (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></span></header>
+  <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
+  <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>Mitglied Nr. <?= (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></button><button class="ver" id="ver" type="button"></button></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
   <div id="appview"></div>
-  <footer><p>Testbetrieb – die Seite ist noch nicht öffentlich.</p><p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p></footer>
+  <footer>
+    <p>Testbetrieb: Die Seite ist noch nicht öffentlich.</p>
+    <p>Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links mit Partner-ID sind Werbelinks; für dich ändert sich der Preis nicht.</p>
+    <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Künstler:innen) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Autor:innen). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Termine bitte vor dem Kauf prüfen.</p>
+    <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
+  </footer>
 </div>
 <script>window.SD = <?= json_encode(['admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1]) ?>;</script>
+<script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
 <main>

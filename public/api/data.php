@@ -10,12 +10,17 @@ if ($a === 'list') {
     $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
         (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
-        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming
+        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming,
+        s.total_works,
+        (SELECT MAX(w.year) FROM works w WHERE w.subject_id=s.id) AS last_year,
+        (SELECT SUM(CAST(SUBSTRING_INDEX(w.note,' ',1) AS UNSIGNED)) FROM works w WHERE w.subject_id=s.id AND w.kind='Staffel') AS episodes
         FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? ORDER BY s.name");
     $s->execute([$u['id']]);
     $rows = $s->fetchAll();
     foreach ($rows as &$r) { $r['genres'] = json_decode($r['genres'] ?: '[]', true) ?: []; }
-    json_out(['entries' => $rows]);
+    $site = ['tag' => '', 'domain' => 'amazon.de'];
+    try { foreach ($pdo->query('SELECT k,v FROM site_settings')->fetchAll() as $r) $site[$r['k']] = $r['v']; } catch (Throwable $e) {}
+    json_out(['entries' => $rows, 'site' => $site]);
 }
 if ($a === 'calendar') {
     $s = $pdo->prepare("SELECT r.id,r.title,r.release_date,r.kind,s.id AS subject_id,s.name,s.type
@@ -69,8 +74,8 @@ if ($a === 'search') {
 if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $type = $b['type'] ?? ''; $name = trim(preg_replace('/\s+/', ' ', (string) ($b['name'] ?? '')));
     if (!in_array($type, $TYPES, true) || $name === '' || mb_strlen($name) > 190) json_out(['error' => 'Bitte einen Namen eingeben.'], 422);
-    $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries WHERE user_id=?'); $n->execute([$u['id']]);
-    if ((int) $n->fetchColumn() >= 500) json_out(['error' => 'Die Liste ist voll (500 Einträge).'], 422);
+    $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
+    if ((int) $n->fetchColumn() >= 100) json_out(['error' => 'Du hast die Grenze von 100 Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
     foreach (['tvmaze' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
