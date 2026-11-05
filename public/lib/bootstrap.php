@@ -36,9 +36,13 @@ function body(): array {
 function current_user(): ?array {
     start_session();
     if (empty($_SESSION['uid'])) return null;
-    $s = db()->prepare('SELECT id,email,role,city,skin FROM users WHERE id=? AND email_verified_at IS NOT NULL');
+    $s = db()->prepare('SELECT * FROM users WHERE id=? AND email_verified_at IS NOT NULL');
     $s->execute([$_SESSION['uid']]);
-    return $s->fetch() ?: null;
+    $u = $s->fetch();
+    if (!$u) return null;
+    unset($u['pass_hash']);
+    $u['approved'] = $u['role'] === 'admin' || !empty($u['approved_at']);
+    return $u;
 }
 
 function client_ip(): string { return substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45); }

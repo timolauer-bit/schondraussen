@@ -25,6 +25,10 @@ $M = [
      KEY idx_ip_at (ip, kind, at)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '002_approval' => [
+  "ALTER TABLE users ADD COLUMN approved_at DATETIME NULL",
+  "UPDATE users SET approved_at=NOW() WHERE role='admin'",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

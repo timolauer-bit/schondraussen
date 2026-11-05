@@ -3,6 +3,7 @@ require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/sources.php';
 $u = current_user();
 if (!$u) json_out(['error' => 'Bitte anmelden.'], 401);
+if (empty($u['approved'])) json_out(['error' => 'Dein Konto wartet auf Freischaltung.', 'pending' => true], 403);
 $pdo = db(); $a = $_GET['a'] ?? '';
 
 if ($a === 'list') {

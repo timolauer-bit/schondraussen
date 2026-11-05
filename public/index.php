@@ -24,17 +24,25 @@ button.ghost{margin:0;background:none;color:var(--ink);border:1px solid var(--li
 .dot{display:inline-block;background:#d93025;color:#fff;border-radius:99px;font-size:12px;min-width:20px;text-align:center;padding:1px 6px}
 .d{display:inline-block;min-width:92px;color:var(--muted);font-size:13px}.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:1px 9px;font-size:12px;color:var(--muted);margin:0 4px 4px 0}
 h3{margin:18px 0 6px;font-size:15px}
+.note{background:var(--bg);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}.row2{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.row2 button{margin:0}button.danger{color:#b62520;border-color:#b62520}
 </style></head><body>
 <main<?= $u ? ' class="wide"' : '' ?>>
 <h1>Schondraussen<span>.de</span></h1>
 <p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort.</p>
 <?php if ($u): ?>
+<?php if (empty($u['approved'])): ?>
+  <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars($u['email']) ?></b>.</p>
+  <p><b>Dein Konto wartet auf Freischaltung.</b> Die Seite ist noch im Testbetrieb. Sobald der Admin dich freigeschaltet hat, siehst du hier deine Listen. Schau später einfach noch einmal vorbei.</p>
+  <button id="logout" type="button" class="ghost">Abmelden</button></div>
+<?php else: ?>
   <div id="app" class="card" style="max-width:none">
     <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><span class="muted"><?= htmlspecialchars($u['email']) ?><?= $u['role'] === 'admin' ? ' (Admin)' : '' ?></span><button id="logout" type="button" class="ghost">Abmelden</button></div>
     <nav id="tabs"></nav><div id="view"></div>
   </div>
+<?php endif; ?>
 <?php else: ?>
   <div class="card">
+    <div class="note"><b>Testbetrieb:</b> Diese Seite ist noch nicht öffentlich. Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
     <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
       <label for="le">E-Mail-Adresse</label><input id="le" type="email" autocomplete="email" required>
       <label for="lp">Passwort</label><input id="lp" type="password" autocomplete="current-password" required>
@@ -80,20 +88,23 @@ h3{margin:18px 0 6px;font-size:15px}
 
   var tabsEl = document.getElementById('tabs');
   if (tabsEl) (function () {
+    var ADMIN = <?= json_encode($u['role'] === 'admin') ?>, pend = 0;
     var T = [['author', 'Autoren'], ['artist', 'Künstler'], ['film', 'Filme'], ['series', 'Serien'], ['cal', 'Termine']];
+    if (ADMIN) T.push(['users', 'Nutzer']);
     var cat = 'series', all = [], view = document.getElementById('view');
     function esc(x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
     function fd(d) { if (!d) return 'Termin offen'; var p = d.split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : p.length === 2 ? p[1] + '.' + p[0] : d; }
     function get(q) { return fetch('/api/data.php?' + q, { credentials: 'same-origin' }).then(function (r) { return r.json(); }); }
     function tabs() {
       tabsEl.innerHTML = T.map(function (t) {
-        var n = t[0] === 'cal' ? '' : ' ' + all.filter(function (e) { return e.type === t[0]; }).length;
+        var n = t[0] === 'cal' ? '' : t[0] === 'users' ? (pend ? ' <span class="dot">' + pend + '</span>' : '') : ' ' + all.filter(function (e) { return e.type === t[0]; }).length;
         return '<button data-c="' + t[0] + '" class="' + (t[0] === cat ? 'on' : '') + '">' + t[1] + n + '</button>';
       }).join('');
       tabsEl.querySelectorAll('button').forEach(function (b) { b.onclick = function () { cat = b.dataset.c; tabs(); show(); }; });
     }
     function show() {
       if (cat === 'cal') return calendar();
+      if (cat === 'users') return users();
       var l = all.filter(function (e) { return e.type === cat; });
       if (!l.length) { view.innerHTML = '<p class="muted">Hier ist noch nichts.</p>'; return; }
       view.innerHTML = l.map(function (e) {
@@ -102,6 +113,27 @@ h3{margin:18px 0 6px;font-size:15px}
           '</span></span>' + (e.next_date ? '<span class="dot">' + e.upcoming + '</span>' : '') + '</div>';
       }).join('');
       view.querySelectorAll('.it').forEach(function (x) { x.onclick = function () { entry(x.dataset.id); }; });
+    }
+    function adm(a, id) { return fetch('/api/admin.php?a=' + a, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }).then(function (r) { return r.json(); }); }
+    function users() {
+      view.innerHTML = '<p class="muted">Lade …</p>';
+      fetch('/api/admin.php?a=users', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (r) {
+        var l = r.users || []; pend = l.filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; tabs();
+        view.innerHTML = l.map(function (x) {
+          var ok = x.role === 'admin' || x.approved_at, me = x.id == r.me;
+          return '<div class="it" style="cursor:default;align-items:flex-start"><span><b>' + esc(x.email) + '</b>' + (x.role === 'admin' ? ' <span class="chip">Admin</span>' : '') +
+            '<br><span class="muted">' + (ok ? 'Freigeschaltet' : '<b style="color:var(--accent)">Wartet auf Freischaltung</b>') + (x.email_verified_at ? '' : ' · E-Mail nicht bestätigt') +
+            ' · ' + x.entries + ' Einträge · registriert ' + esc((x.created_at || '').slice(0, 10)) + '</span>' +
+            (me ? '' : '<div class="row2">' + (ok ? (x.role === 'admin' ? '' : '<button class="ghost" data-a="revoke" data-id="' + x.id + '">Sperren</button>') : '<button data-a="approve" data-id="' + x.id + '" style="padding:6px 12px;font-size:14px">Freischalten</button>') +
+              (x.role === 'admin' ? '' : '<button class="ghost danger" data-a="delete" data-id="' + x.id + '">Löschen</button>') + '</div>') + '</span></div>';
+        }).join('');
+        view.querySelectorAll('button[data-a]').forEach(function (b) {
+          b.onclick = function () {
+            if (b.dataset.a === 'delete' && !confirm('Konto samt Liste wirklich löschen?')) return;
+            adm(b.dataset.a, +b.dataset.id).then(function (x) { if (x.ok) users(); else alert(x.error); });
+          };
+        });
+      });
     }
     function calendar() {
       view.innerHTML = '<p class="muted">Lade …</p>';
@@ -137,6 +169,7 @@ h3{margin:18px 0 6px;font-size:15px}
     }
     function load(cb) { get('a=list').then(function (r) { all = r.entries || []; tabs(); if (cb) cb(); else show(); }); }
     load();
+    if (ADMIN) fetch('/api/admin.php?a=users', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (r) { pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; tabs(); });
   })();
   var lo = document.getElementById('logout');
   if (lo) lo.addEventListener('click', function () { api('logout').then(function () { location.reload(); }); });

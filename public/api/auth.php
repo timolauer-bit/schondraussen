@@ -61,8 +61,15 @@ try {
             $first = (int) $pdo->query('SELECT COUNT(*) c FROM users')->fetch()['c'] === 0;
             $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']);
             link_mail($pdo, (int) $pdo->lastInsertId(), $email, 'verify');
+            if ($first) { try { $pdo->exec("UPDATE users SET approved_at=NOW() WHERE role='admin'"); } catch (Throwable $e) {} }
+            else {
+                try {
+                    foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
+                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\n$email\n\nDas Konto sieht keine Inhalte, bis du es in der Nutzerverwaltung freischaltest:\n" . rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/') . "/\n");
+                } catch (Throwable $e) {}
+            }
         }
-        json_out(['ok' => true, 'message' => 'Fast geschafft: Wir haben dir eine Mail mit einem Bestätigungslink geschickt.']);
+        json_out(['ok' => true, 'message' => 'Fast geschafft: Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Nach der Bestätigung schaltet der Admin dein Konto frei (Testbetrieb).']);
     }
 
     if ($a === 'login') {
