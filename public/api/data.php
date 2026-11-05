@@ -22,6 +22,12 @@ if ($a === 'calendar') {
     $s->execute([$u['id']]);
     json_out(['releases' => $s->fetchAll()]);
 }
+if ($a === 'skin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $sk = body()['skin'] ?? '';
+    $sk = in_array($sk, ['light', 'dark', 'paper', 'cinema', 'mint', 'eighties'], true) ? $sk : null;
+    $pdo->prepare('UPDATE users SET skin=? WHERE id=?')->execute([$sk, $u['id']]);
+    json_out(['ok' => true]);
+}
 $TYPES = ['author', 'artist', 'film', 'series'];
 if ($a === 'search') {
     $type = $_GET['type'] ?? ''; $q = trim((string) ($_GET['q'] ?? ''));
