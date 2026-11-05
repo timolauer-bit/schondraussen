@@ -7,7 +7,7 @@ return [
         'user' => 'dXXXXXXX',
         'pass' => '***',
     ],
-    'base_url' => 'https://test.schondraussen.de',
+    'base_url' => 'https://schondraussen.de',
     'tmdb_key' => '',
     'mail' => [
         'from'      => 'benachrichtigung@schondraussen.de',
