@@ -128,7 +128,8 @@
     ORDER.forEach(function (k) { topbar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
     var rg = ' rg';
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
-    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg), feat('feat') ? btn('feat', 'Featurewünsche', 0, ' feat') : null);
+    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
+    if (feat('feat')) topbar.append(btn('feat', 'Featurewünsche', 0, ' feat'));
     if (isAlpha()) topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
     topbar.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
