@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 7, d: '06.11.2026', t: [
+    'O|Einstellungen: „Beispieleinträge“ entfernt (leere Listen zeigen stattdessen beliebte Vorschläge); der Import bleibt',
     'U|„Featurewünsche“ heißen jetzt „Ideen“ (Reiter, Liste, Auswahl im Kontakt und Mails)',
     'U|Info: Unter „Wann werden Einträge erneuert?“ steht für alle eine grobe Angabe, wann zuletzt aktualisiert wurde (zum Beispiel „vor etwa 2 Stunden“)',
     'U|Obere Leiste mit Rahmen und abgerundeten Ecken wie die übrigen Karten',

@@ -522,10 +522,6 @@
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benachrichtigungen'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'), opts,
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
-    var sm = h('span', { class: 'msg', style: 'margin:0' }), sbtn = [];
-    function sample(mode) { sm.className = 'msg'; sm.textContent = 'Einen Moment …'; api('/api/data.php?a=samples', { mode: mode }).then(function (r) { if (!r.ok) { sm.className = 'msg err'; sm.textContent = r.msg || 'Das hat nicht geklappt.'; return; } D.sample_asked = 1; sm.textContent = mode === 'add' ? (r.added ? pl(r.added, 'Beispieleintrag', 'Beispieleinträge') + ' angelegt.' : 'Alle Beispiele stehen schon auf deiner Liste.') : (r.removed ? pl(r.removed, 'Beispieleintrag', 'Beispieleinträge') + ' entfernt.' : 'Es sind keine Beispieleinträge vorhanden.'); load(function () { nav(); }); }); }
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Beispieleinträge'), h('p', { class: 'hint' }, 'Legt bis zu 10 Beispieleinträge je Kategorie an. Was schon auf deiner Liste steht, wird nicht doppelt angelegt. „Entfernen“ löscht nur die Einträge, die auf diesem Weg angelegt wurden, eigene bleiben. Für Beispiele bekommst du keine Mails.'),
-      h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { sample('add'); } }, 'Beispieleinträge hinzufügen'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { sample('remove'); } }, 'Beispieleinträge entfernen'), sm)));
     var imp = h('div', { class: 'wide2' }), ifile = h('input', { type: 'file', accept: '.json,.csv,.txt,text/plain,application/json,text/csv', 'aria-label': 'Datei laden' }), itext = h('textarea', { rows: '6', 'aria-label': 'Namen, einer pro Zeile', placeholder: 'Radiohead\nBlind Guardian\nNightwish', style: 'width:100%;margin-top:8px' }), imsg = h('span', { class: 'msg', style: 'margin:0' }), ipanel = h('div', { hidden: true, style: 'margin-top:10px' });
     function splitCsv(l, dl) { var o = [], cur = '', q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === dl && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; }
     function namesFrom(text, fname) {
@@ -575,10 +571,10 @@
       box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Konto löschen'), h('p', { class: 'hint' }, 'Du kannst dein Konto samt aller Einträge jederzeit löschen lassen.'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { dbox.hidden = !dbox.hidden; if (!dbox.hidden) pw.focus(); } }, 'Konto löschen …'), dbox));
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
-    st.append(setCard('Profil', [K[0], K[1]]), setCard('Darstellung', [K[2]], 'solo'), setCard('Benachrichtigungen', [K[3]], 'solo'), setCard('Beispieleinträge und Import', [K[4], K[5]]));
-    if (K[8]) K[8].classList.add('dangerzone');
-    st.append(setCard('Privatsphäre', [K[6], K[7]], 'solo'));
-    if (K[8]) st.append(setCard('Konto löschen', [K[8]], 'danger solo'));
+    st.append(setCard('Profil', [K[0], K[1]]), setCard('Darstellung', [K[2]], 'solo'), setCard('Benachrichtigungen', [K[3]], 'solo'), setCard('Import', [K[4]], 'solo'));
+    if (K[7]) K[7].classList.add('dangerzone');
+    st.append(setCard('Privatsphäre', [K[5], K[6]], 'solo'));
+    if (K[7]) st.append(setCard('Konto löschen', [K[7]], 'danger solo'));
     p.append(st); mainEl.append(p);
   }
 
