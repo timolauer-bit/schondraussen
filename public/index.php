@@ -43,6 +43,7 @@ button.ghost{margin:0;background:none;color:var(--ink);border:1px solid var(--li
 .dot{display:inline-block;background:#d93025;color:#fff;border-radius:99px;font-size:12px;min-width:20px;text-align:center;padding:1px 6px}
 .d{display:inline-block;min-width:92px;color:var(--muted);font-size:13px}.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:1px 9px;font-size:12px;color:var(--muted);margin:0 4px 4px 0}
 h3{margin:18px 0 6px;font-size:15px}
+.pitch{margin:22px 0 6px}.pitch h2{font-size:20px;margin:0 0 6px}.pitch ul{padding-left:20px;margin:8px 0}.pitch li{margin:4px 0}.pitch .fine{color:var(--muted);font-size:14px}
 .note{background:var(--bg);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}.row2{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.row2 button{margin:0}button.danger{color:#b62520;border-color:#b62520}
 </style>
 <?php endif; ?>
@@ -83,6 +84,7 @@ h3{margin:18px 0 6px;font-size:15px}
 <?php endif; ?>
 <?php else: ?>
   <div class="card">
+    <!-- HINWEIS-FREISCHALTUNG: Testbetrieb-Hinweis zum Start entfernen -->
     <div class="note"><b>Testbetrieb:</b> Diese Seite ist noch nicht öffentlich. Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
     <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
       <label for="le">E-Mail-Adresse</label><input id="le" type="email" autocomplete="email" required>
@@ -107,6 +109,19 @@ h3{margin:18px 0 6px;font-size:15px}
       <button type="submit">Passwort speichern</button></form>
     <div class="msg" id="msg" role="status"></div>
   </div>
+  <section class="pitch" aria-labelledby="pitch-h">
+    <h2 id="pitch-h">Nie wieder eine Neuerscheinung verpassen</h2>
+    <p>Trag deine Lieblingskünstler:innen, Autor:innen, Filme und Serien ein, kostenlos. Schondraussen.de zeigt dir, was sie schon veröffentlicht haben, und sagt dir Bescheid, sobald etwas Neues angekündigt wird.</p>
+    <ul>
+      <li><b>Alles an einem Ort:</b> Alben, Bücher, Filme und Serienstaffeln übersichtlich pro Eintrag.</li>
+      <li><b>Kalender:</b> Alle kommenden Veröffentlichungen auf einen Blick, bei Serien mit den einzelnen Folgen.</li>
+      <li><b>Erinnerung per Mail:</b> Du wählst selbst, ob du bei der Ankündigung, am Erscheinungstag oder als Wochenübersicht informiert wirst.</li>
+    </ul>
+    <p>Registrieren, Einträge hinzufügen, fertig. Du wählst einen Benutzernamen, und dein Konto lässt sich jederzeit selbst löschen.</p>
+    <!-- HINWEIS-FREISCHALTUNG: Absatz zum Start der Seite entfernen (zusammen mit der Freischaltung) -->
+    <p class="fine">Dein Konto wird kurz geprüft und von Hand freigeschaltet, bevor du Inhalte siehst.</p>
+    <!-- /HINWEIS-FREISCHALTUNG -->
+  </section>
   <?php if ($shots): ?><section class="shots" aria-labelledby="shots-h">
     <h2 id="shots-h">So sieht es aus</h2>
     <div class="thumbs">
