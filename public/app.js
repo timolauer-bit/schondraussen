@@ -136,10 +136,12 @@
     else if (p.prec === 'none') left = h('div', { class: 'day soft' }, 'offen'); else left = h('div', { class: 'day soft' }, String(p.y));
     var diff = Math.round((p.start - now) / 864e5), soon = p.prec === 'day' && diff <= 60 && diff >= 0 ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : '';
     var sub = h('div', { class: 'sub' }, h('b', null, it.e.name), it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '', it.u.note ? ' · ' + it.u.note : '');
-    return h('div', { class: 'rel' + (cal ? '' : ' wide hasacts') }, left,
-      cal ? h('div', null, h('div', { class: 'ttl' }, nameLink(it.e)), h('div', { class: 'sub line2' }, it.u.title + (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : '')), soon ? h('div', { class: 'soon' }, soon) : null)
-          : h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
-      cal ? null : h('div', { class: 'acts' }, amazonLink(it.e, it.u.title)));
+    var kindTxt = (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : '');
+    if (cal) return h('div', { class: 'rel calrow c-' + it.e.type }, h('i', { class: 'cbar', 'aria-hidden': 'true' }), left,
+      h('div', null, h('div', { class: 'ttl' }, it.u.title), h('div', { class: 'sub' }, nameLink(it.e), kindTxt), soon ? h('div', { class: 'soon' }, soon) : null));
+    return h('div', { class: 'rel wide hasacts' }, left,
+      h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
+      h('div', { class: 'acts' }, amazonLink(it.e, it.u.title)));
   }
   function nameLink(e) { return h('button', { class: 'namelink', type: 'button', title: 'Seite von ' + e.name + ' öffnen', onclick: function () { S.view = 'list'; S.cat = e.type; S.sel = String(e.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, e.name); }
   function groupByMonth(items) {

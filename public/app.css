@@ -183,3 +183,12 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .work .stat{font:500 12px var(--font-mono);white-space:nowrap}.season-foot{padding:10px 0 4px;border-top:1px solid var(--line)}
 
 .whorow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+/* Kalender: kompakte Zeilen mit Kategorie-Balken */
+.month .rel.calrow{grid-template-columns:5px 84px minmax(0,1fr);gap:2px 12px;padding:6px 0;align-items:center}
+.rel.calrow .cbar{align-self:stretch;min-height:30px;border-radius:999px;background:var(--muted)}
+.rel.calrow.c-author .cbar{background:var(--c-author)}.rel.calrow.c-artist .cbar{background:var(--c-artist)}.rel.calrow.c-film .cbar{background:var(--c-film)}.rel.calrow.c-series .cbar{background:var(--c-series)}
+.rel.calrow .ttl{font-size:14.5px;font-weight:600}.rel.calrow .sub{font-size:12.5px;color:var(--muted)}
+.rel.calrow .namelink{font:inherit;font-weight:700;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.rel.calrow .namelink:hover{color:var(--accent)}
+.rel.calrow .day{font-size:15px}.rel.calrow .dow{font-size:10px;margin-top:1px}

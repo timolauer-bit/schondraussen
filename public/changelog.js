@@ -2,6 +2,7 @@ window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
     'Konto löschen in den Einstellungen: Die Daten bleiben noch eine Woche gespeichert, in dieser Zeit lässt sich die Löschung abbrechen, danach wird alles endgültig gelöscht',
     'Abmelden steht jetzt oben rechts neben der Versionsangabe',
+    'Kalender: kompaktere Zeilen wie in den Übersichten, mit schmalem Balken in der Farbe der Kategorie',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
