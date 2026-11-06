@@ -36,6 +36,7 @@ h3{margin:18px 0 6px;font-size:15px}
   <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
   <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>Mitglied Nr. <?= (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
+  <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
   <div id="appview"></div>
   <footer>
     <p>Testbetrieb: Die Seite ist noch nicht öffentlich.</p>

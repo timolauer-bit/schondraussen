@@ -1,4 +1,5 @@
 <?php
+function email_blocked(PDO $pdo, string $email): bool { try { $s = $pdo->prepare('SELECT 1 FROM blocked_emails WHERE email=?'); $s->execute([$email]); return (bool) $s->fetchColumn(); } catch (Throwable $e) { return false; } }
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/mail.php';
 start_session();
@@ -57,7 +58,7 @@ try {
         if ($ex) {
             // Keine Auskunft, ob die Adresse schon existiert; unbestätigte Konten bekommen den Link erneut.
             if (!$ex['email_verified_at']) link_mail($pdo, (int) $ex['id'], $email, 'verify');
-        } else {
+        } elseif (!email_blocked($pdo, $email)) {
             $first = (int) $pdo->query('SELECT COUNT(*) c FROM users')->fetch()['c'] === 0;
             $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']);
             link_mail($pdo, (int) $pdo->lastInsertId(), $email, 'verify');

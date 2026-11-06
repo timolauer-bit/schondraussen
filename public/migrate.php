@@ -75,6 +75,12 @@ $M = [
   "ALTER TABLE users ADD COLUMN n_new TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN n_day TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN n_week TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN n_mode VARCHAR(8) NOT NULL DEFAULT 'digest', ADD COLUMN n_weekday TINYINT NOT NULL DEFAULT 1, ADD COLUMN bell_default TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN last_morning DATE NULL, ADD COLUMN last_weekly DATE NULL",
   "ALTER TABLE notified MODIFY kind ENUM('new','soon','day') NOT NULL",
  ],
+  '008_blocked_emails' => [
+  "CREATE TABLE IF NOT EXISTS blocked_emails (
+     email VARCHAR(190) NOT NULL PRIMARY KEY,
+     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);
