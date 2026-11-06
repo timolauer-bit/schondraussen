@@ -333,3 +333,11 @@ button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}
 .setcard.danger{border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
 .setcard.danger>h3{border-bottom-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
 .setcard .msg:empty{display:none}
+
+/* Kontakt: Unterhaltung und Eingabe klar trennen */
+.chat{gap:16px}
+.setcard .chatlog{border:0;box-shadow:none;background:color-mix(in srgb,var(--accent-soft) 38%,var(--bg));min-height:140px}
+.chatempty{margin:auto;text-align:center;color:var(--muted);font-size:14px;line-height:1.5;max-width:34ch}
+.chatempty b{color:var(--ink)}
+.setcard.composer{border-color:var(--accent)}
+.setcard.composer>h3{border-bottom-color:var(--accent-soft)}

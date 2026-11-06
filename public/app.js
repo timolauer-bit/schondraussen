@@ -658,9 +658,10 @@
     }
     function pull() {
       var go2 = function () {
-        if (admin && !S.sup.sel) { log.textContent = ''; return; }
+        if (admin && !S.sup.sel) { log.textContent = ''; log.append(h('p', { class: 'chatempty' }, 'Wähle links eine Unterhaltung.')); return; }
         api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
+          if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), admin ? 'Der Nutzer hat noch nichts geschrieben.' : 'Schreibe unten deine erste Nachricht. Antworten des Administrators erscheinen hier.'));
           (r.messages || []).forEach(function (m) { var mine = admin ? +m.from_admin === 1 : +m.from_admin === 0;
             log.append(h('div', { class: 'bub ' + (mine ? 'me' : 'them') }, m.body, (m.images || []).map(function (id) { return picLink(id, 'inchat'); }), h('small', null, fmtChat(m.created_at), mine ? h('span', { class: 'ticks' + (m.read_at ? ' seen' : ''), title: m.read_at ? 'Gelesen' : 'Gesendet' }, m.read_at ? '✓✓' : '✓') : null))); });
           if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
@@ -668,7 +669,7 @@
       };
       if (admin) api('/api/chat.php?a=threads').then(function (r) { S.sup.threads = r.threads || []; if (!S.sup.sel && S.sup.threads.length) S.sup.sel = S.sup.threads[0].id; drawThreads(); go2(); }); else go2();
     }
-    grid.append(threads, h('div', { class: 'chat' }, log, admin ? null : kindBox, admin ? null : kindHint, form, draftBox, h('p', { class: 'hint picnote' }, 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.'), msg)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+    grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [admin ? null : kindBox, admin ? null : kindHint, form, draftBox, h('p', { class: 'hint picnote' }, 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.'), msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
     var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Featurewünsche'),
