@@ -368,7 +368,6 @@
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'),
       h('p', { style: 'margin:10px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Testmail an mich senden'), ' ', tm)));
     box.append(h('p', { class: 'hint wide2' }, 'Der Administrator dieser Seite sieht deine E-Mail-Adresse, die Zahl deiner Einträge und wann du zuletzt hier warst. Deine Einträge selbst bleiben privat.'));
-    box.append(h('div', { class: 'wide2' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { api('/api/auth.php?a=logout', {}).then(function () { location.reload(); }); } }, 'Abmelden')));
     p.append(box); mainEl.append(p);
   }
 
@@ -456,6 +455,7 @@
 
   /* ---------- Start ---------- */
   var who = $('who'); if (who) who.addEventListener('click', function () { go('set'); });
+  var lg = $('logoutTop'); if (lg) lg.addEventListener('click', function () { api('/api/auth.php?a=logout', {}).then(function () { location.reload(); }); });
   var ver = $('ver'); if (ver) ver.addEventListener('click', function () { go('log'); });
   document.addEventListener('click', function () { var p = $('filtPop'); if (p && !p.hidden) { p.hidden = true; var b = $('filtBtn'); if (b) b.setAttribute('aria-expanded', 'false'); } });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { var p = $('filtPop'); if (p) p.hidden = true; } });

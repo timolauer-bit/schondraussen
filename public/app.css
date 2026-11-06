@@ -181,3 +181,5 @@ footer{position:relative;z-index:1;clear:both;margin-top:8px}
 
 details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.season summary{cursor:pointer;font:650 16px var(--font-display)}details.season[open] summary{margin-bottom:6px}
 .work .stat{font:500 12px var(--font-mono);white-space:nowrap}.season-foot{padding:10px 0 4px;border-top:1px solid var(--line)}
+
+.whorow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
