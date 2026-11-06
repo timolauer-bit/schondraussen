@@ -303,3 +303,9 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .similar{margin-top:22px}.sglist{display:grid;gap:0;margin:8px 0}.sgrow{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.sgt{min-width:0;overflow-wrap:anywhere}
 .gchips.pick{margin:8px 0 12px}.gchip.pickbtn{cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;margin:0}
 .gchip.pickbtn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* Layout-Sprünge vermeiden (CLS): Bereiche, die per JavaScript gefüllt werden, reservieren ihren Platz */
+#appview{min-height:60vh}
+#appview:empty ~ footer{visibility:hidden}
+.topbar{min-height:46px}
+button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}

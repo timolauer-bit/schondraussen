@@ -1,5 +1,6 @@
 window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
+    'Weniger Springen beim Laden der Seite: Footer, obere Leiste und Versionsanzeige reservieren ihren Platz, bis die Inhalte da sind',
     'Anmeldeseite: Vorstellungstext („Nie wieder eine Neuerscheinung verpassen“) mit Hinweis auf die Freischaltung von Hand',
     'Suchmaschinen: Die Seite ist vorerst für Google & Co. gesperrt (noindex); zum Start genügt ein Schalter in der Konfiguration, dann gelten Titel, Beschreibung, Vorschau beim Teilen, robots.txt und Sitemap. Außerdem leitet www auf schondraussen.de weiter',
     'Konto löschen in den Einstellungen: Die Daten bleiben noch eine Woche gespeichert, in dieser Zeit lässt sich die Löschung abbrechen, danach wird alles endgültig gelöscht',
