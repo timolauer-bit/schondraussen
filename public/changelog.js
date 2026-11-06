@@ -19,6 +19,7 @@ window.CHANGELOG = [
     'Featurewünsche und Bugs: Admin und Alphatester sehen, von wem ein Eintrag stammt (Admin mit E-Mail); Bugs lassen sich abhaken, erledigte stehen unten',
     'Bilder im Chat, bei Featurewünschen und Bugs anhängen (Büroklammer oder Strg+V); bei Featurewünschen und Bugs erscheinen sie für andere erst nach Freigabe durch Admin oder Alphatester',
     'Featurewünsche sind vorerst Alpha: nur Admin und Alphatester sehen die Seite, können abstimmen und Wünsche einreichen',
+    'Bugs-Seite mit Alpha-Markierung',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

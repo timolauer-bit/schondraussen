@@ -108,7 +108,7 @@
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
   // Funktionsstatus: 'alpha' = nur für Admins und Alphatester sichtbar (mit auffälliger Markierung), sonst für alle.
-  var FEATURES = { feat: 'alpha' }; // Featurewünsche: noch Alpha
+  var FEATURES = { feat: 'alpha', bugs: 'alpha' }; // Featurewünsche: noch Alpha
   function isAlpha() { return !S.preview && !!D.alpha; }
   function feat(key) { return (FEATURES[key] || 'live') !== 'alpha' || isAlpha(); }
   function alphaBadge() { return h('span', { class: 'alphabadge', title: 'Alpha: Diese Funktion ist noch in Entwicklung und nur für Alphatester sichtbar' }, 'Alpha'); }
@@ -578,7 +578,7 @@
   function feedbackView(kind) {
     var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Featurewünsche'),
       h('p', { class: 'hint' }, bug ? 'Meldungen von Nutzern. Du siehst sie als Admin oder Alphatester. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Wünsche von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für einen Wunsch, ein zweiter Klick nimmt die Stimme zurück. Neue Wünsche schreibst du unter „Kontakt“ (Auswahl „Featurewunsch“).')),
-      box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(bug ? p : alphaWrap('feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
+      box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
     function draw(r) {
