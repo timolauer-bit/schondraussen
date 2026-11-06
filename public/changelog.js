@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 7, d: '06.11.2026', t: [
+    'U|Obere Leiste mit Rahmen und abgerundeten Ecken wie die übrigen Karten',
     'U|Versionsverlauf: Die Änderungen sind innerhalb jeder Version nach Themen sortiert (Neue Funktionen, Optionen, Oberfläche, Bugfixes, Admin, Datenschutz und Sicherheit, Technik)',
     'D|Privatsphäre: In den Einstellungen lässt sich die E-Mail-Adresse für den Administrator ausblenden und die letzte Anmeldung nur grob anzeigen („vor über einer Woche“); neue Konten starten mit beidem ausgeblendet. Der Administrator kann die Adresse im Ausnahmefall aufdecken, das wird protokolliert (benötigt Migration 022). „Konto löschen“ ist eine eigene Karte',
     'U|Einstellungen, Admin, Info, Featurewünsche und Bugs haben jetzt dieselbe Breite wie die übrigen Seiten und das Menü',
