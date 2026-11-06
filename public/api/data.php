@@ -6,6 +6,10 @@ if (!$u) json_out(['error' => 'Bitte anmelden.'], 401);
 if (empty($u['approved'])) json_out(['error' => 'Dein Konto wartet auf Freischaltung.', 'pending' => true], 403);
 $pdo = db(); $a = $_GET['a'] ?? '';
 
+if ($a === 'lastrun') { // grobe Angabe für alle, ohne Namen oder Zahlen einzelner Einträge
+    $m = $pdo->query('SELECT TIMESTAMPDIFF(MINUTE, MAX(fetched_at), NOW()) FROM subjects')->fetchColumn();
+    json_out(['minutes' => $m === null || $m === false ? null : max(0, (int) $m)]);
+}
 if ($a === 'list') {
     $bellSql = 'e.bell';
     try { $pdo->query('SELECT bell FROM user_entries LIMIT 1'); } catch (Throwable $e) { $bellSql = '1'; }

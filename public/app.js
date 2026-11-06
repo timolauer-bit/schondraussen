@@ -618,13 +618,18 @@
       '<p>Schondraussen.de hilft dir dabei, ganz ohne viel Schnickschnack: Du legst fest, wem du folgst, und die Seite schickt dir eine Mail, sobald es etwas Neues gibt. So behältst du den Überblick und bestimmst selbst, was dich wirklich erreicht.</p>' +
       '<p class="muted">Aktuell ist die Seite noch im Testbetrieb und nicht öffentlich. Neue Konten werden vom Admin freigeschaltet.</p></div>' +
       '<section class="infosec"><h3>Zum Testen</h3><p>Trage bitte möglichst unterschiedliche Musiker:innen, Autor:innen und Serien ein, am besten auch solche mit angekündigten Neuerscheinungen. So sehe ich, wo die Angaben stimmen und wo etwas fehlt. Schau außerdem, ob der Kalender die Termine zeigt, ob die Mails ankommen und ob die Seite auf deinem Handy gut aussieht. Fällt dir etwas auf, schreib mir über „Kontakt“.</p></section>' +
-      '<section class="infosec"><h3>Wann werden Einträge erneuert?</h3><p>Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf. Beim Hinzufügen eines Eintrags und über „Aktualisieren“ werden die Daten sofort geladen. Das Datum steht als „Stand“ am Eintrag.</p></section>' +
+      '<section class="infosec"><h3>Wann werden Einträge erneuert?</h3><p>Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf. Beim Hinzufügen eines Eintrags und über „Aktualisieren“ werden die Daten sofort geladen. Das Datum steht als „Stand“ am Eintrag.</p><p class="muted" id="lastrun"></p></section>' +
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Autor:innen</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
       '<div class="infocat"><h4>Musiker:innen</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
       '<div class="infocat"><h4>Filme</h4><p>Die Datenquelle wird noch angebunden, vorgesehen ist <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Einträge kannst du schon anlegen.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen.</p></div>' +
       '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div></section>';
+    api('/api/data.php?a=lastrun').then(function (r) {
+      var el = d.querySelector('#lastrun'); if (!el || r.minutes == null) return; var m = +r.minutes, t;
+      if (m < 60) t = 'vor weniger als einer Stunde'; else if (m < 180) t = 'vor etwa ' + Math.round(m / 60) + ' Stunden'; else if (m < 1440) t = 'vor ' + Math.round(m / 60) + ' Stunden'; else t = 'vor über einem Tag';
+      el.textContent = 'Zuletzt wurden Einträge aktualisiert: ' + t + '.';
+    });
     if (isAdm()) d.append(cronSection());
     mainEl.append(d);
   }
