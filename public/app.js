@@ -274,9 +274,9 @@
     var bellBtn = h('button', { class: 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'), type: 'button', title: bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus', 'aria-pressed': String(bellOn), 'aria-label': bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus',
       onclick: function () { var on = !bellOn; if (le) le.bell = on ? 1 : 0; api('/api/data.php?a=bell&id=' + e.id, { on: on }); rows(); content(); } }, ico(on_(bellOn)));
     var actions = h('div', { class: 'actions' }, bellBtn,
-      h('button', { class: 'btn ghost small', id: 'rfr', type: 'button', onclick: function () { refresh(cur); } }, ico(ICONS.refresh), 'Aktualisieren'),
       S.confirm === e.id ? [h('button', { class: 'btn warn small', type: 'button', onclick: function () { api('/api/data.php?a=remove&id=' + e.id, {}).then(function () { S.sel = null; S.confirm = null; load(); }); } }, 'Wirklich entfernen'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.confirm = null; content(); } }, 'Abbrechen')]
         : [h('button', { class: 'btn ghost small more', type: 'button', title: 'Weitere Aktionen', 'aria-label': 'Weitere Aktionen', 'aria-expanded': String(S.menuFor === e.id), onclick: function () { S.menuFor = S.menuFor === e.id ? null : e.id; content(); } }, '…'),
+           S.menuFor === e.id ? h('button', { class: 'btn ghost small', id: 'rfr', type: 'button', onclick: function () { S.menuFor = null; refresh(cur); } }, ico(ICONS.refresh), 'Aktualisieren') : null,
            S.menuFor === e.id && e.type !== 'film' ? h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.menuFor = null; S.relink = e.id; content(); } }, 'Treffer ändern') : null,
            S.menuFor === e.id ? h('button', { class: 'btn warn small', type: 'button', onclick: function () { S.menuFor = null; S.confirm = e.id; content(); } }, 'Entfernen') : null]);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp' }, stamp) : null);
