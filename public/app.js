@@ -701,7 +701,7 @@
         else { var on = +x.mine_vote > 0, vb = h('button', { class: 'vote' + (on ? ' on' : ''), type: 'button', title: on ? 'Stimme zurücknehmen' : 'Dafür stimmen', 'aria-pressed': String(on), onclick: function () { api('/api/feedback.php?a=vote', { id: x.id, on: !on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, ico(ICONS.thumb), h('b', null, String(x.votes))); side = vb; }
         var chk = null;
         if (bug) { chk = h('input', { type: 'checkbox', class: 'fbchk', 'aria-label': 'Erledigt', title: x.done_at ? 'Als offen markieren' : 'Als erledigt abhaken', onchange: function () { var on = this.checked; api('/api/feedback.php?a=done', { id: x.id, on: on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }); chk.checked = !!x.done_at; }
-        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow' : '') + (bug && x.done_at ? ' done' : '') }, bug ? chk : side, h('div', { class: 'fbmain' }, head, body, bug ? side : null));
+        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (bug && x.done_at ? ' done' : '') }, bug ? chk : side, h('div', { class: 'fbmain' }, head, body, bug ? side : null));
         if (D.admin && !S.preview) body.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen')));
         box.append(row);
       });

@@ -341,3 +341,17 @@ button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}
 .chatempty b{color:var(--ink)}
 .setcard.composer{border-color:var(--accent)}
 .setcard.composer>h3{border-bottom-color:var(--accent-soft)}
+
+/* Info, Featurewünsche und Bugs: abgegrenzte Karten */
+.infopanel>.intro,.infopanel>.hint,.infopanel>.infosec{width:auto;max-width:860px}
+.infopanel>.intro{background:color-mix(in srgb,var(--accent-soft) 38%,var(--bg));border-radius:12px;padding:18px 20px;margin:12px 0 16px}
+.infopanel>.intro p:last-child{margin-bottom:0}
+.infosec{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:16px 18px;margin:0 0 16px}
+.infosec h3{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line);font:700 18px var(--font-display)}
+.infosec .infocat{padding:10px 0;border-top:1px dashed var(--line)}.infosec h3+.infocat{border-top:0;padding-top:0}
+.infosec .infocat h4{margin:0 0 2px}
+.fblist{gap:10px;max-width:860px;margin-top:12px}
+.fbrow{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px}
+.fblist .fbrow:last-child{border-bottom:1px solid var(--line)}
+.fbrow.p-urgent{border-left:4px solid var(--danger)}.fbrow.p-normal{border-left:4px solid var(--accent)}.fbrow.p-low{border-left:4px solid var(--line)}
+.fbrow.done{opacity:.6}
