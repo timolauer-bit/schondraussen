@@ -20,6 +20,13 @@ label{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}input[ty
 button{margin-top:16px;padding:10px 16px;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;font:600 15px inherit;cursor:pointer}
 button.link{background:none;border:0;color:var(--accent);padding:0;margin:0;font-weight:500;text-decoration:underline;cursor:pointer}
 .msg{min-height:22px;margin-top:12px;font-size:14px}.err{color:#b62520}.chk{display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:14px;color:var(--muted)}
+.shots{margin-top:26px}.shots h2{font-size:15px;margin:0 0 10px;color:var(--muted);font-weight:600}.thumbs{display:flex;gap:12px;flex-wrap:wrap}
+.thumb{margin:0;padding:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;overflow:hidden;width:calc(50% - 6px);text-align:left;color:var(--ink);cursor:pointer;font:500 13px system-ui}
+.thumb img{display:block;width:100%;height:110px;object-fit:cover;object-position:top left}.thumb span{display:block;padding:6px 10px}.thumb:hover,.thumb:focus-visible{border-color:var(--accent)}
+.lb{position:fixed;inset:0;background:rgba(10,14,18,.88);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}.lb[hidden]{display:none}
+.lb figure{margin:0;max-width:min(1100px,100%);text-align:center}.lb img{max-width:100%;max-height:78vh;border-radius:10px;background:#fff}.lb figcaption{color:#e8ecee;font-size:14px;margin-top:8px}
+.lb button{margin:0;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;width:42px;height:42px;font-size:26px;line-height:1;padding:0}
+.lbx{position:absolute;top:14px;right:14px}.lbn{flex:none;margin:0 8px!important}.lb.one .lbn{display:none}
 footer{max-width:440px;margin:0 auto 30px;font-size:13px;color:var(--muted)}footer a{color:var(--muted)}.row{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:14px}[hidden]{display:none!important}
 #tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}#tabs button{margin:0;background:none;color:var(--ink);border:1px solid var(--line);padding:6px 12px;font-size:14px}#tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 button.ghost{margin:0;background:none;color:var(--ink);border:1px solid var(--line);padding:6px 12px;font-size:14px}.muted{color:var(--muted);font-size:14px}
@@ -84,11 +91,37 @@ h3{margin:18px 0 6px;font-size:15px}
       <button type="submit">Passwort speichern</button></form>
     <div class="msg" id="msg" role="status"></div>
   </div>
+  <section class="shots" aria-labelledby="shots-h">
+    <h2 id="shots-h">So sieht es aus</h2>
+    <div class="thumbs">
+      <button type="button" class="thumb" data-i="0"><img src="/shots/shot1.webp" alt="Kalender mit allen angekündigten Veröffentlichungen" loading="lazy"><span>Kalender</span></button>
+      <button type="button" class="thumb" data-i="1"><img src="/shots/shot2.webp" alt="Serienübersicht mit Liste und kommenden Veröffentlichungen" loading="lazy"><span>Serienübersicht</span></button>
+    </div>
+  </section>
+  <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Bildansicht" hidden>
+    <button type="button" class="lbx" id="lbx" aria-label="Schließen">×</button>
+    <button type="button" class="lbn prev" id="lbp" aria-label="Vorheriges Bild">‹</button>
+    <figure><img id="lbi" alt=""><figcaption id="lbc"></figcaption></figure>
+    <button type="button" class="lbn next" id="lbn" aria-label="Nächstes Bild">›</button>
+  </div>
 <?php endif; ?>
 </main>
 <footer><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></footer>
 <script>
 (function () {
+  var lb = document.getElementById('lb');
+  if (lb) {
+    var SH = [['/shots/shot1.webp', 'Kalender mit allen angekündigten Veröffentlichungen'], ['/shots/shot2.webp', 'Serienübersicht mit Liste und kommenden Veröffentlichungen']], cur = 0, opener = null;
+    function lbShow(i) { cur = (i + SH.length) % SH.length; document.getElementById('lbi').src = SH[cur][0]; document.getElementById('lbi').alt = SH[cur][1]; document.getElementById('lbc').textContent = SH[cur][1] + ' (' + (cur + 1) + ' von ' + SH.length + ')'; }
+    function lbOpen(i, el) { opener = el; lb.classList.toggle('one', SH.length < 2); lbShow(i); lb.hidden = false; document.getElementById('lbx').focus(); }
+    function lbClose() { lb.hidden = true; if (opener) opener.focus(); }
+    document.querySelectorAll('.thumb').forEach(function (b) { b.addEventListener('click', function () { lbOpen(+b.dataset.i, b); }); });
+    document.getElementById('lbx').addEventListener('click', lbClose);
+    document.getElementById('lbp').addEventListener('click', function () { lbShow(cur - 1); });
+    document.getElementById('lbn').addEventListener('click', function () { lbShow(cur + 1); });
+    lb.addEventListener('click', function (e) { if (e.target === lb) lbClose(); });
+    document.addEventListener('keydown', function (e) { if (lb.hidden) return; if (e.key === 'Escape') lbClose(); else if (e.key === 'ArrowLeft') lbShow(cur - 1); else if (e.key === 'ArrowRight') lbShow(cur + 1); });
+  }
   var msg = document.getElementById('msg');
   function say(t, err) { if (!msg) return; msg.textContent = t || ''; msg.className = 'msg' + (err ? ' err' : ''); }
   function api(a, data) {
