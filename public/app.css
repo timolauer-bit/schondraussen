@@ -235,3 +235,9 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 
 .row-btn .beloff{position:static;display:inline-flex;vertical-align:-2px;margin-left:8px;color:#c0392b;opacity:1}
 .row-btn .beloff svg{width:12px;height:12px}
+
+/* Filtermenü darf nicht von der Leiste abgeschnitten werden: Scrollen übernimmt nur die Liste */
+@media(min-width:900px){.rail{max-height:none;overflow:visible}#list{max-height:calc(100vh - 330px);overflow-y:auto;scrollbar-width:thin}}
+.filtpop select:disabled{opacity:.6}
+.rail{z-index:5}
+@media(max-width:899px){.rail{position:relative}}

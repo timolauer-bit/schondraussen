@@ -226,8 +226,8 @@
     pop.append(h('p', { class: 'label' }, 'Sortieren nach'));
     SORTS.forEach(function (o) { pop.append(h('button', { class: 'fopt', type: 'button', 'aria-pressed': String(cur === o[0]), onclick: function () { S.sort[S.cat] = o[0]; filt(); rows(); } }, o[1])); });
     var gl = genresOf(S.cat);
-    if (gl.length) { pop.append(h('p', { class: 'label', style: 'margin-top:14px' }, 'Genre'));
-      var sel = h('select', { 'aria-label': 'Nach Genre filtern', onchange: function () { S.genre[S.cat] = this.value; filt(); rows(); } }, h('option', { value: '' }, 'Alle Genres'), gl.map(function (x) { return h('option', { value: x[0] }, x[0] + ' (' + x[1] + ')'); }));
+    { pop.append(h('p', { class: 'label', style: 'margin-top:14px' }, 'Genre'));
+      var sel = h('select', { 'aria-label': 'Nach Genre filtern', disabled: gl.length ? null : true, onchange: function () { S.genre[S.cat] = this.value; filt(); rows(); } }, h('option', { value: '' }, gl.length ? 'Alle Genres' : 'Keine Genres vorhanden'), gl.map(function (x) { return h('option', { value: x[0] }, x[0] + ' (' + x[1] + ')'); }));
       sel.value = g; pop.append(sel); }
     var b = $('fbadge'); b.hidden = !n; b.textContent = String(n);
     var ch = $('fchips'); ch.textContent = '';

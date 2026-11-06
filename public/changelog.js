@@ -12,6 +12,7 @@ window.CHANGELOG = [
     'Künstlerliste importieren (Einfügen oder Datei, z. B. Spotify-Export) und Beispieleinträge: Frage beim ersten Start, später in den Einstellungen hinzufügen und entfernen',
     'Info: Abschnitt „To-Do / Ideen“',
     'Texte vereinheitlicht: durchgehend Du-Form, korrekte Einzahl/Mehrzahl bei Zahlen (1 Folge, 2 Folgen)',
+    'Filter und Sortierung: Das Menü wird bei kurzen Listen nicht mehr abgeschnitten, alle vier Sortierungen und das Genre-Feld sind immer sichtbar (ohne Genres ausgegraut)',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
