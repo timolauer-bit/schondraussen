@@ -245,9 +245,8 @@
     es.forEach(function (e) {
       var mode = S.sort[S.cat], n = e.upcoming;
       box.append(h('button', { class: 'row-btn', type: 'button', 'aria-current': String(S.sel === e.id), onclick: function () { S.sel = e.id; S.confirm = null; S.menuFor = null; rows(); content(); if (window.innerWidth < 900) $('content').scrollIntoView({ behavior: 'smooth' }); } },
-        h('span', { class: 'nm' }, e.name), h('span', { class: 'tp' }, (mode === 'last' || mode === 'next') ? (e._lab || 'keine Angabe') : worksLine(e)),
-        n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null,
-        +e.bell === 0 ? h('span', { class: 'beloff', title: 'Keine Benachrichtigungen für diesen Eintrag' }, ico(ICONS.bellOff)) : null));
+        h('span', { class: 'nm' }, e.name), h('span', { class: 'tp' }, (mode === 'last' || mode === 'next') ? (e._lab || 'keine Angabe') : worksLine(e), +e.bell === 0 ? h('span', { class: 'beloff', title: 'Benachrichtigungen für diesen Eintrag sind aus' }, ico(ICONS.bellOff)) : null),
+        n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null));
     });
   }
   function content() {

@@ -232,3 +232,6 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .menu .mi.warn{color:var(--danger)}
 .menu .mi .ico{display:inline-flex;margin:0}.menu .mi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .menu .mq{margin:4px 11px 6px;font-size:13px;color:var(--muted)}
+
+.row-btn .beloff{position:static;display:inline-flex;vertical-align:-2px;margin-left:8px;color:#c0392b;opacity:1}
+.row-btn .beloff svg{width:12px;height:12px}
