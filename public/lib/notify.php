@@ -110,20 +110,21 @@ function build_preview(PDO $pdo, array $u): array {
         $s->execute([$u['id'], $today]); $R = $s->fetchAll();
     } catch (Throwable $e) { $R = []; }
     $demo = !$R;
-    if ($demo) $R = [['name' => 'Beispiel-Band', 'title' => 'Neues Album', 'release_date' => date('Y-m-d', strtotime('+3 days'))], ['name' => 'Beispiel-Serie', 'title' => 'S02E05 Folgentitel', 'release_date' => date('Y-m-d', strtotime('+9 days'))], ['name' => 'Beispiel-Autor:in', 'title' => 'Neuer Roman', 'release_date' => date('Y-m-d', strtotime('+20 days'))]];
+    if ($demo) $R = [['name' => 'Beispiel-Band', 'title' => 'Neues Album', 'release_date' => date('Y-m-d', strtotime('+3 days'))], ['name' => 'Beispiel-Serie', 'title' => 'S02E05 Folgentitel', 'release_date' => date('Y-m-d', strtotime('+9 days'))]];
     $line = fn($r) => '- ' . $r['name'] . ' – ' . $r['title'] . ' (' . fmt_date($r['release_date']) . ')';
     $nNew = (int) ($u['n_new'] ?? 1); $nDay = (int) ($u['n_day'] ?? 1); $nWeek = (int) ($u['n_week'] ?? 0);
     $text = "VORSCHAU: So sieht deine Benachrichtigungsmail nach deinen aktuellen Einstellungen aus.\n" .
-            "Die Termine unten sind echte kommende Termine aus deinen Listen" . ($demo ? " (du hast noch keine, daher Beispiele)" : "") . ", sie wurden nur als Beispiel zugeordnet.\n\n" .
+            "Die Termine sind nur als Beispiel eingesetzt" . ($demo ? " (Beispieldaten, du hast noch keine kommenden Termine mit Glocke)" : " (deine nächsten echten Termine mit Glocke)") . ". In der echten Mail steht nur, was wirklich zutrifft.\n\n" .
             "--- Morgenmail ---\n\nHallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
-    if ($nDay) $text .= "\nHEUTE ERSCHEINT\n" . implode("\n", array_map(fn($r) => '- ' . $r['name'] . ' – ' . $r['title'], array_slice($R, 0, 2))) . "\n";
-    if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n" . implode("\n", array_map($line, array_slice($R, 2, 3) ?: array_slice($R, 0, 2))) . "\n";
+    if ($nDay) $text .= "\nHEUTE ERSCHEINT\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . implode("\n", array_map(fn($r) => '- ' . $r['name'] . ' – ' . $r['title'], array_slice($R, 0, 1))) . "\n";
+    if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n[Beispiel: Hier steht jeder neue Termin nur einmal.]\n" . implode("\n", array_map($line, array_slice($R, 0, 3))) . "\n";
     if (!$nDay && !$nNew) $text .= "\n(Du hast gerade weder „Neu angekündigt“ noch „Am Erscheinungstag“ eingeschaltet, deshalb gäbe es keine solche Mail.)\n";
     $text .= "\nAlles im Überblick: " . base_url() . "/\n";
     $wk = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][max(1, min(7, (int) ($u['n_weekday'] ?? 1))) - 1];
     if ($nWeek) {
         $in14 = array_values(array_filter($R, fn($r) => $r['release_date'] <= date('Y-m-d', strtotime('+14 days'))));
-        $text .= "\n--- Wochenübersicht (kommt jeden $wk) ---\n\nHallo,\n\nhier sind die Termine der nächsten 14 Tage aus deinen Listen:\n\n" . implode("\n", array_map($line, $in14 ?: array_slice($R, 0, 3))) . "\n\nAlles im Überblick: " . base_url() . "/\n";
+        $text .= "\n--- Wochenübersicht (kommt jeden $wk) ---\n\nHallo,\n\nhier sind die Termine der nächsten 14 Tage aus deinen Listen:\n\n" .
+            ($in14 ? implode("\n", array_map($line, $in14)) : "[Aktuell hast du in den nächsten 14 Tagen keinen Termin mit Glocke. Dann wird keine Wochenübersicht verschickt.]") . "\n\nAlles im Überblick: " . base_url() . "/\n";
     } else $text .= "\n(Die Wochenübersicht ist ausgeschaltet.)\n";
     return ['Schondraussen.de: Vorschau deiner Benachrichtigungen', $text];
 }
