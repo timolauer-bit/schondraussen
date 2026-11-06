@@ -171,6 +171,19 @@ $M = [
      fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '021_cron_runs' => [
+  "CREATE TABLE IF NOT EXISTS cron_runs (
+     id INT AUTO_INCREMENT PRIMARY KEY,
+     started_at DATETIME NOT NULL,
+     duration_ms INT NOT NULL DEFAULT 0,
+     ok_count INT NOT NULL DEFAULT 0,
+     fail_count INT NOT NULL DEFAULT 0,
+     checked INT NOT NULL DEFAULT 0,
+     left_count INT NOT NULL DEFAULT 0,
+     stopped_early TINYINT(1) NOT NULL DEFAULT 0,
+     details TEXT NULL
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

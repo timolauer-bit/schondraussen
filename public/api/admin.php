@@ -12,6 +12,15 @@ if ($a === 'users') {
     catch (Throwable $e) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
+if ($a === 'cron') {
+    $o = ['runs' => null, 'stats' => [], 'stale' => [], 'empty' => []];
+    try { $o['runs'] = $pdo->query('SELECT started_at,duration_ms,ok_count,fail_count,left_count,stopped_early,details FROM cron_runs ORDER BY id DESC LIMIT 8')->fetchAll(); } catch (Throwable $e) { $o['needs_migration'] = true; }
+    $o['stats'] = $pdo->query("SELECT type, COUNT(*) total, SUM(fetched_at IS NULL) never, SUM(fetched_at IS NOT NULL AND fetched_at < NOW() - INTERVAL 12 HOUR) old12, SUM(fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0)) empty, MIN(fetched_at) oldest, MAX(fetched_at) newest FROM subjects GROUP BY type")->fetchAll();
+    $o['stale'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 12 HOUR ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT 40")->fetchAll();
+    $o['empty'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0) ORDER BY fetched_at LIMIT 40")->fetchAll();
+    $o['now'] = date('Y-m-d H:i:s');
+    json_out($o);
+}
 if ($a === 'site') {
     $o = ['tag' => '', 'domain' => 'amazon.de'];
     try { foreach ($pdo->query('SELECT k,v FROM site_settings')->fetchAll() as $r) $o[$r['k']] = $r['v']; } catch (Throwable $e) {}

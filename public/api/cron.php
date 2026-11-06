@@ -1,19 +1,39 @@
 <?php
-// Aufruf per Cron (alle 12 Stunden): /api/cron.php?token=<cron_token>
+// Aufruf per Cron (alle 2 Stunden): /api/cron.php?token=<cron_token>
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/sources.php';
 require __DIR__ . '/../lib/notify.php';
 header('Content-Type: text/plain; charset=utf-8');
 $tok = (string) cfg('cron_token', '');
 if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { http_response_code(403); exit("Token fehlt oder falsch.\n"); }
-set_time_limit(110);
+set_time_limit(120);
+$t0 = microtime(true); $started = date('Y-m-d H:i:s'); $BUDGET = 80; // Sekunden für die Aktualisierung, danach laufen noch Mails und Aufräumen
 $pdo = db();
-$ids = [];
-foreach ([['series', 15], ['artist', 12], ['author', 10]] as [$t, $lim])
-    foreach ($pdo->query("SELECT id FROM subjects WHERE type='$t' AND (fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 11 HOUR) ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT $lim")->fetchAll(PDO::FETCH_COLUMN) as $i) $ids[] = $i;
-$ok = 0; $fail = 0;
-foreach ($ids as $id) { $r = refresh_subject($pdo, (int) $id); $r['ok'] ? $ok++ : $fail++; usleep(400000); }
-echo "Aktualisiert: $ok, fehlgeschlagen: $fail, geprüft: " . count($ids) . "\n";
+// Warteschlange je Kategorie (älteste zuerst, nie geladene vorn), reihum abgearbeitet, damit keine Kategorie verhungert
+$queues = [];
+foreach (['series', 'artist', 'author'] as $t)
+    $queues[$t] = $pdo->query("SELECT id,name FROM subjects WHERE type='$t' AND (fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 11 HOUR) ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT 150")->fetchAll();
+$ok = 0; $fail = 0; $failed = []; $byType = ['series' => 0, 'artist' => 0, 'author' => 0]; $stopped = false;
+while (array_filter($queues)) {
+    foreach ($queues as $t => &$q) {
+        if (!$q) continue;
+        if (microtime(true) - $t0 > $BUDGET) { $stopped = true; break 2; }
+        $row = array_shift($q);
+        $r = refresh_subject($pdo, (int) $row['id']);
+        if ($r['ok']) { $ok++; $byType[$t]++; } else { $fail++; if (count($failed) < 15) $failed[] = $row['name'] . ': ' . mb_substr((string) ($r['msg'] ?? ''), 0, 80); }
+        usleep(400000);
+    }
+    unset($q);
+}
+unset($q);
+$left = 0; foreach ($queues as $q) $left += count($q);
+$ms = (int) round((microtime(true) - $t0) * 1000);
+echo "Aktualisiert: $ok, fehlgeschlagen: $fail, noch offen: $left" . ($stopped ? ' (Zeitbudget erreicht)' : '') . ', Dauer: ' . round($ms / 1000, 1) . " s\n";
+try {
+    $pdo->prepare('INSERT INTO cron_runs (started_at,duration_ms,ok_count,fail_count,checked,left_count,stopped_early,details) VALUES (?,?,?,?,?,?,?,?)')
+        ->execute([$started, $ms, $ok, $fail, $ok + $fail, $left, $stopped ? 1 : 0, json_encode(['by' => $byType, 'failed' => $failed], JSON_UNESCAPED_UNICODE)]);
+    $pdo->exec('DELETE FROM cron_runs WHERE id < (SELECT m FROM (SELECT MAX(id)-60 AS m FROM cron_runs) x)');
+} catch (Throwable $e) {}
 try { [$m, $f] = run_digests($pdo); echo "Mails: $m versendet, $f fehlgeschlagen\n"; } catch (Throwable $e) { echo "Mails: übersprungen (" . $e->getMessage() . ")\n"; }
 try { $pdo->exec("DELETE FROM images WHERE ref_id IS NULL AND created_at < NOW() - INTERVAL 1 DAY"); } catch (Throwable $e) {}
 try {
