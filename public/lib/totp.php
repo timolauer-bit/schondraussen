@@ -8,11 +8,11 @@ function totp_code(string $secret, int $step): string {
     $n = ((ord($h[$o]) & 0x7f) << 24) | (ord($h[$o + 1]) << 16) | (ord($h[$o + 2]) << 8) | ord($h[$o + 3]);
     return str_pad((string) ($n % 1000000), 6, '0', STR_PAD_LEFT);
 }
-/** Prüft den Code (±1 Schritt Toleranz); gibt den benutzten Schritt zurück oder null. */
+/** Prüft den Code (±2 Schritte = ±60 Sekunden Toleranz); gibt den benutzten Schritt zurück oder null. */
 function totp_check(string $secret, string $code, int $minStep = 0): ?int {
     $code = preg_replace('/\D/', '', $code); if (strlen($code) !== 6) return null;
     $now = intdiv(time(), 30);
-    foreach ([0, -1, 1] as $d) { $st = $now + $d; if ($st > $minStep && hash_equals(totp_code($secret, $st), $code)) return $st; }
+    foreach ([0, -1, 1, -2, 2] as $d) { $st = $now + $d; if ($st > $minStep && hash_equals(totp_code($secret, $st), $code)) return $st; }
     return null;
 }
 function totp_backup_codes(): array { $c = []; for ($i = 0; $i < 8; $i++) $c[] = strtoupper(bin2hex(random_bytes(2))) . '-' . strtoupper(bin2hex(random_bytes(2))); return $c; }

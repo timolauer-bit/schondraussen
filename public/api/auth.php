@@ -131,7 +131,7 @@ try {
         }
         if ($a === 'totp_enable') {
             $sec = (string) ($_SESSION['totp_pending'] ?? ''); if (!$sec) json_out(['error' => 'Bitte zuerst neu starten.'], 422);
-            $st = totp_check($sec, (string) ($b['code'] ?? '')); if ($st === null) { note($pdo, 'login'); json_out(['error' => 'Der Code stimmt nicht. Prüfe die Uhrzeit deines Handys und versuche es noch einmal.'], 422); }
+            $st = totp_check($sec, (string) ($b['code'] ?? '')); if ($st === null) { note($pdo, 'login'); json_out(['error' => 'Der Code stimmt nicht. Prüfe, dass du den Eintrag aus diesem Durchgang in der App hast (bei jedem Start entsteht ein neuer Schlüssel) und die Uhrzeit deines Handys stimmt. Serverzeit: ' . date('H:i:s') . ' (Berlin).'], 422); }
             $codes = totp_backup_codes();
             $pdo->prepare('UPDATE users SET totp_secret=?, totp_enabled=1, totp_codes=?, totp_step=? WHERE id=?')->execute([$sec, totp_hash_codes($codes), $st, $cu['id']]);
             unset($_SESSION['totp_pending']); json_out(['ok' => true, 'codes' => $codes]);

@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 7, d: '06.11.2026', t: [
+    'B|Zwei-Faktor-Einrichtung: etwas mehr Zeittoleranz bei den Codes und eine genauere Fehlermeldung',
     'F|Gesehen, gelesen, gehört: Bei Serien hakst du einzelne Folgen oder ganze Staffeln ab (mit Fortschritt je Staffel), bei Alben, Büchern und Filmen markierst du, was du schon kennst; dazu ein Zähler und der Filter „Nur Neues für mich“',
     'F|Kalender-Abo: In den Einstellungen gibt es einen privaten Link (.ics), den Google, Apple, Outlook oder Thunderbird abonnieren; alle angekündigten Termine deiner Einträge erscheinen und aktualisieren sich selbst; der Link lässt sich erneuern oder beenden',
     'F|Zwei-Faktor-Anmeldung (optional) in den Einstellungen: Code aus einer Authenticator-App bei der Anmeldung, dazu 8 Backup-Codes',
