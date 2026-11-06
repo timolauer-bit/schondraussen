@@ -19,7 +19,7 @@ $skin = ($u && in_array($u['skin'] ?? '', ['light', 'dark', 'paper', 'cinema', '
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 16px}
 main{max-width:440px;margin:10vh auto 40px}main.wide{max-width:760px;margin-top:5vh}h1{font-size:36px;letter-spacing:-.035em;margin:0 0 4px}h1 span{color:var(--accent)}
 p{color:var(--muted)}.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:20px}
-label{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}input[type=email],input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+label{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}input[type=email],input[type=password],input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
 button{margin-top:16px;padding:10px 16px;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;font:600 15px inherit;cursor:pointer}
 button.link{background:none;border:0;color:var(--accent);padding:0;margin:0;font-weight:500;text-decoration:underline;cursor:pointer}
 .msg{min-height:22px;margin-top:12px;font-size:14px}.err{color:#b62520}.chk{display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:14px;color:var(--muted)}
@@ -30,6 +30,9 @@ button.link{background:none;border:0;color:var(--accent);padding:0;margin:0;font
 .lb figure{margin:0;max-width:min(1100px,100%);text-align:center}.lb img{max-width:100%;max-height:78vh;border-radius:10px;background:#fff}.lb figcaption{color:#e8ecee;font-size:14px;margin-top:8px}
 .lb button{margin:0;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;width:42px;height:42px;font-size:26px;line-height:1;padding:0}
 .lbx{position:absolute;top:14px;right:14px}.lbn{flex:none;margin:0 8px!important}.lb.one .lbn{display:none}
+.pw{position:relative;display:block}.pw input{padding-right:46px!important}
+button.eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);margin:0;padding:6px;width:34px;height:34px;background:none;border:0;color:var(--muted);border-radius:8px;display:flex;align-items:center;justify-content:center}
+button.eye:hover,button.eye:focus-visible{color:var(--accent);background:var(--bg)}button.eye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 footer{max-width:440px;margin:0 auto 30px;font-size:13px;color:var(--muted)}footer a{color:var(--muted)}.row{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:14px}[hidden]{display:none!important}
 #tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}#tabs button{margin:0;background:none;color:var(--ink);border:1px solid var(--line);padding:6px 12px;font-size:14px}#tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 button.ghost{margin:0;background:none;color:var(--ink);border:1px solid var(--line);padding:6px 12px;font-size:14px}.muted{color:var(--muted);font-size:14px}
@@ -87,6 +90,7 @@ h3{margin:18px 0 6px;font-size:15px}
       <label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required>
       <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich">
       <label for="rp">Passwort (mindestens 10 Zeichen)</label><input id="rp" type="password" autocomplete="new-password" minlength="10" required>
+      <label for="rp2">Passwort wiederholen</label><input id="rp2" type="password" autocomplete="new-password" minlength="10" required>
       <div class="chk"><input id="ra" type="checkbox" required><label for="ra" style="margin:0">Ich habe die <a href="/datenschutz.php" target="_blank">Datenschutzerklärung</a> gelesen.</label></div>
       <button type="submit">Konto anlegen</button>
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück zur Anmeldung</button></div></form>
@@ -96,6 +100,7 @@ h3{margin:18px 0 6px;font-size:15px}
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück zur Anmeldung</button></div></form>
     <form id="f-reset" hidden><h2 style="margin:0 0 4px;font-size:20px">Neues Passwort</h2>
       <label for="np">Neues Passwort (mindestens 10 Zeichen)</label><input id="np" type="password" autocomplete="new-password" minlength="10" required>
+      <label for="np2">Neues Passwort wiederholen</label><input id="np2" type="password" autocomplete="new-password" minlength="10" required>
       <button type="submit">Passwort speichern</button></form>
     <div class="msg" id="msg" role="status"></div>
   </div>
@@ -140,15 +145,25 @@ h3{margin:18px 0 6px;font-size:15px}
   document.querySelectorAll('[data-show]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.show); }); });
   function on(id, fn) { var f = document.getElementById(id); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); say('…'); fn(); }); }
   on('f-login', function () { api('login', { email: le.value, password: lp.value }).then(function (r) { if (r.ok) location.reload(); else say(r.error, true); }); });
-  on('f-register', function () { api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
+  on('f-register', function () { if (rp.value !== rp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
   on('f-forgot', function () { api('forgot', { email: fe.value }).then(function (r) { say(r.message || r.error, !r.ok); }); });
   var q = new URLSearchParams(location.search), tok = q.get('reset');
-  on('f-reset', function () { api('reset', { token: tok, password: np.value }).then(function (r) { if (r.ok) { history.replaceState(null, '', '/'); show('f-login'); say(r.message); } else say(r.error, true); }); });
+  on('f-reset', function () { if (np.value !== np2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('reset', { token: tok, password: np.value }).then(function (r) { if (r.ok) { history.replaceState(null, '', '/'); show('f-login'); say(r.message); } else say(r.error, true); }); });
   if (tok) show('f-reset');
   if (q.get('verified') === '1') say('Deine Adresse ist bestätigt. Du kannst dich jetzt anmelden.');
   if (q.get('verified') === '0') say('Der Bestätigungslink ist abgelaufen oder ungültig.', true);
 
   var lo = document.getElementById('logout');
+  // Passwort anzeigen/verbergen
+  document.querySelectorAll('input[type=password]').forEach(function (inp) {
+    var w = document.createElement('span'); w.className = 'pw'; inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'eye'; b.setAttribute('aria-label', 'Passwort anzeigen'); b.setAttribute('aria-pressed', 'false'); b.title = 'Passwort anzeigen';
+    var SHOW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var HIDE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.2A10 10 0 0 1 12 5c6.5 0 10.5 7 10.5 7a17 17 0 0 1-3.2 3.9M6.5 6.6C3.3 8.6 1.5 12 1.5 12S5.5 19 12 19c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+    b.innerHTML = SHOW;
+    b.addEventListener('click', function () { var on = inp.type === 'password'; inp.type = on ? 'text' : 'password'; b.innerHTML = on ? HIDE : SHOW; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Passwort verbergen' : 'Passwort anzeigen'); b.title = on ? 'Passwort verbergen' : 'Passwort anzeigen'; inp.focus(); });
+    w.appendChild(b);
+  });
   var fr = document.getElementById('f-rename');
   if (fr) fr.addEventListener('submit', function (e) { e.preventDefault(); say('…'); api('username', { username: document.getElementById('rn').value }).then(function (r) { r.ok ? location.reload() : say(r.error || 'Das hat nicht geklappt.', true); }); });
   var cd = document.getElementById('canceldel');

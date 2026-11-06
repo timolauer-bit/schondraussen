@@ -29,6 +29,7 @@ window.CHANGELOG = [
     'Featurewünsche können alle Nutzer im Kontakt-Fenster einreichen, die Liste bleibt vorerst Alpha',
     'Admin-Mail bei neuer Registrierung mit Freischaltungs-Link (Bestätigung per Knopf, einmal verwendbar)',
     'Featurewunsch und Bugmeldung: Bestätigung als Fenster nach dem Abschicken',
+    'Passwort anzeigen per Augensymbol; beim Registrieren und beim Zurücksetzen zweimal eingeben',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
