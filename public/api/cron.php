@@ -15,6 +15,7 @@ $ok = 0; $fail = 0;
 foreach ($ids as $id) { $r = refresh_subject($pdo, (int) $id); $r['ok'] ? $ok++ : $fail++; usleep(400000); }
 echo "Aktualisiert: $ok, fehlgeschlagen: $fail, geprüft: " . count($ids) . "\n";
 try { [$m, $f] = run_digests($pdo); echo "Mails: $m versendet, $f fehlgeschlagen\n"; } catch (Throwable $e) { echo "Mails: übersprungen (" . $e->getMessage() . ")\n"; }
+try { $pdo->exec("DELETE FROM images WHERE ref_id IS NULL AND created_at < NOW() - INTERVAL 1 DAY"); } catch (Throwable $e) {}
 try {
     $dead = $pdo->query("SELECT id FROM users WHERE role<>'admin' AND delete_requested_at IS NOT NULL AND delete_requested_at < NOW() - INTERVAL 7 DAY")->fetchAll(PDO::FETCH_COLUMN);
     foreach ($dead as $uid) {

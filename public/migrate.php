@@ -110,6 +110,20 @@ $M = [
   '012_feedback_done' => [
   "ALTER TABLE feedback ADD COLUMN done_at DATETIME NULL",
  ],
+  '013_images' => [
+  "CREATE TABLE IF NOT EXISTS images (
+     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     user_id INT UNSIGNED NOT NULL,
+     scope ENUM('chat','feedback') NOT NULL,
+     ref_id INT UNSIGNED NULL,
+     status ENUM('pending','approved') NOT NULL DEFAULT 'pending',
+     data MEDIUMBLOB NOT NULL,
+     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     KEY idx_ref (scope, ref_id),
+     KEY idx_user (user_id, created_at),
+     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

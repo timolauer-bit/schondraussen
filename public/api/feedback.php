@@ -2,6 +2,7 @@
 // Featurewünsche (für alle freigeschalteten Nutzer sichtbar, mit Stimmen) und Bugmeldungen (nur Admin und Alphatester)
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/mail.php';
+require __DIR__ . '/../lib/images.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $admin = $u['role'] === 'admin'; $alpha = is_alpha($u);
@@ -29,7 +30,17 @@ if ($a === 'list') {
         if ($alpha) $r['author'] = 'Mitglied Nr. ' . (int) $r['user_id'] . ($admin && $r['author_email'] ? ' · ' . $r['author_email'] : '');
         unset($r['user_id'], $r['author_email']);
     }
-    json_out(['items' => $rows, 'admin' => $admin]);
+    if ($rows) { // Bilder: Freigegebene für alle, Wartende für Absender und Admin/Alpha (dort mit status)
+        try {
+            $ids = implode(',', array_map('intval', array_column($rows, 'id'))); $by = []; $pend = [];
+            foreach ($pdo->query("SELECT id,ref_id,status,user_id FROM images WHERE scope='feedback' AND ref_id IN ($ids) ORDER BY id")->fetchAll() as $im) {
+                if ($im['status'] === 'approved' || $alpha || (int) $im['user_id'] === (int) $u['id']) $by[$im['ref_id']][] = ['id' => (int) $im['id'], 'status' => $im['status']];
+                else $pend[$im['ref_id']] = ($pend[$im['ref_id']] ?? 0) + 1;
+            }
+            foreach ($rows as &$r) { $r['images'] = $by[$r['id']] ?? []; $r['pending_hidden'] = $pend[$r['id']] ?? 0; }
+        } catch (Throwable $e) {}
+    }
+    json_out(['items' => $rows, 'admin' => $admin, 'alpha' => $alpha]);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
 $b = body();
@@ -43,6 +54,9 @@ if ($a === 'add') {
         if ((int) $c->fetchColumn() >= 10) json_out(['error' => 'Bitte etwas später weiterschreiben.'], 429);
         $first = trim(strtok($text, "\n")); $title = mb_strlen($first) > 80 ? mb_substr($first, 0, 79) . '…' : $first;
         $pdo->prepare('INSERT INTO feedback (user_id,kind,title,body) VALUES (?,?,?,?)')->execute([$u['id'], $kind, $title, $text]);
+        $fid = (int) $pdo->lastInsertId();
+        // Bilder von Admin/Alpha gelten sofort als freigegeben, alle anderen warten auf die Prüfung
+        if (!empty($b['images']) && is_array($b['images'])) { try { images_attach($pdo, $b['images'], (int) $u['id'], 'feedback', $fid, $alpha ? 'approved' : 'pending'); } catch (Throwable $e) {} }
     } catch (PDOException $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     try {
         $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
@@ -77,6 +91,7 @@ if ($a === 'priority') {
 }
 if ($a === 'delete') {
     if (!$admin) json_out(['error' => 'Nicht erlaubt.'], 403);
+    try { $pdo->prepare("DELETE FROM images WHERE scope='feedback' AND ref_id=?")->execute([$id]); } catch (Throwable $e) {}
     $pdo->prepare('DELETE FROM feedback WHERE id=?')->execute([$id]);
     json_out(['ok' => true]);
 }
