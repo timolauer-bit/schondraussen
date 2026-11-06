@@ -98,3 +98,32 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     }
     return [$sent, $fail];
 }
+
+// Vorschau-Mail für den Testmail-Button: so sieht die Morgenmail nach den aktuellen Einstellungen aus.
+// Die Beispiele stammen aus den nächsten echten Terminen der Einträge mit Glocke (sonst feste Beispiele).
+function build_preview(PDO $pdo, array $u): array {
+    date_default_timezone_set('Europe/Berlin');
+    $today = date('Y-m-d');
+    try {
+        $s = $pdo->prepare("SELECT s.name, r.title, r.release_date FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
+            WHERE e.user_id=? AND e.bell=1 AND LENGTH(r.release_date)=10 AND r.release_date>=? ORDER BY r.release_date, s.name LIMIT 12");
+        $s->execute([$u['id'], $today]); $R = $s->fetchAll();
+    } catch (Throwable $e) { $R = []; }
+    $demo = !$R;
+    if ($demo) $R = [['name' => 'Beispiel-Band', 'title' => 'Neues Album', 'release_date' => date('Y-m-d', strtotime('+3 days'))], ['name' => 'Beispiel-Serie', 'title' => 'S02E05 Folgentitel', 'release_date' => date('Y-m-d', strtotime('+9 days'))], ['name' => 'Beispiel-Autor:in', 'title' => 'Neuer Roman', 'release_date' => date('Y-m-d', strtotime('+20 days'))]];
+    $line = fn($r) => '- ' . $r['name'] . ' – ' . $r['title'] . ' (' . fmt_date($r['release_date']) . ')';
+    $nNew = (int) ($u['n_new'] ?? 1); $nDay = (int) ($u['n_day'] ?? 1); $nWeek = (int) ($u['n_week'] ?? 0);
+    $text = "VORSCHAU: So sieht deine Benachrichtigungsmail nach deinen aktuellen Einstellungen aus.\n" .
+            "Die Termine unten sind echte kommende Termine aus deinen Listen" . ($demo ? " (du hast noch keine, daher Beispiele)" : "") . ", sie wurden nur als Beispiel zugeordnet.\n\n" .
+            "--- Morgenmail ---\n\nHallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
+    if ($nDay) $text .= "\nHEUTE ERSCHEINT\n" . implode("\n", array_map(fn($r) => '- ' . $r['name'] . ' – ' . $r['title'], array_slice($R, 0, 2))) . "\n";
+    if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n" . implode("\n", array_map($line, array_slice($R, 2, 3) ?: array_slice($R, 0, 2))) . "\n";
+    if (!$nDay && !$nNew) $text .= "\n(Du hast gerade weder „Neu angekündigt“ noch „Am Erscheinungstag“ eingeschaltet, deshalb gäbe es keine solche Mail.)\n";
+    $text .= "\nAlles im Überblick: " . base_url() . "/\n";
+    $wk = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][max(1, min(7, (int) ($u['n_weekday'] ?? 1))) - 1];
+    if ($nWeek) {
+        $in14 = array_values(array_filter($R, fn($r) => $r['release_date'] <= date('Y-m-d', strtotime('+14 days'))));
+        $text .= "\n--- Wochenübersicht (kommt jeden $wk) ---\n\nHallo,\n\nhier sind die Termine der nächsten 14 Tage aus deinen Listen:\n\n" . implode("\n", array_map($line, $in14 ?: array_slice($R, 0, 3))) . "\n\nAlles im Überblick: " . base_url() . "/\n";
+    } else $text .= "\n(Die Wochenübersicht ist ausgeschaltet.)\n";
+    return ['Schondraussen.de: Vorschau deiner Benachrichtigungen', $text];
+}

@@ -61,8 +61,9 @@ if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     start_session();
     if (time() - (int) ($_SESSION['testmail'] ?? 0) < 120) json_out(['ok' => false, 'msg' => 'Bitte kurz warten, bevor du erneut eine Testmail schickst.']);
     $_SESSION['testmail'] = time();
-    $ok = send_user_mail($pdo, $u, 'Schondraussen.de: Testmail', "Hallo,\n\ndas ist eine Testmail. Wenn du sie siehst, funktionieren die Benachrichtigungen.\n");
-    json_out(['ok' => $ok, 'msg' => $ok ? 'Testmail ist unterwegs. Schau auch im Spam-Ordner nach.' : 'Der Mailversand ist fehlgeschlagen.']);
+    [$subj, $txt] = build_preview($pdo, $u);
+    $ok = send_user_mail($pdo, $u, $subj, $txt);
+    json_out(['ok' => $ok, 'msg' => $ok ? 'Vorschau ist unterwegs. Schau auch im Spam-Ordner nach.' : 'Der Mailversand ist fehlgeschlagen.']);
 }
 $TYPES = ['author', 'artist', 'film', 'series'];
 if ($a === 'search') {
