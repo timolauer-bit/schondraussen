@@ -6,6 +6,7 @@ window.CHANGELOG = [
     'Benachrichtigungen neu: Glocke an jedem Eintrag, Mail-Arten (neu angekündigt, am Erscheinungstag, Wochenübersicht mit frei wählbarem Wochentag), Sammelmail ab 7 Uhr oder sofort, alles in den Einstellungen',
     'Glocke am Eintrag ohne Text: grün = Benachrichtigungen an, rot = aus',
     '„Aktualisieren“ liegt jetzt im „…“-Menü des Eintrags, der Kopf zeigt nur noch Glocke und Menü; Buttons einheitlich und mittig',
+    'Das „…“-Menü am Eintrag klappt ohne Neuladen der Seite auf (Aktualisieren, Treffer ändern, Entfernen mit Rückfrage), die Glocke schaltet ebenfalls ohne Flackern',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

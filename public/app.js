@@ -272,13 +272,29 @@
     var le = null; S.entries.forEach(function (x) { if (x.id === String(e.id)) le = x; });
     var bellOn = !le || +le.bell !== 0;
     var bellBtn = h('button', { class: 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'), type: 'button', title: bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus', 'aria-pressed': String(bellOn), 'aria-label': bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus',
-      onclick: function () { var on = !bellOn; if (le) le.bell = on ? 1 : 0; api('/api/data.php?a=bell&id=' + e.id, { on: on }); rows(); content(); } }, ico(on_(bellOn)));
-    var actions = h('div', { class: 'actions' }, bellBtn,
-      S.confirm === e.id ? [h('button', { class: 'btn warn small', type: 'button', onclick: function () { api('/api/data.php?a=remove&id=' + e.id, {}).then(function () { S.sel = null; S.confirm = null; load(); }); } }, 'Wirklich entfernen'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.confirm = null; content(); } }, 'Abbrechen')]
-        : [h('button', { class: 'btn ghost small more', type: 'button', title: 'Weitere Aktionen', 'aria-label': 'Weitere Aktionen', 'aria-expanded': String(S.menuFor === e.id), onclick: function () { S.menuFor = S.menuFor === e.id ? null : e.id; content(); } }, '…'),
-           S.menuFor === e.id ? h('button', { class: 'btn ghost small', id: 'rfr', type: 'button', onclick: function () { S.menuFor = null; refresh(cur); } }, ico(ICONS.refresh), 'Aktualisieren') : null,
-           S.menuFor === e.id && e.type !== 'film' ? h('button', { class: 'btn ghost small', type: 'button', onclick: function () { S.menuFor = null; S.relink = e.id; content(); } }, 'Treffer ändern') : null,
-           S.menuFor === e.id ? h('button', { class: 'btn warn small', type: 'button', onclick: function () { S.menuFor = null; S.confirm = e.id; content(); } }, 'Entfernen') : null]);
+      onclick: function () { bellOn = !bellOn; if (le) le.bell = bellOn ? 1 : 0; api('/api/data.php?a=bell&id=' + e.id, { on: bellOn }); bellBtn.className = 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'); bellBtn.title = bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus'; bellBtn.setAttribute('aria-pressed', String(bellOn)); bellBtn.setAttribute('aria-label', bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus'); bellBtn.textContent = ''; bellBtn.append(ico(on_(bellOn))); rows(); } }, ico(on_(bellOn)));
+    var menu = h('div', { class: 'menu', role: 'menu', hidden: true }), moreBtn, wrap;
+    function closeMenu() { menu.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', outside, true); document.removeEventListener('keydown', esc); }
+    function outside(ev) { if (!wrap.contains(ev.target)) closeMenu(); }
+    function esc(ev) { if (ev.key === 'Escape') closeMenu(); }
+    function fillMenu() {
+      menu.textContent = '';
+      menu.append(h('button', { class: 'mi', id: 'rfr', type: 'button', role: 'menuitem', onclick: function () { closeMenu(); refresh(cur); } }, ico(ICONS.refresh), 'Aktualisieren'));
+      if (e.type !== 'film') menu.append(h('button', { class: 'mi', type: 'button', role: 'menuitem', onclick: function () { closeMenu(); S.relink = e.id; content(); } }, 'Treffer ändern'));
+      menu.append(h('button', { class: 'mi warn', type: 'button', role: 'menuitem', onclick: function () {
+        menu.textContent = '';
+        menu.append(h('p', { class: 'mq' }, 'Wirklich aus deiner Liste entfernen?'),
+          h('button', { class: 'mi warn', type: 'button', onclick: function () { api('/api/data.php?a=remove&id=' + e.id, {}).then(function () { S.sel = null; S.confirm = null; load(); }); } }, 'Ja, entfernen'),
+          h('button', { class: 'mi', type: 'button', onclick: closeMenu }, 'Abbrechen'));
+      } }, 'Entfernen'));
+    }
+    moreBtn = h('button', { class: 'btn ghost small more', type: 'button', title: 'Weitere Aktionen', 'aria-label': 'Weitere Aktionen', 'aria-haspopup': 'menu', 'aria-expanded': 'false', onclick: function () {
+      if (!menu.hidden) { closeMenu(); return; }
+      fillMenu(); menu.hidden = false; moreBtn.setAttribute('aria-expanded', 'true');
+      setTimeout(function () { document.addEventListener('click', outside, true); document.addEventListener('keydown', esc); }, 0);
+    } }, '…');
+    wrap = h('div', { class: 'menuwrap' }, moreBtn, menu);
+    var actions = h('div', { class: 'actions' }, bellBtn, wrap);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp' }, stamp) : null);
     var gch = (e.genres || []).length ? h('div', { class: 'gchips' }, e.genres.map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));

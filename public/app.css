@@ -222,3 +222,13 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .card .actions .btn svg{width:15px;height:15px;display:block}
 .card .actions .btn.more{padding:0 10px;font-size:18px;letter-spacing:1px;padding-bottom:5px}
 .card .actions .bellbtn{padding:0}
+
+/* Dropdown-Menü am Eintrag */
+.menuwrap{position:relative;display:inline-flex}
+.menu{position:absolute;left:0;top:calc(100% + 6px);z-index:30;min-width:210px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:5px;display:flex;flex-direction:column;gap:2px}
+.menu[hidden]{display:none}
+.menu .mi{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);border-radius:7px;padding:9px 11px;font:500 14px var(--font-body);cursor:pointer}
+.menu .mi:hover,.menu .mi:focus-visible{background:var(--accent-soft)}
+.menu .mi.warn{color:var(--danger)}
+.menu .mi .ico{display:inline-flex;margin:0}.menu .mi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.menu .mq{margin:4px 11px 6px;font-size:13px;color:var(--muted)}
