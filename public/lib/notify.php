@@ -31,7 +31,8 @@ function fmt_date(string $d): string {
 // Gibt [versendete Mails, Fehler] zurück.
 function run_digests(PDO $pdo, int $maxMails = 40): array {
     $sent = 0; $fail = 0;
-    $users = $pdo->query("SELECT id,email,unsub_token FROM users WHERE notify=1 AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL)")->fetchAll();
+    try { $users = $pdo->query("SELECT id,email,unsub_token FROM users WHERE notify=1 AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL) AND delete_requested_at IS NULL")->fetchAll(); }
+    catch (Throwable $e) { $users = $pdo->query("SELECT id,email,unsub_token FROM users WHERE notify=1 AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL)")->fetchAll(); }
     $today = date('Y-m-d'); $soonTo = date('Y-m-d', strtotime('+7 days'));
     $subs = $pdo->prepare('SELECT s.id,s.name FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.fetched_at IS NOT NULL');
     $rels = $pdo->prepare("SELECT title,release_date FROM releases WHERE subject_id=? AND release_date<>'' AND release_date IS NOT NULL");

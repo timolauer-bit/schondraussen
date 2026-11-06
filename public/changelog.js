@@ -1,4 +1,9 @@
 window.CHANGELOG = [
+  { v: 7, d: '06.11.2026', t: [
+    'Konto löschen in den Einstellungen: Die Daten bleiben noch eine Woche gespeichert, in dieser Zeit lässt sich die Löschung abbrechen, danach wird alles endgültig gelöscht',
+    'Abmelden steht jetzt oben rechts neben der Versionsangabe',
+    'Versionsangabe mit Rahmen'
+  ] },
   { v: 6, d: '05.11.2026', t: [
     'Umzug auf einen eigenen Server (schondraussen.de): eigene Anmeldung mit E-Mail-Bestätigung und Passwort-Zurücksetzen, Mitgliedsnummern',
     'Testbetrieb: Neue Konten sehen erst Inhalte, wenn der Admin sie freigeschaltet hat. Der Admin bekommt bei jedem neuen Konto eine Mail und verwaltet alle Nutzer unter „Admin“',

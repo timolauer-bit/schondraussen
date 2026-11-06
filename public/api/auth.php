@@ -87,6 +87,22 @@ try {
 
     if ($a === 'logout') { $_SESSION = []; session_destroy(); json_out(['ok' => true]); }
 
+    if ($a === 'delete_account' || $a === 'cancel_delete') {
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte zuerst anmelden.'], 401);
+        if ($a === 'cancel_delete') {
+            $pdo->prepare('UPDATE users SET delete_requested_at=NULL WHERE id=?')->execute([$cu['id']]);
+            json_out(['ok' => true]);
+        }
+        if ($cu['role'] === 'admin') json_out(['error' => 'Das Admin-Konto kann hier nicht gelöscht werden.'], 403);
+        if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
+        $s = $pdo->prepare('SELECT pass_hash FROM users WHERE id=?'); $s->execute([$cu['id']]); $row = $s->fetch();
+        if (!$row || !password_verify((string) ($b['password'] ?? ''), $row['pass_hash'])) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
+        $pdo->prepare('UPDATE users SET delete_requested_at=NOW() WHERE id=? AND delete_requested_at IS NULL')->execute([$cu['id']]);
+        $until = date('d.m.Y', time() + 7 * 86400);
+        try { send_mail($cu['email'], 'Dein Konto wird gelöscht', "Du hast die Löschung deines Kontos bei Schondraussen.de beantragt.\n\nDeine Daten bleiben noch eine Woche gespeichert und werden nach dem $until endgültig gelöscht. Wenn du dich bis dahin wieder anmeldest, kannst du die Löschung mit einem Klick abbrechen.\n\nWenn du das nicht warst, melde dich an und brich die Löschung ab, und ändere dann dein Passwort.\n"); } catch (Throwable $e) {}
+        json_out(['ok' => true]);
+    }
+
     if ($a === 'forgot') {
         if (limited($pdo, 'forgot', 5, 60)) json_out(['error' => 'Zu viele Versuche, bitte später erneut.'], 429);
         note($pdo, 'forgot');

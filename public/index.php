@@ -53,8 +53,13 @@ h3{margin:18px 0 6px;font-size:15px}
 <p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort.</p>
 <?php if ($u): ?>
   <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars($u['email']) ?></b> (Mitglied Nr. <?= (int) $u['id'] ?>).</p>
+<?php if (!empty($u['deleting'])): $until = date('d.m.Y', strtotime($u['delete_requested_at']) + 7 * 86400); ?>
+  <p><b>Dein Konto ist zur Löschung vorgemerkt.</b> Deine Daten werden nach dem <?= $until ?> endgültig gelöscht. Bis dahin kannst du es behalten, wenn du die Löschung abbrichst.</p>
+  <button id="canceldel" type="button">Löschung abbrechen</button> <button id="logout" type="button" class="ghost">Abmelden</button></div>
+<?php else: ?>
   <p><b>Dein Konto wartet auf Freischaltung.</b> Die Seite ist noch im Testbetrieb. Sobald der Admin dich freigeschaltet hat, siehst du hier deine Listen. Schau später einfach noch einmal vorbei.</p>
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
+<?php endif; ?>
 <?php else: ?>
   <div class="card">
     <div class="note"><b>Testbetrieb:</b> Diese Seite ist noch nicht öffentlich. Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
@@ -102,6 +107,8 @@ h3{margin:18px 0 6px;font-size:15px}
   if (q.get('verified') === '0') say('Der Bestätigungslink ist abgelaufen oder ungültig.', true);
 
   var lo = document.getElementById('logout');
+  var cd = document.getElementById('canceldel');
+  if (cd) cd.addEventListener('click', function () { api('cancel_delete').then(function () { location.reload(); }); });
   if (lo) lo.addEventListener('click', function () { api('logout').then(function () { location.reload(); }); });
 })();
 </script>

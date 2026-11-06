@@ -67,6 +67,9 @@ $M = [
      FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '006_delete_request' => [
+  "ALTER TABLE users ADD COLUMN delete_requested_at DATETIME NULL",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

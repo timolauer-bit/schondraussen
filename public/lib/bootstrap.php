@@ -41,7 +41,8 @@ function current_user(): ?array {
     $u = $s->fetch();
     if (!$u) return null;
     unset($u['pass_hash']);
-    $u['approved'] = $u['role'] === 'admin' || !empty($u['approved_at']);
+    $u['deleting'] = !empty($u['delete_requested_at']);
+    $u['approved'] = !$u['deleting'] && ($u['role'] === 'admin' || !empty($u['approved_at']));
     return $u;
 }
 
