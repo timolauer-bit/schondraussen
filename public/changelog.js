@@ -1,5 +1,6 @@
 window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
+    'Kontakt (Admin): In der Liste der Unterhaltungen stehen Benutzernamen statt E-Mail-Adressen (ohne Namen „Mitglied Nr. …“)',
     'Kontakt: Unterhaltung und Eingabe sind klar getrennt (zwei Karten, der Verlauf getönt ohne Rahmen, die Eingabe mit farbigem Rahmen) und ein leerer Verlauf erklärt, was zu tun ist',
     'Einstellungen und Admin: Bereiche sind jetzt als abgegrenzte Karten mit Überschrift sortiert (Profil, Darstellung, Benachrichtigungen, Beispieleinträge und Import, Datenschutz; im Admin Amazon, Bilder, Nutzerverwaltung, gesperrte Adressen, Ansicht prüfen); „Konto löschen“ ist rot abgesetzt',
     'Obere Leiste: Admin, Einstellungen, Featurewünsche, Bugs, Info und Kontakt als Symbole (Name per Tooltip, bei der aktiven Seite sichtbar), Leiste bleibt einzeilig; Benutzername, Version und Abmelden stehen nebeneinander',

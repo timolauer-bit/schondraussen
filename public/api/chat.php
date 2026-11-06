@@ -13,7 +13,7 @@ if ($a === 'unread') {
     json_out(['unread' => (int) $n]);
 }
 if ($a === 'threads' && $admin) {
-    $rows = $pdo->query("SELECT u.id,u.email,
+    $rows = $pdo->query("SELECT u.id,u.username,
         (SELECT IF(body='','[Bild]',body) FROM messages m WHERE m.user_id=u.id ORDER BY m.id DESC LIMIT 1) AS last_body,
         (SELECT from_admin FROM messages m WHERE m.user_id=u.id ORDER BY m.id DESC LIMIT 1) AS last_admin,
         (SELECT MAX(created_at) FROM messages m WHERE m.user_id=u.id) AS last_at,
