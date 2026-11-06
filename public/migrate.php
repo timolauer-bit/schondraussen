@@ -124,6 +124,16 @@ $M = [
      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '014_feature_seed' => [
+  "INSERT INTO feedback (user_id,kind,title,body)
+     SELECT id,'feature','Listen veröffentlichen und übernehmen',
+     'User können ihre Listen auf einer Seite veröffentlichen. Dann könnten andere Leute diese Daten alle oder einzeln übernehmen.\n\nZusammen mit Übersichten nach „Am häufigsten abonnierte Künstler“, zeitlich insgesamt und für die letzten 14 Tage.'
+     FROM users WHERE role='admin' ORDER BY id LIMIT 1",
+  "INSERT INTO feedback (user_id,kind,title,body)
+     SELECT id,'feature','Obere Leiste neu aufbauen',
+     'Obere Leiste neu aufbauen wegen Platzproblem.'
+     FROM users WHERE role='admin' ORDER BY id LIMIT 1",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);
