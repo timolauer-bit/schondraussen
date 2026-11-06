@@ -211,6 +211,14 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .row-btn .beloff svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nopts select{max-width:100%}
 
-.bellbtn{padding:6px 9px}
+
 .bellbtn.on{color:#1d8a4a;border-color:#1d8a4a;background:color-mix(in srgb,#1d8a4a 12%,transparent)}
 .bellbtn.off{color:#c0392b;border-color:#c0392b;background:color-mix(in srgb,#c0392b 10%,transparent)}
+
+/* Aktionsbuttons im Eintragskopf: gleiche Höhe, Inhalt mittig */
+.card .actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.card .actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;min-width:32px;padding:0 11px;line-height:1;box-sizing:border-box}
+.card .actions .btn .ico{display:inline-flex;align-items:center;margin:0}
+.card .actions .btn svg{width:15px;height:15px;display:block}
+.card .actions .btn.more{padding:0 10px;font-size:18px;letter-spacing:1px;padding-bottom:5px}
+.card .actions .bellbtn{padding:0}
