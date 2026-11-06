@@ -257,7 +257,6 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .fblist{display:grid;gap:0}
 .fbrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
 .fblist .fbrow:last-child{border-bottom:1px solid var(--line)}
-.fbrow:has(.fbacts){grid-template-columns:minmax(0,1fr)}
 .vote{display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:6px 8px;cursor:pointer}
 .vote svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .vote b{font:700 14px var(--font-mono)}
@@ -275,3 +274,8 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .prio.urgent{background:#c0392b;border-color:#c0392b;color:#fff}
 .prio.low{opacity:.7}
 @media(max-width:1340px) and (min-width:761px){.topbar{gap:0 16px}}
+
+.fbrow.bugrow{grid-template-columns:auto minmax(0,1fr)}
+.fbchk{width:20px;height:20px;margin:8px 0 0;accent-color:var(--accent);cursor:pointer}
+.fbrow.done .fbt{text-decoration:line-through;color:var(--muted)}
+.fbrow.done{opacity:.7}

@@ -11,16 +11,24 @@ if ($a === 'list') {
     $kind = (string) ($_GET['kind'] ?? 'feature');
     if (!isset($kinds[$kind])) json_out(['error' => 'Unbekannte Liste.'], 400);
     if ($kind === 'bug') require_alpha($u);
+    $doneSel = ''; $doneOrd = '';
+    try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try {
-        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,
+        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email$doneSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id AND v.user_id=?) AS mine_vote
-            FROM feedback f WHERE f.kind=? " . ($kind === 'bug'
-                ? "ORDER BY FIELD(f.priority,'urgent','normal','low'), f.created_at DESC"
+            FROM feedback f LEFT JOIN users uu ON uu.id=f.user_id WHERE f.kind=? " . ($kind === 'bug'
+                ? "ORDER BY {$doneOrd}FIELD(f.priority,'urgent','normal','low'), f.created_at DESC"
                 : "ORDER BY votes DESC, f.created_at DESC") . " LIMIT 300");
         $s->execute([$u['id'], $kind]); $rows = $s->fetchAll();
     } catch (Throwable $e) { json_out(['items' => [], 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
-    foreach ($rows as &$r) { $r['mine'] = (int) $r['user_id'] === (int) $u['id']; if ($kind === 'feature') unset($r['priority']); if (!$alpha) unset($r['user_id']); }
+    foreach ($rows as &$r) {
+        $r['mine'] = (int) $r['user_id'] === (int) $u['id'];
+        if ($kind === 'feature') unset($r['priority']);
+        // Absender: Admin sieht Nummer und E-Mail, Alphatester die Mitgliedsnummer
+        if ($alpha) $r['author'] = 'Mitglied Nr. ' . (int) $r['user_id'] . ($admin && $r['author_email'] ? ' · ' . $r['author_email'] : '');
+        unset($r['user_id'], $r['author_email']);
+    }
     json_out(['items' => $rows, 'admin' => $admin]);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
@@ -54,6 +62,12 @@ if ($a === 'vote') {
     else $pdo->prepare('DELETE FROM feedback_votes WHERE feedback_id=? AND user_id=?')->execute([$id, $u['id']]);
     $n = $pdo->prepare('SELECT COUNT(*) FROM feedback_votes WHERE feedback_id=?'); $n->execute([$id]);
     json_out(['ok' => true, 'votes' => (int) $n->fetchColumn()]);
+}
+if ($a === 'done') {
+    if ($kind !== 'bug') json_out(['error' => 'Nur Bugmeldungen lassen sich abhaken.'], 422);
+    try { $pdo->prepare('UPDATE feedback SET done_at=' . (!empty($b['on']) ? 'NOW()' : 'NULL') . ' WHERE id=?')->execute([$id]); }
+    catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
 }
 if ($a === 'priority') {
     if ($kind !== 'bug') json_out(['error' => 'Nur Bugmeldungen haben eine Dringlichkeit.'], 422);

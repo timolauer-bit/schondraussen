@@ -107,6 +107,9 @@ $M = [
      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '012_feedback_done' => [
+  "ALTER TABLE feedback ADD COLUMN done_at DATETIME NULL",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

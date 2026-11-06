@@ -545,12 +545,14 @@
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
       if (!l.length) { box.append(h('p', { class: 'hint' }, bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Wünsche. Schreib den ersten unter „Kontakt“.')); return; }
       l.forEach(function (x) {
-        var body = h('div', { class: 'fbbody', hidden: true }, h('p', { style: 'white-space:pre-wrap;margin:0 0 10px' }, x.body), h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (bug && x.user_id ? ' · von Mitglied Nr. ' + x.user_id : '') + (x.mine ? ' · von dir' : '')));
+        var body = h('div', { class: 'fbbody', hidden: true }, h('p', { style: 'white-space:pre-wrap;margin:0 0 10px' }, x.body), h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (x.author ? ' · von ' + x.author : '') + (x.mine ? ' · von dir' : '') + (bug && x.done_at ? ' · erledigt am ' + when(x.done_at) : '')));
         var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, x.title), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : null);
         var side;
         if (bug) side = h('div', { class: 'fbacts' }, ['urgent', 'normal', 'low'].map(function (k) { return h('button', { class: 'btn ghost small prio-' + k, type: 'button', 'aria-pressed': String(x.priority === k), onclick: function () { api('/api/feedback.php?a=priority', { id: x.id, priority: k }).then(function () { reload(); }); } }, PRIO[k][0]); }));
         else { var on = +x.mine_vote > 0, vb = h('button', { class: 'vote' + (on ? ' on' : ''), type: 'button', title: on ? 'Stimme zurücknehmen' : 'Dafür stimmen', 'aria-pressed': String(on), onclick: function () { api('/api/feedback.php?a=vote', { id: x.id, on: !on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, ico(ICONS.thumb), h('b', null, String(x.votes))); side = vb; }
-        var row = h('div', { class: 'fbrow' }, bug ? null : side, h('div', { class: 'fbmain' }, head, body, bug ? side : null));
+        var chk = null;
+        if (bug) { chk = h('input', { type: 'checkbox', class: 'fbchk', 'aria-label': 'Erledigt', title: x.done_at ? 'Als offen markieren' : 'Als erledigt abhaken', onchange: function () { var on = this.checked; api('/api/feedback.php?a=done', { id: x.id, on: on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }); chk.checked = !!x.done_at; }
+        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow' : '') + (bug && x.done_at ? ' done' : '') }, bug ? chk : side, h('div', { class: 'fbmain' }, head, body, bug ? side : null));
         if (D.admin && !S.preview) body.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen')));
         box.append(row);
       });

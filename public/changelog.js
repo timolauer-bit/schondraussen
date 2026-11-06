@@ -16,6 +16,7 @@ window.CHANGELOG = [
     'Admin: Nutzer lassen sich zu Alphatestern ernennen; Alpha-Funktionen sind nur für sie (und Admins) sichtbar und gelb markiert',
     'Kontakt: Auswahl Chat / Featurewunsch / Bugmeldung über dem Senden-Button',
     'Neuer Reiter „Featurewünsche“ (Liste mit Daumen-Abstimmung, nach Stimmen sortiert, Klick zeigt den ganzen Text) und „Bugs“ (nur Admin und Alphatester, mit Dringlichkeit Dringend/Normal/Unwichtig)',
+    'Featurewünsche und Bugs: Admin und Alphatester sehen, von wem ein Eintrag stammt (Admin mit E-Mail); Bugs lassen sich abhaken, erledigte stehen unten',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
