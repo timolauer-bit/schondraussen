@@ -17,7 +17,7 @@ if ($a === 'get') {
         } elseif ($im['ref_id'] !== null && $im['scope'] === 'feedback') {
             $f = $pdo->prepare('SELECT kind FROM feedback WHERE id=?'); $f->execute([$im['ref_id']]); $kind = $f->fetchColumn();
             if ($kind === 'bug') $ok = $alpha;                       // Bugs sieht nur Admin/Alpha (Admin oben schon erledigt)
-            elseif ($kind === 'feature') $ok = $im['status'] === 'approved' || $alpha;
+            elseif ($kind === 'feature') $ok = $alpha; // Featurewünsche sind noch Alpha
         }
     }
     if (!$ok) { http_response_code(404); exit; }

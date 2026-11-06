@@ -6,12 +6,14 @@ require __DIR__ . '/../lib/images.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $admin = $u['role'] === 'admin'; $alpha = is_alpha($u);
+// Featurewünsche sind noch Alpha (nur Admin und Alphatester); auf false setzen, um sie für alle zu öffnen
+const FEATURE_ALPHA = true;
 $kinds = ['feature' => 'Featurewunsch', 'bug' => 'Bugmeldung'];
 
 if ($a === 'list') {
     $kind = (string) ($_GET['kind'] ?? 'feature');
     if (!isset($kinds[$kind])) json_out(['error' => 'Unbekannte Liste.'], 400);
-    if ($kind === 'bug') require_alpha($u);
+    if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
     $doneSel = ''; $doneOrd = '';
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try {
@@ -48,6 +50,7 @@ $b = body();
 if ($a === 'add') {
     $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? ''));
     if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Featurewunsch oder Bugmeldung.'], 422);
+    if ($kind === 'feature' && FEATURE_ALPHA) require_alpha($u);
     if (mb_strlen($text) < 5 || mb_strlen($text) > 2000) json_out(['error' => 'Bitte beschreibe es in 5 bis 2000 Zeichen.'], 422);
     try {
         $c = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
@@ -68,7 +71,7 @@ if ($a === 'add') {
 $id = (int) ($b['id'] ?? 0);
 $f = $pdo->prepare('SELECT kind FROM feedback WHERE id=?'); $f->execute([$id]); $kind = $f->fetchColumn();
 if (!$kind) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
-if ($kind === 'bug') require_alpha($u);
+if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
 
 if ($a === 'vote') {
     if ($kind !== 'feature') json_out(['error' => 'Nur Featurewünsche haben Stimmen.'], 422);

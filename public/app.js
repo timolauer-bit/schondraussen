@@ -108,7 +108,7 @@
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
   // Funktionsstatus: 'alpha' = nur für Admins und Alphatester sichtbar (mit auffälliger Markierung), sonst für alle.
-  var FEATURES = {};
+  var FEATURES = { feat: 'alpha' }; // Featurewünsche: noch Alpha
   function isAlpha() { return !S.preview && !!D.alpha; }
   function feat(key) { return (FEATURES[key] || 'live') !== 'alpha' || isAlpha(); }
   function alphaBadge() { return h('span', { class: 'alphabadge', title: 'Alpha: Diese Funktion ist noch in Entwicklung und nur für Alphatester sichtbar' }, 'Alpha'); }
@@ -128,7 +128,7 @@
     ORDER.forEach(function (k) { topbar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
     var rg = ' rg';
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
-    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg), btn('feat', 'Featurewünsche', 0, ' feat'));
+    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg), feat('feat') ? btn('feat', 'Featurewünsche', 0, ' feat') : null);
     if (isAlpha()) topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
     topbar.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
@@ -153,7 +153,7 @@
     var v = S.view;
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat') feedbackView('feature'); else if (v === 'bug' && isAlpha()) feedbackView('bug');
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug' && isAlpha()) feedbackView('bug');
   }
 
   /* ---------- Kalender ---------- */
@@ -549,7 +549,7 @@
     }
     var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
     var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Featurewunsch', 'Was wünschst du dir? (Die erste Zeile erscheint als Titel in der Liste)', 'Dein Wunsch landet in der Liste „Featurewünsche“, alle können dafür abstimmen.'], ['bug', 'Bugmeldung', 'Was funktioniert nicht? Wo, und was hast du gemacht? (Die erste Zeile erscheint als Titel)', 'Bugmeldungen sehen nur der Admin und die Alphatester.']];
-    function drawKinds() { kindBox.textContent = ''; KINDS.forEach(function (k) { kindBox.append(h('button', { class: 'kindbtn', type: 'button', role: 'radio', 'aria-checked': String(kindSel === k[0]), onclick: function () { var was = scopeOf(); kindSel = k[0]; if (scopeOf() !== was && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = 'Die angehängten Bilder wurden entfernt, weil du die Art gewechselt hast.'; } inp.placeholder = k[2]; kindHint.textContent = k[3]; inp.maxLength = k[0] === 'chat' ? 1000 : 2000; drawKinds(); } }, k[1])); }); }
+    function drawKinds() { kindBox.textContent = ''; KINDS.filter(function (k) { return k[0] !== 'feature' || feat('feat'); }).forEach(function (k) { kindBox.append(h('button', { class: 'kindbtn', type: 'button', role: 'radio', 'aria-checked': String(kindSel === k[0]), onclick: function () { var was = scopeOf(); kindSel = k[0]; if (scopeOf() !== was && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = 'Die angehängten Bilder wurden entfernt, weil du die Art gewechselt hast.'; } inp.placeholder = k[2]; kindHint.textContent = k[3]; inp.maxLength = k[0] === 'chat' ? 1000 : 2000; drawKinds(); } }, k[1])); }); }
     drawKinds();
     var fileIn = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: true, hidden: true, onchange: function () { addFiles(fileIn.files); fileIn.value = ''; } });
     var form = h('form', { class: 'chatform', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); send(); } }, inp, fileIn,
@@ -578,7 +578,7 @@
   function feedbackView(kind) {
     var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Featurewünsche'),
       h('p', { class: 'hint' }, bug ? 'Meldungen von Nutzern. Du siehst sie als Admin oder Alphatester. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Wünsche von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für einen Wunsch, ein zweiter Klick nimmt die Stimme zurück. Neue Wünsche schreibst du unter „Kontakt“ (Auswahl „Featurewunsch“).')),
-      box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(p); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
+      box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(bug ? p : alphaWrap('feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
     function draw(r) {

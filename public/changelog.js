@@ -18,6 +18,7 @@ window.CHANGELOG = [
     'Neuer Reiter „Featurewünsche“ (Liste mit Daumen-Abstimmung, nach Stimmen sortiert, Klick zeigt den ganzen Text) und „Bugs“ (nur Admin und Alphatester, mit Dringlichkeit Dringend/Normal/Unwichtig)',
     'Featurewünsche und Bugs: Admin und Alphatester sehen, von wem ein Eintrag stammt (Admin mit E-Mail); Bugs lassen sich abhaken, erledigte stehen unten',
     'Bilder im Chat, bei Featurewünschen und Bugs anhängen (Büroklammer oder Strg+V); bei Featurewünschen und Bugs erscheinen sie für andere erst nach Freigabe durch Admin oder Alphatester',
+    'Featurewünsche sind vorerst Alpha: nur Admin und Alphatester sehen die Seite, können abstimmen und Wünsche einreichen',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
