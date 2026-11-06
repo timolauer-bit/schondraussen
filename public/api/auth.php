@@ -74,8 +74,16 @@ try {
             if ($first) { try { $pdo->exec("UPDATE users SET approved_at=NOW() WHERE role='admin'"); } catch (Throwable $e) {} }
             else {
                 try {
+                    $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
+                    $link = '';
+                    try { // Ein-Klick-Freischaltung per Mail (14 Tage gültig, einmal verwendbar)
+                        [$tk, $th] = token_new(); $nid = (int) $pdo->query('SELECT MAX(id) FROM users')->fetchColumn();
+                        $q = $pdo->prepare('SELECT id FROM users WHERE email=?'); $q->execute([$email]); $nid = (int) $q->fetchColumn();
+                        $pdo->prepare('INSERT INTO admin_tokens (user_id,token_hash,expires_at) VALUES (?,?,NOW() + INTERVAL 14 DAY)')->execute([$nid, $th]);
+                        $link = "\n\nKonto direkt freischalten (Link nur für dich, 14 Tage gültig):\n$base/approve.php?t=$tk\n";
+                    } catch (Throwable $e) {}
                     foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\n$email\n\nDas Konto sieht keine Inhalte, bis du es in der Nutzerverwaltung freischaltest:\n" . rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/') . "/\n");
+                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\nBenutzername: $uname\nE-Mail: $email\n\nDas Konto sieht keine Inhalte, bis du es freischaltest." . $link . "\nOder in der Nutzerverwaltung:\n$base/\n\nKeine Freischaltung nötig? Dann ignoriere diese Mail einfach.\n");
                 } catch (Throwable $e) {}
             }
         }

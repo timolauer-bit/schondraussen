@@ -151,6 +151,16 @@ $M = [
   '017_name_change' => [
   "ALTER TABLE users ADD COLUMN name_change_required TINYINT(1) NOT NULL DEFAULT 0",
  ],
+  '018_admin_tokens' => [
+  "CREATE TABLE IF NOT EXISTS admin_tokens (
+     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     user_id INT UNSIGNED NOT NULL,
+     token_hash CHAR(64) NOT NULL UNIQUE,
+     expires_at DATETIME NOT NULL,
+     used_at DATETIME NULL,
+     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);
