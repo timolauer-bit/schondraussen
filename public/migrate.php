@@ -164,6 +164,13 @@ $M = [
   '019_move_topbar_to_bugs' => [
   "UPDATE feedback SET kind='bug', priority='normal' WHERE kind='feature' AND title='Obere Leiste neu aufbauen'",
  ],
+  '020_suggest_cache' => [
+  "CREATE TABLE IF NOT EXISTS suggest_cache (
+     k VARCHAR(190) NOT NULL PRIMARY KEY,
+     data MEDIUMTEXT NOT NULL,
+     fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

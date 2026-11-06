@@ -30,6 +30,7 @@ window.CHANGELOG = [
     'Admin-Mail bei neuer Registrierung mit Freischaltungs-Link (Bestätigung per Knopf, einmal verwendbar)',
     'Featurewunsch und Bugmeldung: Bestätigung als Fenster nach dem Abschicken',
     'Passwort anzeigen per Augensymbol; beim Registrieren und beim Zurücksetzen zweimal eingeben',
+    'Ähnliche Künstler:innen, Serien und Autor:innen in jedem Eintrag (aus ListenBrainz, TVmaze und Open Library) und bis zu 10 beliebte Vorschläge je Genre auf leeren Listen, jeweils mit „Hinzufügen“',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

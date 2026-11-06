@@ -271,7 +271,7 @@
   function content() {
     var box = $('content'); box.textContent = '';
     var es = entriesOf(S.cat), t = TYPES[S.cat];
-    if (!es.length) { box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural), h('p', null, 'Gib links einen Namen ein und wähle den passenden Treffer. Werke und angekündigte Neuerscheinungen werden dann automatisch geladen.'))); return; }
+    if (!es.length) { box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural), h('p', null, 'Gib links einen Namen ein und wähle den passenden Treffer. Werke und angekündigte Neuerscheinungen werden dann automatisch geladen.'))); box.append(popularBox(S.cat)); return; }
     var cur = es.filter(function (e) { return e.id === S.sel; })[0];
     if (!cur) { box.append(overview(S.cat)); return; }
     box.append(h('button', { class: 'backlink', type: 'button', onclick: function () { S.sel = null; S.confirm = null; rows(); content(); } }, '← Alle ' + t.plural));
@@ -340,13 +340,68 @@
     var up = r.releases.map(function (x) { return { e: e, p: parseDate(x.release_date), u: { title: x.title, date: x.release_date, kind: x.kind || '', note: x.note || '' } }; });
     card.append(h('h3', { class: 'sec' }, 'Kommende Veröffentlichungen'));
     if (up.length) up.forEach(function (it) { card.append(relRow(it)); }); else card.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.'));
-    if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes)); return card; }
+    if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes)); card.append(renderSimilar(e)); return card; }
     if (e.type === 'series' && e.fetched_at && !S.epTried[e.id]) { S.epTried[e.id] = 1; refresh(cur, true); }
     card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : 'Bekannte Werke'));
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
     r.works.forEach(function (w) { card.append(h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), amazonLink(e, w.title))); });
+    card.append(renderSimilar(e));
     return card;
+  }
+  /* ---------- Vorschläge: ähnliche Einträge und beliebte Einträge je Genre ---------- */
+  var POP = {
+    artist: [['Rock', 'rock'], ['Metal', 'metal'], ['Thrash Metal', 'thrash metal'], ['Hard Rock', 'hard rock'], ['Punk', 'punk'], ['Pop', 'pop'], ['Hip-Hop', 'hip hop'], ['Elektronik', 'electronic'], ['Jazz', 'jazz'], ['Klassik', 'classical'], ['Folk', 'folk'], ['Blues', 'blues'], ['Reggae', 'reggae'], ['Country', 'country'], ['Indie', 'indie'], ['Soul', 'soul'], ['Schlager', 'schlager']],
+    series: [['Drama', 'Drama'], ['Komödie', 'Comedy'], ['Science-Fiction', 'Science-Fiction'], ['Fantasy', 'Fantasy'], ['Krimi', 'Crime'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Action', 'Action'], ['Abenteuer', 'Adventure'], ['Mystery', 'Mystery'], ['Romanze', 'Romance'], ['Anime', 'Anime'], ['Familie', 'Family'], ['Western', 'Western'], ['Krieg', 'War'], ['Geschichte', 'History']],
+    author: [['Fantasy', 'Fantasy'], ['Science-Fiction', 'Science fiction'], ['Krimi', 'Mystery and detective stories'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Liebesroman', 'Romance'], ['Historischer Roman', 'Historical fiction'], ['Biografie', 'Biography'], ['Jugendbuch', 'Young adult fiction'], ['Humor', 'Humor'], ['Abenteuer', 'Adventure']]
+  };
+  function addSuggestion(type, it, btn, done) {
+    btn.disabled = true; btn.textContent = 'Wird hinzugefügt …';
+    api('/api/data.php?a=add', { type: type, name: it.name, ext: it.ext || {} }).then(function (r) {
+      if (!r.ok) { btn.disabled = false; btn.textContent = 'Hinzufügen'; say(r.error || 'Das hat nicht geklappt.', true); popup('Nicht hinzugefügt', r.error || 'Das hat nicht geklappt.'); return; }
+      btn.textContent = 'Hinzugefügt ✓'; btn.className = 'btn ghost small';
+      load(function () { nav(); if (S.view === 'list' && $('list')) { filt(); rows(); } if (done) done(); });
+    });
+  }
+  function suggestList(type, res, onChange) {
+    var box = h('div', { class: 'sglist' });
+    if (res.msg && !(res.items || []).length) box.append(h('p', { class: 'hint' }, res.msg));
+    (res.items || []).forEach(function (it) {
+      var b = it.have ? h('span', { class: 'hint', style: 'margin:0' }, 'Schon auf deiner Liste') : h('button', { class: 'btn small', type: 'button', onclick: function () { addSuggestion(type, it, b, onChange); } }, 'Hinzufügen');
+      box.append(h('div', { class: 'sgrow' }, h('div', { class: 'sgt' }, h('b', null, it.name), it.note ? h('span', { class: 'hint', style: 'margin:0' }, ' · ' + it.note) : null), b));
+    });
+    return box;
+  }
+  function renderSimilar(e) {
+    var t = TYPES[e.type], sec = h('section', { class: 'similar' }), body = h('div', null);
+    sec.append(h('h3', { class: 'sec' }, 'Ähnliche ' + t.plural), body);
+    function ask(fresh) {
+      body.textContent = ''; body.append(h('p', { class: 'state pulse' }, 'Suche Vorschläge …'));
+      api('/api/suggest.php?a=similar&id=' + e.id + (fresh ? '&fresh=1' : '')).then(function (r) {
+        body.textContent = '';
+        if (r.error) { body.append(h('p', { class: 'warnbox' }, r.error)); return; }
+        body.append(suggestList(e.type, r), h('p', { class: 'hint' }, 'Die Vorschläge kommen aus ' + ({ artist: 'ListenBrainz', series: 'TVmaze-Daten (gleiche Genres, nach Beliebtheit)', author: 'Open Library (gleiche Themen)' }[e.type] || 'freien Datenquellen') + ' und können Lücken haben.'));
+      });
+    }
+    if (e.type === 'film') { body.append(h('p', { class: 'hint' }, 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.')); return sec; }
+    body.append(h('p', { class: 'hint' }, 'Lass dir zeigen, was dir noch gefallen könnte.'), h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { ask(false); } }, 'Vorschläge laden')));
+    return sec;
+  }
+  function popularBox(cat) {
+    var t = TYPES[cat], sec = h('section', { class: 'similar' }), chips = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Genre wählen' }), out = h('div', null), cur = null;
+    sec.append(h('h3', { class: 'sec' }, 'Beliebte ' + t.plural + ' entdecken'));
+    if (!POP[cat]) { sec.append(h('p', { class: 'hint' }, 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.')); return sec; }
+    sec.append(h('p', { class: 'hint' }, 'Wähle ein Genre und bekomme bis zu 10 typische Vorschläge, die du mit einem Klick auf deine Liste setzt.'), chips, out);
+    function draw() { chips.textContent = ''; POP[cat].forEach(function (g) { chips.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(cur === g[1]), onclick: function () { cur = g[1]; draw(); go2(g); } }, g[0])); }); }
+    function go2(g) {
+      out.textContent = ''; out.append(h('p', { class: 'state pulse' }, 'Suche Vorschläge …'));
+      api('/api/suggest.php?a=popular&type=' + cat + '&genre=' + encodeURIComponent(g[1])).then(function (r) {
+        if (cur !== g[1]) return; out.textContent = '';
+        if (r.error) { out.append(h('p', { class: 'warnbox' }, r.error)); return; }
+        out.append(suggestList(cat, r));
+      });
+    }
+    draw(); return sec;
   }
   function relinkBox(cur, e) {
     var box = h('div', { class: 'cfgpanel', style: 'margin:14px 0' }), inp = h('input', { type: 'text', maxlength: '80', placeholder: 'Anderer Titel oder Schreibweise', value: '' }), res = h('div', { class: 'suggest wide2' });

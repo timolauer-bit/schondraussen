@@ -300,3 +300,6 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .unmodal{position:fixed;inset:0;z-index:60;background:rgba(10,14,18,.6);display:flex;align-items:center;justify-content:center;padding:16px}
 .unbox{background:var(--surface,#fff);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:440px;width:100%}
 .unbox input{width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:inherit;margin-top:6px}
+.similar{margin-top:22px}.sglist{display:grid;gap:0;margin:8px 0}.sgrow{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.sgt{min-width:0;overflow-wrap:anywhere}
+.gchips.pick{margin:8px 0 12px}.gchip.pickbtn{cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;margin:0}
+.gchip.pickbtn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
