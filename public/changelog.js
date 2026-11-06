@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 7, d: '06.11.2026', t: [
+    'F|Ideen lassen sich wie Bugs als erledigt abhaken (erledigte stehen unten); hakt der Admin einen Eintrag ab, bekommt die einreichende Person im Kontakt eine Systemnachricht',
     'U|Bugmeldungen sind fortlaufend nummeriert (#1, #2, …); die Nummer bleibt auch nach dem Erledigen bestehen',
     'B|Web-App: Das Symbol wird jetzt geladen (der Ordner hieß wie ein reservierter Server-Pfad und war nicht erreichbar)',
     'B|Zwei-Faktor-Einrichtung: QR-Code zum Scannen, etwas mehr Zeittoleranz bei den Codes und eine genauere Fehlermeldung',

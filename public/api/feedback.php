@@ -23,7 +23,7 @@ if ($a === 'list') {
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id AND v.user_id=?) AS mine_vote
             FROM feedback f LEFT JOIN users uu ON uu.id=f.user_id WHERE f.kind=? " . ($kind === 'bug'
                 ? "ORDER BY {$doneOrd}FIELD(f.priority,'urgent','normal','low'), f.created_at DESC"
-                : "ORDER BY votes DESC, f.created_at DESC") . " LIMIT 300");
+                : "ORDER BY {$doneOrd}votes DESC, f.created_at DESC") . " LIMIT 300");
         $s->execute([$u['id'], $kind]); $rows = $s->fetchAll();
     } catch (Throwable $e) { json_out(['items' => [], 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
     foreach ($rows as &$r) {
@@ -87,9 +87,18 @@ if ($a === 'vote') {
     json_out(['ok' => true, 'votes' => (int) $n->fetchColumn()]);
 }
 if ($a === 'done') {
-    if ($kind !== 'bug') json_out(['error' => 'Nur Bugmeldungen lassen sich abhaken.'], 422);
-    try { $pdo->prepare('UPDATE feedback SET done_at=' . (!empty($b['on']) ? 'NOW()' : 'NULL') . ' WHERE id=?')->execute([$id]); }
-    catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    $on = !empty($b['on']);
+    try {
+        $q = $pdo->prepare('SELECT user_id,title,bug_no,done_at FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
+        $pdo->prepare('UPDATE feedback SET done_at=' . ($on ? 'NOW()' : 'NULL') . ' WHERE id=?')->execute([$id]);
+    } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    // Systemnachricht an die Person, die den Eintrag geschrieben hat (nur wenn der Admin abhakt, nur beim ersten Abhaken, nicht bei eigenen Einträgen)
+    if ($on && $admin && $it && empty($it['done_at']) && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
+        $t = (string) $it['title']; $t = mb_strlen($t) > 70 ? mb_substr($t, 0, 69) . '…' : $t;
+        $txt = $kind === 'bug' ? 'Systemnachricht: Deine Bugmeldung' . ($it['bug_no'] ? ' #' . (int) $it['bug_no'] : '') . ' „' . $t . '“ ist als erledigt markiert. Danke für den Hinweis!'
+            : 'Systemnachricht: Deine Idee „' . $t . '“ ist als erledigt markiert. Danke für deinen Vorschlag!';
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], $txt]); } catch (Throwable $e) {}
+    }
     json_out(['ok' => true]);
 }
 if ($a === 'priority') {
