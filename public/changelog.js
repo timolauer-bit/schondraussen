@@ -1,5 +1,6 @@
 window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
+    'Einstellungen, Admin, Info, Featurewünsche und Bugs haben jetzt dieselbe Breite wie die übrigen Seiten und das Menü',
     'Aktualisierung: Der Cron-Job arbeitet nach Zeitbudget (80 Sekunden) reihum Serien, Musiker:innen und Autor:innen ab, statt feste Mengen abzuarbeiten; Mails und Aufräumen laufen immer mit. Im Admin zeigt die neue Karte „Aktualisierung“ die letzten Läufe, die Zahl veralteter Einträge je Kategorie und Listen der betroffenen Einträge (benötigt Migration 021)',
     'Info: Abschnitt „To-Do / Ideen“ entfernt',
     'Info, Featurewünsche und Bugs: Abschnitte und Einträge als abgegrenzte Karten; bei Bugs zeigt ein farbiger Rand die Dringlichkeit, erledigte Bugs sind abgeblendet',
