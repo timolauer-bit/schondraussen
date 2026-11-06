@@ -8,18 +8,25 @@ if ($a === 'users') {
     $cols = 'u.id,u.email,u.username,u.name_change_required,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at';
     $sql = " FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC";
     $ent = ',(SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) AS entries';
-    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha' . $ent . $sql)->fetchAll(); }
-    catch (Throwable $e) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
+    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha,u.hide_email,u.hide_activity' . $ent . $sql)->fetchAll(); }
+    catch (Throwable $e) {
+        try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha' . $ent . $sql)->fetchAll(); }
+        catch (Throwable $e2) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
+    }
+    foreach ($r as &$x) {
+        if (!empty($x['hide_email']) && $x['role'] !== 'admin') { $x['email'] = null; $x['email_hidden'] = 1; }
+        if (!empty($x['hide_activity']) && $x['role'] !== 'admin') { $x['seen_label'] = seen_bucket($x['last_seen_at']); $x['last_seen_at'] = null; }
+    }
+    unset($x);
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
-if ($a === 'cron') {
-    $o = ['runs' => null, 'stats' => [], 'stale' => [], 'empty' => []];
-    try { $o['runs'] = $pdo->query('SELECT started_at,duration_ms,ok_count,fail_count,left_count,stopped_early,details FROM cron_runs ORDER BY id DESC LIMIT 8')->fetchAll(); } catch (Throwable $e) { $o['needs_migration'] = true; }
-    $o['stats'] = $pdo->query("SELECT type, COUNT(*) total, SUM(fetched_at IS NULL) never, SUM(fetched_at IS NOT NULL AND fetched_at < NOW() - INTERVAL 12 HOUR) old12, SUM(fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0)) empty, MIN(fetched_at) oldest, MAX(fetched_at) newest FROM subjects GROUP BY type")->fetchAll();
-    $o['stale'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 12 HOUR ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT 40")->fetchAll();
-    $o['empty'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0) ORDER BY fetched_at LIMIT 40")->fetchAll();
-    $o['now'] = date('Y-m-d H:i:s');
-    json_out($o);
+if ($a === 'reveal' && $_SERVER['REQUEST_METHOD'] === 'POST') { // E-Mail eines Nutzers aufdecken, wird protokolliert
+    $id = (int) ($b['id'] ?? 0);
+    $s = $pdo->prepare('SELECT email FROM users WHERE id=?'); $s->execute([$id]); $em = $s->fetchColumn();
+    if (!$em) json_out(['error' => 'Nutzer nicht gefunden.'], 404);
+    try { $pdo->prepare('INSERT INTO admin_log (admin_id,action,target_id) VALUES (?,?,?)')->execute([$u['id'], 'reveal_email', $id]); }
+    catch (Throwable $e) { json_out(['error' => 'Protokoll nicht möglich (migrate.php einspielen).'], 500); }
+    json_out(['ok' => true, 'email' => $em]);
 }
 if ($a === 'site') {
     $o = ['tag' => '', 'domain' => 'amazon.de'];

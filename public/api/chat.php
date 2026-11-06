@@ -57,7 +57,7 @@ if ($a === 'send' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
             foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-                send_mail($adm, 'Neue Nachricht auf Schondraussen.de', "Von " . $u['email'] . ":\n\n" . ($text === '' ? '[Bild]' : $text) . ($imgs ? "\n(mit Bild)" : '') . "\n\nAntworten unter Kontakt: $base/\n");
+                send_mail($adm, 'Neue Nachricht auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . ($text === '' ? '[Bild]' : $text) . ($imgs ? "\n(mit Bild)" : '') . "\n\nAntworten unter Kontakt: $base/\n");
         } catch (Throwable $e) {}
     }
     json_out(['ok' => true]);

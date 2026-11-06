@@ -360,3 +360,6 @@ button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}
 .tblwrap{overflow-x:auto}.crontbl{border-collapse:collapse;width:100%;font-size:14px}.crontbl th{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 10px 6px 0}.crontbl td{padding:6px 10px 6px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}.crontbl tr.warnrow td{color:var(--danger);font-weight:600}
 .cronbox h4{margin:16px 0 6px;font:650 15px var(--font-display)}.cronruns{margin:0;padding-left:18px;font-size:14px}.cronruns li{margin:5px 0}.cronruns details{margin-top:2px;color:var(--muted)}
 .cronlist{margin-top:10px;font-size:14px}.cronlist summary{cursor:pointer;font-weight:600}.cronlist ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+
+.hiddenmail{color:var(--muted);font-style:italic}.hiddenmail .btn{margin-left:6px}
+.privbox>div+div{margin-top:10px}

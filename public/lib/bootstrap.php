@@ -62,3 +62,4 @@ function username_error(string $n): ?string {
     if ($e = name_policy_error($n)) return $e;
     return null;
 }
+require_once __DIR__ . '/privacy.php';

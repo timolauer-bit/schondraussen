@@ -17,7 +17,7 @@ if ($a === 'list') {
     $doneSel = ''; $doneOrd = '';
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try {
-        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name,uu.role AS author_role,uu.alpha AS author_alpha$doneSel,
+        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id AND v.user_id=?) AS mine_vote
             FROM feedback f LEFT JOIN users uu ON uu.id=f.user_id WHERE f.kind=? " . ($kind === 'bug'
@@ -31,10 +31,10 @@ if ($a === 'list') {
         // Absender: Admin sieht Nummer und E-Mail, Alphatester die Mitgliedsnummer
         if ($alpha) {
             $nm = $r['author_name'] ?: 'Mitglied Nr. ' . (int) $r['user_id'];
-            $r['author'] = $nm . ($admin ? ($r['author_name'] ? ' (Nr. ' . (int) $r['user_id'] . ')' : '') . ($r['author_email'] ? ' · ' . $r['author_email'] : '') : '');
+            $r['author'] = $nm . ($admin ? ($r['author_name'] ? ' (Nr. ' . (int) $r['user_id'] . ')' : '') . ($r['author_email'] && empty($r['author_hide']) ? ' · ' . $r['author_email'] : '') : '');
         }
         $r['author_tier'] = $r['author_role'] === 'admin' ? 'admin' : (!empty($r['author_alpha']) ? 'alpha' : '');
-        unset($r['user_id'], $r['author_email'], $r['author_name'], $r['author_role'], $r['author_alpha']);
+        unset($r['user_id'], $r['author_hide'], $r['author_email'], $r['author_name'], $r['author_role'], $r['author_alpha']);
     }
     if ($rows) { // Bilder: Freigegebene für alle, Wartende für Absender und Admin/Alpha (dort mit status)
         try {
@@ -67,7 +67,7 @@ if ($a === 'add') {
     try {
         $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
         foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-            send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . $u['email'] . ":\n\n" . $text . "\n\nZur Liste: $base/\n");
+            send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . $text . "\n\nZur Liste: $base/\n");
     } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }

@@ -7,10 +7,10 @@ $state = 'invalid'; $who = '';
 if (strlen($t) === 48) {
     try {
         $pdo = db();
-        $s = $pdo->prepare('SELECT t.id tid,t.used_at,t.expires_at > NOW() AS fresh,u.id,u.email,u.username,u.approved_at FROM admin_tokens t JOIN users u ON u.id=t.user_id WHERE t.token_hash=?');
+        $s = $pdo->prepare('SELECT t.id tid,t.used_at,t.expires_at > NOW() AS fresh,u.id,u.email,u.username,u.approved_at' . (users_have_privacy($pdo) ? ',u.hide_email' : '') . ' FROM admin_tokens t JOIN users u ON u.id=t.user_id WHERE t.token_hash=?');
         $s->execute([hash('sha256', $t)]); $r = $s->fetch();
         if ($r && $r['fresh']) {
-            $who = ($r['username'] ? $r['username'] . ' · ' : '') . $r['email'];
+            $who = user_label($r);
             if ($r['used_at'] || $r['approved_at']) $state = 'already';
             elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=? AND approved_at IS NULL')->execute([$r['id']]);

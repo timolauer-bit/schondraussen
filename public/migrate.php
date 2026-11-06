@@ -184,6 +184,16 @@ $M = [
      details TEXT NULL
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '022_privacy' => [
+  "ALTER TABLE users ADD COLUMN hide_email TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN hide_activity TINYINT(1) NOT NULL DEFAULT 0",
+  "CREATE TABLE IF NOT EXISTS admin_log (
+     id INT AUTO_INCREMENT PRIMARY KEY,
+     admin_id INT NOT NULL,
+     action VARCHAR(40) NOT NULL,
+     target_id INT NULL,
+     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

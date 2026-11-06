@@ -71,6 +71,7 @@ try {
                 $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']); // Spalte fehlt noch (migrate.php)
             }
             link_mail($pdo, (int) $pdo->lastInsertId(), $email, 'verify');
+            if (!$first) { try { $pdo->prepare('UPDATE users SET hide_email=1, hide_activity=1 WHERE email=?')->execute([$email]); } catch (Throwable $e) {} } // neue Konten: E-Mail und Aktivität standardmäßig ausgeblendet
             if ($first) { try { $pdo->exec("UPDATE users SET approved_at=NOW() WHERE role='admin'"); } catch (Throwable $e) {} }
             else {
                 try {
@@ -83,7 +84,7 @@ try {
                         $link = "\n\nKonto direkt freischalten (Link nur für dich, 14 Tage gültig):\n$base/approve.php?t=$tk\n";
                     } catch (Throwable $e) {}
                     foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\nBenutzername: $uname\nE-Mail: $email\n\nDas Konto sieht keine Inhalte, bis du es freischaltest." . $link . "\nOder in der Nutzerverwaltung:\n$base/\n\nKeine Freischaltung nötig? Dann ignoriere diese Mail einfach.\n");
+                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\nBenutzername: $uname\nE-Mail: ausgeblendet (Standard bei neuen Konten; im Notfall in der Nutzerverwaltung unter „Adresse anzeigen“)\n\nDas Konto sieht keine Inhalte, bis du es freischaltest." . $link . "\nOder in der Nutzerverwaltung:\n$base/\n\nKeine Freischaltung nötig? Dann ignoriere diese Mail einfach.\n");
                 } catch (Throwable $e) {}
             }
         }
@@ -103,6 +104,12 @@ try {
         json_out(['ok' => true, 'user' => current_user()]);
     }
 
+    if ($a === 'privacy' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        try { $pdo->prepare('UPDATE users SET hide_email=?, hide_activity=? WHERE id=?')->execute([!empty($b['hide_email']) ? 1 : 0, !empty($b['hide_activity']) ? 1 : 0, $cu['id']]); }
+        catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+        json_out(['ok' => true]);
+    }
     if ($a === 'username') {
         $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
         $n = trim((string) ($b['username'] ?? '')); if ($err = username_error($n)) json_out(['error' => $err], 422);
