@@ -382,3 +382,4 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .wact{display:flex;align-items:center;gap:10px;justify-self:end}.donebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 4px;font-size:14px}.donebar .cnt{flex:1;color:var(--muted)}
 .season-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qrbox{width:200px;max-width:100%;margin:10px 0;padding:8px;background:#fff;border-radius:10px;border:1px solid var(--line)}.qrbox svg{display:block;width:100%;height:auto}
+.bugno{font:500 13px var(--font-mono);color:var(--muted);margin-right:2px}

@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 7, d: '06.11.2026', t: [
+    'U|Bugmeldungen sind fortlaufend nummeriert (#1, #2, …); die Nummer bleibt auch nach dem Erledigen bestehen',
     'B|Web-App: Das Symbol wird jetzt geladen (der Ordner hieß wie ein reservierter Server-Pfad und war nicht erreichbar)',
     'B|Zwei-Faktor-Einrichtung: QR-Code zum Scannen, etwas mehr Zeittoleranz bei den Codes und eine genauere Fehlermeldung',
     'F|Gesehen, gelesen, gehört: Bei Serien hakst du einzelne Folgen oder ganze Staffeln ab (mit Fortschritt je Staffel), bei Alben, Büchern und Filmen markierst du, was du schon kennst; dazu ein Zähler und der Filter „Nur Neues für mich“',
