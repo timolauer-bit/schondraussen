@@ -84,6 +84,9 @@ $M = [
   '009_sample_asked' => [
   "ALTER TABLE users ADD COLUMN sample_asked TINYINT(1) NOT NULL DEFAULT 0",
  ],
+  '010_alpha' => [
+  "ALTER TABLE users ADD COLUMN alpha TINYINT(1) NOT NULL DEFAULT 0",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

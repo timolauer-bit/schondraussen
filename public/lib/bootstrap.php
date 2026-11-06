@@ -48,3 +48,7 @@ function current_user(): ?array {
 
 function client_ip(): string { return substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45); }
 function token_new(): array { $t = bin2hex(random_bytes(24)); return [$t, hash('sha256', $t)]; }
+
+// Alphafunktionen: sichtbar für Admins und als Alphatester markierte Nutzer.
+function is_alpha(?array $u): bool { return $u && ($u['role'] === 'admin' || !empty($u['alpha'])); }
+function require_alpha(?array $u): void { if (!is_alpha($u)) json_out(['error' => 'Diese Funktion ist noch nicht freigegeben.'], 403); }

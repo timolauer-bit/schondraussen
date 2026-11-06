@@ -5,8 +5,11 @@ $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
 if ($a === 'users') {
-    $r = $pdo->query("SELECT u.id,u.email,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at,
-        (SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) AS entries FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC")->fetchAll();
+    $cols = 'u.id,u.email,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at';
+    $sql = " FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC";
+    $ent = ',(SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) AS entries';
+    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha' . $ent . $sql)->fetchAll(); }
+    catch (Throwable $e) { $r = $pdo->query('SELECT ' . $cols . $ent . $sql)->fetchAll(); }
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
 if ($a === 'site') {
@@ -42,6 +45,11 @@ if ($a === 'block' || $a === 'unblock') {
 }
 $id = (int) ($b['id'] ?? 0);
 if ($id === (int) $u['id']) json_out(['error' => 'Das eigene Konto kann hier nicht geändert werden.'], 422);
+if ($a === 'alpha') {
+    try { $pdo->prepare("UPDATE users SET alpha=? WHERE id=? AND role<>'admin'")->execute([!empty($b['on']) ? 1 : 0, $id]); }
+    catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
 if ($a === 'approve') { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$id]); json_out(['ok' => true]); }
 if ($a === 'revoke')  { $pdo->prepare("UPDATE users SET approved_at=NULL WHERE id=? AND role<>'admin'")->execute([$id]); json_out(['ok' => true]); }
 if ($a === 'delete')  {
