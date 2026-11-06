@@ -1,14 +1,14 @@
 <?php
-// Featurewünsche (für alle freigeschalteten Nutzer sichtbar, mit Stimmen) und Bugmeldungen (nur Admin und Alphatester)
+// Ideen (für alle freigeschalteten Nutzer sichtbar, mit Stimmen) und Bugmeldungen (nur Admin und Alphatester)
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/mail.php';
 require __DIR__ . '/../lib/images.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $admin = $u['role'] === 'admin'; $alpha = is_alpha($u);
-// Featurewünsche sind noch Alpha (nur Admin und Alphatester); auf false setzen, um sie für alle zu öffnen
+// Ideen sind noch Alpha (nur Admin und Alphatester); auf false setzen, um sie für alle zu öffnen
 const FEATURE_ALPHA = true;
-$kinds = ['feature' => 'Featurewunsch', 'bug' => 'Bugmeldung'];
+$kinds = ['feature' => 'Idee', 'bug' => 'Bugmeldung'];
 
 if ($a === 'list') {
     $kind = (string) ($_GET['kind'] ?? 'feature');
@@ -53,7 +53,7 @@ $b = body();
 
 if ($a === 'add') {
     $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? ''));
-    if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Featurewunsch oder Bugmeldung.'], 422);
+    if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Idee oder Bugmeldung.'], 422);
     if (mb_strlen($text) < 5 || mb_strlen($text) > 2000) json_out(['error' => 'Bitte beschreibe es in 5 bis 2000 Zeichen.'], 422);
     try {
         $c = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
@@ -77,7 +77,7 @@ if (!$kind) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
 if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
 
 if ($a === 'vote') {
-    if ($kind !== 'feature') json_out(['error' => 'Nur Featurewünsche haben Stimmen.'], 422);
+    if ($kind !== 'feature') json_out(['error' => 'Nur Ideen haben Stimmen.'], 422);
     if (!empty($b['on'])) $pdo->prepare('INSERT IGNORE INTO feedback_votes (feedback_id,user_id) VALUES (?,?)')->execute([$id, $u['id']]);
     else $pdo->prepare('DELETE FROM feedback_votes WHERE feedback_id=? AND user_id=?')->execute([$id, $u['id']]);
     $n = $pdo->prepare('SELECT COUNT(*) FROM feedback_votes WHERE feedback_id=?'); $n->execute([$id]);

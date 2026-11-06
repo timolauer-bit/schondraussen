@@ -122,7 +122,7 @@
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
   // Funktionsstatus: 'alpha' = nur für Admins und Alphatester sichtbar (mit auffälliger Markierung), sonst für alle.
-  var FEATURES = { feat: 'alpha', bugs: 'alpha' }; // Featurewünsche: noch Alpha
+  var FEATURES = { feat: 'alpha', bugs: 'alpha' }; // Ideen: noch Alpha
   function isAlpha() { return !S.preview && !!D.alpha; }
   function feat(key) { return (FEATURES[key] || 'live') !== 'alpha' || isAlpha(); }
   function alphaBadge() { return h('span', { class: 'alphabadge', title: 'Alpha: Diese Funktion ist noch in Entwicklung und nur für Alphatester sichtbar' }, 'Alpha'); }
@@ -145,7 +145,7 @@
     var rg = ' rg';
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
     topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
-    if (feat('feat')) topbar.append(btn('feat', 'Featurewünsche', 0, ' feat'));
+    if (feat('feat')) topbar.append(btn('feat', 'Ideen', 0, ' feat'));
     if (isAlpha()) topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
     topbar.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
@@ -647,7 +647,7 @@
   }
 
   /* ---------- Kontakt ---------- */
-  /* ---------- Bilder (Chat, Featurewünsche, Bugs) ---------- */
+  /* ---------- Bilder (Chat, Ideen, Bugs) ---------- */
   function imgUrl(id) { return '/api/image.php?id=' + id; }
   function shrinkImage(file) { // verkleinert im Browser (spart Upload, entfernt EXIF), liefert JPEG-Blob
     return new Promise(function (res, rej) {
@@ -692,11 +692,11 @@
     }
     function send() {
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
-      if (!admin && kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Wunsch abgeschickt' : 'Bugmeldung abgeschickt', (kd === 'feature' ? (feat('feat') ? 'Danke! Dein Wunsch steht jetzt in der Liste „Featurewünsche“.' : 'Danke! Dein Wunsch ist angekommen.') : 'Danke! Deine Bugmeldung ist beim Admin angekommen.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
+      if (!admin && kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (kd === 'feature' ? (feat('feat') ? 'Danke! Deine Idee steht jetzt in der Liste „Ideen“.' : 'Danke! Deine Idee ist angekommen.') : 'Danke! Deine Bugmeldung ist beim Admin angekommen.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; drafts = []; drawDrafts(); api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids }).then(function (r) { msg.textContent = r.ok ? '' : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok ? '' : ' err'); pull(); });
     }
     var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
-    var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Featurewunsch', 'Was wünschst du dir? (Die erste Zeile erscheint als Titel in der Liste)', isAlpha() ? 'Dein Wunsch landet in der Liste „Featurewünsche“, alle können dafür abstimmen.' : 'Dein Wunsch landet beim Admin. Die Liste der Wünsche ist noch in Entwicklung und für dich noch nicht sichtbar.'], ['bug', 'Bugmeldung', 'Was funktioniert nicht? Wo, und was hast du gemacht? (Die erste Zeile erscheint als Titel)', 'Bugmeldungen sehen nur der Admin und die Alphatester.']];
+    var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Idee', 'Welche Idee hast du? (Die erste Zeile erscheint als Titel in der Liste)', isAlpha() ? 'Deine Idee landet in der Liste „Ideen“, alle können dafür abstimmen.' : 'Deine Idee landet beim Admin. Die Liste der Ideen ist noch in Entwicklung und für dich noch nicht sichtbar.'], ['bug', 'Bugmeldung', 'Was funktioniert nicht? Wo, und was hast du gemacht? (Die erste Zeile erscheint als Titel)', 'Bugmeldungen sehen nur der Admin und die Alphatester.']];
     function drawKinds() { kindBox.textContent = ''; KINDS.forEach(function (k) { kindBox.append(h('button', { class: 'kindbtn', type: 'button', role: 'radio', 'aria-checked': String(kindSel === k[0]), onclick: function () { var was = scopeOf(); kindSel = k[0]; if (scopeOf() !== was && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = 'Die angehängten Bilder wurden entfernt, weil du die Art gewechselt hast.'; } inp.placeholder = k[2]; kindHint.textContent = k[3]; inp.maxLength = k[0] === 'chat' ? 1000 : 2000; drawKinds(); } }, k[1])); }); }
     drawKinds();
     var fileIn = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: true, hidden: true, onchange: function () { addFiles(fileIn.files); fileIn.value = ''; } });
@@ -725,15 +725,15 @@
     grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [admin ? null : kindBox, admin ? null : kindHint, form, draftBox, h('p', { class: 'hint picnote' }, 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.'), msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
-    var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Featurewünsche'),
-      h('p', { class: 'hint' }, bug ? 'Meldungen von Nutzern. Du siehst sie als Admin oder Alphatester. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Wünsche von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für einen Wunsch, ein zweiter Klick nimmt die Stimme zurück. Neue Wünsche schreibst du unter „Kontakt“ (Auswahl „Featurewunsch“).')),
+    var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
+      h('p', { class: 'hint' }, bug ? 'Meldungen von Nutzern. Du siehst sie als Admin oder Alphatester. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).')),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
     function draw(r) {
       box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
-      if (!l.length) { box.append(h('p', { class: 'hint' }, bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Wünsche. Schreib den ersten unter „Kontakt“.')); return; }
+      if (!l.length) { box.append(h('p', { class: 'hint' }, bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.')); return; }
       l.forEach(function (x) {
         var pics = h('div', { class: 'pics' });
         (x.images || []).forEach(function (im) {
