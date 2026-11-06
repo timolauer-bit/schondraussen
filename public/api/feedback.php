@@ -17,7 +17,7 @@ if ($a === 'list') {
     $doneSel = ''; $doneOrd = '';
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try {
-        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name$doneSel,
+        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name,uu.role AS author_role,uu.alpha AS author_alpha$doneSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id AND v.user_id=?) AS mine_vote
             FROM feedback f LEFT JOIN users uu ON uu.id=f.user_id WHERE f.kind=? " . ($kind === 'bug'
@@ -33,7 +33,8 @@ if ($a === 'list') {
             $nm = $r['author_name'] ?: 'Mitglied Nr. ' . (int) $r['user_id'];
             $r['author'] = $nm . ($admin ? ($r['author_name'] ? ' (Nr. ' . (int) $r['user_id'] . ')' : '') . ($r['author_email'] ? ' · ' . $r['author_email'] : '') : '');
         }
-        unset($r['user_id'], $r['author_email'], $r['author_name']);
+        $r['author_tier'] = $r['author_role'] === 'admin' ? 'admin' : (!empty($r['author_alpha']) ? 'alpha' : '');
+        unset($r['user_id'], $r['author_email'], $r['author_name'], $r['author_role'], $r['author_alpha']);
     }
     if ($rows) { // Bilder: Freigegebene für alle, Wartende für Absender und Admin/Alpha (dort mit status)
         try {
