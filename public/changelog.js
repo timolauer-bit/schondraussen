@@ -24,6 +24,7 @@ window.CHANGELOG = [
     'Benutzername bei der Registrierung wählbar (wird anderen Nutzern angezeigt, nicht zur Anmeldung); in den Einstellungen alle 30 Tage änderbar',
     'Admin: Bilder der Anmeldeseite verwalten (hinzufügen, Beschreibung ändern, Reihenfolge, löschen)',
     'Nutzer ohne Benutzernamen werden beim Anmelden einmal danach gefragt (mit „Später“)',
+    'Benutzernamen: Prüfung auf Verwechslung mit Admin/Support (auch Schreibvarianten) und auf anstößige oder verbotene Begriffe; Admin kann einen neuen Namen verlangen, bis dahin ist die Seite für den Nutzer gesperrt',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

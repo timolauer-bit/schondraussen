@@ -5,11 +5,11 @@ $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
 if ($a === 'users') {
-    $cols = 'u.id,u.email,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at';
+    $cols = 'u.id,u.email,u.username,u.name_change_required,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at';
     $sql = " FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC";
     $ent = ',(SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) AS entries';
     try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha' . $ent . $sql)->fetchAll(); }
-    catch (Throwable $e) { $r = $pdo->query('SELECT ' . $cols . $ent . $sql)->fetchAll(); }
+    catch (Throwable $e) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
 if ($a === 'site') {
@@ -48,6 +48,19 @@ if ($id === (int) $u['id']) json_out(['error' => 'Das eigene Konto kann hier nic
 if ($a === 'alpha') {
     try { $pdo->prepare("UPDATE users SET alpha=? WHERE id=? AND role<>'admin'")->execute([!empty($b['on']) ? 1 : 0, $id]); }
     catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
+if ($a === 'renamereq') {
+    $on = !empty($b['on']);
+    try { $pdo->prepare("UPDATE users SET name_change_required=? WHERE id=? AND role<>'admin'")->execute([$on ? 1 : 0, $id]); }
+    catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); }
+    if ($on) {
+        try {
+            require_once __DIR__ . '/../lib/mail.php';
+            $s = $pdo->prepare('SELECT email FROM users WHERE id=?'); $s->execute([$id]); $em = $s->fetchColumn();
+            if ($em) send_mail($em, 'Bitte wähle einen neuen Benutzernamen', "Dein Benutzername auf Schondraussen.de entspricht nicht unseren Regeln.\n\nBitte melde dich an und wähle einen neuen Namen. Bis dahin kannst du die Seite nicht nutzen. Erlaubt sind Namen ohne anstößige, beleidigende oder verbotene Inhalte und ohne Verwechslung mit dem Betreiber.\n\n" . rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/') . "/\n");
+        } catch (Throwable $e) {}
+    }
     json_out(['ok' => true]);
 }
 if ($a === 'approve') { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$id]); json_out(['ok' => true]); }

@@ -67,6 +67,10 @@ h3{margin:18px 0 6px;font-size:15px}
 <?php if (!empty($u['deleting'])): $until = date('d.m.Y', strtotime($u['delete_requested_at']) + 7 * 86400); ?>
   <p><b>Dein Konto ist zur Löschung vorgemerkt.</b> Deine Daten werden nach dem <?= $until ?> endgültig gelöscht. Bis dahin kannst du es behalten, wenn du die Löschung abbrichst.</p>
   <button id="canceldel" type="button">Löschung abbrechen</button> <button id="logout" type="button" class="ghost">Abmelden</button></div>
+<?php elseif (!empty($u['rename'])): ?>
+  <p><b>Bitte wähle einen neuen Benutzernamen.</b> Dein bisheriger Name entspricht nicht den Regeln. Bis du einen neuen gewählt hast, kannst du die Seite nicht nutzen.</p>
+  <form id="f-rename"><label for="rn">Neuer Benutzername (3 bis 20 Zeichen)</label><input id="rn" type="text" maxlength="20" minlength="3" required autocomplete="off">
+    <button type="submit">Speichern</button> <button id="logout" type="button" class="ghost">Abmelden</button></form><div class="msg" id="msg" role="status"></div></div>
 <?php else: ?>
   <p><b>Dein Konto wartet auf Freischaltung.</b> Die Seite ist noch im Testbetrieb. Sobald der Admin dich freigeschaltet hat, siehst du hier deine Listen. Schau später einfach noch einmal vorbei.</p>
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
@@ -145,6 +149,8 @@ h3{margin:18px 0 6px;font-size:15px}
   if (q.get('verified') === '0') say('Der Bestätigungslink ist abgelaufen oder ungültig.', true);
 
   var lo = document.getElementById('logout');
+  var fr = document.getElementById('f-rename');
+  if (fr) fr.addEventListener('submit', function (e) { e.preventDefault(); say('…'); api('username', { username: document.getElementById('rn').value }).then(function (r) { r.ok ? location.reload() : say(r.error || 'Das hat nicht geklappt.', true); }); });
   var cd = document.getElementById('canceldel');
   if (cd) cd.addEventListener('click', function () { api('cancel_delete').then(function () { location.reload(); }); });
   if (lo) lo.addEventListener('click', function () { api('logout').then(function () { location.reload(); }); });

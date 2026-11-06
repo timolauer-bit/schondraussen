@@ -42,7 +42,8 @@ function current_user(): ?array {
     if (!$u) return null;
     unset($u['pass_hash']);
     $u['deleting'] = !empty($u['delete_requested_at']);
-    $u['approved'] = !$u['deleting'] && ($u['role'] === 'admin' || !empty($u['approved_at']));
+    $u['rename'] = $u['role'] !== 'admin' && !empty($u['name_change_required']);
+    $u['approved'] = !$u['deleting'] && !$u['rename'] && ($u['role'] === 'admin' || !empty($u['approved_at']));
     return $u;
 }
 
@@ -57,7 +58,7 @@ function require_alpha(?array $u): void { if (!is_alpha($u)) json_out(['error' =
 function username_error(string $n): ?string {
     if (mb_strlen($n) < 3 || mb_strlen($n) > 20) return 'Der Benutzername braucht 3 bis 20 Zeichen.';
     if (!preg_match('/^[\p{L}\p{N}][\p{L}\p{N}_.\-]*[\p{L}\p{N}]$/u', $n)) return 'Erlaubt sind Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich, ohne Leerzeichen und nicht am Anfang oder Ende.';
-    $low = mb_strtolower($n);
-    foreach (['admin', 'administrator', 'schondraussen', 'support', 'moderator', 'system', 'team', 'info'] as $r) if ($low === $r) return 'Dieser Name ist reserviert.';
+    require_once __DIR__ . '/namefilter.php';
+    if ($e = name_policy_error($n)) return $e;
     return null;
 }
