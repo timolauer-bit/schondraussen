@@ -1,5 +1,6 @@
 window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
+    'Info: Abschnitt „To-Do / Ideen“ entfernt',
     'Info, Featurewünsche und Bugs: Abschnitte und Einträge als abgegrenzte Karten; bei Bugs zeigt ein farbiger Rand die Dringlichkeit, erledigte Bugs sind abgeblendet',
     'Kontakt (Admin): In der Liste der Unterhaltungen stehen Benutzernamen statt E-Mail-Adressen (ohne Namen „Mitglied Nr. …“)',
     'Kontakt: Unterhaltung und Eingabe sind klar getrennt (zwei Karten, der Verlauf getönt ohne Rahmen, die Eingabe mit farbigem Rahmen) und ein leerer Verlauf erklärt, was zu tun ist',
