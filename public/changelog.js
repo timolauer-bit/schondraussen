@@ -22,6 +22,8 @@ window.CHANGELOG = [
     'Bugs-Seite mit Alpha-Markierung',
     'Anmeldeseite: Screenshots als klickbare Vorschaubilder, durchblätterbar',
     'Benutzername bei der Registrierung wählbar (wird anderen Nutzern angezeigt, nicht zur Anmeldung); in den Einstellungen alle 30 Tage änderbar',
+    'Admin: Bilder der Anmeldeseite verwalten (hinzufügen, Beschreibung ändern, Reihenfolge, löschen)',
+    'Nutzer ohne Benutzernamen werden beim Anmelden einmal danach gefragt (mit „Später“)',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

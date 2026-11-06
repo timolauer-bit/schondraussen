@@ -137,6 +137,17 @@ $M = [
   '015_username' => [
   "ALTER TABLE users ADD COLUMN username VARCHAR(24) COLLATE utf8mb4_unicode_ci NULL, ADD COLUMN username_changed_at DATETIME NULL, ADD UNIQUE KEY uq_username (username)",
  ],
+  '016_site_images' => [
+  "CREATE TABLE IF NOT EXISTS site_images (
+     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     title VARCHAR(120) NOT NULL DEFAULT '',
+     position INT NOT NULL DEFAULT 0,
+     mime VARCHAR(30) NOT NULL DEFAULT 'image/jpeg',
+     data MEDIUMBLOB NOT NULL,
+     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);
@@ -144,5 +155,17 @@ foreach ($M as $name => $stmts) {
     foreach ($stmts as $s) { $pdo->exec($s); }
     $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute([$name]);
     echo "eingespielt: $name\n";
+}
+// Startseiten-Bilder einmalig aus den mitgelieferten Dateien übernehmen
+$q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute(['016_site_images_seed']);
+if (!$q->fetch()) {
+    if ((int) $pdo->query('SELECT COUNT(*) FROM site_images')->fetchColumn() === 0) {
+        foreach ([['shot1.webp', 'Kalender mit allen angekündigten Veröffentlichungen'], ['shot2.webp', 'Serienübersicht mit Liste und kommenden Veröffentlichungen']] as $i => $sf) {
+            $f = __DIR__ . '/shots/' . $sf[0]; if (!is_file($f)) continue;
+            $pdo->prepare('INSERT INTO site_images (title,position,mime,data) VALUES (?,?,?,?)')->execute([$sf[1], $i + 1, 'image/webp', file_get_contents($f)]);
+        }
+    }
+    $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute(['016_site_images_seed']);
+    echo "eingespielt: 016_site_images_seed\n";
 }
 echo "Fertig.\n";

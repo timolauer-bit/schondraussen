@@ -5,7 +5,7 @@ const IMG_MAX_SIDE = 1600;
 const IMG_MAX_PER_POST = 3;
 
 /** Gibt JPEG-Bytes zurück oder wirft RuntimeException mit einer Nutzermeldung. */
-function image_clean(string $raw): string {
+function image_clean(string $raw, int $maxSide = IMG_MAX_SIDE, int $quality = 82): string {
     if ($raw === '' || strlen($raw) > IMG_MAX_BYTES) throw new RuntimeException('Das Bild ist zu groß (höchstens 6 MB).');
     if (!function_exists('imagecreatefromstring')) throw new RuntimeException('Bilder sind auf dem Server gerade nicht möglich.');
     $info = @getimagesizefromstring($raw);
@@ -19,11 +19,11 @@ function image_clean(string $raw): string {
         $rot = [3 => 180, 6 => -90, 8 => 90][$ex['Orientation'] ?? 0] ?? 0;
         if ($rot) { $r = imagerotate($im, $rot, 0); if ($r) { $im = $r; $w = imagesx($im); $h = imagesy($im); } }
     }
-    $k = min(1, IMG_MAX_SIDE / max($w, $h)); $nw = max(1, (int) round($w * $k)); $nh = max(1, (int) round($h * $k));
+    $k = min(1, $maxSide / max($w, $h)); $nw = max(1, (int) round($w * $k)); $nh = max(1, (int) round($h * $k));
     $out = imagecreatetruecolor($nw, $nh);
     imagefill($out, 0, 0, imagecolorallocate($out, 255, 255, 255)); // Transparenz auf Weiß
     imagecopyresampled($out, $im, 0, 0, 0, 0, $nw, $nh, imagesx($im), imagesy($im));
-    ob_start(); imagejpeg($out, null, 82); $jpg = (string) ob_get_clean();
+    ob_start(); imagejpeg($out, null, $quality); $jpg = (string) ob_get_clean();
     if ($jpg === '') throw new RuntimeException('Das Bild konnte nicht verarbeitet werden.');
     return $jpg;
 }

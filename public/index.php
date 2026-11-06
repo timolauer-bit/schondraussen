@@ -5,6 +5,9 @@ header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
 $u = null; try { $u = current_user(); } catch (Throwable $e) {}
 $app = $u && !empty($u['approved']);
+$shots = [];
+if (!$u) { try { foreach (db()->query('SELECT id,title,UNIX_TIMESTAMP(updated_at) v FROM site_images ORDER BY position,id')->fetchAll() as $r) $shots[] = ['src' => '/api/shot.php?id=' . (int) $r['id'] . '&v=' . (int) $r['v'], 'title' => $r['title']]; } catch (Throwable $e) {}
+  if (!$shots) $shots = [['src' => '/shots/shot1.webp', 'title' => 'Kalender mit allen angekündigten Veröffentlichungen'], ['src' => '/shots/shot2.webp', 'title' => 'Serienübersicht mit Liste und kommenden Veröffentlichungen']]; }
 $skin = ($u && in_array($u['skin'] ?? '', ['light', 'dark', 'paper', 'cinema', 'mint', 'eighties'], true)) ? $u['skin'] : '';
 ?><!doctype html>
 <html lang="de"<?= $skin ? ' data-skin="' . $skin . '"' : '' ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -92,13 +95,13 @@ h3{margin:18px 0 6px;font-size:15px}
       <button type="submit">Passwort speichern</button></form>
     <div class="msg" id="msg" role="status"></div>
   </div>
-  <section class="shots" aria-labelledby="shots-h">
+  <?php if ($shots): ?><section class="shots" aria-labelledby="shots-h">
     <h2 id="shots-h">So sieht es aus</h2>
     <div class="thumbs">
-      <button type="button" class="thumb" data-i="0"><img src="/shots/shot1.webp" alt="Kalender mit allen angekündigten Veröffentlichungen" loading="lazy"><span>Kalender</span></button>
-      <button type="button" class="thumb" data-i="1"><img src="/shots/shot2.webp" alt="Serienübersicht mit Liste und kommenden Veröffentlichungen" loading="lazy"><span>Serienübersicht</span></button>
+<?php foreach ($shots as $k => $sh): ?>      <button type="button" class="thumb" data-i="<?= $k ?>"><img src="<?= htmlspecialchars($sh['src']) ?>" alt="<?= htmlspecialchars($sh['title']) ?>" loading="lazy"><?php if ($sh['title'] !== ''): ?><span><?= htmlspecialchars($sh['title']) ?></span><?php endif; ?></button>
+<?php endforeach; ?>
     </div>
-  </section>
+  </section><?php endif; ?>
   <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Bildansicht" hidden>
     <button type="button" class="lbx" id="lbx" aria-label="Schließen">×</button>
     <button type="button" class="lbn prev" id="lbp" aria-label="Vorheriges Bild">‹</button>
@@ -112,8 +115,8 @@ h3{margin:18px 0 6px;font-size:15px}
 (function () {
   var lb = document.getElementById('lb');
   if (lb) {
-    var SH = [['/shots/shot1.webp', 'Kalender mit allen angekündigten Veröffentlichungen'], ['/shots/shot2.webp', 'Serienübersicht mit Liste und kommenden Veröffentlichungen']], cur = 0, opener = null;
-    function lbShow(i) { cur = (i + SH.length) % SH.length; document.getElementById('lbi').src = SH[cur][0]; document.getElementById('lbi').alt = SH[cur][1]; document.getElementById('lbc').textContent = SH[cur][1] + ' (' + (cur + 1) + ' von ' + SH.length + ')'; }
+    var SH = <?= json_encode(array_map(function ($s) { return [$s['src'], $s['title']]; }, $shots ?? []), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>, cur = 0, opener = null;
+    function lbShow(i) { cur = (i + SH.length) % SH.length; document.getElementById('lbi').src = SH[cur][0]; document.getElementById('lbi').alt = SH[cur][1]; document.getElementById('lbc').textContent = (SH[cur][1] ? SH[cur][1] + ' ' : '') + '(' + (cur + 1) + ' von ' + SH.length + ')'; }
     function lbOpen(i, el) { opener = el; lb.classList.toggle('one', SH.length < 2); lbShow(i); lb.hidden = false; document.getElementById('lbx').focus(); }
     function lbClose() { lb.hidden = true; if (opener) opener.focus(); }
     document.querySelectorAll('.thumb').forEach(function (b) { b.addEventListener('click', function () { lbOpen(+b.dataset.i, b); }); });
