@@ -479,10 +479,23 @@
 
   /* ---------- Einstellungen ---------- */
   function setSkin(id) { var r = document.documentElement; if (id) r.setAttribute('data-skin', id); else r.removeAttribute('data-skin'); S.skin = id; }
+  // Bereiche als abgegrenzte Karten mit Überschrift
+  function setCard(title, kids, cls) {
+    var c = h('section', { class: 'setcard' + (cls ? ' ' + cls : '') }, h('h3', null, title));
+    kids.forEach(function (k) { if (k) c.append(k); }); return c;
+  }
+  function sectionize(p, firstTitle) {
+    var h2 = p.querySelector('h2.sec'), kids = [].slice.call(p.children).filter(function (x) { return x !== h2; }), groups = [], cur = null;
+    kids.forEach(function (k) {
+      if (k.tagName === 'H3') { cur = { t: k.textContent, items: [] }; groups.push(cur); k.remove(); }
+      else { if (!cur) { cur = { t: firstTitle, items: [] }; groups.push(cur); } cur.items.push(k); }
+    });
+    var st = h('div', { class: 'setstack' }); groups.forEach(function (g) { st.append(setCard(g.t, g.items)); }); p.append(st);
+  }
   function settings() {
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Einstellungen'));
     var box = h('div', { class: 'cfgpanel' });
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Konto'), h('p', { style: 'margin:0' }, D.email + ' · Nr. ' + D.id + (isAdm() ? ' · Admin' : '') + (!D.admin && D.alpha ? ' · Alphatester' : ''))));
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Angemeldet als'), h('p', { style: 'margin:0' }, D.email + ' · Nr. ' + D.id + (isAdm() ? ' · Admin' : '') + (!D.admin && D.alpha ? ' · Alphatester' : ''))));
     var un = h('input', { type: 'text', value: D.username || '', maxlength: '20', 'aria-label': 'Benutzername', autocomplete: 'off' }), unMsg = h('p', { class: 'msg', role: 'status' }), unLeft = +D.uname_left || 0;
     if (unLeft) un.disabled = true;
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benutzername'),
@@ -540,7 +553,7 @@
         var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = 'Keine Namen gefunden.'; return; }
         imsg.className = 'msg'; imsg.textContent = 'Importiere …'; api('/api/data.php?a=import', { names: l }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = pl(r.added, 'Musiker:in', 'Musiker:innen') + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
       } }, 'Importieren'), imsg));
-    imp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { ipanel.hidden = !ipanel.hidden; this.setAttribute('aria-expanded', String(!ipanel.hidden)); } }, 'Künstlerliste importieren'), ipanel);
+    imp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { ipanel.hidden = !ipanel.hidden; this.setAttribute('aria-expanded', String(!ipanel.hidden)); } }, 'Musikerliste importieren'), ipanel);
     box.append(imp);
     box.append(h('p', { class: 'hint wide2' }, 'Der Administrator dieser Seite sieht deine E-Mail-Adresse, die Zahl deiner Einträge und wann du zuletzt hier warst. Deine Einträge selbst bleiben privat.'));
     if (!isAdm()) {
@@ -549,7 +562,11 @@
         h('button', { class: 'btn warn small', type: 'button', onclick: function () { dm.className = 'msg'; dm.textContent = ''; api('/api/auth.php?a=delete_account', { password: pw.value }).then(function (r) { if (r && r.ok) location.reload(); else { dm.className = 'msg err'; dm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, 'Konto jetzt löschen'), dm));
       box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Konto löschen'), h('p', { class: 'hint' }, 'Du kannst dein Konto samt aller Einträge jederzeit löschen lassen.'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { dbox.hidden = !dbox.hidden; if (!dbox.hidden) pw.focus(); } }, 'Konto löschen …'), dbox));
     }
-    p.append(box); mainEl.append(p);
+    var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
+    st.append(setCard('Profil', [K[0], K[1]]), setCard('Darstellung', [K[2]], 'solo'), setCard('Benachrichtigungen', [K[3]], 'solo'), setCard('Beispieleinträge und Import', [K[4], K[5]]));
+    if (K[7]) K[7].classList.add('dangerzone');
+    st.append(setCard(K[7] ? 'Datenschutz und Konto löschen' : 'Datenschutz', [K[6], K[7]], K[7] ? 'danger' : ''));
+    p.append(st); mainEl.append(p);
   }
 
   /* ---------- Info ---------- */
@@ -744,6 +761,7 @@
       h('form', { class: 'add', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); var v = bm.value.trim(); if (!v) return; api('/api/admin.php?a=block', { email: v }).then(function (r) { bmsg.className = 'msg' + (r.ok ? '' : ' err'); bmsg.textContent = r.ok ? 'Gesperrt.' : (r.error || 'Das hat nicht geklappt.'); if (r.ok) { bm.value = ''; blocked(); users(); } }); } }, bm, h('button', { class: 'btn small', type: 'submit' }, 'Sperren')), bmsg,
       h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Ansicht prüfen'), h('p', { class: 'hint' }, 'Zeigt dir die Seite so, wie sie ein normaler Nutzer sieht, ohne Admin-Funktionen. Zurück geht es über den Hinweis oben auf der Seite.'),
       h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { setPreview(true); } }, 'Als normaler Nutzer ansehen')));
+    sectionize(p, 'Amazon-Partner-Links');
     function blocked() {
       api('/api/admin.php?a=blocked').then(function (r) {
         bl.textContent = ''; var l = r.blocked || [];

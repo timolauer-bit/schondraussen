@@ -1,5 +1,6 @@
 window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
+    'Einstellungen und Admin: Bereiche sind jetzt als abgegrenzte Karten mit Überschrift sortiert (Profil, Darstellung, Benachrichtigungen, Beispieleinträge und Import, Datenschutz; im Admin Amazon, Bilder, Nutzerverwaltung, gesperrte Adressen, Ansicht prüfen); „Konto löschen“ ist rot abgesetzt',
     'Obere Leiste: Admin, Einstellungen, Featurewünsche, Bugs, Info und Kontakt als Symbole (Name per Tooltip, bei der aktiven Seite sichtbar), Leiste bleibt einzeilig; Benutzername, Version und Abmelden stehen nebeneinander',
     '„Künstler:innen“ heißt jetzt überall „Musiker:innen“',
     'Weniger Springen beim Laden der Seite: Footer, obere Leiste und Versionsanzeige reservieren ihren Platz, bis die Inhalte da sind',
