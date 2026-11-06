@@ -37,7 +37,7 @@ window.CHANGELOG = [
     'F|Neuer Reiter „Featurewünsche“ (Liste mit Daumen-Abstimmung, nach Stimmen sortiert, Klick zeigt den ganzen Text) und „Bugs“ (nur Admin und Alphatester, mit Dringlichkeit Dringend/Normal/Unwichtig)',
     'F|Featurewünsche und Bugs: Admin und Alphatester sehen, von wem ein Eintrag stammt (Admin mit E-Mail); Bugs lassen sich abhaken, erledigte stehen unten',
     'F|Bilder im Chat, bei Featurewünschen und Bugs anhängen (Büroklammer oder Strg+V); bei Featurewünschen und Bugs erscheinen sie für andere erst nach Freigabe durch Admin oder Alphatester',
-    'F|Featurewünsche sind vorerst Alpha: nur Admin und Alphatester sehen die Seite, können abstimmen und Wünsche einreichen',
+    'F|Die Liste der Featurewünsche (jetzt „Ideen“) ist vorerst Alpha: nur Admin und Alphatester sehen sie und können abstimmen; einreichen kann jeder über „Kontakt“',
     'U|Bugs-Seite mit Alpha-Markierung',
     'U|Anmeldeseite: Screenshots als klickbare Vorschaubilder, durchblätterbar',
     'F|Benutzername bei der Registrierung wählbar (wird anderen Nutzern angezeigt, nicht zur Anmeldung); in den Einstellungen alle 30 Tage änderbar',
