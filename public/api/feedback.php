@@ -54,7 +54,6 @@ $b = body();
 if ($a === 'add') {
     $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? ''));
     if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Featurewunsch oder Bugmeldung.'], 422);
-    if ($kind === 'feature' && FEATURE_ALPHA) require_alpha($u);
     if (mb_strlen($text) < 5 || mb_strlen($text) > 2000) json_out(['error' => 'Bitte beschreibe es in 5 bis 2000 Zeichen.'], 422);
     try {
         $c = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);

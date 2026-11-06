@@ -26,6 +26,7 @@ window.CHANGELOG = [
     'Nutzer ohne Benutzernamen werden beim Anmelden einmal danach gefragt (mit „Später“)',
     'Benutzernamen: Prüfung auf Verwechslung mit Admin/Support (auch Schreibvarianten) und auf anstößige oder verbotene Begriffe; Admin kann einen neuen Namen verlangen, bis dahin ist die Seite für den Nutzer gesperrt',
     'Bei Benutzernamen steht für andere sichtbar, ob die Person Admin oder Alphatester ist',
+    'Featurewünsche können alle Nutzer im Kontakt-Fenster einreichen, die Liste bleibt vorerst Alpha',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
