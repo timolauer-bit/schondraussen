@@ -363,3 +363,5 @@ button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}
 
 .hiddenmail{color:var(--muted);font-style:italic}.hiddenmail .btn{margin-left:6px}
 .privbox>div+div{margin-top:10px}
+
+.logcat{margin:12px 0 2px;font:500 11px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}

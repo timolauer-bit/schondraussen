@@ -601,7 +601,13 @@
   function logView() {
     markSeen(); renderVer();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Versionsverlauf'), h('p', { class: 'hint' }, 'Was sich in welcher Version geändert hat.'));
-    CL.forEach(function (c) { p.append(h('div', { class: 'logv' }, h('h3', null, 'Version ' + c.v, h('small', null, c.d)), h('ul', null, c.t.map(function (x) { return h('li', null, x); })))); });
+    var CATS = [['F', 'Neue Funktionen'], ['O', 'Optionen'], ['U', 'Oberfläche'], ['B', 'Bugfixes'], ['A', 'Admin'], ['D', 'Datenschutz und Sicherheit'], ['T', 'Technik']];
+    CL.forEach(function (c) {
+      var by = {}; c.t.forEach(function (x) { var m = /^([FOUBADT])\|/.exec(x), k = m ? m[1] : 'F'; (by[k] = by[k] || []).push(m ? x.slice(2) : x); });
+      var v = h('div', { class: 'logv' }, h('h3', null, 'Version ' + c.v, h('small', null, c.d)));
+      CATS.forEach(function (k) { if (by[k[0]]) v.append(h('h4', { class: 'logcat' }, k[1]), h('ul', null, by[k[0]].map(function (x) { return h('li', null, x); }))); });
+      p.append(v);
+    });
     mainEl.append(p);
   }
 
