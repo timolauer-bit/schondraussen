@@ -9,6 +9,8 @@ window.CHANGELOG = [
     'Das „…“-Menü am Eintrag klappt ohne Neuladen der Seite auf (Aktualisieren, Treffer ändern, Entfernen mit Rückfrage), die Glocke schaltet ebenfalls ohne Flackern',
     'Folgennummern in der Staffelübersicht zweistellig (E01 statt E1)',
     'Admin: „Ansicht prüfen“ zeigt die Seite wie für einen normalen Nutzer, außerdem wieder Liste der gesperrten E-Mail-Adressen (sperren, freigeben, beim Löschen eines Kontos optional mitsperren)',
+    'Künstlerliste importieren (Einfügen oder Datei, z. B. Spotify-Export) und Beispieleinträge: Frage beim ersten Start, später in den Einstellungen hinzufügen und entfernen',
+    'Info: Abschnitt „To-Do / Ideen“',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

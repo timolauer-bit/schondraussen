@@ -105,6 +105,55 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($u['bell_default']) && !(int) $u['bell_default']) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
     json_out(['ok' => true, 'id' => $sid, 'type' => $type]);
 }
+if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $names = []; $seen = [];
+    foreach ((array) (body()['names'] ?? []) as $x) {
+        $t = trim(preg_replace('/[\x00-\x1f\s]+/u', ' ', (string) $x));
+        if ($t === '' || mb_strlen($t) > 190 || isset($seen[mb_strtolower($t)])) continue;
+        $seen[mb_strtolower($t)] = 1; $names[] = $t;
+        if (count($names) >= 300) break;
+    }
+    if (!$names) json_out(['ok' => false, 'msg' => 'Keine Namen gefunden.']);
+    $c = $pdo->prepare("SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type='artist'"); $c->execute([$u['id']]);
+    $room = max(0, 100 - (int) $c->fetchColumn()); $added = 0; $had = 0; $over = 0;
+    $sub = $pdo->prepare("INSERT INTO subjects (type,name) VALUES ('artist',?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)");
+    $ue = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)');
+    $off = isset($u['bell_default']) && !(int) $u['bell_default'];
+    foreach ($names as $nm) {
+        $sub->execute([$nm]); $sid = (int) $pdo->lastInsertId();
+        $chk = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $chk->execute([$u['id'], $sid]);
+        if ($chk->fetch()) { $had++; continue; }
+        if ($room <= 0) { $over++; continue; }
+        $ue->execute([$u['id'], $sid]); $room--; $added++;
+        if ($off) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
+    }
+    json_out(['ok' => true, 'added' => $added, 'had' => $had, 'over' => $over]);
+}
+if ($a === 'samples' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mode = (string) (body()['mode'] ?? '');
+    try { if ($mode !== 'remove') $pdo->prepare('UPDATE users SET sample_asked=1 WHERE id=?')->execute([$u['id']]); } catch (Throwable $e) { json_out(['ok' => false, 'msg' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
+    if ($mode === 'remove') {
+        $q = $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND is_sample=1'); $q->execute([$u['id']]);
+        json_out(['ok' => true, 'removed' => $q->rowCount()]);
+    }
+    if ($mode !== 'add') json_out(['ok' => true, 'added' => 0]);
+    $adm = (int) $pdo->query("SELECT MIN(id) FROM users WHERE role='admin'")->fetchColumn(); $added = 0; $today = date('Y-m-d');
+    if (!$adm || $adm === (int) $u['id']) json_out(['ok' => true, 'added' => 0]);
+    foreach ($TYPES as $t) {
+        $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $t]);
+        $room = 100 - (int) $c->fetchColumn(); if ($room <= 0) continue;
+        $q = $pdo->prepare("SELECT s.id FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.is_sample=0 AND s.type=? AND s.fetched_at IS NOT NULL
+            ORDER BY (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=?) DESC, s.name LIMIT 10");
+        $q->execute([$adm, $t, $today]);
+        foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $sid) {
+            if ($room <= 0) break;
+            try { $ins = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id,is_sample,bell) VALUES (?,?,1,0)'); $ins->execute([$u['id'], $sid]); }
+            catch (Throwable $e) { $ins = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id,is_sample) VALUES (?,?,1)'); $ins->execute([$u['id'], $sid]); }
+            if ($ins->rowCount()) { $added++; $room--; }
+        }
+    }
+    json_out(['ok' => true, 'added' => $added]);
+}
 // Ab hier: ein Titel, nur wenn er in der eigenen Liste steht
 $id = (int) ($_GET['id'] ?? (body()['id'] ?? 0));
 $own = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $own->execute([$u['id'], $id]);

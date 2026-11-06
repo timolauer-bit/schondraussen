@@ -123,8 +123,20 @@
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
     renderVer();
   }
+  function welcome() {
+    var w = $('welcome'); if (!w) { w = h('section', { class: 'warnbox', id: 'welcome', style: 'margin:12px 0' }); $('topbar').before(w); }
+    w.textContent = '';
+    if (S.preview || !S.ready || D.sample_asked || S.entries.length) { w.hidden = true; return; }
+    w.hidden = false;
+    var msg = h('p', { class: 'msg', role: 'status' }), bs = [];
+    function ask(mode) { bs.forEach(function (b) { b.disabled = true; }); msg.textContent = 'Einen Moment …'; api('/api/data.php?a=samples', { mode: mode }).then(function (r) { if (!r.ok) { bs.forEach(function (b) { b.disabled = false; }); msg.className = 'msg err'; msg.textContent = r.msg || 'Das hat nicht geklappt. Bitte versuche es noch einmal.'; return; } D.sample_asked = 1; load(function () { render(); if (r.added) say(r.added + ' Beispieleinträge angelegt.'); }); }); }
+    bs = [h('button', { class: 'btn small', type: 'button', onclick: function () { ask('add'); } }, 'Ja, Beispiele anlegen'), h('button', { class: 'btn small ghost', type: 'button', onclick: function () { ask('skip'); } }, 'Nein, leer starten')];
+    w.append(h('b', null, 'Willkommen bei Schondraussen.de! '), 'Lege deine Autor:innen, Künstler:innen, Filme und Serien an und behalte ihre Neuerscheinungen im Blick. Damit die Seite für alle schnell bleibt, sind pro Liste höchstens 100 Einträge möglich. Wenn du die Grenze erreichst, lösche bitte zuerst nicht mehr benötigte Einträge.',
+      h('p', { style: 'margin:10px 0 0' }, h('b', null, 'Möchtest du mit Beispielen starten? '), 'Ich lege dir in jeder Kategorie bis zu 10 Beispieleinträge an, damit du sofort siehst, wie Kalender und Übersicht aussehen. Du kannst sie jederzeit wieder entfernen.'),
+      h('div', { class: 'add', style: 'margin-top:8px' }, bs[0], bs[1]), msg);
+  }
   function render() {
-    nav(); mainEl.textContent = '';
+    nav(); welcome(); mainEl.textContent = '';
     if (!S.ready) { mainEl.append(h('p', { class: 'state pulse' }, 'Lade deine Liste …')); return; }
     clearInterval(supTimer);
     var v = S.view;
@@ -409,6 +421,39 @@
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benachrichtigungen'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'), opts,
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
+    var sm = h('span', { class: 'msg', style: 'margin:0' }), sbtn = [];
+    function sample(mode) { sm.className = 'msg'; sm.textContent = 'Einen Moment …'; api('/api/data.php?a=samples', { mode: mode }).then(function (r) { if (!r.ok) { sm.className = 'msg err'; sm.textContent = r.msg || 'Das hat nicht geklappt.'; return; } D.sample_asked = 1; sm.textContent = mode === 'add' ? (r.added ? r.added + ' Beispieleinträge angelegt.' : 'Alle Beispiele stehen schon auf deiner Liste.') : (r.removed ? r.removed + ' Beispieleinträge entfernt.' : 'Es sind keine Beispieleinträge vorhanden.'); load(function () { nav(); }); }); }
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Beispieleinträge'), h('p', { class: 'hint' }, 'Legt bis zu 10 Beispieleinträge je Kategorie an. Was schon auf deiner Liste steht, wird nicht doppelt angelegt. „Entfernen“ löscht nur die Einträge, die auf diesem Weg angelegt wurden, eigene bleiben. Für Beispiele bekommst du keine Mails.'),
+      h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { sample('add'); } }, 'Beispieleinträge hinzufügen'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { sample('remove'); } }, 'Beispieleinträge entfernen'), sm)));
+    var imp = h('div', { class: 'wide2' }), ifile = h('input', { type: 'file', accept: '.json,.csv,.txt,text/plain,application/json,text/csv', 'aria-label': 'Datei laden' }), itext = h('textarea', { rows: '6', 'aria-label': 'Namen, einer pro Zeile', placeholder: 'Radiohead\nBlind Guardian\nNightwish', style: 'width:100%;margin-top:8px' }), imsg = h('span', { class: 'msg', style: 'margin:0' }), ipanel = h('div', { hidden: true, style: 'margin-top:10px' });
+    function splitCsv(l, dl) { var o = [], cur = '', q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === dl && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; }
+    function namesFrom(text, fname) {
+      var out = [];
+      function add(v) { if (typeof v === 'string' && v.trim()) out.push(v.trim()); }
+      var t = text.replace(/^\ufeff/, '');
+      if (/\.json$/i.test(fname) || /^\s*[\[{]/.test(t)) { try { (function walk(o) { if (Array.isArray(o)) o.forEach(function (x) { if (typeof x === 'string') add(x); else walk(x); }); else if (o && typeof o === 'object') { var hit = false, hasArr = Object.keys(o).some(function (k) { return Array.isArray(o[k]); }); ['artistName', 'artist_name', 'artist', 'name', 'Artist Name(s)'].forEach(function (k) { if (k === 'name' && hasArr) return; if (!hit && typeof o[k] === 'string') { add(o[k]); hit = true; } else if (!hit && o[k] && typeof o[k] === 'object' && typeof o[k].name === 'string') { add(o[k].name); hit = true; } }); if (!hit) Object.keys(o).forEach(function (k) { walk(o[k]); }); } })(JSON.parse(t)); return out; } catch (_) {} }
+      var lines = t.split(/\r?\n/).filter(function (l) { return l.trim(); });
+      if (/\.csv$/i.test(fname) || (lines[0] && lines[0].indexOf(',') > -1 && /artist|name|interpret/i.test(lines[0]))) {
+        var dl = lines[0].indexOf(',') > -1 ? ',' : (lines[0].indexOf('\t') > -1 ? '\t' : ';'), hd = lines[0].split(dl).map(function (x) { return x.replace(/^"|"$/g, '').toLowerCase(); }), ci = 0; hd.forEach(function (x, i) { if (/artist|interpret|name/.test(x) && !ci && i >= 0 && ci === 0 && /artist|interpret/.test(x)) ci = i; });
+        if (!ci) hd.forEach(function (x, i) { if (!ci && x === 'name') ci = i; });
+        lines.slice(1).forEach(function (l) { var c = splitCsv(l, dl)[ci] || ''; c = c.replace(/^"|"$/g, ''); c.split(/;\s*/).forEach(add); });
+        return out;
+      }
+      lines.forEach(add); return out;
+    }
+    ifile.addEventListener('change', function () {
+      var f = ifile.files && ifile.files[0]; if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { imsg.className = 'msg err'; imsg.textContent = 'Die Datei ist größer als 5 MB.'; return; }
+      var rd = new FileReader(); rd.onload = function () { var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? l.length + ' Namen erkannt. Du kannst sie unten noch ändern.' : 'In der Datei habe ich keine Namen gefunden.'; };
+      rd.onerror = function () { imsg.className = 'msg err'; imsg.textContent = 'Die Datei konnte nicht gelesen werden.'; }; rd.readAsText(f);
+    });
+    ipanel.append(h('p', { class: 'hint' }, 'Füge Namen von Künstler:innen ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text), zum Beispiel einen Export aus Spotify. Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern. Die Angaben zu den Künstler:innen werden danach nach und nach geladen, bei langen Listen kann das einige Stunden dauern.'), ifile, itext,
+      h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn', type: 'button', onclick: function () {
+        var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = 'Keine Namen gefunden.'; return; }
+        imsg.className = 'msg'; imsg.textContent = 'Importiere …'; api('/api/data.php?a=import', { names: l }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = r.added + ' Künstler:innen hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
+      } }, 'Importieren'), imsg));
+    imp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { ipanel.hidden = !ipanel.hidden; this.setAttribute('aria-expanded', String(!ipanel.hidden)); } }, 'Künstlerliste importieren'), ipanel);
+    box.append(imp);
     box.append(h('p', { class: 'hint wide2' }, 'Der Administrator dieser Seite sieht deine E-Mail-Adresse, die Zahl deiner Einträge und wann du zuletzt hier warst. Deine Einträge selbst bleiben privat.'));
     if (!isAdm()) {
       var dm = h('span', { class: 'msg', style: 'margin:0' }), pw = h('input', { type: 'password', autocomplete: 'current-password', placeholder: 'Passwort zur Bestätigung', style: 'max-width:260px' }), dbox = h('div', { hidden: true, style: 'margin-top:10px' });
@@ -433,7 +478,7 @@
       '<div class="infocat"><h4>Filme</h4><p>Die Datenquelle wird noch angebunden, vorgesehen ist <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Einträge kannst du schon anlegen.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen.</p></div>' +
       '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div></section>' +
-      '<section class="infosec"><h3>Was noch fehlt</h3><ul><li>Filmdaten und Kinostarts (TMDB, Lizenz wird geklärt)</li><li>Streaminganbieter bei Serien</li><li>Gesehene Folgen abhaken</li><li>Weitere Shops als Alternative zu Amazon</li><li>Mehr Auswahl und Einschränkungen im Kalender</li><li><b>Kalender-Abo (.ics):</b> ein privater Link, den man in Google, Apple oder Outlook abonniert und der sich mit den Terminen von selbst aktualisiert</li></ul></section>';
+      '<section class="infosec"><h3>To-Do / Ideen</h3><ul><li><b>Filmdaten und Kinostarts:</b> Die Anbindung (TMDB) folgt, sobald die Lizenz geklärt ist.</li><li><b>Streaminganbieter bei Serien:</b> Anzeigen, wo eine Serie läuft.</li><li><b>Gesehene Folgen abhaken:</b> Bei Serien in der Folgenübersicht markieren, was man schon gesehen hat.</li><li><b>Weitere Shops als Alternative zu Amazon:</b> Zur Auswahl stehen, wo man ein Buch, Album oder einen Film kaufen möchte.</li><li><b>Mehr Auswahl und Einschränkungen im Kalender:</b> Zum Beispiel nach Kategorie, Zeitraum oder Eintrag filtern.</li><li><b>Mehr Werke laden und ähnliche Vorschläge:</b> Weitere Werke eines Eintrags nachladen und Vorschläge zu ähnlichen Künstler:innen, Autor:innen, Filmen und Serien.</li><li><b>Kalender-Abo (.ics):</b> ein privater Link, den man in Google, Apple oder Outlook abonniert und der sich mit den Terminen von selbst aktualisiert</li></ul></section>';
     mainEl.append(d);
   }
   function logView() {
