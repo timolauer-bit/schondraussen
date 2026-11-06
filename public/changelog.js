@@ -21,6 +21,7 @@ window.CHANGELOG = [
     'Featurewünsche sind vorerst Alpha: nur Admin und Alphatester sehen die Seite, können abstimmen und Wünsche einreichen',
     'Bugs-Seite mit Alpha-Markierung',
     'Anmeldeseite: Screenshots als klickbare Vorschaubilder, durchblätterbar',
+    'Benutzername bei der Registrierung wählbar (wird anderen Nutzern angezeigt, nicht zur Anmeldung); in den Einstellungen alle 30 Tage änderbar',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

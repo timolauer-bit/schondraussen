@@ -134,6 +134,9 @@ $M = [
      'Obere Leiste neu aufbauen wegen Platzproblem.'
      FROM users WHERE role='admin' ORDER BY id LIMIT 1",
  ],
+  '015_username' => [
+  "ALTER TABLE users ADD COLUMN username VARCHAR(24) COLLATE utf8mb4_unicode_ci NULL, ADD COLUMN username_changed_at DATETIME NULL, ADD UNIQUE KEY uq_username (username)",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

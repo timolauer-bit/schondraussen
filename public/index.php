@@ -41,7 +41,7 @@ h3{margin:18px 0 6px;font-size:15px}
 <?php if ($app): ?>
 <div class="wrap">
   <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
-  <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>Mitglied Nr. <?= (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
+  <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><?= !empty($u['username']) ? htmlspecialchars($u['username']) : 'Mitglied Nr. ' . (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
   <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
   <div id="appview"></div>
@@ -52,7 +52,7 @@ h3{margin:18px 0 6px;font-size:15px}
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
-<script>window.SD = <?= json_encode(['alpha' => is_alpha($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
+<script>window.SD = <?= json_encode(['alpha' => is_alpha($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
 <script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
@@ -78,6 +78,7 @@ h3{margin:18px 0 6px;font-size:15px}
       <div class="row"><button class="link" type="button" data-show="f-register">Neu registrieren</button><button class="link" type="button" data-show="f-forgot">Passwort vergessen</button></div></form>
     <form id="f-register" hidden><h2 style="margin:0 0 4px;font-size:20px">Registrieren</h2>
       <label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required>
+      <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich">
       <label for="rp">Passwort (mindestens 10 Zeichen)</label><input id="rp" type="password" autocomplete="new-password" minlength="10" required>
       <div class="chk"><input id="ra" type="checkbox" required><label for="ra" style="margin:0">Ich habe die <a href="/datenschutz.php" target="_blank">Datenschutzerklärung</a> gelesen.</label></div>
       <button type="submit">Konto anlegen</button>
@@ -132,7 +133,7 @@ h3{margin:18px 0 6px;font-size:15px}
   document.querySelectorAll('[data-show]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.show); }); });
   function on(id, fn) { var f = document.getElementById(id); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); say('…'); fn(); }); }
   on('f-login', function () { api('login', { email: le.value, password: lp.value }).then(function (r) { if (r.ok) location.reload(); else say(r.error, true); }); });
-  on('f-register', function () { api('register', { email: re.value, password: rp.value, accept: ra.checked }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
+  on('f-register', function () { api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
   on('f-forgot', function () { api('forgot', { email: fe.value }).then(function (r) { say(r.message || r.error, !r.ok); }); });
   var q = new URLSearchParams(location.search), tok = q.get('reset');
   on('f-reset', function () { api('reset', { token: tok, password: np.value }).then(function (r) { if (r.ok) { history.replaceState(null, '', '/'); show('f-login'); say(r.message); } else say(r.error, true); }); });

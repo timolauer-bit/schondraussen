@@ -291,3 +291,4 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .pics{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}.pics:empty{display:none}
 .fbpic{margin:0;max-width:260px}.fbpic figcaption{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:12.5px;color:var(--muted)}
 .chatform textarea{flex:1 1 0;width:0}.chatform .btn{flex:none}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.inline input{flex:1 1 200px;min-width:0;max-width:280px;padding:9px 11px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:inherit}.inline input:disabled{opacity:.6}

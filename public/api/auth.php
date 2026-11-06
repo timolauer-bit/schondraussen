@@ -54,13 +54,22 @@ try {
         if (!valid_email($email)) json_out(['error' => 'Bitte eine gültige E-Mail-Adresse eingeben.'], 422);
         if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422);
         if (empty($b['accept'])) json_out(['error' => 'Bitte Datenschutzerklärung und Nutzungsbedingungen bestätigen.'], 422);
+        $uname = trim((string) ($b['username'] ?? ''));
+        if ($err = username_error($uname)) json_out(['error' => $err], 422);
         $s = $pdo->prepare('SELECT id,email_verified_at FROM users WHERE email=?'); $s->execute([$email]); $ex = $s->fetch();
         if ($ex) {
             // Keine Auskunft, ob die Adresse schon existiert; unbestätigte Konten bekommen den Link erneut.
             if (!$ex['email_verified_at']) link_mail($pdo, (int) $ex['id'], $email, 'verify');
         } elseif (!email_blocked($pdo, $email)) {
             $first = (int) $pdo->query('SELECT COUNT(*) c FROM users')->fetch()['c'] === 0;
-            $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']);
+            try {
+                $t = $pdo->prepare('SELECT 1 FROM users WHERE username=?'); $t->execute([$uname]);
+                if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
+                $pdo->prepare('INSERT INTO users (email,pass_hash,role,username,username_changed_at) VALUES (?,?,?,?,NOW())')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user', $uname]);
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'username') !== false && strpos($e->getMessage(), 'Unknown column') === false) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
+                $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']); // Spalte fehlt noch (migrate.php)
+            }
             link_mail($pdo, (int) $pdo->lastInsertId(), $email, 'verify');
             if ($first) { try { $pdo->exec("UPDATE users SET approved_at=NOW() WHERE role='admin'"); } catch (Throwable $e) {} }
             else {
@@ -86,6 +95,23 @@ try {
         json_out(['ok' => true, 'user' => current_user()]);
     }
 
+    if ($a === 'username') {
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        $n = trim((string) ($b['username'] ?? '')); if ($err = username_error($n)) json_out(['error' => $err], 422);
+        if (mb_strtolower($n) === mb_strtolower((string) ($cu['username'] ?? ''))) {
+            if ($n === ($cu['username'] ?? '')) json_out(['error' => 'Das ist schon dein Benutzername.'], 422);
+        } else {
+            $t = $pdo->prepare('SELECT 1 FROM users WHERE username=? AND id<>?'); $t->execute([$n, $cu['id']]);
+            if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
+        }
+        if (!empty($cu['username']) && $cu['role'] !== 'admin' && !empty($cu['username_changed_at'])) {
+            $left = 30 - (int) floor((time() - strtotime($cu['username_changed_at'])) / 86400);
+            if ($left > 0) json_out(['error' => 'Den Benutzernamen kannst du erst in ' . $left . ($left === 1 ? ' Tag' : ' Tagen') . ' wieder ändern.'], 429);
+        }
+        try { $pdo->prepare('UPDATE users SET username=?, username_changed_at=NOW() WHERE id=?')->execute([$n, $cu['id']]); }
+        catch (PDOException $e) { json_out(['error' => 'Das hat nicht geklappt. Ist die Datenbank aktualisiert (migrate.php)?'], 500); }
+        json_out(['ok' => true, 'username' => $n]);
+    }
     if ($a === 'logout') { $_SESSION = []; session_destroy(); json_out(['ok' => true]); }
 
     if ($a === 'delete_account' || $a === 'cancel_delete') {
