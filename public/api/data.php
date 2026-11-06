@@ -41,11 +41,12 @@ if ($a === 'export') { // alle eigenen Daten, als JSON oder (nur die Liste) als 
     $set = []; foreach (['skin', 'city', 'notify', 'n_new', 'n_day', 'n_week', 'n_mode', 'n_weekday', 'bell_default', 'hide_email', 'hide_activity'] as $k) if (array_key_exists($k, $u)) $set[$k] = $u[$k];
     $msgs = []; try { $m = $pdo->prepare('SELECT from_admin,body,created_at FROM messages WHERE user_id=? ORDER BY id'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $msgs[] = ['von' => $r['from_admin'] ? 'Administrator' : 'du', 'text' => $r['body'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
     $fb = []; try { $m = $pdo->prepare('SELECT kind,title,body,created_at FROM feedback WHERE user_id=? ORDER BY id'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $fb[] = ['art' => $r['kind'] === 'bug' ? 'Bugmeldung' : 'Idee', 'titel' => $r['title'], 'text' => $r['body'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
+    $dn = []; try { $m = $pdo->prepare('SELECT s.name, d.item_key, d.created_at FROM user_done d JOIN subjects s ON s.id=d.subject_id WHERE d.user_id=? ORDER BY s.name, d.item_key'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $dn[] = ['eintrag' => $r['name'], 'schluessel' => $r['item_key'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
     $out = ['exportiert_am' => date('c'), 'hinweis' => 'Hochgeladene Bilder sind nicht enthalten.',
         'konto' => ['email' => $u['email'], 'benutzername' => $u['username'] ?? null, 'mitgliedsnummer' => (int) $u['id'], 'rolle' => $u['role'], 'angelegt_am' => $u['created_at']],
         'einstellungen' => $set,
         'liste' => array_map(fn($r) => ['typ' => $typ[$r['type']] ?? $r['type'], 'name' => $r['name'], 'hinzugefuegt_am' => $r['added_at'], 'benachrichtigung' => (bool) $r['bell']], $list),
-        'nachrichten' => $msgs, 'ideen_und_bugs' => $fb];
+        'erledigt_gesehen_gelesen_gehoert' => $dn, 'nachrichten' => $msgs, 'ideen_und_bugs' => $fb];
     header('Content-Type: application/json; charset=utf-8'); header('Content-Disposition: attachment; filename="schondraussen-daten-' . $stamp . '.json"');
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); exit;
 }
@@ -224,6 +225,18 @@ if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND subject_id=?')->execute([$u['id'], $id]);
     json_out(['ok' => true]);
 }
+function done_key_work($title, $year): string { return 'w' . substr(md5(mb_strtolower(trim((string) $title)) . '|' . (int) $year), 0, 16); }
+function done_key_ep($season, $number): string { return 'e' . (int) $season . 'x' . (int) $number; }
+if ($a === 'done' && $_SERVER['REQUEST_METHOD'] === 'POST') { // gesehen / gelesen / gehört
+    $b = body(); $sid = (int) ($b['id'] ?? 0); $keys = array_values(array_unique(array_filter((array) ($b['keys'] ?? []), fn($k) => is_string($k) && preg_match('/^(w[0-9a-f]{16}|e\d{1,3}x\d{1,4})$/', $k))));
+    if (!$sid || !$keys || count($keys) > 400) json_out(['error' => 'Ungültige Angabe.'], 422);
+    $own = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $own->execute([$u['id'], $sid]); if (!$own->fetch()) json_out(['error' => 'Der Eintrag steht nicht auf deiner Liste.'], 404);
+    try {
+        if (!empty($b['on'])) { $q = $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)'); foreach ($keys as $k) $q->execute([$u['id'], $sid, $k]); }
+        else { $q = $pdo->prepare('DELETE FROM user_done WHERE user_id=? AND subject_id=? AND item_key=?'); foreach ($keys as $k) $q->execute([$u['id'], $sid, $k]); }
+    } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
 if ($a === 'entry') {
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
     $e = $s->fetch(); $e['genres'] = json_decode($e['genres'] ?: '[]', true);
@@ -232,6 +245,9 @@ if ($a === 'entry') {
     if ($e['type'] === 'series') { try { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); $eps = $q->fetchAll(); } catch (Throwable $t) {} }
     $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);
     $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
-    json_out(['entry' => $e, 'works' => $w->fetchAll(), 'releases' => $r->fetchAll(), 'episodes' => $eps]);
+    $works = $w->fetchAll(); foreach ($works as &$x) $x['k'] = done_key_work($x['title'], $x['year']); unset($x);
+    foreach ($eps as &$x) $x['k'] = done_key_ep($x['season'], $x['number']); unset($x);
+    $done = []; try { $q = $pdo->prepare('SELECT item_key FROM user_done WHERE user_id=? AND subject_id=?'); $q->execute([$u['id'], $id]); $done = $q->fetchAll(PDO::FETCH_COLUMN); } catch (Throwable $t) {}
+    json_out(['entry' => $e, 'works' => $works, 'releases' => $r->fetchAll(), 'episodes' => $eps, 'done' => $done]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);
