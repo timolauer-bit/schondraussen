@@ -50,7 +50,7 @@ h3{margin:18px 0 6px;font-size:15px}
 </head><body>
 <?php if ($app): ?>
 <div class="wrap">
-  <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
+  <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Autor:innen, Musiker:innen, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
   <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><?= !empty($u['username']) ? htmlspecialchars($u['username']) : 'Mitglied Nr. ' . (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
   <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
@@ -58,7 +58,7 @@ h3{margin:18px 0 6px;font-size:15px}
   <footer>
     <p>Testbetrieb: Die Seite ist noch nicht öffentlich.</p>
     <p>Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links mit Partner-ID sind Werbelinks; für dich ändert sich der Preis nicht.</p>
-    <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Künstler:innen) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Autor:innen). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Termine bitte vor dem Kauf prüfen.</p>
+    <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Musiker:innen) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Autor:innen). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Termine bitte vor dem Kauf prüfen.</p>
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
@@ -68,7 +68,7 @@ h3{margin:18px 0 6px;font-size:15px}
 <?php else: ?>
 <main>
 <h1>Schondraussen<span>.de</span></h1>
-<p>Deine Autor:innen, Künstler:innen, Filme und Serien an einem Ort.</p>
+<p>Deine Autor:innen, Musiker:innen, Filme und Serien an einem Ort.</p>
 <?php if ($u): ?>
   <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars($u['email']) ?></b> (Mitglied Nr. <?= (int) $u['id'] ?>).</p>
 <?php if (!empty($u['deleting'])): $until = date('d.m.Y', strtotime($u['delete_requested_at']) + 7 * 86400); ?>
@@ -111,7 +111,7 @@ h3{margin:18px 0 6px;font-size:15px}
   </div>
   <section class="pitch" aria-labelledby="pitch-h">
     <h2 id="pitch-h">Nie wieder eine Neuerscheinung verpassen</h2>
-    <p>Trag deine Lieblingskünstler:innen, Autor:innen, Filme und Serien ein, kostenlos. Schondraussen.de zeigt dir, was sie schon veröffentlicht haben, und sagt dir Bescheid, sobald etwas Neues angekündigt wird.</p>
+    <p>Trag deine Lieblingsmusiker:innen, Autor:innen, Filme und Serien ein, kostenlos. Schondraussen.de zeigt dir, was sie schon veröffentlicht haben, und sagt dir Bescheid, sobald etwas Neues angekündigt wird.</p>
     <ul>
       <li><b>Alles an einem Ort:</b> Alben, Bücher, Filme und Serienstaffeln übersichtlich pro Eintrag.</li>
       <li><b>Kalender:</b> Alle kommenden Veröffentlichungen auf einen Blick, bei Serien mit den einzelnen Folgen.</li>

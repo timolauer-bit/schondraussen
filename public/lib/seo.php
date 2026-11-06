@@ -8,8 +8,8 @@ function seo_cfg(): array {
 function seo_public(): bool { return !empty(seo_cfg()['seo_public']); }
 function seo_base(): string { return rtrim(seo_cfg()['base_url'] ?? 'https://schondraussen.de', '/'); }
 
-const SEO_TITLE = 'Schondraussen.de – Neuerscheinungen deiner Künstler, Autoren, Filme und Serien';
-const SEO_DESC  = 'Alle Neuerscheinungen deiner Lieblingskünstler, Autor:innen, Filme und Serien an einem Ort: Werkübersicht, Kalender und Erinnerungen per Mail. Jetzt registrieren.';
+const SEO_TITLE = 'Schondraussen.de – Neuerscheinungen deiner Musiker, Autoren, Filme und Serien';
+const SEO_DESC  = 'Alle Neuerscheinungen deiner Lieblingsmusiker, Autor:innen, Filme und Serien an einem Ort: Werkübersicht, Kalender und Erinnerungen per Mail. Jetzt registrieren.';
 
 // Header senden und Head-Tags (robots, ggf. Canonical/Description/Open Graph) ausgeben.
 // $indexable=false erzwingt noindex (z. B. für eingeloggte Nutzer).

@@ -5,7 +5,7 @@
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
   var TYPES = {
     author: { label: 'Autor:in', plural: 'Autor:innen', ph: 'z. B. Terry Pratchett', idx: 'stripbooks', work: 'Bücher' },
-    artist: { label: 'Künstler:in', plural: 'Künstler:innen', ph: 'z. B. Radiohead', idx: 'music', work: 'Alben' },
+    artist: { label: 'Musiker:in', plural: 'Musiker:innen', ph: 'z. B. Radiohead', idx: 'music', work: 'Alben' },
     film: { label: 'Film', plural: 'Filme', ph: 'z. B. Dune', idx: 'video', work: 'Filme' },
     series: { label: 'Serie', plural: 'Serien', ph: 'z. B. Severance', idx: 'video', work: 'Staffeln' }
   };
@@ -25,6 +25,12 @@
     thumb: '<svg viewBox="0 0 24 24"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm0 0 4-8a2 2 0 0 1 2 2v4h5.2a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 16.9 20H7"/></svg>',
     bell: '<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
     bellOff: '<svg viewBox="0 0 24 24"><path d="M13.7 21a1.94 1.94 0 0 1-3.4 0M17 17H3s3-2 3-9a6 6 0 0 1 .3-1.9M8.7 3.3A6 6 0 0 1 18 8c0 2.5.4 4.4.9 5.7M2 2l20 20"/></svg>',
+    gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    shield: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    bulb: '<svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.4 1 2.3h6c0-.9.3-1.7 1-2.3A7 7 0 0 0 12 2z"/></svg>',
+    bug: '<svg viewBox="0 0 24 24"><rect x="8" y="6" width="8" height="14" rx="4"/><path d="M19 7l-3 2M5 7l3 2M19 19l-3-2M5 19l3-2M20 13h-4M4 13h4M10 2l1 2M14 2l-1 2"/></svg>',
+    info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    chat: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     refresh: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8M3 3v5h5M3 12a9 9 0 0 0 15 6.7L21 16M21 21v-5h-5"/></svg>'
   };
 
@@ -127,10 +133,12 @@
   function go(view, cat) { S.view = view; S.cat = cat || view; S.sel = null; S.confirm = null; S.menuFor = null; S.filter = ''; S.adding = false; S.sugg = null; say(''); render(); window.scrollTo(0, 0); }
   function nav() {
     topbar.textContent = '';
+    // Rechte Gruppe: Symbole. Für Admins und Alphatester nur Symbole (Name per Tooltip, bei der aktiven Seite sichtbar), sonst Symbol plus Text.
+    var RI = { adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = isAdm() || isAlpha();
     function btn(key, text, count, extra) {
-      var cur = S.view === 'list' ? S.cat === key : S.view === key;
-      return h('button', { class: 'nav' + (extra || ''), type: 'button', 'aria-current': cur ? 'page' : null, onclick: function () { /^(author|artist|film|series)$/.test(key) ? go('list', key) : go(key); } },
-        key === 'cal' ? ico(ICONS.cal) : null, /^(author|artist|film|series)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, text, count ? h('small', null, String(count)) : null);
+      var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
+      return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series)$/.test(key) ? go('list', key) : go(key); } },
+        key === 'cal' ? ico(ICONS.cal) : null, ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : text, count ? h('small', null, String(count)) : null);
     }
     topbar.append(btn('cal', 'Kalender', S.rels.length));
     ORDER.forEach(function (k) { topbar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
@@ -151,7 +159,7 @@
     var msg = h('p', { class: 'msg', role: 'status' }), bs = [];
     function ask(mode) { bs.forEach(function (b) { b.disabled = true; }); msg.textContent = 'Einen Moment …'; api('/api/data.php?a=samples', { mode: mode }).then(function (r) { if (!r.ok) { bs.forEach(function (b) { b.disabled = false; }); msg.className = 'msg err'; msg.textContent = r.msg || 'Das hat nicht geklappt. Bitte versuche es noch einmal.'; return; } D.sample_asked = 1; load(function () { render(); if (r.added) say(pl(r.added, 'Beispieleintrag', 'Beispieleinträge') + ' angelegt.'); }); }); }
     bs = [h('button', { class: 'btn small', type: 'button', onclick: function () { ask('add'); } }, 'Ja, Beispiele anlegen'), h('button', { class: 'btn small ghost', type: 'button', onclick: function () { ask('skip'); } }, 'Nein, leer starten')];
-    w.append(h('b', null, 'Willkommen bei Schondraussen.de! '), 'Lege deine Autor:innen, Künstler:innen, Filme und Serien an und behalte ihre Neuerscheinungen im Blick. Damit die Seite für alle schnell bleibt, sind pro Liste höchstens 100 Einträge möglich. Wenn du die Grenze erreichst, lösche bitte zuerst nicht mehr benötigte Einträge.',
+    w.append(h('b', null, 'Willkommen bei Schondraussen.de! '), 'Lege deine Autor:innen, Musiker:innen, Filme und Serien an und behalte ihre Neuerscheinungen im Blick. Damit die Seite für alle schnell bleibt, sind pro Liste höchstens 100 Einträge möglich. Wenn du die Grenze erreichst, lösche bitte zuerst nicht mehr benötigte Einträge.',
       h('p', { style: 'margin:10px 0 0' }, h('b', null, 'Möchtest du mit Beispielen starten? '), 'Ich lege dir in jeder Kategorie bis zu 10 Beispieleinträge an, damit du sofort siehst, wie Kalender und Übersicht aussehen. Du kannst sie jederzeit wieder entfernen.'),
       h('div', { class: 'add', style: 'margin-top:8px' }, bs[0], bs[1]), msg);
   }
@@ -283,7 +291,7 @@
     var t = TYPES[cat], es = entriesOf(cat), wrap = h('div', { class: 'overview' }), works = 0, ups = 0, eps = 0, epsKnown = 0, tot = 0, totKnown = 0, items = [];
     es.forEach(function (e) { works += e.works; var l = itemsOf(e); ups += l.length; items = items.concat(l); var ne = +e.episodes || 0; eps += ne; if (ne) epsKnown++; var tw = +e.total_works; if (tw > 0) { tot += tw; totKnown++; } });
     var tiles = cat === 'author' ? [['Autor:innen', es.length], ['Bücher in deiner Liste', works], ['Bücher insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben'], ['Kommende Veröffentlichungen', ups]]
-      : cat === 'artist' ? [['Künstler:innen', es.length], ['Alben in deiner Liste', works], ['Alben insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben'], ['Kommende Veröffentlichungen', ups]]
+      : cat === 'artist' ? [['Musiker:innen', es.length], ['Alben in deiner Liste', works], ['Alben insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben'], ['Kommende Veröffentlichungen', ups]]
       : cat === 'film' ? [['Filme', es.length], ['Filme und Teile der Reihen', works], ['Kommende Starts', ups]]
       : [['Serien', es.length], ['Staffeln', works], ['Folgen gesamt', eps, epsKnown ? 'Folgenzahl bei ' + epsKnown + ' von ' + es.length : 'noch keine Angaben'], ['Kommende Termine', ups]];
     wrap.append(h('h2', { class: 'sec' }, 'Übersicht ' + t.plural));
@@ -527,10 +535,10 @@
       var rd = new FileReader(); rd.onload = function () { var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? (l.length === 1 ? '1 Name erkannt. Du kannst ihn unten noch ändern.' : l.length + ' Namen erkannt. Du kannst sie unten noch ändern.') : 'In der Datei habe ich keine Namen gefunden.'; };
       rd.onerror = function () { imsg.className = 'msg err'; imsg.textContent = 'Die Datei konnte nicht gelesen werden.'; }; rd.readAsText(f);
     });
-    ipanel.append(h('p', { class: 'hint' }, 'Füge Namen von Künstler:innen ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text), zum Beispiel einen Export aus Spotify. Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern. Die Angaben zu den Künstler:innen werden danach nach und nach geladen, bei langen Listen kann das einige Stunden dauern.'), ifile, itext,
+    ipanel.append(h('p', { class: 'hint' }, 'Füge Namen von Musiker:innen ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text), zum Beispiel einen Export aus Spotify. Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern. Die Angaben zu den Musiker:innen werden danach nach und nach geladen, bei langen Listen kann das einige Stunden dauern.'), ifile, itext,
       h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn', type: 'button', onclick: function () {
         var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = 'Keine Namen gefunden.'; return; }
-        imsg.className = 'msg'; imsg.textContent = 'Importiere …'; api('/api/data.php?a=import', { names: l }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = pl(r.added, 'Künstler:in', 'Künstler:innen') + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
+        imsg.className = 'msg'; imsg.textContent = 'Importiere …'; api('/api/data.php?a=import', { names: l }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = pl(r.added, 'Musiker:in', 'Musiker:innen') + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
       } }, 'Importieren'), imsg));
     imp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { ipanel.hidden = !ipanel.hidden; this.setAttribute('aria-expanded', String(!ipanel.hidden)); } }, 'Künstlerliste importieren'), ipanel);
     box.append(imp);
@@ -547,18 +555,18 @@
   /* ---------- Info ---------- */
   function info() {
     var d = document.createElement('section'); d.className = 'panel infopanel';
-    d.innerHTML = '<h2 class="sec">Info</h2><div class="intro"><p class="lead">Du bist hier richtig, wenn du irgendwann angefangen hast zu arbeiten und einfach keine Zeit mehr hast, deinen Lieblingskünstler:innen, Autor:innen oder Serien zu folgen. Wenn du überrascht feststellst, dass die Band deiner Jugend schon vor zwei Jahren ein neues Album veröffentlicht hat.</p>' +
+    d.innerHTML = '<h2 class="sec">Info</h2><div class="intro"><p class="lead">Du bist hier richtig, wenn du irgendwann angefangen hast zu arbeiten und einfach keine Zeit mehr hast, deinen Lieblingsmusiker:innen, Autor:innen oder Serien zu folgen. Wenn du überrascht feststellst, dass die Band deiner Jugend schon vor zwei Jahren ein neues Album veröffentlicht hat.</p>' +
       '<p>Schondraussen.de hilft dir dabei, ganz ohne viel Schnickschnack: Du legst fest, wem du folgst, und die Seite schickt dir eine Mail, sobald es etwas Neues gibt. So behältst du den Überblick und bestimmst selbst, was dich wirklich erreicht.</p>' +
       '<p class="muted">Aktuell ist die Seite noch im Testbetrieb und nicht öffentlich. Neue Konten werden vom Admin freigeschaltet.</p></div>' +
-      '<section class="infosec"><h3>Zum Testen</h3><p>Trage bitte möglichst unterschiedliche Künstler:innen, Autor:innen und Serien ein, am besten auch solche mit angekündigten Neuerscheinungen. So sehe ich, wo die Angaben stimmen und wo etwas fehlt. Schau außerdem, ob der Kalender die Termine zeigt, ob die Mails ankommen und ob die Seite auf deinem Handy gut aussieht. Fällt dir etwas auf, schreib mir über „Kontakt“.</p></section>' +
+      '<section class="infosec"><h3>Zum Testen</h3><p>Trage bitte möglichst unterschiedliche Musiker:innen, Autor:innen und Serien ein, am besten auch solche mit angekündigten Neuerscheinungen. So sehe ich, wo die Angaben stimmen und wo etwas fehlt. Schau außerdem, ob der Kalender die Termine zeigt, ob die Mails ankommen und ob die Seite auf deinem Handy gut aussieht. Fällt dir etwas auf, schreib mir über „Kontakt“.</p></section>' +
       '<section class="infosec"><h3>Wann werden Einträge erneuert?</h3><p>Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf. Beim Hinzufügen eines Eintrags und über „Aktualisieren“ werden die Daten sofort geladen. Das Datum steht als „Stand“ am Eintrag.</p></section>' +
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Autor:innen</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
-      '<div class="infocat"><h4>Künstler:innen</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
+      '<div class="infocat"><h4>Musiker:innen</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
       '<div class="infocat"><h4>Filme</h4><p>Die Datenquelle wird noch angebunden, vorgesehen ist <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Einträge kannst du schon anlegen.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen.</p></div>' +
       '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div></section>' +
-      '<section class="infosec"><h3>To-Do / Ideen</h3><ul><li><b>Filmdaten und Kinostarts:</b> Die Anbindung (TMDB) folgt, sobald die Lizenz geklärt ist.</li><li><b>Streaminganbieter bei Serien:</b> Anzeigen, wo eine Serie läuft.</li><li><b>Gesehene Folgen abhaken:</b> Bei Serien in der Folgenübersicht markieren, was du schon gesehen hast.</li><li><b>Weitere Shops als Alternative zu Amazon:</b> Zur Auswahl stehen, wo du ein Buch, Album oder einen Film kaufen möchtest.</li><li><b>Mehr Auswahl und Einschränkungen im Kalender:</b> Zum Beispiel nach Kategorie, Zeitraum oder Eintrag filtern.</li><li><b>Mehr Werke laden und ähnliche Vorschläge:</b> Weitere Werke eines Eintrags nachladen und Vorschläge zu ähnlichen Künstler:innen, Autor:innen, Filmen und Serien.</li><li><b>Kalender-Abo (.ics):</b> ein privater Link, den du in Google, Apple oder Outlook abonnierst und der sich mit den Terminen von selbst aktualisiert</li></ul></section>';
+      '<section class="infosec"><h3>To-Do / Ideen</h3><ul><li><b>Filmdaten und Kinostarts:</b> Die Anbindung (TMDB) folgt, sobald die Lizenz geklärt ist.</li><li><b>Streaminganbieter bei Serien:</b> Anzeigen, wo eine Serie läuft.</li><li><b>Gesehene Folgen abhaken:</b> Bei Serien in der Folgenübersicht markieren, was du schon gesehen hast.</li><li><b>Weitere Shops als Alternative zu Amazon:</b> Zur Auswahl stehen, wo du ein Buch, Album oder einen Film kaufen möchtest.</li><li><b>Mehr Auswahl und Einschränkungen im Kalender:</b> Zum Beispiel nach Kategorie, Zeitraum oder Eintrag filtern.</li><li><b>Mehr Werke laden und ähnliche Vorschläge:</b> Weitere Werke eines Eintrags nachladen und Vorschläge zu ähnlichen Musiker:innen, Autor:innen, Filmen und Serien.</li><li><b>Kalender-Abo (.ics):</b> ein privater Link, den du in Google, Apple oder Outlook abonnierst und der sich mit den Terminen von selbst aktualisiert</li></ul></section>';
     mainEl.append(d);
   }
   function logView() {
