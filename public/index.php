@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/lib/bootstrap.php';
+require_once __DIR__ . '/lib/seo.php';
 header('Content-Type: text/html; charset=utf-8');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
@@ -9,9 +10,11 @@ $shots = [];
 if (!$u) { try { foreach (db()->query('SELECT id,title,UNIX_TIMESTAMP(updated_at) v FROM site_images ORDER BY position,id')->fetchAll() as $r) $shots[] = ['src' => '/api/shot.php?id=' . (int) $r['id'] . '&v=' . (int) $r['v'], 'title' => $r['title']]; } catch (Throwable $e) {}
   if (!$shots) $shots = [['src' => '/shots/shot1.webp', 'title' => 'Kalender mit allen angekündigten Veröffentlichungen'], ['src' => '/shots/shot2.webp', 'title' => 'Serienübersicht mit Liste und kommenden Veröffentlichungen']]; }
 $skin = ($u && in_array($u['skin'] ?? '', ['light', 'dark', 'paper', 'cinema', 'mint', 'eighties'], true)) ? $u['skin'] : '';
+$seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u); // sendet ggf. X-Robots-Tag, daher vor der Ausgabe
 ?><!doctype html>
 <html lang="de"<?= $skin ? ' data-skin="' . $skin . '"' : '' ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Schondraussen.de</title>
+<title><?= (!$u && seo_public()) ? SEO_TITLE : 'Schondraussen.de' ?></title>
+<?= $seo ?>
 <?php if ($app): ?><link rel="stylesheet" href="/app.css?v=<?= filemtime(__DIR__ . '/app.css') ?>"><?php else: ?>
 <style>
 :root{--bg:#f2f2f0;--surface:#fff;--ink:#11171d;--muted:#58616a;--line:#d6d6d1;--accent:#db4d1a}

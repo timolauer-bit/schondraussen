@@ -1,5 +1,6 @@
 window.CHANGELOG = [
   { v: 7, d: '06.11.2026', t: [
+    'Suchmaschinen: Die Seite ist vorerst für Google & Co. gesperrt (noindex); zum Start genügt ein Schalter in der Konfiguration, dann gelten Titel, Beschreibung, Vorschau beim Teilen, robots.txt und Sitemap. Außerdem leitet www auf schondraussen.de weiter',
     'Konto löschen in den Einstellungen: Die Daten bleiben noch eine Woche gespeichert, in dieser Zeit lässt sich die Löschung abbrechen, danach wird alles endgültig gelöscht',
     'Abmelden steht jetzt oben rechts neben der Versionsangabe',
     'Kalender: ein Termin pro Zeile („Name – Titel“) mit schmalem Balken in der Farbe der Kategorie',
