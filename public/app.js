@@ -96,6 +96,14 @@
     var u = 'https://www.' + d + '/s?k=' + encodeURIComponent(term) + '&i=' + idx; if (S.site.tag) u += '&tag=' + encodeURIComponent(S.site.tag); return u;
   }
   function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon'); }
+  function popup(title, text) { // Bestätigung als Fenster, schließt mit OK, Esc oder Klick daneben
+    var prev = document.activeElement, ok = h('button', { class: 'btn', type: 'button' }, 'OK');
+    var box = h('div', { class: 'unmodal', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'pph' }, h('div', { class: 'unbox' }, h('h2', { id: 'pph', style: 'margin:0 0 6px;font-size:20px' }, title), h('p', { class: 'hint', style: 'margin:0 0 14px' }, text), ok));
+    function close() { document.removeEventListener('keydown', key); box.remove(); if (prev && prev.focus) prev.focus(); }
+    function key(ev) { if (ev.key === 'Escape' || ev.key === 'Enter') { ev.preventDefault(); close(); } }
+    ok.addEventListener('click', close); box.addEventListener('click', function (ev) { if (ev.target === box) close(); }); document.addEventListener('keydown', key);
+    document.body.append(box); ok.focus();
+  }
   function say(t, err) { S.msg = t || ''; S.msgErr = !!err; var m = $('msg'); if (m) { m.textContent = S.msg; m.className = 'msg' + (err ? ' err' : ''); } }
 
   /* ---------- Kopf und Leiste ---------- */
@@ -551,7 +559,7 @@
     }
     function send() {
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
-      if (!admin && kindSel !== 'chat') { api('/api/feedback.php?a=add', { kind: kindSel, text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = (kindSel === 'feature' ? (feat('feat') ? 'Danke! Dein Wunsch steht jetzt in der Liste „Featurewünsche“.' : 'Danke! Dein Wunsch ist angekommen.') : 'Danke! Deine Bugmeldung ist beim Admin angekommen.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : ''); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
+      if (!admin && kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Wunsch abgeschickt' : 'Bugmeldung abgeschickt', (kd === 'feature' ? (feat('feat') ? 'Danke! Dein Wunsch steht jetzt in der Liste „Featurewünsche“.' : 'Danke! Dein Wunsch ist angekommen.') : 'Danke! Deine Bugmeldung ist beim Admin angekommen.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; drafts = []; drawDrafts(); api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids }).then(function (r) { msg.textContent = r.ok ? '' : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok ? '' : ' err'); pull(); });
     }
     var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
