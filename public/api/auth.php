@@ -70,7 +70,7 @@ try {
                 } catch (Throwable $e) {}
             }
         }
-        json_out(['ok' => true, 'message' => 'Fast geschafft: Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Nach der Bestätigung schaltet der Admin dein Konto frei (Testbetrieb).']);
+        json_out(['ok' => true, 'message' => 'Fast geschafft: Du bekommst gleich eine Mail mit einem Bestätigungslink. Nach der Bestätigung schaltet der Admin dein Konto frei (Testbetrieb).']);
     }
 
     if ($a === 'login') {
@@ -110,7 +110,7 @@ try {
         $email = strtolower(trim((string) ($b['email'] ?? '')));
         $s = $pdo->prepare('SELECT id FROM users WHERE email=? AND email_verified_at IS NOT NULL'); $s->execute([$email]);
         if ($u = $s->fetch()) link_mail($pdo, (int) $u['id'], $email, 'reset');
-        json_out(['ok' => true, 'message' => 'Wenn die Adresse bei uns bekannt ist, haben wir dir einen Link geschickt.']);
+        json_out(['ok' => true, 'message' => 'Wenn die Adresse bekannt ist, bekommst du gleich einen Link per Mail.']);
     }
 
     if ($a === 'reset') {

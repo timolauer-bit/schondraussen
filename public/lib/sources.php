@@ -62,7 +62,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         ksort($seasons);
-        foreach ($seasons as $n => $x) $w->execute([$sid, "Staffel $n", $x['first'] ? (int) substr($x['first'], 0, 4) : null, 'Staffel', $x['n'] . ' Folgen']);
+        foreach ($seasons as $n => $x) $w->execute([$sid, "Staffel $n", $x['first'] ? (int) substr($x['first'], 0, 4) : null, 'Staffel', $x['n'] . ((int) $x['n'] === 1 ? ' Folge' : ' Folgen')]);
         $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_slice($rel, 0, 60) as $x) $r->execute([$sid, $x[0], $x[1], $x[2], null]);
         $pdo->commit();
