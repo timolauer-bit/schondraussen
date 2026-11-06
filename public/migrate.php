@@ -70,6 +70,11 @@ $M = [
   '006_delete_request' => [
   "ALTER TABLE users ADD COLUMN delete_requested_at DATETIME NULL",
  ],
+  '007_notify_options' => [
+  "ALTER TABLE user_entries ADD COLUMN bell TINYINT(1) NOT NULL DEFAULT 1",
+  "ALTER TABLE users ADD COLUMN n_new TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN n_day TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN n_week TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN n_mode VARCHAR(8) NOT NULL DEFAULT 'digest', ADD COLUMN n_weekday TINYINT NOT NULL DEFAULT 1, ADD COLUMN bell_default TINYINT(1) NOT NULL DEFAULT 1, ADD COLUMN last_morning DATE NULL, ADD COLUMN last_weekly DATE NULL",
+  "ALTER TABLE notified MODIFY kind ENUM('new','soon','day') NOT NULL",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

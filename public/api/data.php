@@ -7,7 +7,9 @@ if (empty($u['approved'])) json_out(['error' => 'Dein Konto wartet auf Freischal
 $pdo = db(); $a = $_GET['a'] ?? '';
 
 if ($a === 'list') {
-    $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,
+    $bellSql = 'e.bell';
+    try { $pdo->query('SELECT bell FROM user_entries LIMIT 1'); } catch (Throwable $e) { $bellSql = '1'; }
+    $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,$bellSql AS bell,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
         (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
         (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming,
@@ -39,6 +41,20 @@ if ($a === 'notify' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $on = !empty(body()['on']) ? 1 : 0;
     $pdo->prepare('UPDATE users SET notify=? WHERE id=?')->execute([$on, $u['id']]);
     json_out(['ok' => true, 'on' => $on]);
+}
+if ($a === 'notifyset' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $b = body();
+    $mode = ($b['mode'] ?? '') === 'instant' ? 'instant' : 'digest';
+    $wd = max(1, min(7, (int) ($b['weekday'] ?? 1)));
+    try {
+        $pdo->prepare('UPDATE users SET n_new=?, n_day=?, n_week=?, n_mode=?, n_weekday=?, bell_default=? WHERE id=?')
+            ->execute([!empty($b['new']) ? 1 : 0, !empty($b['day']) ? 1 : 0, !empty($b['week']) ? 1 : 0, $mode, $wd, !empty($b['bell_default']) ? 1 : 0, $u['id']]);
+    } catch (Throwable $e) { json_out(['ok' => false, 'msg' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
+    json_out(['ok' => true]);
+}
+if ($a === 'bellall' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo->prepare('UPDATE user_entries SET bell=? WHERE user_id=?')->execute([!empty(body()['on']) ? 1 : 0, $u['id']]);
+    json_out(['ok' => true]);
 }
 if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/../lib/notify.php';
@@ -85,6 +101,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$old) $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($ext), $sid]);
     }
     $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)')->execute([$u['id'], $sid]);
+    if (isset($u['bell_default']) && !(int) $u['bell_default']) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
     json_out(['ok' => true, 'id' => $sid, 'type' => $type]);
 }
 // Ab hier: ein Titel, nur wenn er in der eigenen Liste steht
@@ -104,6 +121,11 @@ if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$ext) json_out(['ok' => false, 'msg' => 'Kein Treffer gewählt.']);
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
     json_out(refresh_subject($pdo, $id));
+}
+if ($a === 'bell' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $on = !empty(body()['on']) ? 1 : 0;
+    $pdo->prepare('UPDATE user_entries SET bell=? WHERE user_id=? AND subject_id=?')->execute([$on, $u['id'], $id]);
+    json_out(['ok' => true, 'on' => $on]);
 }
 if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND subject_id=?')->execute([$u['id'], $id]);

@@ -202,3 +202,11 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .rel.calrow .one .namelink{font-size:14px}
 .rel.calrow .soon{font-size:11px;margin:0;white-space:nowrap}
 @media(max-width:560px){.rel.calrow .one{white-space:normal}}
+
+/* Glocke */
+.bellbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bellbtn.on{color:var(--accent);border-color:var(--accent)}
+.row-btn{position:relative}
+.row-btn .beloff{position:absolute;right:8px;bottom:8px;color:var(--muted);opacity:.7;display:inline-flex}
+.row-btn .beloff svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nopts select{max-width:100%}

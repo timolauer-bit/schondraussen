@@ -3,6 +3,7 @@ window.CHANGELOG = [
     'Konto löschen in den Einstellungen: Die Daten bleiben noch eine Woche gespeichert, in dieser Zeit lässt sich die Löschung abbrechen, danach wird alles endgültig gelöscht',
     'Abmelden steht jetzt oben rechts neben der Versionsangabe',
     'Kalender: ein Termin pro Zeile („Name – Titel“) mit schmalem Balken in der Farbe der Kategorie',
+    'Benachrichtigungen neu: Glocke an jedem Eintrag, Mail-Arten (neu angekündigt, am Erscheinungstag, Wochenübersicht mit frei wählbarem Wochentag), Sammelmail ab 7 Uhr oder sofort, alles in den Einstellungen',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },
