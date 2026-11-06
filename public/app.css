@@ -210,3 +210,7 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .row-btn .beloff{position:absolute;right:8px;bottom:8px;color:var(--muted);opacity:.7;display:inline-flex}
 .row-btn .beloff svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nopts select{max-width:100%}
+
+.bellbtn{padding:6px 9px}
+.bellbtn.on{color:#1d8a4a;border-color:#1d8a4a;background:color-mix(in srgb,#1d8a4a 12%,transparent)}
+.bellbtn.off{color:#c0392b;border-color:#c0392b;background:color-mix(in srgb,#c0392b 10%,transparent)}
