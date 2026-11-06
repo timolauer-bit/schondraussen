@@ -7,6 +7,7 @@ window.CHANGELOG = [
     'Glocke am Eintrag ohne Text: grün = Benachrichtigungen an, rot = aus',
     '„Aktualisieren“ liegt jetzt im „…“-Menü des Eintrags, der Kopf zeigt nur noch Glocke und Menü; Buttons einheitlich und mittig',
     'Das „…“-Menü am Eintrag klappt ohne Neuladen der Seite auf (Aktualisieren, Treffer ändern, Entfernen mit Rückfrage), die Glocke schaltet ebenfalls ohne Flackern',
+    'Folgennummern in der Staffelübersicht zweistellig (E01 statt E1)',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

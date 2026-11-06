@@ -344,7 +344,7 @@
       l.forEach(function (x) {
         var p = x.airdate ? parseDate(x.airdate) : null, ok = p && p.prec === 'day', isFut = ok && p.end >= now, diff = ok ? Math.round((p.start - now) / 864e5) : 0;
         var when = ok ? WDAY.format(p.start).replace('.', '') + ', ' + LONG.format(p.start) : 'Datum offen', stat = isFut ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : (ok ? 'gezeigt' : '');
-        det.append(h('div', { class: 'work' }, h('div', { class: 'yr' }, 'E' + x.number), h('div', null, h('div', { class: 'ttl' }, x.title || 'Titel noch offen'), h('div', { class: 'sub' }, when)), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
+        det.append(h('div', { class: 'work' }, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', null, h('div', { class: 'ttl' }, x.title || 'Titel noch offen'), h('div', { class: 'sub' }, when)), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
       });
       det.append(h('div', { class: 'season-foot' }, amazonLink(e, e.name + ' Staffel ' + sn)));
       box.append(det);
