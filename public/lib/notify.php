@@ -106,7 +106,7 @@ function build_preview(PDO $pdo, array $u): array {
     $today = date('Y-m-d');
     try {
         $s = $pdo->prepare("SELECT s.name, r.title, r.release_date FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
-            WHERE e.user_id=? AND e.bell=1 AND LENGTH(r.release_date)=10 AND r.release_date>=? ORDER BY r.release_date, s.name LIMIT 12");
+            WHERE e.user_id=? AND e.bell=1 AND LENGTH(r.release_date)=10 AND r.release_date>=? ORDER BY r.release_date, s.name, r.title LIMIT 12");
         $s->execute([$u['id'], $today]); $R = $s->fetchAll();
     } catch (Throwable $e) { $R = []; }
     $demo = !$R;
@@ -116,8 +116,8 @@ function build_preview(PDO $pdo, array $u): array {
     $text = "VORSCHAU: So sieht deine Benachrichtigungsmail nach deinen aktuellen Einstellungen aus.\n" .
             "Die Termine sind nur als Beispiel eingesetzt" . ($demo ? " (Beispieldaten, du hast noch keine kommenden Termine mit Glocke)" : " (deine nächsten echten Termine mit Glocke)") . ". In der echten Mail steht nur, was wirklich zutrifft.\n\n" .
             "--- Morgenmail ---\n\nHallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
-    if ($nDay) $text .= "\nHEUTE ERSCHEINT\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . implode("\n", array_map(fn($r) => '- ' . $r['name'] . ' – ' . $r['title'], array_slice($R, 0, 1))) . "\n";
-    if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n[Beispiel: Hier steht jeder neue Termin nur einmal.]\n" . implode("\n", array_map($line, array_slice($R, 0, 3))) . "\n";
+    if ($nDay) $text .= "\nHEUTE ERSCHEINT\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . '- Beispiel-Serie – S01E01 Folgentitel' . "\n";
+    if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n[Beispiel: Hier steht jeder neue Termin nur einmal.]\n" . implode("\n", array_map($line, array_slice($R, 0, 6))) . "\n";
     if (!$nDay && !$nNew) $text .= "\n(Du hast gerade weder „Neu angekündigt“ noch „Am Erscheinungstag“ eingeschaltet, deshalb gäbe es keine solche Mail.)\n";
     $text .= "\nAlles im Überblick: " . base_url() . "/\n";
     $wk = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][max(1, min(7, (int) ($u['n_weekday'] ?? 1))) - 1];
