@@ -14,6 +14,8 @@ window.CHANGELOG = [
     'Texte vereinheitlicht: durchgehend Du-Form, korrekte Einzahl/Mehrzahl bei Zahlen (1 Folge, 2 Folgen)',
     'Filter und Sortierung: Das Menü wird bei kurzen Listen nicht mehr abgeschnitten, alle vier Sortierungen und das Genre-Feld sind immer sichtbar (ohne Genres ausgegraut)',
     'Admin: Nutzer lassen sich zu Alphatestern ernennen; Alpha-Funktionen sind nur für sie (und Admins) sichtbar und gelb markiert',
+    'Kontakt: Auswahl Chat / Featurewunsch / Bugmeldung über dem Senden-Button',
+    'Neuer Reiter „Featurewünsche“ (Liste mit Daumen-Abstimmung, nach Stimmen sortiert, Klick zeigt den ganzen Text) und „Bugs“ (nur Admin und Alphatester, mit Dringlichkeit Dringend/Normal/Unwichtig)',
     'Versionsangabe mit Rahmen',
     'Die Auswahl des Amazon-Shops im Admin-Bereich ist vorerst entfernt, die Links gehen an amazon.de'
   ] },

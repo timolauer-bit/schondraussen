@@ -87,6 +87,26 @@ $M = [
   '010_alpha' => [
   "ALTER TABLE users ADD COLUMN alpha TINYINT(1) NOT NULL DEFAULT 0",
  ],
+  '011_feedback' => [
+  "CREATE TABLE IF NOT EXISTS feedback (
+     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+     user_id INT UNSIGNED NOT NULL,
+     kind VARCHAR(8) NOT NULL,
+     title VARCHAR(120) NOT NULL,
+     body VARCHAR(2000) NOT NULL,
+     priority VARCHAR(8) NOT NULL DEFAULT 'normal',
+     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     KEY idx_kind (kind, created_at),
+     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "CREATE TABLE IF NOT EXISTS feedback_votes (
+     feedback_id INT UNSIGNED NOT NULL,
+     user_id INT UNSIGNED NOT NULL,
+     PRIMARY KEY (feedback_id, user_id),
+     FOREIGN KEY (feedback_id) REFERENCES feedback(id) ON DELETE CASCADE,
+     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
 ];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);

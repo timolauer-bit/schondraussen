@@ -125,7 +125,7 @@ footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font
 .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:2px}
 .cdot.c-author{background:var(--c-author)}.cdot.c-artist{background:var(--c-artist)}.cdot.c-film{background:var(--c-film)}.cdot.c-series{background:var(--c-series)}
 .nav{display:inline-flex;align-items:center}.nav .badge{margin-left:6px}
-.nav.info,.nav.support,.nav.settings,.nav.adminnav{font:600 14px var(--font-body)}
+.nav.info,.nav.support,.nav.settings,.nav.adminnav,.nav.feat,.nav.bugs{font:600 14px var(--font-body)}
 .note{font-size:13px;color:var(--muted);margin:0 0 18px;max-width:70ch}
 .backlink{border:0;background:transparent;color:var(--muted);font:650 14px var(--font-body);padding:0 0 14px;cursor:pointer}.backlink:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 .namelink{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer}.namelink:hover,.namelink:focus-visible{color:var(--accent)}
@@ -247,3 +247,31 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .alphabox{position:relative;border:2px dashed #f5c400;border-radius:12px;padding:12px;background:repeating-linear-gradient(135deg,color-mix(in srgb,#f5c400 9%,transparent) 0 10px,transparent 10px 20px)}
 .alphabox>.alphabadge{position:absolute;top:-12px;right:12px;margin:0}
 .tier.alpha{background:#f5c400;color:#1a1400;border-color:#1a1400;font-weight:700}
+
+/* Chat: Art der Nachricht */
+.kindsel{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.kindbtn{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font:600 13px var(--font-body);cursor:pointer}
+.kindbtn[aria-checked=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chatform .hint{margin:0 0 8px}
+/* Featurewünsche und Bugs */
+.fblist{display:grid;gap:0}
+.fbrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.fblist .fbrow:last-child{border-bottom:1px solid var(--line)}
+.fbrow:has(.fbacts){grid-template-columns:minmax(0,1fr)}
+.vote{display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:6px 8px;cursor:pointer}
+.vote svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.vote b{font:700 14px var(--font-mono)}
+.vote:hover{border-color:var(--accent);color:var(--accent)}
+.vote.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fbhead{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);padding:6px 0;font:600 15.5px var(--font-body);cursor:pointer}
+.fbhead:hover .fbt{color:var(--accent)}
+.fbt{min-width:0;overflow-wrap:anywhere}
+.fbbody{padding:6px 0 4px}
+.fbacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.fbacts .btn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.fbacts .prio-urgent[aria-pressed=true]{background:#c0392b;border-color:#c0392b;color:#fff}
+.fbacts .prio-low[aria-pressed=true]{background:var(--muted);border-color:var(--muted);color:var(--surface)}
+.prio{display:inline-block;border-radius:999px;padding:1px 9px;font:700 11px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
+.prio.urgent{background:#c0392b;border-color:#c0392b;color:#fff}
+.prio.low{opacity:.7}
+@media(max-width:1340px) and (min-width:761px){.topbar{gap:0 16px}}

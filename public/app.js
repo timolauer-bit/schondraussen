@@ -21,6 +21,7 @@
     series: '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m17 2-5 5-5-5"/></svg>',
     cal: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    thumb: '<svg viewBox="0 0 24 24"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm0 0 4-8a2 2 0 0 1 2 2v4h5.2a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 16.9 20H7"/></svg>',
     bell: '<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
     bellOff: '<svg viewBox="0 0 24 24"><path d="M13.7 21a1.94 1.94 0 0 1-3.4 0M17 17H3s3-2 3-9a6 6 0 0 1 .3-1.9M8.7 3.3A6 6 0 0 1 18 8c0 2.5.4 4.4.9 5.7M2 2l20 20"/></svg>',
     refresh: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8M3 3v5h5M3 12a9 9 0 0 0 15 6.7L21 16M21 21v-5h-5"/></svg>'
@@ -126,7 +127,9 @@
     ORDER.forEach(function (k) { topbar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
     var rg = ' rg';
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
-    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg), btn('info', 'Info', 0, ' info'));
+    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg), btn('feat', 'Featurewünsche', 0, ' feat'));
+    if (isAlpha()) topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
+    topbar.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
     renderVer();
   }
@@ -149,7 +152,7 @@
     var v = S.view;
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin();
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat') feedbackView('feature'); else if (v === 'bug' && isAlpha()) feedbackView('bug');
   }
 
   /* ---------- Kalender ---------- */
@@ -503,8 +506,13 @@
     var inp = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Nachricht', placeholder: 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)' }), msg = h('p', { class: 'msg', role: 'status' });
     function send() {
       var t = inp.value.trim(); if (!t) return; if (admin && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
+      if (!admin && kindSel !== 'chat') { api('/api/feedback.php?a=add', { kind: kindSel, text: t }).then(function (r) { if (r.ok) { inp.value = ''; msg.className = 'msg'; msg.textContent = kindSel === 'feature' ? 'Danke! Dein Wunsch steht jetzt in der Liste „Featurewünsche“.' : 'Danke! Deine Bugmeldung ist beim Admin angekommen.'; } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel }).then(function (r) { msg.textContent = r.ok ? '' : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok ? '' : ' err'); pull(); });
     }
+    var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
+    var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Featurewunsch', 'Was wünschst du dir? (Die erste Zeile erscheint als Titel in der Liste)', 'Dein Wunsch landet in der Liste „Featurewünsche“, alle können dafür abstimmen.'], ['bug', 'Bugmeldung', 'Was funktioniert nicht? Wo, und was hast du gemacht? (Die erste Zeile erscheint als Titel)', 'Bugmeldungen sehen nur der Admin und die Alphatester.']];
+    function drawKinds() { kindBox.textContent = ''; KINDS.forEach(function (k) { kindBox.append(h('button', { class: 'kindbtn', type: 'button', role: 'radio', 'aria-checked': String(kindSel === k[0]), onclick: function () { kindSel = k[0]; inp.placeholder = k[2]; kindHint.textContent = k[3]; inp.maxLength = k[0] === 'chat' ? 1000 : 2000; drawKinds(); } }, k[1])); }); }
+    drawKinds();
     var form = h('form', { class: 'chatform', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); send(); } }, inp, h('button', { class: 'btn', type: 'submit' }, 'Senden'));
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
@@ -524,7 +532,31 @@
       };
       if (admin) api('/api/chat.php?a=threads').then(function (r) { S.sup.threads = r.threads || []; if (!S.sup.sel && S.sup.threads.length) S.sup.sel = S.sup.threads[0].id; drawThreads(); go2(); }); else go2();
     }
-    grid.append(threads, h('div', { class: 'chat' }, log, form, msg)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+    grid.append(threads, h('div', { class: 'chat' }, log, admin ? null : kindBox, admin ? null : kindHint, form, msg)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+  }
+  function feedbackView(kind) {
+    var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Featurewünsche'),
+      h('p', { class: 'hint' }, bug ? 'Meldungen von Nutzern. Du siehst sie als Admin oder Alphatester. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Wünsche von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für einen Wunsch, ein zweiter Klick nimmt die Stimme zurück. Neue Wünsche schreibst du unter „Kontakt“ (Auswahl „Featurewunsch“).')),
+      box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(p); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
+    var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
+    function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
+    function draw(r) {
+      box.textContent = ''; var l = r.items || [];
+      if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
+      if (!l.length) { box.append(h('p', { class: 'hint' }, bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Wünsche. Schreib den ersten unter „Kontakt“.')); return; }
+      l.forEach(function (x) {
+        var body = h('div', { class: 'fbbody', hidden: true }, h('p', { style: 'white-space:pre-wrap;margin:0 0 10px' }, x.body), h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (bug && x.user_id ? ' · von Mitglied Nr. ' + x.user_id : '') + (x.mine ? ' · von dir' : '')));
+        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, x.title), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : null);
+        var side;
+        if (bug) side = h('div', { class: 'fbacts' }, ['urgent', 'normal', 'low'].map(function (k) { return h('button', { class: 'btn ghost small prio-' + k, type: 'button', 'aria-pressed': String(x.priority === k), onclick: function () { api('/api/feedback.php?a=priority', { id: x.id, priority: k }).then(function () { reload(); }); } }, PRIO[k][0]); }));
+        else { var on = +x.mine_vote > 0, vb = h('button', { class: 'vote' + (on ? ' on' : ''), type: 'button', title: on ? 'Stimme zurücknehmen' : 'Dafür stimmen', 'aria-pressed': String(on), onclick: function () { api('/api/feedback.php?a=vote', { id: x.id, on: !on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, ico(ICONS.thumb), h('b', null, String(x.votes))); side = vb; }
+        var row = h('div', { class: 'fbrow' }, bug ? null : side, h('div', { class: 'fbmain' }, head, body, bug ? side : null));
+        if (D.admin && !S.preview) body.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen')));
+        box.append(row);
+      });
+    }
+    function reload() { api('/api/feedback.php?a=list&kind=' + kind).then(draw); }
+    reload();
   }
   function unreadPoll() { api('/api/chat.php?a=unread').then(function (r) { var n = +r.unread || 0; if (n !== S.unread) { S.unread = n; var k = topbar.querySelector('.support'); if (k) { var b = k.querySelector('.badge'); if (b) b.remove(); if (n && S.view !== 'sup') k.append(h('span', { class: 'badge' }, n > 99 ? '99+' : String(n))); } } }); }
 
