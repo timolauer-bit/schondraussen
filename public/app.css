@@ -192,3 +192,13 @@ details.season{border-top:1px solid var(--line);padding:10px 0 6px}details.seaso
 .rel.calrow .namelink{font:inherit;font-weight:700;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
 .rel.calrow .namelink:hover{color:var(--accent)}
 .rel.calrow .day{font-size:15px}.rel.calrow .dow{font-size:10px;margin-top:1px}
+
+/* Kalender: eine Zeile pro Termin */
+.month .rel.calrow{grid-template-columns:5px 74px minmax(0,1fr) auto;gap:0 12px;padding:4px 0;align-items:center}
+.rel.calrow .cbar{min-height:20px}
+.rel.calrow>div:nth-child(2){display:flex;align-items:baseline;gap:6px}
+.rel.calrow .day{font-size:14px}.rel.calrow .dow{margin:0}
+.rel.calrow .one{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rel.calrow .one .namelink{font-size:14px}
+.rel.calrow .soon{font-size:11px;margin:0;white-space:nowrap}
+@media(max-width:560px){.rel.calrow .one{white-space:normal}}
