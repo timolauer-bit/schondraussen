@@ -35,6 +35,7 @@ if ($a === 'cron') {
     $o['stale'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 12 HOUR ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT 40")->fetchAll();
     $o['empty'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0) ORDER BY fetched_at LIMIT 40")->fetchAll();
     $o['now'] = date('Y-m-d H:i:s');
+    require_once __DIR__ . '/../lib/watchdog.php'; $o['ops'] = ops_health($pdo);
     json_out($o);
 }
 if ($a === 'site') {

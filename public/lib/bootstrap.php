@@ -41,6 +41,7 @@ function current_user(): ?array {
     $u = $s->fetch();
     if (!$u) return null;
     unset($u['pass_hash']);
+    $u['totp_on'] = (int) ($u['totp_enabled'] ?? 0) === 1; unset($u['totp_secret'], $u['totp_codes'], $u['totp_step']);
     $u['deleting'] = !empty($u['delete_requested_at']);
     $u['rename'] = $u['role'] !== 'admin' && !empty($u['name_change_required']);
     $u['approved'] = !$u['deleting'] && !$u['rename'] && ($u['role'] === 'admin' || !empty($u['approved_at']));
@@ -63,3 +64,4 @@ function username_error(string $n): ?string {
     return null;
 }
 require_once __DIR__ . '/privacy.php';
+require_once __DIR__ . '/totp.php';

@@ -98,10 +98,48 @@ try {
         $ok = $u && password_verify($pw, $u['pass_hash']);
         if (!$ok) { note($pdo, 'login'); json_out(['error' => 'E-Mail-Adresse oder Passwort stimmt nicht.'], 401); }
         if (!$u['email_verified_at']) json_out(['error' => 'Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.'], 403);
+        try { $t = $pdo->prepare('SELECT totp_enabled FROM users WHERE id=?'); $t->execute([$u['id']]); if ((int) $t->fetchColumn() === 1) { $_SESSION['mfa_uid'] = (int) $u['id']; $_SESSION['mfa_at'] = time(); json_out(['ok' => true, 'mfa' => true]); } } catch (Throwable $e) {}
         session_regenerate_id(true);
         $_SESSION['uid'] = (int) $u['id'];
         $pdo->prepare('UPDATE users SET last_seen_at=NOW() WHERE id=?')->execute([$u['id']]);
         json_out(['ok' => true, 'user' => current_user()]);
+    }
+
+    if ($a === 'login2') {
+        if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
+        $uid = (int) ($_SESSION['mfa_uid'] ?? 0);
+        if (!$uid || time() - (int) ($_SESSION['mfa_at'] ?? 0) > 600) { unset($_SESSION['mfa_uid'], $_SESSION['mfa_at']); json_out(['error' => 'Die Anmeldung ist abgelaufen, bitte noch einmal mit Passwort beginnen.', 'restart' => true], 401); }
+        $s = $pdo->prepare('SELECT id,totp_secret,totp_codes,totp_step FROM users WHERE id=? AND totp_enabled=1'); $s->execute([$uid]); $row = $s->fetch();
+        if (!$row || !totp_verify_user($pdo, $row, (string) ($b['code'] ?? ''))) { note($pdo, 'login'); json_out(['error' => 'Der Code stimmt nicht.'], 401); }
+        unset($_SESSION['mfa_uid'], $_SESSION['mfa_at']);
+        session_regenerate_id(true); $_SESSION['uid'] = $uid;
+        $pdo->prepare('UPDATE users SET last_seen_at=NOW() WHERE id=?')->execute([$uid]);
+        json_out(['ok' => true]);
+    }
+    if (in_array($a, ['totp_start', 'totp_enable', 'totp_disable', 'totp_codes'], true) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        try { $s = $pdo->prepare('SELECT pass_hash,totp_enabled,totp_secret,totp_codes,totp_step,id FROM users WHERE id=?'); $s->execute([$cu['id']]); $row = $s->fetch(); }
+        catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+        if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
+        $pwOk = password_verify((string) ($b['password'] ?? ''), $row['pass_hash']);
+        if ($a === 'totp_start') {
+            if (!$pwOk) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
+            if ((int) $row['totp_enabled'] === 1) json_out(['error' => 'Die Zwei-Faktor-Anmeldung ist schon aktiv.'], 409);
+            $sec = totp_new_secret(); $_SESSION['totp_pending'] = $sec;
+            $lbl = rawurlencode('Schondraussen.de:' . ($cu['username'] ?: 'Konto'));
+            json_out(['ok' => true, 'secret' => trim(chunk_split($sec, 4, ' ')), 'uri' => 'otpauth://totp/' . $lbl . '?secret=' . $sec . '&issuer=Schondraussen.de&digits=6&period=30']);
+        }
+        if ($a === 'totp_enable') {
+            $sec = (string) ($_SESSION['totp_pending'] ?? ''); if (!$sec) json_out(['error' => 'Bitte zuerst neu starten.'], 422);
+            $st = totp_check($sec, (string) ($b['code'] ?? '')); if ($st === null) { note($pdo, 'login'); json_out(['error' => 'Der Code stimmt nicht. Prüfe die Uhrzeit deines Handys und versuche es noch einmal.'], 422); }
+            $codes = totp_backup_codes();
+            $pdo->prepare('UPDATE users SET totp_secret=?, totp_enabled=1, totp_codes=?, totp_step=? WHERE id=?')->execute([$sec, totp_hash_codes($codes), $st, $cu['id']]);
+            unset($_SESSION['totp_pending']); json_out(['ok' => true, 'codes' => $codes]);
+        }
+        if ((int) $row['totp_enabled'] !== 1) json_out(['error' => 'Die Zwei-Faktor-Anmeldung ist nicht aktiv.'], 409);
+        if (!$pwOk || !totp_verify_user($pdo, $row, (string) ($b['code'] ?? ''))) { note($pdo, 'login'); json_out(['error' => 'Passwort oder Code stimmt nicht.'], 403); }
+        if ($a === 'totp_disable') { $pdo->prepare('UPDATE users SET totp_enabled=0, totp_secret=NULL, totp_codes=NULL, totp_step=0 WHERE id=?')->execute([$cu['id']]); json_out(['ok' => true]); }
+        $codes = totp_backup_codes(); $pdo->prepare('UPDATE users SET totp_codes=? WHERE id=?')->execute([totp_hash_codes($codes), $cu['id']]); json_out(['ok' => true, 'codes' => $codes]);
     }
 
     if ($a === 'privacy' && $_SERVER['REQUEST_METHOD'] === 'POST') {

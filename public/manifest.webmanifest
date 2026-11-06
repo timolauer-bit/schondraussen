@@ -1,0 +1,16 @@
+{
+  "name": "Schondraussen.de",
+  "short_name": "Schondraussen",
+  "description": "Nie wieder eine Neuerscheinung verpassen: Musik, Bücher, Filme und Serien im Blick.",
+  "lang": "de",
+  "start_url": "/?pwa=1",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f2f0",
+  "theme_color": "#db4d1a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

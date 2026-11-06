@@ -10,11 +10,14 @@ $shots = [];
 if (!$u) { try { foreach (db()->query('SELECT id,title,UNIX_TIMESTAMP(updated_at) v FROM site_images ORDER BY position,id')->fetchAll() as $r) $shots[] = ['src' => '/api/shot.php?id=' . (int) $r['id'] . '&v=' . (int) $r['v'], 'title' => $r['title']]; } catch (Throwable $e) {}
   if (!$shots) $shots = [['src' => '/shots/shot1.webp', 'title' => 'Kalender mit allen angekündigten Veröffentlichungen'], ['src' => '/shots/shot2.webp', 'title' => 'Serienübersicht mit Liste und kommenden Veröffentlichungen']]; }
 $skin = ($u && in_array($u['skin'] ?? '', ['light', 'dark', 'paper', 'cinema', 'mint', 'eighties'], true)) ? $u['skin'] : '';
+try { require_once __DIR__ . '/lib/watchdog.php'; ops_watchdog(db()); } catch (Throwable $e) {}
 $seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u); // sendet ggf. X-Robots-Tag, daher vor der Ausgabe
 ?><!doctype html>
 <html lang="de"<?= $skin ? ' data-skin="' . $skin . '"' : '' ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title><?= (!$u && seo_public()) ? SEO_TITLE : 'Schondraussen.de' ?></title>
 <?= $seo ?>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#db4d1a"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Schondraussen">
 <?php if ($app): ?><link rel="stylesheet" href="/app.css?v=<?= filemtime(__DIR__ . '/app.css') ?>"><?php else: ?>
 <style>
 :root{--bg:#f2f2f0;--surface:#fff;--ink:#11171d;--muted:#58616a;--line:#d6d6d1;--accent:#db4d1a}
@@ -62,7 +65,7 @@ h3{margin:18px 0 6px;font-size:15px}
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
-<script>window.SD = <?= json_encode(['alpha' => is_alpha($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
+<script>window.SD = <?= json_encode(['alpha' => is_alpha($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
 <script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
@@ -91,6 +94,10 @@ h3{margin:18px 0 6px;font-size:15px}
       <label for="lp">Passwort</label><input id="lp" type="password" autocomplete="current-password" required>
       <button type="submit">Anmelden</button>
       <div class="row"><button class="link" type="button" data-show="f-register">Neu registrieren</button><button class="link" type="button" data-show="f-forgot">Passwort vergessen</button></div></form>
+    <form id="f-mfa" hidden><h2 style="margin:0 0 4px;font-size:20px">Bestätigungscode</h2><p>Gib den 6-stelligen Code aus deiner Authenticator-App ein, oder einen deiner Backup-Codes.</p>
+      <label for="lc">Code</label><input id="lc" type="text" inputmode="text" autocomplete="one-time-code" maxlength="12" required>
+      <button type="submit">Bestätigen</button>
+      <div class="row"><button class="link" type="button" data-show="f-login">Zurück</button></div></form>
     <form id="f-register" hidden><h2 style="margin:0 0 4px;font-size:20px">Registrieren</h2>
       <label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required>
       <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich">
@@ -159,10 +166,11 @@ h3{margin:18px 0 6px;font-size:15px}
     return fetch('/api/auth.php?a=' + a, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}), credentials: 'same-origin' })
       .then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); });
   }
-  function show(id) { ['f-login', 'f-register', 'f-forgot', 'f-reset'].forEach(function (f) { var e = document.getElementById(f); if (e) e.hidden = f !== id; }); say(''); }
+  function show(id) { ['f-login', 'f-mfa', 'f-register', 'f-forgot', 'f-reset'].forEach(function (f) { var e = document.getElementById(f); if (e) e.hidden = f !== id; }); say(''); }
   document.querySelectorAll('[data-show]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.show); }); });
   function on(id, fn) { var f = document.getElementById(id); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); say('…'); fn(); }); }
-  on('f-login', function () { api('login', { email: le.value, password: lp.value }).then(function (r) { if (r.ok) location.reload(); else say(r.error, true); }); });
+  on('f-login', function () { api('login', { email: le.value, password: lp.value }).then(function (r) { if (r.ok && r.mfa) { show('f-mfa'); document.getElementById('lc').focus(); } else if (r.ok) location.reload(); else say(r.error, true); }); });
+  on('f-mfa', function () { api('login2', { code: document.getElementById('lc').value }).then(function (r) { if (r.ok) location.reload(); else { if (r.restart) show('f-login'); say(r.error, true); } }); });
   on('f-register', function () { if (rp.value !== rp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
   on('f-forgot', function () { api('forgot', { email: fe.value }).then(function (r) { say(r.message || r.error, !r.ok); }); });
   var q = new URLSearchParams(location.search), tok = q.get('reset');
@@ -190,4 +198,5 @@ h3{margin:18px 0 6px;font-size:15px}
 })();
 </script>
 <?php endif; ?>
+<script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){})});</script>
 </body></html>

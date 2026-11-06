@@ -10,6 +10,45 @@ if ($a === 'lastrun') { // grobe Angabe für alle, ohne Namen oder Zahlen einzel
     $m = $pdo->query('SELECT TIMESTAMPDIFF(MINUTE, MAX(fetched_at), NOW()) FROM subjects')->fetchColumn();
     json_out(['minutes' => $m === null || $m === false ? null : max(0, (int) $m)]);
 }
+if ($a === 'calinfo') {
+    $tok = null; try { $s = $pdo->prepare('SELECT cal_token FROM users WHERE id=?'); $s->execute([$u['id']]); $tok = $s->fetchColumn() ?: null; } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
+    json_out(['url' => $tok ? $base . '/kalender/' . $tok . '.ics' : null]);
+}
+if ($a === 'caltoken' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mode = (string) (body()['mode'] ?? '');
+    if (!in_array($mode, ['create', 'reset', 'off'], true)) json_out(['error' => 'Unbekannte Aktion.'], 422);
+    $tok = $mode === 'off' ? null : bin2hex(random_bytes(16));
+    try { $pdo->prepare('UPDATE users SET cal_token=? WHERE id=?')->execute([$tok, $u['id']]); } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
+    json_out(['ok' => true, 'url' => $tok ? $base . '/kalender/' . $tok . '.ics' : null]);
+}
+if ($a === 'export') { // alle eigenen Daten, als JSON oder (nur die Liste) als CSV
+    $fmt = ($_GET['fmt'] ?? 'json') === 'csv' ? 'csv' : 'json';
+    $typ = ['author' => 'Autor:in', 'artist' => 'Musiker:in', 'film' => 'Film', 'series' => 'Serie'];
+    $bellOk = true; try { $pdo->query('SELECT bell FROM user_entries LIMIT 1'); } catch (Throwable $e) { $bellOk = false; }
+    $s = $pdo->prepare('SELECT s.type,s.name,e.added_at' . ($bellOk ? ',e.bell' : ',1 AS bell') . ' FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? ORDER BY s.type,s.name');
+    $s->execute([$u['id']]); $list = $s->fetchAll();
+    $stamp = date('Y-m-d');
+    header('X-Robots-Tag: noindex, nofollow'); header('Cache-Control: no-store');
+    if ($fmt === 'csv') {
+        header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="schondraussen-liste-' . $stamp . '.csv"');
+        $f = fopen('php://output', 'w'); fwrite($f, "\xEF\xBB\xBF");
+        fputcsv($f, ['Typ', 'Name', 'Hinzugefügt am', 'Benachrichtigung']);
+        foreach ($list as $r) fputcsv($f, [$typ[$r['type']] ?? $r['type'], $r['name'], $r['added_at'], $r['bell'] ? 'an' : 'aus']);
+        fclose($f); exit;
+    }
+    $set = []; foreach (['skin', 'city', 'notify', 'n_new', 'n_day', 'n_week', 'n_mode', 'n_weekday', 'bell_default', 'hide_email', 'hide_activity'] as $k) if (array_key_exists($k, $u)) $set[$k] = $u[$k];
+    $msgs = []; try { $m = $pdo->prepare('SELECT from_admin,body,created_at FROM messages WHERE user_id=? ORDER BY id'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $msgs[] = ['von' => $r['from_admin'] ? 'Administrator' : 'du', 'text' => $r['body'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
+    $fb = []; try { $m = $pdo->prepare('SELECT kind,title,body,created_at FROM feedback WHERE user_id=? ORDER BY id'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $fb[] = ['art' => $r['kind'] === 'bug' ? 'Bugmeldung' : 'Idee', 'titel' => $r['title'], 'text' => $r['body'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
+    $out = ['exportiert_am' => date('c'), 'hinweis' => 'Hochgeladene Bilder sind nicht enthalten.',
+        'konto' => ['email' => $u['email'], 'benutzername' => $u['username'] ?? null, 'mitgliedsnummer' => (int) $u['id'], 'rolle' => $u['role'], 'angelegt_am' => $u['created_at']],
+        'einstellungen' => $set,
+        'liste' => array_map(fn($r) => ['typ' => $typ[$r['type']] ?? $r['type'], 'name' => $r['name'], 'hinzugefuegt_am' => $r['added_at'], 'benachrichtigung' => (bool) $r['bell']], $list),
+        'nachrichten' => $msgs, 'ideen_und_bugs' => $fb];
+    header('Content-Type: application/json; charset=utf-8'); header('Content-Disposition: attachment; filename="schondraussen-daten-' . $stamp . '.json"');
+    echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); exit;
+}
 if ($a === 'list') {
     $bellSql = 'e.bell';
     try { $pdo->query('SELECT bell FROM user_entries LIMIT 1'); } catch (Throwable $e) { $bellSql = '1'; }

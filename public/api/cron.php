@@ -3,6 +3,7 @@
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/sources.php';
 require __DIR__ . '/../lib/notify.php';
+require __DIR__ . '/../lib/backup.php';
 header('Content-Type: text/plain; charset=utf-8');
 $tok = (string) cfg('cron_token', '');
 if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { http_response_code(403); exit("Token fehlt oder falsch.\n"); }
@@ -44,3 +45,4 @@ try {
     }
     echo 'Konten endgültig gelöscht: ' . count($dead) . "\n";
 } catch (Throwable $e) { echo "Kontolöschung: übersprungen (" . $e->getMessage() . ")\n"; }
+try { echo 'Sicherung: ' . run_backup($pdo) . "\n"; ops_watchdog($pdo); } catch (Throwable $e) { echo 'Sicherung: übersprungen (' . $e->getMessage() . ")\n"; }
