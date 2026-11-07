@@ -31,7 +31,7 @@ function fmt_date(string $d): string {
 // Kurzinfo und aktuelle Schlagzeilen (Google-News-Suche, kostenlos) zu einem Titel für die Benachrichtigungsmail. Höchstens 8 Zeilen.
 function news_for(PDO $pdo, string $name, string $title): array {
     static $fetches = 0;
-    $q = '"' . str_replace('"', '', $name) . '"' . (preg_match('/^S\d+E\d+/i', $title) ? '' : ' ' . str_replace('"', '', $title)) . ' when:90d';
+    $q = '"' . str_replace('"', '', $name) . '"' . (preg_match('/^S\d+E\d+/i', $title) ? '' : ' ' . str_replace('"', '', $title)) . ' when:7d';
     $key = sha1($q); $json = null;
     try { $s = $pdo->prepare('SELECT data FROM news_cache WHERE k=? AND fetched_at > (NOW() - INTERVAL 12 HOUR)'); $s->execute([$key]); $json = $s->fetchColumn() ?: null; } catch (Throwable $e) {}
     if ($json !== null) return json_decode($json, true) ?: [];
@@ -46,7 +46,7 @@ function news_for(PDO $pdo, string $name, string $title): array {
             $head = trim((string) $it->title); $src = trim((string) ($it->source ?? '')); $link = trim((string) $it->link);
             if ($src !== '' && substr($head, -strlen($src) - 3) === ' - ' . $src) $head = substr($head, 0, -strlen($src) - 3);
             if ($head === '' || $link === '' || mb_stripos($head, $name) === false) continue; // nur Treffer, die den Namen nennen
-            $ts = strtotime((string) $it->pubDate); if ($ts && $ts < time() - 180 * 86400) continue;
+            $ts = strtotime((string) $it->pubDate); if ($ts && $ts < time() - 7 * 86400) continue;
             $out[] = [mb_substr($head, 0, 110), $src, $link];
             if (count($out) >= 2) break;
         }
