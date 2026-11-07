@@ -16,6 +16,7 @@ if ($a === 'list') {
     if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
     $doneSel = ''; $doneOrd = '';
     $noSel = ''; try { $pdo->query('SELECT bug_no FROM feedback LIMIT 1'); $noSel = ',f.bug_no'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try {
         $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel,
@@ -28,6 +29,7 @@ if ($a === 'list') {
     } catch (Throwable $e) { json_out(['items' => [], 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
     foreach ($rows as &$r) {
         $r['mine'] = (int) $r['user_id'] === (int) $u['id'];
+        if ($r['user_id'] === null) { $r['gone'] = 1; $r['author'] = ($r['author_gone'] ?? '') ?: 'gelöschtes Konto'; unset($r['author_gone']); continue; }
         if ($kind === 'feature') unset($r['priority']);
         // Absender: Admin sieht Nummer und E-Mail, Alphatester die Mitgliedsnummer
         if ($alpha) {

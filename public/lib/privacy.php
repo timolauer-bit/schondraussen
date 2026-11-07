@@ -18,3 +18,12 @@ function users_have_privacy(PDO $pdo): bool { // false, solange migrate.php (022
     if ($has === null) { try { $has = (bool) $pdo->query("SHOW COLUMNS FROM users LIKE 'hide_email'")->fetch(); } catch (Throwable $e) { $has = false; } }
     return $has;
 }
+
+/** Konto endgültig löschen. Ideen und Bugmeldungen bleiben erhalten (Name wird als gelöscht gemerkt), Chat-Bilder werden entfernt. */
+function delete_user_keep_feedback(PDO $pdo, int $uid): void {
+    try {
+        $pdo->prepare("UPDATE feedback SET author_gone = (SELECT COALESCE(NULLIF(username,''), CONCAT('Mitglied Nr. ', id)) FROM users WHERE id=?) WHERE user_id=?")->execute([$uid, $uid]);
+        $pdo->prepare("DELETE FROM images WHERE user_id=? AND scope='chat'")->execute([$uid]);
+    } catch (Throwable $e) {}
+    $pdo->prepare('DELETE FROM users WHERE id=?')->execute([$uid]);
+}

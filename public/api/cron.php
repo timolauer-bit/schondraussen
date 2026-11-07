@@ -41,7 +41,7 @@ try {
     $dead = $pdo->query("SELECT id FROM users WHERE role<>'admin' AND delete_requested_at IS NOT NULL AND delete_requested_at < NOW() - INTERVAL 7 DAY")->fetchAll(PDO::FETCH_COLUMN);
     foreach ($dead as $uid) {
         foreach (['email_tokens', 'notified'] as $t) { try { $pdo->prepare("DELETE FROM $t WHERE user_id=?")->execute([$uid]); } catch (Throwable $e) {} }
-        $pdo->prepare('DELETE FROM users WHERE id=?')->execute([$uid]);
+        delete_user_keep_feedback($pdo, (int) $uid);
     }
     echo 'Konten endgültig gelöscht: ' . count($dead) . "\n";
 } catch (Throwable $e) { echo "Kontolöschung: übersprungen (" . $e->getMessage() . ")\n"; }
