@@ -80,6 +80,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 <?php if ($u): ?>
   <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars($u['email']) ?></b> (Mitglied Nr. <?= (int) $u['id'] ?>).</p>
 <?php if (!empty($u['deleting'])): $until = date('d.m.Y', strtotime($u['delete_requested_at']) + 7 * 86400); ?>
+  <p><?= htmlspecialchars(farewell_line(db(), (int) $u['id'])) ?></p>
   <p><b>Dein Konto ist zur Löschung vorgemerkt.</b> Deine Daten werden nach dem <?= $until ?> endgültig gelöscht. Bis dahin kannst du es behalten, wenn du die Löschung abbrichst.</p>
   <button id="canceldel" type="button">Löschung abbrechen</button> <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php elseif (!empty($u['rename'])): ?>

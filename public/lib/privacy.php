@@ -33,3 +33,23 @@ function soft_delete_user(PDO $pdo, int $uid): void {
     try { $pdo->prepare("UPDATE users SET delete_requested_at=COALESCE(delete_requested_at,NOW()), admin_deleted=1, approved_at=NULL, notify=0 WHERE id=? AND role<>'admin'")->execute([$uid]); }
     catch (Throwable $e) { delete_user_keep_feedback($pdo, $uid); }
 }
+
+/** Abschiedszeile: Dauer des Kontos und Zahl der Einträge je Kategorie. */
+function farewell_line(PDO $pdo, int $uid): string {
+    $r = $pdo->prepare('SELECT created_at FROM users WHERE id=?'); $r->execute([$uid]); $c = $r->fetchColumn();
+    $days = $c ? max(0, (int) floor((time() - strtotime((string) $c)) / 86400)) : 0;
+    $pl = fn($n, $a, $b) => $n . ' ' . ($n === 1 ? $a : $b);
+    if ($days < 1) $dur = 'weniger als einen Tag';
+    elseif ($days < 60) $dur = $pl($days, 'Tag', 'Tage');
+    elseif ($days < 365) { $m = intdiv($days, 30); $d = $days - $m * 30; $dur = $pl($m, 'Monat', 'Monate') . ($d ? ' und ' . $pl($d, 'Tag', 'Tage') : ''); }
+    else { $y = intdiv($days, 365); $m = intdiv($days - $y * 365, 30); $dur = $pl($y, 'Jahr', 'Jahre') . ($m ? ' und ' . $pl($m, 'Monat', 'Monate') : ''); }
+    $cnt = ['artist' => 0, 'author' => 0, 'film' => 0, 'series' => 0];
+    try { $q = $pdo->prepare('SELECT s.type, COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? GROUP BY s.type'); $q->execute([$uid]); foreach ($q->fetchAll(PDO::FETCH_NUM) as $x) $cnt[$x[0]] = (int) $x[1]; } catch (Throwable $e) {}
+    $parts = [];
+    if ($cnt['artist']) $parts[] = $cnt['artist'] . ' Musiker:in' . ($cnt['artist'] === 1 ? '' : 'nen');
+    if ($cnt['author']) $parts[] = $cnt['author'] . ' Autor:in' . ($cnt['author'] === 1 ? '' : 'nen');
+    if ($cnt['film']) $parts[] = $pl($cnt['film'], 'Film', 'Filme');
+    if ($cnt['series']) $parts[] = $pl($cnt['series'], 'Serie', 'Serien');
+    $list = $parts ? implode(', ', array_slice($parts, 0, -1)) . (count($parts) > 1 ? ' und ' : '') . end($parts) : '';
+    return 'Schade, dass du uns verlässt. Du warst ' . $dur . ' dabei' . ($list ? ' und hattest ' . $list . ' auf deiner Liste.' : '.');
+}
