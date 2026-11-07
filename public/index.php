@@ -106,10 +106,10 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
       <label for="lc">Code</label><input id="lc" type="text" inputmode="text" autocomplete="one-time-code" maxlength="12" required>
       <button type="submit">Bestätigen</button>
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück</button></div></form>
-    <form id="f-register" hidden><h2 style="margin:0 0 4px;font-size:20px">Registrieren</h2>
+    <form id="f-register" hidden novalidate><h2 style="margin:0 0 4px;font-size:20px">Registrieren</h2>
       <label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required>
-      <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich"><p class="fine" style="margin:4px 0 0">3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich, ohne Leerzeichen.</p>
-      <label for="rp">Passwort (mindestens 10 Zeichen)</label><input id="rp" type="password" autocomplete="new-password" minlength="10" required>
+      <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich"><p class="fine" style="margin:4px 0 0">3 bis 20 Zeichen: Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich, Bindestrich, ohne Leerzeichen, nicht am Anfang oder Ende. <span id="ruh" role="status"></span></p>
+      <label for="rp">Passwort (10 bis 72 Zeichen)</label><input id="rp" type="password" autocomplete="new-password" minlength="10" required><p class="fine" style="margin:4px 0 0">Alle Zeichen sind erlaubt, auch Leerzeichen und Sonderzeichen. <span id="rph" role="status"></span></p>
       <label for="rp2">Passwort wiederholen</label><input id="rp2" type="password" autocomplete="new-password" minlength="10" required>
       <div class="chk"><input id="ra" type="checkbox" required><label for="ra" style="margin:0">Ich habe die <a href="/datenschutz.php" target="_blank">Datenschutzerklärung</a> gelesen.</label></div>
       <button type="submit">Konto anlegen</button>
@@ -118,8 +118,8 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
       <label for="fe">E-Mail-Adresse</label><input id="fe" type="email" autocomplete="email" required>
       <button type="submit">Link anfordern</button>
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück zur Anmeldung</button></div></form>
-    <form id="f-reset" hidden><h2 style="margin:0 0 4px;font-size:20px">Neues Passwort</h2>
-      <label for="np">Neues Passwort (mindestens 10 Zeichen)</label><input id="np" type="password" autocomplete="new-password" minlength="10" required>
+    <form id="f-reset" hidden novalidate><h2 style="margin:0 0 4px;font-size:20px">Neues Passwort</h2>
+      <label for="np">Neues Passwort (10 bis 72 Zeichen)</label><input id="np" type="password" autocomplete="new-password" minlength="10" required><p class="fine" style="margin:4px 0 0">Alle Zeichen sind erlaubt, auch Leerzeichen und Sonderzeichen. <span id="nph" role="status"></span></p>
       <label for="np2">Neues Passwort wiederholen</label><input id="np2" type="password" autocomplete="new-password" minlength="10" required>
       <button type="submit">Passwort speichern</button></form>
     <div class="msg" id="msg" role="status"></div>
@@ -174,13 +174,17 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   }
   function show(id) { ['f-login', 'f-mfa', 'f-register', 'f-forgot', 'f-reset'].forEach(function (f) { var e = document.getElementById(f); if (e) e.hidden = f !== id; }); say(''); }
   document.querySelectorAll('[data-show]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.show); }); });
+  function pwErr(v) { var n = Array.from(v).length; if (n < 10) return 'Das Passwort ist zu kurz: ' + (n ? 'es fehlen noch ' + (10 - n) + ' Zeichen (mindestens 10).' : 'bitte mindestens 10 Zeichen eingeben.'); if (new TextEncoder().encode(v).length > 72) return 'Das Passwort ist zu lang (höchstens 72 Zeichen).'; return ''; }
+  function unErr(v) { var n = Array.from(v).length; if (n < 3 || n > 20) return 'Der Benutzername braucht 3 bis 20 Zeichen' + (n ? ' (aktuell ' + n + ').' : '.'); if (/\s/.test(v)) return 'Leerzeichen sind nicht erlaubt.'; if (!/^[\p{L}\p{N}][\p{L}\p{N}_.\-]*[\p{L}\p{N}]$/u.test(v)) return 'Erlaubt sind nur Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich, nicht am Anfang oder Ende.'; return ''; }
+  function live(inp, out, fn, okText) { if (!inp || !out) return; inp.addEventListener('input', function () { var e = inp.value ? fn(inp.value) : ''; out.textContent = inp.value ? (e || okText) : ''; out.style.color = e ? 'var(--bad,#b3261e)' : ''; }); }
+  live(document.getElementById('ru'), document.getElementById('ruh'), unErr, 'Passt.'); live(document.getElementById('rp'), document.getElementById('rph'), pwErr, 'Passt.'); live(document.getElementById('np'), document.getElementById('nph'), pwErr, 'Passt.');
   function on(id, fn) { var f = document.getElementById(id); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); say('…'); fn(); }); }
   on('f-login', function () { api('login', { email: le.value, password: lp.value }).then(function (r) { if (r.ok && r.mfa) { show('f-mfa'); document.getElementById('lc').focus(); } else if (r.ok) location.reload(); else say(r.error, true); }); });
   on('f-mfa', function () { api('login2', { code: document.getElementById('lc').value }).then(function (r) { if (r.ok) location.reload(); else { if (r.restart) show('f-login'); say(r.error, true); } }); });
-  on('f-register', function () { if (rp.value !== rp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked, invite: inviteTok }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
+  on('f-register', function () { var e1 = unErr(ru.value.trim()) || pwErr(rp.value); if (e1) { say(e1, true); return; } if (!ra.checked) { say('Bitte bestätige die Datenschutzerklärung.', true); return; } if (rp.value !== rp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked, invite: inviteTok }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
   on('f-forgot', function () { api('forgot', { email: fe.value }).then(function (r) { say(r.message || r.error, !r.ok); }); });
   var q = new URLSearchParams(location.search), tok = q.get('reset');
-  on('f-reset', function () { if (np.value !== np2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('reset', { token: tok, password: np.value }).then(function (r) { if (r.ok) { history.replaceState(null, '', '/'); show('f-login'); say(r.message); } else say(r.error, true); }); });
+  on('f-reset', function () { var e1 = pwErr(np.value); if (e1) { say(e1, true); return; } if (np.value !== np2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('reset', { token: tok, password: np.value }).then(function (r) { if (r.ok) { history.replaceState(null, '', '/'); show('f-login'); say(r.message); } else say(r.error, true); }); });
   if (tok) show('f-reset');
   var inviteTok = q.get('invite') || '';
   if (inviteTok && !tok) { show('f-register'); say('Du wurdest eingeladen. Lege hier dein Konto an, es wird sofort freigeschaltet.'); }

@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Registrierung und Passwort zurücksetzen: Hinweise zu Passwort (10 bis 72 Zeichen, alle Zeichen erlaubt) und Benutzername sowie eine Live-Rückmeldung beim Tippen; Fehler erscheinen auf Deutsch direkt unter dem Formular statt als Browser-Sprechblase',
     'U|Benutzername: Auf der Seite zur Namensänderung, bei der Registrierung und in den Einstellungen steht jetzt, welche Zeichen erlaubt sind und warum ein Name abgelehnt werden kann (vergeben, anstößig, mit dem Betreiber verwechselbar); der Grund erscheint direkt unter dem Feld',
     'F|Info-Seite: Unten steht für jeden Nutzer „Deine Statistik“ mit Anmeldedatum, Einträgen je Kategorie, Zahl der Werke, eingereichten Ideen und Bugs sowie der Summe deiner gesendeten Chatnachrichten (nur eigene Zahlen); bei hoher Aktivität zusätzlich „Du gehörst zu den 10 % der aktivsten Nutzer“ (Stufen 1, 5, 10, 25, 50 %, erst ab 10 aktiven Nutzern)',
     'U|Anmeldeseite: Der doppelte Hinweis auf die Prüfung neuer Konten im linken Kasten entfällt (er steht groß im rechten Kasten)',

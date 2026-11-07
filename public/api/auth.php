@@ -52,7 +52,7 @@ try {
         note($pdo, 'register');
         $email = strtolower(trim((string) ($b['email'] ?? ''))); $pw = (string) ($b['password'] ?? '');
         if (!valid_email($email)) json_out(['error' => 'Bitte eine gültige E-Mail-Adresse eingeben.'], 422);
-        if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422);
+        if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422); if (strlen($pw) > 72) json_out(['error' => 'Das Passwort darf höchstens 72 Zeichen haben.'], 422);
         if (empty($b['accept'])) json_out(['error' => 'Bitte Datenschutzerklärung und Nutzungsbedingungen bestätigen.'], 422);
         $uname = trim((string) ($b['username'] ?? ''));
         if ($err = username_error($uname)) json_out(['error' => $err], 422);
@@ -220,7 +220,7 @@ try {
 
     if ($a === 'reset') {
         $pw = (string) ($b['password'] ?? '');
-        if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422);
+        if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422); if (strlen($pw) > 72) json_out(['error' => 'Das Passwort darf höchstens 72 Zeichen haben.'], 422);
         $h = hash('sha256', (string) ($b['token'] ?? ''));
         $s = $pdo->prepare("SELECT id,user_id FROM email_tokens WHERE token_hash=? AND kind='reset' AND used_at IS NULL AND expires_at > NOW()");
         $s->execute([$h]); $r = $s->fetch();
