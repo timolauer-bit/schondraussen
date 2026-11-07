@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Übersicht: Datumsangaben bei den kommenden Veröffentlichungen einheitlich (TT.MM.JJJJ, bei unbekanntem Tag MM.JJJJ)',
     'U|Übersicht: Erklärungen als Tooltip bei den Zahlenfeldern (z. B. warum „Bücher insgesamt“ höher liegt als die Zahl in der Liste)',
     'A|Neues Protokoll der Admin-Zugriffe: zeigt, wann welche E-Mail-Adresse aufgedeckt wurde',
     'A|Nutzerliste: Button „E-Mail anzeigen“ links neben „Namensänderung“ im Stil der übrigen Buttons; Button „Namensänderung“; „Alphatester“ mit grünem Haken (aktiv) oder rotem Kreuz (nicht aktiv)',
