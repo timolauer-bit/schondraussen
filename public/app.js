@@ -567,13 +567,14 @@
       ifile.addEventListener('change', function () {
         var f = ifile.files && ifile.files[0]; if (!f) return;
         if (f.size > 5 * 1024 * 1024) { imsg.className = 'msg err'; imsg.textContent = 'Die Datei ist größer als 5 MB.'; return; }
-        var rd = new FileReader(); rd.onload = function () { var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? (l.length === 1 ? '1 Name erkannt. Du kannst ihn unten noch ändern.' : l.length + ' Namen erkannt. Du kannst sie unten noch ändern.') : 'In der Datei habe ich keine Namen gefunden.'; };
+        var rd = new FileReader(); rd.onload = function () { var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? (fixed ? (l.length === 1 ? '1 Name erkannt. Klicke auf „Importieren“.' : l.length + ' Namen erkannt. Klicke auf „Importieren“.') : (l.length === 1 ? '1 Name erkannt. Du kannst ihn unten noch ändern.' : l.length + ' Namen erkannt. Du kannst sie unten noch ändern.')) : 'In der Datei habe ich keine Namen gefunden.'; };
         rd.onerror = function () { imsg.className = 'msg err'; imsg.textContent = 'Die Datei konnte nicht gelesen werden.'; }; rd.readAsText(f);
       });
       var kids = [hint];
       if (sel) kids.push(h('p', { style: 'margin:8px 0' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, 'Kategorie', sel)));
+      if (fixed) itext.hidden = true;
       kids.push(ifile, itext, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn', type: 'button', onclick: function () {
-        var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = 'Keine Namen gefunden.'; return; }
+        var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = fixed ? 'Bitte wähle zuerst eine Datei aus.' : 'Keine Namen gefunden.'; return; }
         var c = cat(); imsg.className = 'msg'; imsg.textContent = 'Importiere …';
         api('/api/data.php?a=import', { names: l, type: c[0] }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = r.added + ' ' + (r.added === 1 ? c[2] : (c[0] === 'artist' ? 'Musiker:innen' : c[1])) + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
       } }, 'Importieren'), imsg));
@@ -582,7 +583,7 @@
       ipanel.classList.add('imppanel');
     }
     mkImporter('Listen importieren', null, function (c) { return 'Wähle die Kategorie und füge ' + c[3] + ' ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text). Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern. Die Angaben dazu werden danach nach und nach geladen, bei langen Listen kann das einige Stunden dauern.'; });
-    mkImporter('Spotify-Import', 'artist', function () { return 'Importiere die Musiker:innen aus deinem Spotify-Datenexport (JSON oder CSV) oder aus einer eigenen Liste. Eine ausführliche Schritt-für-Schritt-Anleitung folgt in Kürze.'; });
+    mkImporter('Spotify-Import', 'artist', function () { return 'Importiere die Musiker:innen aus deinem Spotify-Datenexport (JSON oder CSV). Eine ausführliche Schritt-für-Schritt-Anleitung folgt in Kürze.'; });
     box.append(imp);
     // Trakt-Import (Export-ZIP oder einzelne JSON-Dateien), alles im Browser ausgewertet
     var tImp = h('div', { class: 'wide2' }), tFile = h('input', { type: 'file', multiple: true, accept: '.zip,.json,application/zip,application/json', 'aria-label': 'Trakt-Export laden' }), tMsg = h('p', { class: 'msg', role: 'status' }), tGo = h('button', { class: 'btn', type: 'button', hidden: true }, 'Importieren'), tPanel = h('div', { hidden: true, style: 'margin-top:10px' }), tItems = [];
