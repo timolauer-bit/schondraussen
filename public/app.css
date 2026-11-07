@@ -393,3 +393,4 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .fbrow,.fbrow.bugrow{grid-template-columns:minmax(0,1fr)}
 .tick{font-weight:700}.tick.yes{color:#1e8e3e}.tick.no{color:#c0392b}
 .hiddenmail .btn{font-style:normal;color:var(--ink);min-height:32px;vertical-align:middle}
+.hiddenmail .btn{margin:0}

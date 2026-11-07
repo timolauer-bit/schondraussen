@@ -1,7 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
-    'A|Nutzerliste: Button „E-Mail anzeigen“ im Stil der übrigen Buttons; Button „Namensänderung“; „Alphatester“ mit grünem Haken (aktiv) oder rotem Kreuz (nicht aktiv)',
+    'A|Nutzerliste: Button „E-Mail anzeigen“ links neben „Namensänderung“ im Stil der übrigen Buttons; Button „Namensänderung“; „Alphatester“ mit grünem Haken (aktiv) oder rotem Kreuz (nicht aktiv)',
     'U|Ideen und Bugs einheitlich: Erledigt als Button in der Leiste unter dem Titel, daneben bei Bugs die drei Prioritäten, bei Ideen Stimme und (Admin) „Ablehnen“, dazu rechtsbündig „Löschen“',
     'U|Info, „Zum Testen“: Hinweis, dass die Daten aus den Quellen stammen, Lücken haben können und manchmal fremdsprachige Ergebnisse enthalten',
     'F|Ideen lassen sich zusätzlich als „abgelehnt“ markieren (nur Admin); die einreichende Person bekommt dazu eine eigene Systemnachricht im Kontakt',
