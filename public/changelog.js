@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'A|Nutzerverwaltung: aufsteigend nach Mitgliedsnummer sortiert, darüber ein Suchfeld (Nummer oder Benutzername)',
     'B|Einstellungen, Import: Der aufgeklappte Bereich überlappt nicht mehr den Spotify-Import; die beiden Punkte stehen nebeneinander, das Eingabefeld darunter',
     'U|Einstellungen: Das Feld zur Änderung des Benutzernamens hat mehr Abstand zum Text darüber',
     'U|Leere Kategorie: Bei den Vorschlägen steht jetzt der Hinweis, dass man in den Einstellungen Importe und eigene Sammellisten hinzufügen kann',
