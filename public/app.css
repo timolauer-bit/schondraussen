@@ -396,3 +396,4 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .hiddenmail .btn{margin:0}
 .ovtile.hastip{cursor:help}.ovtile.hastip .ovlbl{text-decoration:underline dotted;text-underline-offset:3px}
 .ovd{flex:0 0 90px;font-variant-numeric:tabular-nums}
+.tipd{cursor:help;text-decoration:underline dotted;text-underline-offset:3px}
