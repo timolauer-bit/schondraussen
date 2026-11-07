@@ -1,7 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
-    'F|Bücher: Bücher, die in den letzten 4 Wochen neu bei der Quelle aufgetaucht sind, stehen bei „Kommende Veröffentlichungen“ (Vermerk „neu hinzugefügt“) und gelten für die Mails als neu; beim ersten Abruf eines Eintrags wird nur der Bestand gemerkt. Dazu ein Hinweis, dass die freien Schnittstellen kaum zukünftige Bücher liefern. Erfordert Migration 039',
+    'F|Bücher: Bücher, die in den letzten 4 Wochen neu bei der Quelle aufgetaucht sind, stehen bei „Kommende Veröffentlichungen“ (Vermerk „neu hinzugefügt“) und gelten für die Mails als neu; beim ersten Abruf eines Eintrags wird nur der Bestand gemerkt. Dazu ein Hinweis (beim Autor und auf der Bücher-Übersicht), dass die freien Schnittstellen kaum zukünftige Bücher liefern. Erfordert Migration 039',
     'F|Bücher: Werke ohne deutsche Ausgabe werden ausgeblendet (Open Library); bei Google Books zählen nur deutsche Titel. Wirkt beim nächsten Aktualisieren des Eintrags',
     'U|„Treffer ändern“: Das Eingabefeld ragt nicht mehr in die Knöpfe „Suchen“ und „Abbrechen“ hinein (bei schmalen Fenstern rutschen die Knöpfe in die nächste Zeile)',
     'F|Bücher: Zusätzlich zu Open Library werden jetzt angekündigte Bücher aus Google Books gelesen (mit Datum, wenn der Verlag es angibt, sonst Monat oder Jahr) und im Kalender und in den Mails berücksichtigt. Wirkt beim nächsten Aktualisieren des Eintrags',
