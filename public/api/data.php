@@ -156,6 +156,15 @@ if ($a === 'mystats') { // persönliche Statistik für die Info-Seite (nur eigen
     try { $q = $pdo->prepare('SELECT COUNT(*) FROM works w JOIN user_entries e ON e.subject_id=w.subject_id WHERE e.user_id=?'); $q->execute([$u['id']]); $o['works'] = (int) $q->fetchColumn(); } catch (Throwable $e) {}
     try { $q = $pdo->prepare('SELECT kind, COUNT(*) FROM feedback WHERE user_id=? GROUP BY kind'); $q->execute([$u['id']]); foreach ($q->fetchAll(PDO::FETCH_NUM) as $x) { if ($x[0] === 'feature') $o['ideas'] = (int) $x[1]; if ($x[0] === 'bug') $o['bugs'] = (int) $x[1]; } } catch (Throwable $e) {}
     try { $q = $pdo->prepare('SELECT COUNT(*) FROM messages WHERE user_id=? AND from_admin=0'); $q->execute([$u['id']]); $o['messages'] = (int) $q->fetchColumn(); } catch (Throwable $e) {}
+    try { // Aktivitätsrang: Einträge + eingereichte Beiträge + gesendete Chatnachrichten, verglichen mit allen aktiven Nutzern (nur Prozentstufe, keine Namen)
+        $sc = $pdo->query("SELECT u.id, (SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) + (SELECT COUNT(*) FROM feedback f WHERE f.user_id=u.id) + (SELECT COUNT(*) FROM messages m WHERE m.user_id=u.id AND m.from_admin=0) AS sc FROM users u WHERE u.role<>'admin' AND u.approved_at IS NOT NULL AND u.delete_requested_at IS NULL")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $n = count($sc);
+        if ($n >= 10 && isset($sc[$u['id']]) && (int) $sc[$u['id']] > 0) {
+            $mine = (int) $sc[$u['id']]; $higher = 0; foreach ($sc as $v) if ((int) $v > $mine) $higher++;
+            $pct = ($higher + 1) / $n * 100;
+            foreach ([1, 5, 10, 25, 50] as $st) if ($pct <= $st) { $o['top_percent'] = $st; break; }
+        }
+    } catch (Throwable $e) {}
     json_out($o);
 }
 if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
