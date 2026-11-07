@@ -71,7 +71,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     try {
         $ext['tvmaze'] = (int) $show['id']; $ext['tv_status'] = (string) ($show['status'] ?? '');
         $genres = $show['genres'] ?? [];
-        $sumTxt = clean_text($show['summary'] ?? '');
+        $sumTxt = clean_text($show['summary'] ?? '', 600);
         if ($sumTxt !== '' && !in_array((string) ($show['language'] ?? ''), ['German', ''], true)) { // englische Beschreibung einmal übersetzen und merken
             $hh = sha1($sumTxt);
             if (($ext['sum_h'] ?? '') === $hh && !empty($ext['sum_de'])) $sumTxt = $ext['sum_de'];
