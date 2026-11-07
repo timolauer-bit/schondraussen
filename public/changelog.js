@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 7, d: '06.11.2026', t: [
+    'U|Anmeldeseite in drei Kästen nebeneinander: Infotext, Screenshots übereinander, Anmeldung (auf dem Handy untereinander, die Anmeldung zuerst)',
     'O|Info: Link zur öffentlichen Statusseite („Systemstatus ansehen“)',
     'F|Ideen lassen sich wie Bugs als erledigt abhaken (erledigte stehen unten); hakt der Admin einen Eintrag ab, bekommt die einreichende Person im Kontakt eine Systemnachricht',
     'U|Bugmeldungen sind fortlaufend nummeriert (#1, #2, …); die Nummer bleibt auch nach dem Erledigen bestehen',

@@ -48,6 +48,11 @@ button.ghost{margin:0;background:none;color:var(--ink);border:1px solid var(--li
 h3{margin:18px 0 6px;font-size:15px}
 .pitch{margin:22px 0 6px}.pitch h2{font-size:20px;margin:0 0 6px}.pitch ul{padding-left:20px;margin:8px 0}.pitch li{margin:4px 0}.pitch .fine{color:var(--muted);font-size:14px}
 .note{background:var(--bg);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}.row2{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.row2 button{margin:0}button.danger{color:#b62520;border-color:#b62520}
+main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
+.land-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.7fr) minmax(0,.9fr);gap:20px;align-items:start;margin-top:20px}
+.land-grid .card{margin-top:0}.land-pitch{order:1;margin:0!important}.land-shots{order:2;margin:0!important}.land-login{order:3}
+.land-pitch h2{margin-top:0}.land-shots h2{margin-top:0}.land .thumbs{flex-direction:column;flex-wrap:nowrap}.land .thumb{width:100%}.land .thumb img{height:auto;max-height:190px}
+@media(max-width:980px){.land-grid{grid-template-columns:1fr}.land-login{order:1}.land-pitch{order:2}.land-shots{order:3}}
 </style>
 <?php endif; ?>
 </head><body>
@@ -69,7 +74,7 @@ h3{margin:18px 0 6px;font-size:15px}
 <script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
-<main>
+<main<?= $u ? '' : ' class="land"' ?>>
 <h1>Schondraussen<span>.de</span></h1>
 <p>Deine Autor:innen, Musiker:innen, Filme und Serien an einem Ort.</p>
 <?php if ($u): ?>
@@ -86,7 +91,8 @@ h3{margin:18px 0 6px;font-size:15px}
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php endif; ?>
 <?php else: ?>
-  <div class="card">
+  <div class="land-grid">
+  <div class="card land-login">
     <!-- HINWEIS-FREISCHALTUNG: Testbetrieb-Hinweis zum Start entfernen -->
     <div class="note"><b>Testbetrieb:</b> Diese Seite ist noch nicht öffentlich. Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
     <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
@@ -116,7 +122,7 @@ h3{margin:18px 0 6px;font-size:15px}
       <button type="submit">Passwort speichern</button></form>
     <div class="msg" id="msg" role="status"></div>
   </div>
-  <section class="pitch" aria-labelledby="pitch-h">
+  <section class="card pitch land-pitch" aria-labelledby="pitch-h">
     <h2 id="pitch-h">Nie wieder eine Neuerscheinung verpassen</h2>
     <p>Trag deine Lieblingsmusiker:innen, Autor:innen, Filme und Serien ein, kostenlos. Schondraussen.de zeigt dir, was sie schon veröffentlicht haben, und sagt dir Bescheid, sobald etwas Neues angekündigt wird.</p>
     <ul>
@@ -129,13 +135,14 @@ h3{margin:18px 0 6px;font-size:15px}
     <p class="fine">Dein Konto wird kurz geprüft und von Hand freigeschaltet, bevor du Inhalte siehst.</p>
     <!-- /HINWEIS-FREISCHALTUNG -->
   </section>
-  <?php if ($shots): ?><section class="shots" aria-labelledby="shots-h">
+  <?php if ($shots): ?><section class="card shots land-shots" aria-labelledby="shots-h">
     <h2 id="shots-h">So sieht es aus</h2>
     <div class="thumbs">
 <?php foreach ($shots as $k => $sh): ?>      <button type="button" class="thumb" data-i="<?= $k ?>"><img src="<?= htmlspecialchars($sh['src']) ?>" alt="<?= htmlspecialchars($sh['title']) ?>" loading="lazy"><?php if ($sh['title'] !== ''): ?><span><?= htmlspecialchars($sh['title']) ?></span><?php endif; ?></button>
 <?php endforeach; ?>
     </div>
   </section><?php endif; ?>
+  </div>
   <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Bildansicht" hidden>
     <button type="button" class="lbx" id="lbx" aria-label="Schließen">×</button>
     <button type="button" class="lbn prev" id="lbp" aria-label="Vorheriges Bild">‹</button>
