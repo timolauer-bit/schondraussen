@@ -149,6 +149,15 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($u['bell_default']) && !(int) $u['bell_default']) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
     json_out(['ok' => true, 'id' => $sid, 'type' => $type]);
 }
+if ($a === 'mystats') { // persönliche Statistik für die Info-Seite (nur eigene Zahlen)
+    $o = ['since' => null, 'entries' => ['author' => 0, 'artist' => 0, 'film' => 0, 'series' => 0], 'works' => 0, 'ideas' => 0, 'bugs' => 0, 'messages' => 0];
+    try { $q = $pdo->prepare('SELECT created_at FROM users WHERE id=?'); $q->execute([$u['id']]); $o['since'] = $q->fetchColumn() ?: null; } catch (Throwable $e) {}
+    try { $q = $pdo->prepare('SELECT s.type, COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? GROUP BY s.type'); $q->execute([$u['id']]); foreach ($q->fetchAll(PDO::FETCH_NUM) as $x) if (isset($o['entries'][$x[0]])) $o['entries'][$x[0]] = (int) $x[1]; } catch (Throwable $e) {}
+    try { $q = $pdo->prepare('SELECT COUNT(*) FROM works w JOIN user_entries e ON e.subject_id=w.subject_id WHERE e.user_id=?'); $q->execute([$u['id']]); $o['works'] = (int) $q->fetchColumn(); } catch (Throwable $e) {}
+    try { $q = $pdo->prepare('SELECT kind, COUNT(*) FROM feedback WHERE user_id=? GROUP BY kind'); $q->execute([$u['id']]); foreach ($q->fetchAll(PDO::FETCH_NUM) as $x) { if ($x[0] === 'feature') $o['ideas'] = (int) $x[1]; if ($x[0] === 'bug') $o['bugs'] = (int) $x[1]; } } catch (Throwable $e) {}
+    try { $q = $pdo->prepare('SELECT COUNT(*) FROM messages WHERE user_id=? AND from_admin=0'); $q->execute([$u['id']]); $o['messages'] = (int) $q->fetchColumn(); } catch (Throwable $e) {}
+    json_out($o);
+}
 if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $names = []; $seen = [];
     foreach ((array) (body()['names'] ?? []) as $x) {

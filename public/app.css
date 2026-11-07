@@ -428,3 +428,4 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .edited{text-decoration:underline dotted;text-underline-offset:3px;cursor:help}
 .edmark{font-size:.7em;opacity:.7}
 .fbedit input,.fbedit textarea{font:inherit}
+.mystats{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;margin:8px 0 0}.mystats dt{color:var(--muted,#666)}.mystats dd{margin:0;font-weight:600}

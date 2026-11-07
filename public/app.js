@@ -787,6 +787,16 @@
       if (m < 60) t = 'vor weniger als einer Stunde'; else if (m < 180) t = 'vor etwa ' + Math.round(m / 60) + ' Stunden'; else if (m < 1440) t = 'vor ' + Math.round(m / 60) + ' Stunden'; else t = 'vor über einem Tag';
       el.textContent = 'Zuletzt wurden Einträge aktualisiert: ' + t + '.';
     });
+    var mine = h('section', { class: 'infosec' }, h('h3', null, 'Deine Statistik'), h('p', { class: 'hint' }, 'Lade …')); d.append(mine);
+    api('/api/data.php?a=mystats').then(function (r) {
+      mine.textContent = ''; mine.append(h('h3', null, 'Deine Statistik'));
+      if (!r || r.error) { mine.append(h('p', { class: 'hint' }, 'Die Statistik ist gerade nicht verfügbar.')); return; }
+      var n = function (v) { return Number(v || 0).toLocaleString('de-DE'); }, en = r.entries || {}, tot = (en.author | 0) + (en.artist | 0) + (en.film | 0) + (en.series | 0);
+      var rows = [['Angemeldet seit', r.since ? new Date(String(r.since).replace(' ', 'T')).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–'],
+        ['Einträge insgesamt', n(tot) + ' (' + n(en.author) + ' Bücher, ' + n(en.artist) + ' Musik, ' + n(en.film) + ' Filme, ' + n(en.series) + ' Serien)'],
+        ['Werke zu deinen Einträgen', n(r.works)], ['Eingereichte Ideen', n(r.ideas)], ['Eingereichte Bugs', n(r.bugs)], ['Gesendete Chatnachrichten', n(r.messages)]];
+      var dl = h('dl', { class: 'mystats' }); rows.forEach(function (x) { dl.append(h('dt', null, x[0]), h('dd', null, x[1])); }); mine.append(dl);
+    });
     if (isAdm()) d.append(cronSection());
     mainEl.append(d);
   }
