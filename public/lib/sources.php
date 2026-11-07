@@ -151,6 +151,7 @@ function googlebooks_upcoming(string $name, array $seen): array {
     $known = []; foreach ($seen as $k => $_) $known[$norm((string) $k)] = 1;
     foreach (($r['items'] ?? []) as $it) {
         $v = $it['volumeInfo'] ?? []; $t = trim((string) ($v['title'] ?? '')); $d = (string) ($v['publishedDate'] ?? '');
+        if (!in_array($v['language'] ?? 'de', ['de', 'en'], true)) continue;
         if ($t === '' || !preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $d)) continue;
         $has = false; foreach (($v['authors'] ?? []) as $a) if (mb_strtolower(trim($a)) === mb_strtolower($name)) $has = true;
         if (!$has) continue;
@@ -180,14 +181,15 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         if (!empty($best['top_work'])) $bits[] = 'bekannt für „' . $best['top_work'] . '“';
         $summary = implode(' · ', $bits);
     }
-    $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year&sort=new&author=' . rawurlencode($ext['olid']));
+    $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&author=' . rawurlencode($ext['olid']));
     if (!$r) {
-        $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year&sort=new&q=author_key:' . rawurlencode($ext['olid']));
+        $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&q=author_key:' . rawurlencode($ext['olid']));
     }
     if (!$r) return ['ok' => false, 'msg' => 'Open Library nicht erreichbar.'];
     $seen = []; $works = []; $rel = []; $y = (int) date('Y');
     foreach (($r['docs'] ?? []) as $d) {
         $t = trim((string) ($d['title'] ?? '')); if ($t === '') continue;
+        $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'eng', 'mul'])) continue; // nur deutsch- oder englischsprachige Werke (ohne Angabe bleibt es drin)
         $k = mb_strtolower($t); if (isset($seen[$k])) continue; $seen[$k] = 1;
         $yr = (int) ($d['first_publish_year'] ?? 0);
         if ($yr > $y) $rel[] = [$t, (string) $yr, 'Buch'];

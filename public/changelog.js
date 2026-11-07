@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Bücher: Werke, die laut Open Library nur in anderen Sprachen als Deutsch oder Englisch vorliegen, werden ausgeblendet; bei Google Books zählen nur deutsche und englische Titel. Wirkt beim nächsten Aktualisieren des Eintrags',
     'U|„Treffer ändern“: Das Eingabefeld ragt nicht mehr in die Knöpfe „Suchen“ und „Abbrechen“ hinein (bei schmalen Fenstern rutschen die Knöpfe in die nächste Zeile)',
     'F|Bücher: Zusätzlich zu Open Library werden jetzt angekündigte Bücher aus Google Books gelesen (mit Datum, wenn der Verlag es angibt, sonst Monat oder Jahr) und im Kalender und in den Mails berücksichtigt. Wirkt beim nächsten Aktualisieren des Eintrags',
     'U|Linke Leiste: Mehr Abstand zwischen dem Feld „Liste durchsuchen“ und dem ersten Eintrag',
