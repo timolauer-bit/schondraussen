@@ -108,6 +108,12 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         if (!empty($pick['life-span']['begin'])) $bits[] = 'seit ' . substr($pick['life-span']['begin'], 0, 4);
         $summary = implode(' · ', $bits);
     }
+    // Kurzvorstellung aus Wikipedia (über den Verweis bei MusicBrainz); wird einmal geholt, bei Misserfolg frühestens nach 30 Tagen erneut
+    if (empty($ext['bits'])) $ext['bits'] = (string) $summary;
+    if (!isset($ext['intro_t']) || (empty($ext['intro']) && (int) $ext['intro_t'] < time() - 30 * 86400)) {
+        usleep(1100000); $ext['intro_t'] = time(); $ext['intro'] = wiki_intro_for_mbid($ext['mbid']) ?: '';
+    }
+    if (!empty($ext['intro'])) $summary = $ext['bits'] . ' – ' . $ext['intro'];
     $groups = []; $total = 0;
     for ($page = 0; $page < 2; $page++) {
         $r = http_json('https://musicbrainz.org/ws/2/release-group?fmt=json&limit=100&offset=' . ($page * 100) . '&type=album|ep&artist=' . $ext['mbid']);
@@ -141,6 +147,32 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     return ['ok' => true, 'msg' => count($works) . ' Alben, ' . count($rel) . ' kommende Veröffentlichungen'];
+}
+
+// Kurzvorstellung (höchstens ca. 420 Zeichen) aus der Wikipedia, gefunden über die Verweise bei MusicBrainz bzw. Wikidata. Deutsch bevorzugt, sonst Englisch.
+function wiki_intro_for_mbid(string $mbid): ?string {
+    $r = http_json('https://musicbrainz.org/ws/2/artist/' . rawurlencode($mbid) . '?fmt=json&inc=url-rels', 10);
+    if (!$r) return null;
+    $pages = []; $qid = null;
+    foreach (($r['relations'] ?? []) as $rel) {
+        $u = (string) ($rel['url']['resource'] ?? '');
+        if (($rel['type'] ?? '') === 'wikipedia' && preg_match('#^https://(de|en)\.wikipedia\.org/wiki/([^?\#]+)#', $u, $m)) $pages[$m[1]] = urldecode($m[2]);
+        if (($rel['type'] ?? '') === 'wikidata' && preg_match('#/(Q\d+)$#', $u, $m)) $qid = $m[1];
+    }
+    if (empty($pages['de']) && $qid) {
+        $w = http_json('https://www.wikidata.org/wiki/Special:EntityData/' . $qid . '.json', 10);
+        $sl = $w['entities'][$qid]['sitelinks'] ?? [];
+        foreach (['de' => 'dewiki', 'en' => 'enwiki'] as $l => $k) if (empty($pages[$l]) && !empty($sl[$k]['title'])) $pages[$l] = str_replace(' ', '_', $sl[$k]['title']);
+    }
+    foreach (['de', 'en'] as $l) {
+        if (empty($pages[$l])) continue;
+        $p = http_json('https://' . $l . '.wikipedia.org/api/rest_v1/page/summary/' . rawurlencode($pages[$l]), 10);
+        $t = trim((string) ($p['extract'] ?? ''));
+        if (!$p || ($p['type'] ?? '') === 'disambiguation' || mb_strlen($t) < 60) continue;
+        if (mb_strlen($t) > 420) { $cut = mb_substr($t, 0, 420); $i = max(mb_strrpos($cut, '. '), mb_strrpos($cut, '! ')); $t = $i > 150 ? mb_substr($cut, 0, $i + 1) : rtrim($cut, " ,;") . '…'; }
+        return $t . ' (Quelle: Wikipedia)';
+    }
+    return null;
 }
 
 // Google Books: angekündigte Bücher einer Person (Datum als JJJJ, JJJJ-MM oder JJJJ-MM-TT). $seen = bereits bekannte Titel (klein geschrieben).

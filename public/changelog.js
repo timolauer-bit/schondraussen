@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Musik: Bei Bands und Künstler:innen steht jetzt eine kurze Vorstellung (bis ca. 420 Zeichen) aus der Wikipedia unter dem Namen, gefunden über den Verweis bei MusicBrainz (deutsch bevorzugt, sonst englisch, mit Quellenangabe). Sie wird einmal pro Eintrag geholt; wo es keinen Wikipedia-Verweis gibt, bleibt die bisherige Kurzzeile. Wirkt beim nächsten Aktualisieren des Eintrags und erscheint auch in den Mails',
     'U|Einträge (z. B. Serien): Der Beschreibungstext nutzt jetzt die volle Breite der Karte statt einer schmaleren Spalte',
     'U|Einheitlicher Abstand (10 Pixel) zwischen Hinweis- oder Beschriftungstexten und den darunterstehenden Eingabefeldern in Einstellungen, Admin und Infoseiten',
     'U|Adminmenü: Die Bereiche sind jetzt auf Reiter verteilt (Nutzer, Inhalte, Mails, Sicherheit). Bei „Nutzer“ zeigt eine Marke, wie viele Konten auf Freischaltung warten; der gewählte Reiter bleibt beim Neuladen im selben Tab erhalten',
