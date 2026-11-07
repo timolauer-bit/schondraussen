@@ -92,7 +92,7 @@ if ($a === 'add') {
     } catch (PDOException $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     try {
         $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
-        foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
+        foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL AND id<>" . (int) $u['id'])->fetchAll(PDO::FETCH_COLUMN) as $adm)
             send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . ($given !== '' ? $given . "\n\n" : '') . $text . "\n\nZur Liste: $base/\n");
     } catch (Throwable $e) {}
     json_out(['ok' => true]);
