@@ -56,6 +56,13 @@ try {
         if (empty($b['accept'])) json_out(['error' => 'Bitte Datenschutzerklärung und Nutzungsbedingungen bestätigen.'], 422);
         $uname = trim((string) ($b['username'] ?? ''));
         if ($err = username_error($uname)) json_out(['error' => $err], 422);
+        $inv = null; $itok = trim((string) ($b['invite'] ?? ''));
+        if ($itok !== '') { // Einladungslink (einmal verwendbar)
+            try { $q = $pdo->prepare('SELECT id,email FROM invites WHERE token_hash=? AND used_at IS NULL AND expires_at > NOW()'); $q->execute([hash('sha256', $itok)]); $inv = $q->fetch() ?: null; } catch (Throwable $e) { $inv = null; }
+            if (!$inv) json_out(['error' => 'Der Einladungslink ist ungültig, abgelaufen oder schon benutzt.'], 422);
+            if (!empty($inv['email']) && strtolower($inv['email']) !== $email) json_out(['error' => 'Diese Einladung gilt für eine andere E-Mail-Adresse.'], 422);
+        }
+        $done = null;
         $s = $pdo->prepare('SELECT id,email_verified_at FROM users WHERE email=?'); $s->execute([$email]); $ex = $s->fetch();
         if ($ex) {
             // Keine Auskunft, ob die Adresse schon existiert; unbestätigte Konten bekommen den Link erneut.
@@ -70,10 +77,21 @@ try {
                 if (strpos($e->getMessage(), 'username') !== false && strpos($e->getMessage(), 'Unknown column') === false) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
                 $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']); // Spalte fehlt noch (migrate.php)
             }
-            link_mail($pdo, (int) $pdo->lastInsertId(), $email, 'verify');
+            $nid2 = (int) $pdo->lastInsertId();
+            if ($inv && !$first) {
+                try {
+                    $used = $pdo->prepare('UPDATE invites SET used_at=NOW(), email=NULL WHERE id=? AND used_at IS NULL'); $used->execute([$inv['id']]);
+                    if ($used->rowCount()) {
+                        $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$nid2]);
+                        if (!empty($inv['email'])) { $pdo->prepare('UPDATE users SET email_verified_at=NOW() WHERE id=?')->execute([$nid2]); $done = 'Dein Konto ist angelegt und freigeschaltet. Du kannst dich jetzt anmelden.'; }
+                        else $done = 'Fast geschafft: Du bekommst gleich eine Mail mit einem Bestätigungslink. Danach kannst du direkt loslegen, dein Konto ist schon freigeschaltet.';
+                    } else $inv = null;
+                } catch (Throwable $e) { $inv = null; }
+            }
+            if (!$inv || $done === null || strpos((string) $done, 'Bestätigungslink') !== false) link_mail($pdo, $nid2, $email, 'verify');
             if (!$first) { try { $pdo->prepare('UPDATE users SET hide_email=1, hide_activity=1 WHERE email=?')->execute([$email]); } catch (Throwable $e) {} } // neue Konten: E-Mail und Aktivität standardmäßig ausgeblendet
             if ($first) { try { $pdo->exec("UPDATE users SET approved_at=NOW() WHERE role='admin'"); } catch (Throwable $e) {} }
-            else {
+            elseif (!$inv) {
                 try {
                     $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
                     $link = '';
@@ -88,6 +106,7 @@ try {
                 } catch (Throwable $e) {}
             }
         }
+        if ($done) json_out(['ok' => true, 'message' => $done]);
         json_out(['ok' => true, 'message' => 'Fast geschafft: Du bekommst gleich eine Mail mit einem Bestätigungslink. Nach der Bestätigung schaltet der Admin dein Konto frei (Testbetrieb).']);
     }
 

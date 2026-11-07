@@ -26,6 +26,29 @@ if ($a === 'users') {
     } catch (Throwable $e) {}
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
+if ($a === 'invite_list') {
+    try { $r = $pdo->query("SELECT id,email,created_at,expires_at FROM invites WHERE used_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 50")->fetchAll(); }
+    catch (Throwable $e) { json_out(['invites' => [], 'needs_migration' => true]); }
+    json_out(['invites' => $r]);
+}
+if ($a === 'invite_revoke' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    try { $pdo->prepare('DELETE FROM invites WHERE id=? AND used_at IS NULL')->execute([(int) ($b['id'] ?? 0)]); } catch (Throwable $e) {}
+    json_out(['ok' => true]);
+}
+if ($a === 'invite_create' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Einladung: Einmal-Link, optional per Mail
+    $email = strtolower(trim((string) ($b['email'] ?? '')));
+    if ($email !== '' && !valid_email($email)) json_out(['ok' => false, 'error' => 'Bitte eine gültige E-Mail-Adresse eingeben.']);
+    try {
+        if ((int) $pdo->query('SELECT COUNT(*) FROM invites WHERE used_at IS NULL AND expires_at > NOW()')->fetchColumn() >= 30) json_out(['ok' => false, 'error' => 'Es sind schon 30 offene Einladungen vorhanden. Widerrufe zuerst einige.']);
+        [$tk, $th] = token_new();
+        $pdo->prepare('INSERT INTO invites (token_hash,email,created_by,expires_at) VALUES (?,?,?,NOW() + INTERVAL 14 DAY)')->execute([$th, $email !== '' ? $email : null, $u['id']]);
+    } catch (Throwable $e) { json_out(['ok' => false, 'error' => 'Die Einladungen sind noch nicht eingerichtet (migrate.php ausführen).']); }
+    $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/'); $link = $base . '/?invite=' . $tk; $sent = false;
+    if ($email !== '') {
+        try { $sent = (bool) send_mail($email, 'Einladung zu Schondraussen.de', "Hallo,\n\ndu wurdest zu Schondraussen.de eingeladen, einer kostenlosen Seite, die dich an Neuerscheinungen von Büchern, Musik, Filmen und Serien erinnert.\n\nMit diesem Link legst du dein Konto an (einmal verwendbar, 14 Tage gültig, bitte mit dieser E-Mail-Adresse):\n$link\n\nDein Konto ist danach sofort freigeschaltet.\n\nWenn du die Einladung nicht erwartet hast, ignoriere diese Mail einfach."); } catch (Throwable $e) {}
+    }
+    json_out(['ok' => true, 'link' => $link, 'sent' => $sent, 'email' => $email !== '']);
+}
 if ($a === 'reveal' && $_SERVER['REQUEST_METHOD'] === 'POST') { // E-Mail eines Nutzers aufdecken, wird protokolliert
     $id = (int) ($b['id'] ?? 0);
     $s = $pdo->prepare('SELECT email FROM users WHERE id=?'); $s->execute([$id]); $em = $s->fetchColumn();
