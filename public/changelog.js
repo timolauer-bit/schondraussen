@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Einstellungen, Import: „Listen importieren“ funktioniert jetzt für Bücher, Musik, Filme und Serien (Kategorie vor dem Eingabefeld wählbar); der Spotify-Import hat wieder einen eigenen Punkt mit kurzer Beschreibung',
     'U|Kategorien heißen jetzt „Bücher“ und „Musik“ statt „Autor:innen“ und „Musiker:innen“ (Menü, Übersicht, Info und Anmeldeseite); die Einträge selbst bleiben Autor:innen und Musiker:innen',
     'A|Nutzerverwaltung: Tooltip am Benutzernamen mit den letzten drei Namensänderungen und Datum (ab jetzt erfasst)',
     'U|Obere Leiste: Einstellungen, Ideen, Bugs, Info und Kontakt zeigen für alle nur Symbole; der Name steht nur bei der geöffneten Seite',

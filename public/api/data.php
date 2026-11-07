@@ -158,13 +158,14 @@ if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (count($names) >= 300) break;
     }
     if (!$names) json_out(['ok' => false, 'msg' => 'Keine Namen gefunden.']);
-    $c = $pdo->prepare("SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type='artist'"); $c->execute([$u['id']]);
+    $it = (string) (body()['type'] ?? 'artist'); if (!in_array($it, $TYPES, true)) $it = 'artist';
+    $c = $pdo->prepare("SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?"); $c->execute([$u['id'], $it]);
     $room = max(0, 100 - (int) $c->fetchColumn()); $added = 0; $had = 0; $over = 0;
-    $sub = $pdo->prepare("INSERT INTO subjects (type,name) VALUES ('artist',?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)");
+    $sub = $pdo->prepare("INSERT INTO subjects (type,name) VALUES (?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)");
     $ue = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)');
     $off = isset($u['bell_default']) && !(int) $u['bell_default'];
     foreach ($names as $nm) {
-        $sub->execute([$nm]); $sid = (int) $pdo->lastInsertId();
+        $sub->execute([$it, $nm]); $sid = (int) $pdo->lastInsertId();
         $chk = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $chk->execute([$u['id'], $sid]);
         if ($chk->fetch()) { $had++; continue; }
         if ($room <= 0) { $over++; continue; }
