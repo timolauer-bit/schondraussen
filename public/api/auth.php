@@ -84,7 +84,7 @@ try {
                         $link = "\n\nKonto direkt freischalten (Link nur für dich, 14 Tage gültig):\n$base/approve.php?t=$tk\n";
                     } catch (Throwable $e) {}
                     foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\nBenutzername: $uname\nE-Mail: ausgeblendet (Standard bei neuen Konten; im Notfall in der Nutzerverwaltung unter „Adresse anzeigen“)\n\nDas Konto sieht keine Inhalte, bis du es freischaltest." . $link . "\nOder in der Nutzerverwaltung:\n$base/\n\nKeine Freischaltung nötig? Dann ignoriere diese Mail einfach.\n");
+                        send_mail($adm, 'Neues Konto auf Schondraussen.de', "Es hat sich ein neuer Nutzer registriert:\n\nBenutzername: $uname\nE-Mail: ausgeblendet (Standard bei neuen Konten; im Notfall in der Nutzerverwaltung unter „E-Mail anzeigen“)\n\nDas Konto sieht keine Inhalte, bis du es freischaltest." . $link . "\nOder in der Nutzerverwaltung:\n$base/\n\nKeine Freischaltung nötig? Dann ignoriere diese Mail einfach.\n");
                 } catch (Throwable $e) {}
             }
         }
@@ -145,7 +145,7 @@ try {
 
     if ($a === 'privacy' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
-        try { $pdo->prepare('UPDATE users SET hide_email=?, hide_activity=? WHERE id=?')->execute([!empty($b['hide_email']) ? 1 : 0, !empty($b['hide_activity']) ? 1 : 0, $cu['id']]); }
+        try { $pdo->prepare('UPDATE users SET hide_activity=? WHERE id=?')->execute([!empty($b['hide_activity']) ? 1 : 0, $cu['id']]); }
         catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
         json_out(['ok' => true]);
     }

@@ -691,15 +691,14 @@
     tfaDraw(); box.append(tfaBox);
     var adminSees = h('p', { class: 'hint wide2' });
     function drawAdminSees() {
-      adminSees.textContent = 'Der Administrator sieht deinen Benutzernamen, deine Mitgliedsnummer und die Zahl deiner Einträge, ' + (D.hide_email ? 'deine E-Mail-Adresse ist ausgeblendet' : 'deine E-Mail-Adresse') + ' und ' + (D.hide_activity ? 'nur grob, wann du zuletzt hier warst (zum Beispiel „vor über einer Woche“)' : 'wann du zuletzt hier warst') + '. Deine Einträge selbst bleiben privat.' + (D.hide_email ? ' Im Ausnahmefall (Missbrauch, Rechtsanfragen) kann der Administrator die Adresse aufdecken, das wird protokolliert. Technisch bleibt die Adresse für Anmeldung und Mails auf dem Server gespeichert.' : '');
+      adminSees.textContent = 'Der Administrator sieht deinen Benutzernamen, deine Mitgliedsnummer und die Zahl deiner Einträge sowie ' + (D.hide_activity ? 'nur grob, wann du zuletzt hier warst (zum Beispiel „vor über einer Woche“)' : 'wann du zuletzt hier warst') + '. Deine E-Mail-Adresse wird ihm nicht angezeigt. Nur im Ausnahmefall (Missbrauch, Rechtsanfragen) kann er sie einzeln aufdecken, das wird protokolliert. Technisch bleibt die Adresse für Anmeldung und Mails auf dem Server gespeichert. Deine Einträge selbst bleiben privat.';
     }
     drawAdminSees();
     var pm = h('span', { class: 'msg', style: 'margin:0' });
-    function savePriv() { api('/api/auth.php?a=privacy', { hide_email: !!D.hide_email, hide_activity: !!D.hide_activity }).then(function (r) { pm.className = 'msg' + (r.ok ? '' : ' err'); pm.textContent = r.ok ? 'Gespeichert.' : (r.error || 'Speichern nicht möglich.'); drawAdminSees(); }); }
+    function savePriv() { api('/api/auth.php?a=privacy', { hide_activity: !!D.hide_activity }).then(function (r) { pm.className = 'msg' + (r.ok ? '' : ' err'); pm.textContent = r.ok ? 'Gespeichert.' : (r.error || 'Speichern nicht möglich.'); drawAdminSees(); }); }
     function privChk(key, label, hint) { var c = h('input', { type: 'checkbox', onchange: function () { D[key] = this.checked; savePriv(); } }); c.checked = !!D[key]; return h('div', null, h('label', { style: 'display:flex;gap:8px;align-items:center' }, c, label), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, hint)); }
     box.append(h('div', { class: 'wide2 privbox' }, h('p', { class: 'label' }, 'Privatsphäre'),
-      h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du entscheidest, was der Administrator in der Nutzerverwaltung von dir sieht. Andere Nutzer sehen ohnehin nur deinen Benutzernamen.'),
-      privChk('hide_email', 'E-Mail-Adresse ausblenden', 'Der Administrator sieht statt der Adresse nur deinen Namen und deine Nummer.'),
+      h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du entscheidest, wie genau der Administrator sieht, wann du zuletzt hier warst. Deine E-Mail-Adresse bekommt er in der Nutzerverwaltung grundsätzlich nicht angezeigt. Andere Nutzer sehen ohnehin nur deinen Benutzernamen.'),
       privChk('hide_activity', 'Letzte Anmeldung nur grob anzeigen', 'Statt Datum und Uhrzeit steht dort nur „in den letzten 7 Tagen“, „vor über einer Woche“, „vor über einem Monat“ oder „vor über 3 Monaten“.'), pm));
     box.append(adminSees);
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Meine Daten'),
@@ -828,6 +827,9 @@
     var grid = h('div', { class: 'supgrid' + (admin ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !admin }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
     var inp = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Nachricht', placeholder: 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)' }), msg = h('p', { class: 'msg', role: 'status' });
     var drafts = [], draftBox = h('div', { class: 'drafts' });
+    var mailCk = h('input', { type: 'checkbox' }), mailRow = h('label', { class: 'mailck', hidden: !admin }, mailCk, ' Zusätzlich per E-Mail senden (mit Hinweis, dass man darauf nicht antworten kann)');
+    var pick = h('select', { 'aria-label': 'Neue Unterhaltung mit einem Nutzer beginnen', class: 'userpick', onchange: function () { if (!pick.value) return; S.sup.sel = pick.value; pick.value = ''; drawThreads(); pull(); } }, h('option', { value: '' }, 'Nutzer anschreiben …'));
+    if (admin) api('/api/chat.php?a=users').then(function (r) { (r.users || []).forEach(function (x) { pick.append(h('option', { value: String(x.id) }, (x.username || 'Mitglied') + ' · Nr. ' + x.id)); }); });
     var titleIn = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', hidden: true, 'aria-label': 'Kurzbeschreibung', placeholder: 'Kurzbeschreibung (erscheint als Titel in der Liste)', autocomplete: 'off', onkeydown: function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.focus(); } } });
     var attNote = h('p', { class: 'hint picnote' });
     function drawNote() { attNote.textContent = kindSel === 'chat' ? 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.' : 'Anhänge: ' + drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
@@ -847,7 +849,7 @@
     function send() {
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (kindSel !== 'chat' && !admin) { var ti = titleIn.value.trim(); if (ti.length < 3) { msg.className = 'msg err'; msg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; titleIn.focus(); return; } } else if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
       if (!admin && kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (kd === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
-      inp.value = ''; drafts = []; drawDrafts(); api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids }).then(function (r) { msg.textContent = r.ok ? '' : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok ? '' : ' err'); pull(); });
+      inp.value = ''; drafts = []; drawDrafts(); var wantMail = admin && mailCk.checked; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids, mail: wantMail }).then(function (r) { msg.textContent = r.ok ? (wantMail ? (r.mailed ? 'Gesendet, auch per E-Mail zugestellt.' : 'Im Chat gesendet, aber die E-Mail konnte nicht verschickt werden.') : '') : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok && (!wantMail || r.mailed) ? '' : ' err'); pull(); });
     }
     var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
     var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Idee', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Der Admin schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.'], ['bug', 'Bugmeldung', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Der Admin schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.']];
@@ -860,7 +862,7 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
+      threads.textContent = ''; threads.append(pick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
       S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
     }
     function pull() {
@@ -868,7 +870,8 @@
         if (admin && !S.sup.sel) { log.textContent = ''; log.append(h('p', { class: 'chatempty' }, 'Wähle links eine Unterhaltung.')); return; }
         api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
-          if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), admin ? 'Der Nutzer hat noch nichts geschrieben.' : 'Schreibe unten deine erste Nachricht. Antworten des Administrators erscheinen hier.'));
+          if (admin) mailCk.checked = !(r.messages || []).length;
+          if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), admin ? 'Hier ist noch nichts geschrieben worden. Deine Nachricht erscheint auch im Chat des Nutzers.' : 'Schreibe unten deine erste Nachricht. Antworten des Administrators erscheinen hier.'));
           (r.messages || []).forEach(function (m) { var mine = admin ? +m.from_admin === 1 : +m.from_admin === 0;
             log.append(h('div', { class: 'bub ' + (mine ? 'me' : 'them') }, m.body, (m.images || []).map(function (id) { return picLink(id, 'inchat'); }), h('small', null, fmtChat(m.created_at), mine ? h('span', { class: 'ticks' + (m.read_at ? ' seen' : ''), title: m.read_at ? 'Gelesen' : 'Gesendet' }, m.read_at ? '✓✓' : '✓') : null))); });
           if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
@@ -876,7 +879,7 @@
       };
       if (admin) api('/api/chat.php?a=threads').then(function (r) { S.sup.threads = r.threads || []; if (!S.sup.sel && S.sup.threads.length) S.sup.sel = S.sup.threads[0].id; drawThreads(); go2(); }); else go2();
     }
-    grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [admin ? null : kindBox, admin ? null : kindHint, form, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+    grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [admin ? null : kindBox, admin ? null : kindHint, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
@@ -1005,7 +1008,7 @@
       api('/api/admin.php?a=blocked').then(function (r) {
         bl.textContent = ''; var l = r.blocked || [];
         if (!l.length) bl.append(h('p', { class: 'hint' }, r.error || 'Keine Adresse gesperrt.'));
-        l.forEach(function (x) { bl.append(h('div', { class: 'arow' }, h('div', null, h('div', { class: 'nm2' }, x.email), h('div', { class: 'meta2' }, 'gesperrt seit ' + String(x.created_at || '').slice(0, 10))), h('div', { class: 'acts' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=unblock', { email: x.email }).then(function () { blocked(); }); } }, 'Freigeben')))); });
+        l.forEach(function (x) { bl.append(h('div', { class: 'arow' }, h('div', null, h('div', { class: 'nm2' }, x.masked || x.email), h('div', { class: 'meta2' }, 'gesperrt seit ' + String(x.created_at || '').slice(0, 10))), h('div', { class: 'acts' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=unblock', { key: x.key }).then(function () { blocked(); }); } }, 'Freigeben')))); });
       });
     }
     blocked();

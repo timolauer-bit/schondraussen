@@ -14,7 +14,7 @@ if ($a === 'users') {
         catch (Throwable $e2) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
     }
     foreach ($r as &$x) {
-        if (!empty($x['hide_email']) && $x['role'] !== 'admin') { $x['email'] = null; $x['email_hidden'] = 1; }
+        if ($x['role'] !== 'admin') { $x['email'] = null; $x['email_hidden'] = 1; } // Adressen sind für den Admin grundsätzlich ausgeblendet (Aufdecken nur einzeln und protokolliert)
         if (!empty($x['hide_activity']) && $x['role'] !== 'admin') { $x['seen_label'] = seen_bucket($x['last_seen_at']); $x['last_seen_at'] = null; }
     }
     unset($x);
@@ -58,12 +58,20 @@ if ($a === 'savesite' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     json_out(['ok' => true]);
 }
 if ($a === 'blocked') {
-    try { json_out(['blocked' => $pdo->query('SELECT email,created_at FROM blocked_emails ORDER BY created_at DESC')->fetchAll()]); }
+    try {
+        $rows = $pdo->query('SELECT email,created_at FROM blocked_emails ORDER BY created_at DESC')->fetchAll();
+        foreach ($rows as &$r) { // nur maskiert anzeigen, gesperrt wird über einen Schlüssel aufgehoben
+            [$lo, $dom] = array_pad(explode('@', (string) $r['email'], 2), 2, ''); $dp = explode('.', $dom); $tld = array_pop($dp);
+            $r['masked'] = mb_substr($lo, 0, 2) . '***@' . mb_substr($dom, 0, 1) . '***.' . $tld; $r['key'] = sha1((string) $r['email']); unset($r['email']);
+        }
+        json_out(['blocked' => $rows]);
+    }
     catch (Throwable $e) { json_out(['blocked' => [], 'error' => 'Datenbank noch nicht aktualisiert (migrate.php).']); }
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
 if ($a === 'block' || $a === 'unblock') {
     $mail = strtolower(trim((string) ($b['email'] ?? '')));
+    if ($a === 'unblock' && !empty($b['key'])) { try { $kq = $pdo->prepare('SELECT email FROM blocked_emails WHERE SHA1(email)=?'); $kq->execute([(string) $b['key']]); $mail = (string) $kq->fetchColumn(); } catch (Throwable $e) { $mail = ''; } }
     if (!filter_var($mail, FILTER_VALIDATE_EMAIL) || strlen($mail) > 190) json_out(['error' => 'Bitte eine gültige E-Mail-Adresse eingeben.'], 422);
     try {
         if ($a === 'unblock') $pdo->prepare('DELETE FROM blocked_emails WHERE email=?')->execute([$mail]);

@@ -2,7 +2,7 @@
 // Anzeige-Helfer für Datenschutz-Einstellungen der Nutzer (E-Mail und Aktivität ausblenden)
 function user_label(array $u, bool $withEmail = true): string {
     $n = !empty($u['username']) ? $u['username'] : 'Mitglied Nr. ' . (int) $u['id'];
-    if ($withEmail && empty($u['hide_email']) && !empty($u['email'])) $n .= ' (' . $u['email'] . ')';
+    // E-Mail-Adressen erscheinen nirgends mehr in Mails oder Anzeigen an den Admin
     return $n;
 }
 function seen_bucket(?string $ts): string {

@@ -38,7 +38,7 @@ if ($a === 'list') {
         // Absender: Admin sieht Nummer und E-Mail, Alphatester die Mitgliedsnummer
         if ($alpha) {
             $nm = $r['author_name'] ?: 'Mitglied Nr. ' . (int) $r['user_id'];
-            $r['author'] = $nm . ($admin ? ($r['author_name'] ? ' (Nr. ' . (int) $r['user_id'] . ')' : '') . ($r['author_email'] && empty($r['author_hide']) ? ' · ' . $r['author_email'] : '') : '');
+            $r['author'] = $nm . ($admin ? ($r['author_name'] ? ' (Nr. ' . (int) $r['user_id'] . ')' : '') : '');
         }
         if (!empty($r['author_del'])) $r['gone'] = 1;
         $r['author_tier'] = $r['author_role'] === 'admin' ? 'admin' : (!empty($r['author_alpha']) ? 'alpha' : '');

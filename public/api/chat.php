@@ -21,6 +21,11 @@ if ($a === 'threads' && $admin) {
         FROM users u WHERE EXISTS (SELECT 1 FROM messages m WHERE m.user_id=u.id) ORDER BY last_at DESC")->fetchAll();
     json_out(['threads' => $rows]);
 }
+if ($a === 'users' && $admin) { // Auswahlliste für neue Unterhaltungen (ohne E-Mail-Adressen)
+    try { $rows = $pdo->query("SELECT id,username FROM users WHERE role<>'admin' AND approved_at IS NOT NULL AND admin_deleted=0 AND delete_requested_at IS NULL ORDER BY username IS NULL, username, id LIMIT 1000")->fetchAll(); }
+    catch (Throwable $e) { $rows = $pdo->query("SELECT id,username FROM users WHERE role<>'admin' AND approved_at IS NOT NULL ORDER BY username IS NULL, username, id LIMIT 1000")->fetchAll(); }
+    json_out(['users' => $rows]);
+}
 $uid = $admin ? (int) ($_GET['uid'] ?? body()['uid'] ?? 0) : (int) $u['id'];
 if ($a === 'thread') {
     if (!$uid) json_out(['messages' => []]);
@@ -60,6 +65,18 @@ if ($a === 'send' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 send_mail($adm, 'Neue Nachricht auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . ($text === '' ? '[Bild]' : $text) . ($imgs ? "\n(mit Bild)" : '') . "\n\nAntworten unter Kontakt: $base/\n");
         } catch (Throwable $e) {}
     }
-    json_out(['ok' => true]);
+    $mailed = null;
+    if ($admin && !empty(body()['mail'])) { // zusätzlich per E-Mail an den Nutzer (Adresse bleibt auf dem Server)
+        $mailed = false;
+        try {
+            $q = $pdo->prepare("SELECT email FROM users WHERE id=? AND role<>'admin' AND email_verified_at IS NOT NULL"); $q->execute([$uid]); $to = (string) $q->fetchColumn();
+            if ($to !== '') {
+                $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
+                $mailed = send_mail($to, '[Direkt vom Admin] Neue Nachricht auf Schondraussen.de',
+                    "Der Administrator von Schondraussen.de hat dir geschrieben:\n\n" . ($text === '' ? '[Bild, bitte auf der Webseite ansehen]' : $text) . "\n\n---\nAuf diese E-Mail kannst du nicht antworten. Bitte antworte auf der Webseite unter „Kontakt“:\n$base/\n");
+            }
+        } catch (Throwable $e) { $mailed = false; }
+    }
+    json_out(['ok' => true, 'mailed' => $mailed]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);
