@@ -385,3 +385,5 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .bugno{font:500 13px var(--font-mono);color:var(--muted);margin-right:2px}
 .fbdone{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin-top:6px;cursor:pointer}
 .gonename{text-decoration:line-through;text-decoration-color:var(--muted)}
+
+.fbacts .fbdel{margin-left:auto}
