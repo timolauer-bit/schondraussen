@@ -85,6 +85,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <button id="canceldel" type="button">Löschung abbrechen</button> <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php elseif (!empty($u['rename'])): ?>
   <p><b>Bitte wähle einen neuen Benutzernamen.</b> Dein bisheriger Name entspricht nicht den Regeln. Bis du einen neuen gewählt hast, kannst du die Seite nicht nutzen.</p>
+  <p class="fine">3 bis 20 Zeichen. Erlaubt sind Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich und Bindestrich, ohne Leerzeichen und nicht am Anfang oder Ende.</p>
   <form id="f-rename"><label for="rn">Neuer Benutzername (3 bis 20 Zeichen)</label><input id="rn" type="text" maxlength="20" minlength="3" required autocomplete="off">
     <button type="submit">Speichern</button> <button id="logout" type="button" class="ghost">Abmelden</button></form><div class="msg" id="msg" role="status"></div></div>
 <?php else: ?>
@@ -107,7 +108,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück</button></div></form>
     <form id="f-register" hidden><h2 style="margin:0 0 4px;font-size:20px">Registrieren</h2>
       <label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required>
-      <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich">
+      <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich"><p class="fine" style="margin:4px 0 0">3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich, ohne Leerzeichen.</p>
       <label for="rp">Passwort (mindestens 10 Zeichen)</label><input id="rp" type="password" autocomplete="new-password" minlength="10" required>
       <label for="rp2">Passwort wiederholen</label><input id="rp2" type="password" autocomplete="new-password" minlength="10" required>
       <div class="chk"><input id="ra" type="checkbox" required><label for="ra" style="margin:0">Ich habe die <a href="/datenschutz.php" target="_blank">Datenschutzerklärung</a> gelesen.</label></div>
