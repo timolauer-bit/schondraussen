@@ -569,6 +569,77 @@
       } }, 'Importieren'), imsg));
     imp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { ipanel.hidden = !ipanel.hidden; this.setAttribute('aria-expanded', String(!ipanel.hidden)); } }, 'Musikerliste importieren'), ipanel);
     box.append(imp);
+    // Trakt-Import (Export-ZIP oder einzelne JSON-Dateien), alles im Browser ausgewertet
+    var tImp = h('div', { class: 'wide2' }), tFile = h('input', { type: 'file', multiple: true, accept: '.zip,.json,application/zip,application/json', 'aria-label': 'Trakt-Export laden' }), tMsg = h('p', { class: 'msg', role: 'status' }), tGo = h('button', { class: 'btn', type: 'button', hidden: true }, 'Importieren'), tPanel = h('div', { hidden: true, style: 'margin-top:10px' }), tItems = [];
+    function zipRead(buf) {
+      var dv = new DataView(buf), u8 = new Uint8Array(buf), out = [], eocd = -1, i;
+      for (i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 70000); i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+      if (eocd < 0) return Promise.reject(new Error('Das ist keine gültige ZIP-Datei.'));
+      var n = dv.getUint16(eocd + 10, true), p0 = dv.getUint32(eocd + 16, true), jobs = [];
+      for (i = 0; i < n && i < 500; i++) {
+        if (dv.getUint32(p0, true) !== 0x02014b50) break;
+        var meth = dv.getUint16(p0 + 10, true), cs = dv.getUint32(p0 + 20, true), us = dv.getUint32(p0 + 24, true), nl = dv.getUint16(p0 + 28, true), el = dv.getUint16(p0 + 30, true), cl = dv.getUint16(p0 + 32, true), lo = dv.getUint32(p0 + 42, true);
+        var name = new TextDecoder().decode(u8.subarray(p0 + 46, p0 + 46 + nl)); p0 += 46 + nl + el + cl;
+        if (!/\.json$/i.test(name) || us > 60 * 1024 * 1024) continue;
+        var ds = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), data = u8.subarray(ds, ds + cs);
+        (function (nm, m, d) {
+          if (m === 0) jobs.push(Promise.resolve({ name: nm, text: new TextDecoder().decode(d) }));
+          else if (m === 8 && window.DecompressionStream) jobs.push(new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text().then(function (t) { return { name: nm, text: t }; }));
+        })(name, meth, data);
+      }
+      if (!jobs.length) return Promise.reject(new Error(window.DecompressionStream ? 'In der ZIP-Datei habe ich keine JSON-Dateien gefunden.' : 'Dein Browser kann ZIP-Dateien nicht entpacken. Entpacke sie bitte selbst und wähle die JSON-Dateien aus.'));
+      return Promise.all(jobs);
+    }
+    function traktParse(docs) {
+      var map = {}, order = [];
+      function get(type, name, year) { var k = type + '|' + name.toLowerCase(); if (!map[k]) { map[k] = { type: type, name: name, year: year || null, eps: {} }; order.push(k); } return map[k]; }
+      function walk(o, hint) {
+        if (Array.isArray(o)) { o.forEach(function (x) { walk(x, hint); }); return; }
+        if (!o || typeof o !== 'object') return;
+        if (o.show && typeof o.show.title === 'string') {
+          var it = get('series', o.show.title, o.show.year);
+          if (o.episode && typeof o.episode.number === 'number') it.eps[(o.episode.season | 0) + 'x' + o.episode.number] = [o.episode.season | 0, o.episode.number];
+          (o.seasons || []).forEach(function (sn) { (sn.episodes || []).forEach(function (ep) { if (typeof ep.number === 'number') it.eps[(sn.number | 0) + 'x' + ep.number] = [sn.number | 0, ep.number]; }); });
+          return;
+        }
+        if (o.movie && typeof o.movie.title === 'string') { get('film', o.movie.title, o.movie.year); return; }
+        if (typeof o.title === 'string' && o.ids && typeof o.ids === 'object' && (hint === 'film' || hint === 'series')) { get(hint, o.title, o.year); return; }
+        Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') walk(o[k], hint); });
+      }
+      docs.forEach(function (d) { var hint = /movie|film/i.test(d.name) ? 'film' : /show|serie|episode/i.test(d.name) ? 'series' : ''; try { walk(JSON.parse(d.text.replace(/^﻿/, '')), hint); } catch (_) {} });
+      return order.map(function (k) { var x = map[k]; return { type: x.type, name: x.name, year: x.year, eps: Object.keys(x.eps).map(function (e) { return x.eps[e]; }) }; });
+    }
+    tFile.addEventListener('change', function () {
+      var fs = [].slice.call(tFile.files || []); if (!fs.length) return; tGo.hidden = true; tItems = [];
+      tMsg.className = 'msg'; tMsg.textContent = 'Lese Datei …';
+      Promise.all(fs.map(function (f) {
+        if (f.size > 80 * 1024 * 1024) return Promise.reject(new Error('Eine Datei ist größer als 80 MB.'));
+        return /\.zip$/i.test(f.name) ? f.arrayBuffer().then(zipRead) : f.text().then(function (t) { return [{ name: f.name, text: t }]; });
+      })).then(function (parts) {
+        tItems = traktParse([].concat.apply([], parts));
+        var ns = tItems.filter(function (x) { return x.type === 'series'; }).length, nf = tItems.length - ns, ne = tItems.reduce(function (a, x) { return a + x.eps.length; }, 0);
+        if (!tItems.length) { tMsg.className = 'msg err'; tMsg.textContent = 'Ich habe keine Serien oder Filme gefunden. Wähle die ZIP-Datei aus dem Trakt-Export oder JSON-Dateien daraus (z. B. Watchlist und Verlauf).'; return; }
+        tMsg.className = 'msg'; tMsg.textContent = 'Erkannt: ' + pl(ns, 'Serie', 'Serien') + ', ' + pl(nf, 'Film', 'Filme') + (ne ? ' und ' + pl(ne, 'gesehene Folge', 'gesehene Folgen') : '') + '. Pro Liste passen höchstens 100 Einträge, der Rest wird übersprungen.'; tGo.hidden = false;
+      }).catch(function (e) { tMsg.className = 'msg err'; tMsg.textContent = e.message || 'Die Datei konnte nicht gelesen werden.'; });
+    });
+    tGo.addEventListener('click', function () {
+      var items = tItems.slice(), tot = { series: { added: 0, had: 0, over: 0 }, film: { added: 0, had: 0, over: 0 }, eps: 0 }; tGo.disabled = true; tMsg.className = 'msg'; tMsg.textContent = 'Importiere …';
+      (function next() {
+        if (!items.length) {
+          tGo.disabled = false; tGo.hidden = true; tItems = [];
+          function part(k, one, many) { var o = tot[k]; return pl(o.added, one, many) + ' neu' + (o.had ? ', ' + o.had + ' schon vorhanden' : '') + (o.over ? ', ' + o.over + ' wegen der Grenze von 100 übersprungen' : ''); }
+          tMsg.textContent = 'Fertig: ' + part('series', 'Serie', 'Serien') + '; ' + part('film', 'Film', 'Filme') + '; ' + pl(tot.eps, 'Folge', 'Folgen') + ' als gesehen markiert. Die Angaben werden nach und nach geladen.';
+          load(function () { nav(); }); return;
+        }
+        api('/api/data.php?a=trakt', { items: items.splice(0, 40).map(function (x) { return { type: x.type, name: x.name, eps: x.eps }; }) }).then(function (r) {
+          if (!r.ok) { tGo.disabled = false; tMsg.className = 'msg err'; tMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; }
+          ['series', 'film'].forEach(function (k) { ['added', 'had', 'over'].forEach(function (f) { tot[k][f] += r[k][f]; }); }); tot.eps += r.eps; next();
+        });
+      })();
+    });
+    tPanel.append(h('p', { class: 'hint' }, 'Lade deinen Datenexport von Trakt hoch (die ZIP-Datei oder einzelne JSON-Dateien daraus, z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Die Datei wird nur in deinem Browser gelesen, übertragen werden die Titel und gesehenen Folgen. Die Angaben zu den Titeln werden danach nach und nach geladen.'), tFile, h('p', { style: 'margin:8px 0 0' }, tGo), tMsg);
+    tImp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { tPanel.hidden = !tPanel.hidden; this.setAttribute('aria-expanded', String(!tPanel.hidden)); } }, 'Trakt-Export importieren'), tPanel);
+    box.append(tImp);
     // Kalender-Abo (.ics)
     var calUrl = h('input', { type: 'text', readonly: true, 'aria-label': 'Link zum Kalender-Abo', style: 'width:100%;margin-top:8px', onclick: function () { this.select(); } }), calMsg = h('p', { class: 'msg', role: 'status' }), calBtns = h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' });
     function calSet(mode) { calMsg.className = 'msg'; calMsg.textContent = 'Einen Moment …'; api('/api/data.php?a=caltoken', { mode: mode }).then(function (r) { if (!r.ok) { calMsg.className = 'msg err'; calMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } calMsg.textContent = mode === 'off' ? 'Das Abo ist beendet, der alte Link funktioniert nicht mehr.' : (mode === 'reset' ? 'Neuer Link erzeugt, der alte funktioniert nicht mehr.' : ''); calDraw(r.url); }); }

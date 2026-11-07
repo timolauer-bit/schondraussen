@@ -173,6 +173,30 @@ if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     json_out(['ok' => true, 'added' => $added, 'had' => $had, 'over' => $over]);
 }
+if ($a === 'trakt' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Import aus einem Trakt-Export (vom Browser vorbereitet: Serien/Filme + gesehene Folgen)
+    $items = (array) (body()['items'] ?? []); $res = ['series' => ['added' => 0, 'had' => 0, 'over' => 0], 'film' => ['added' => 0, 'had' => 0, 'over' => 0], 'eps' => 0];
+    $room = []; foreach (['series', 'film'] as $t) { $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $t]); $room[$t] = max(0, 100 - (int) $c->fetchColumn()); }
+    $off = isset($u['bell_default']) && !(int) $u['bell_default']; $seen = []; $epBudget = 20000; $n = 0;
+    $chk = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $ue = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)');
+    $dn = $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)');
+    foreach ($items as $it) {
+        if (++$n > 600 || !is_array($it)) break;
+        $t = ($it['type'] ?? '') === 'film' ? 'film' : 'series'; $nm = trim(preg_replace('/[\x00-\x1f\s]+/u', ' ', (string) ($it['name'] ?? '')));
+        if ($nm === '' || mb_strlen($nm) > 190 || isset($seen[$t . mb_strtolower($nm)])) continue; $seen[$t . mb_strtolower($nm)] = 1;
+        $pdo->prepare('INSERT INTO subjects (type,name) VALUES (?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$t, $nm]); $sid = (int) $pdo->lastInsertId();
+        $chk->execute([$u['id'], $sid]);
+        if ($chk->fetch()) $res[$t]['had']++;
+        elseif ($room[$t] <= 0) { $res[$t]['over']++; continue; }
+        else {
+            $ue->execute([$u['id'], $sid]); $room[$t]--; $res[$t]['added']++;
+            if ($off) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
+        }
+        if ($t === 'series' && !empty($it['eps']) && is_array($it['eps'])) {
+            try { foreach ($it['eps'] as $e) { if ($epBudget <= 0) break; $s1 = (int) ($e[0] ?? 0); $n1 = (int) ($e[1] ?? 0); if ($s1 < 0 || $s1 > 100 || $n1 < 1 || $n1 > 2000) continue; $dn->execute([$u['id'], $sid, 'e' . $s1 . 'x' . $n1]); $res['eps'] += $dn->rowCount(); $epBudget--; } } catch (Throwable $e) {}
+        }
+    }
+    json_out(['ok' => true] + $res);
+}
 if ($a === 'samples' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = (string) (body()['mode'] ?? '');
     try { if ($mode !== 'remove') $pdo->prepare('UPDATE users SET sample_asked=1 WHERE id=?')->execute([$u['id']]); } catch (Throwable $e) { json_out(['ok' => false, 'msg' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }

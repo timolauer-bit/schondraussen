@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Trakt-Import in den Einstellungen: Export-ZIP oder JSON-Dateien hochladen, Serien und Filme kommen auf die Liste, gesehene Folgen werden abgehakt',
     'F|Ideen und Bugmeldungen bestehen jetzt aus Kurzbeschreibung (Titel in der Liste) und Details (im Rahmen beim Aufklappen); die Zahl der Anhänge steht am Titel',
     'F|Bei Ideen und Bugmeldungen lassen sich neben Bildern auch Textdateien anhängen (.txt, .log, .md, .csv, .json, bis 200 KB); insgesamt bis zu 3 Anhänge',
     'U|Versionsverlauf: Nur die neuesten drei Versionen sind aufgeklappt, ältere lassen sich per Klick öffnen; Ideen und Bugs zeigen vor dem Titel ebenfalls einen Pfeil zum Auf- und Zuklappen',
