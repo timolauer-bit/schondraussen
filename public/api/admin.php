@@ -1,6 +1,8 @@
 <?php
 // Nutzerverwaltung (nur Admin)
 require __DIR__ . '/../lib/bootstrap.php';
+require_once __DIR__ . '/../lib/mail.php';
+if (!function_exists('valid_email')) { function valid_email(string $e): bool { return strlen($e) <= 190 && filter_var($e, FILTER_VALIDATE_EMAIL); } }
 $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
@@ -25,6 +27,15 @@ if ($a === 'users') {
         unset($x);
     } catch (Throwable $e) {}
     json_out(['users' => $r, 'me' => (int) $u['id']]);
+}
+if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Testmail im Format der echten Benachrichtigungen (für mail-tester.com u. ä.)
+    require_once __DIR__ . '/../lib/notify.php';
+    $to = trim((string) ($b['email'] ?? ''));
+    if (!valid_email($to)) json_out(['ok' => false, 'error' => 'Bitte eine gültige E-Mail-Adresse eingeben.']);
+    $unsub = base_url() . '/unsubscribe.php?t=' . bin2hex(random_bytes(20)); // Platzhalter, nicht mit einem Konto verbunden
+    $text = "Hallo,\n\nbei deinen Einträgen gibt es Neues:\n\n- Beispiel-Künstler: neues Album „Beispieltitel“ erscheint am 20.11.2026\n- Beispiel-Autorin: neues Buch „Beispielroman“ erscheint am 03.12.2026\n\nAlle Termine siehst du im Kalender: " . base_url() . "/\n\nDas ist eine Testmail im Format der echten Benachrichtigungen.\n";
+    $ok = send_mail($to, 'Neuerscheinungen bei deinen Einträgen (Testmail)', $text . mail_footer($unsub), ["List-Unsubscribe: <$unsub>", 'List-Unsubscribe-Post: List-Unsubscribe=One-Click']);
+    json_out(['ok' => (bool) $ok, 'error' => $ok ? null : 'Die Mail konnte nicht gesendet werden.']);
 }
 if ($a === 'invite_list') {
     try { $r = $pdo->query("SELECT id,email,created_at,expires_at FROM invites WHERE used_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 50")->fetchAll(); }
