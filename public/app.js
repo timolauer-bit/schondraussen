@@ -639,7 +639,7 @@
     });
     tPanel.append(h('p', { class: 'hint' }, 'Lade deinen Datenexport von Trakt hoch (die ZIP-Datei oder einzelne JSON-Dateien daraus, z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Die Datei wird nur in deinem Browser gelesen, übertragen werden die Titel und gesehenen Folgen. Die Angaben zu den Titeln werden danach nach und nach geladen.'), tFile, h('p', { style: 'margin:8px 0 0' }, tGo), tMsg);
     tImp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { tPanel.hidden = !tPanel.hidden; this.setAttribute('aria-expanded', String(!tPanel.hidden)); } }, 'Trakt-Export importieren'), tPanel);
-    box.append(tImp);
+    tImp.style.marginTop = '12px'; imp.append(tImp); // gehört in dieselbe Karte „Import“ (die Karten werden über die Reihenfolge der Blöcke zugeordnet)
     // Kalender-Abo (.ics)
     var calUrl = h('input', { type: 'text', readonly: true, 'aria-label': 'Link zum Kalender-Abo', style: 'width:100%;margin-top:8px', onclick: function () { this.select(); } }), calMsg = h('p', { class: 'msg', role: 'status' }), calBtns = h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' });
     function calSet(mode) { calMsg.className = 'msg'; calMsg.textContent = 'Einen Moment …'; api('/api/data.php?a=caltoken', { mode: mode }).then(function (r) { if (!r.ok) { calMsg.className = 'msg err'; calMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } calMsg.textContent = mode === 'off' ? 'Das Abo ist beendet, der alte Link funktioniert nicht mehr.' : (mode === 'reset' ? 'Neuer Link erzeugt, der alte funktioniert nicht mehr.' : ''); calDraw(r.url); }); }
