@@ -398,3 +398,5 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .ovd{flex:0 0 90px;font-variant-numeric:tabular-nums}
 .tipd{cursor:help}
 .logold>summary{cursor:pointer;list-style:none}.logold>summary::-webkit-details-marker{display:none}.logold>summary h3{margin:0;display:flex;align-items:baseline;gap:8px}.logold>summary h3::before{content:'▸';color:var(--muted);font-size:13px}.logold[open]>summary h3::before{content:'▾'}.logold>summary:hover h3{color:var(--accent)}
+.fbhead::before{content:'▸';color:var(--muted);font-size:13px;flex:0 0 auto}
+.fbhead[aria-expanded=true]::before{content:'▾'}

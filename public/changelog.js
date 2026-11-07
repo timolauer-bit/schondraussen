@@ -1,7 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
-    'U|Versionsverlauf: Nur die neuesten drei Versionen sind aufgeklappt, ältere lassen sich per Klick öffnen',
+    'U|Versionsverlauf: Nur die neuesten drei Versionen sind aufgeklappt, ältere lassen sich per Klick öffnen; Ideen und Bugs zeigen vor dem Titel ebenfalls einen Pfeil zum Auf- und Zuklappen',
     'U|Weitere Tooltips: Stand der Daten, „Angabe bei x von y“, „Treffer ändern“, Gesehen/Gelesen/Gehört-Schalter und Staffelfortschritt',
     'U|Übersicht: Datumsangaben bei den kommenden Veröffentlichungen einheitlich (TT.MM.JJJJ, bei unbekanntem Tag z. B. „Okt 2027“)',
     'U|Übersicht: Erklärungen als Tooltip bei den Zahlenfeldern (z. B. warum „Bücher insgesamt“ höher liegt als die Zahl in der Liste)',
