@@ -197,6 +197,17 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     }
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
+    // Neu bei der Quelle aufgetauchte Bücher (letzte 4 Wochen) wie Ankündigungen behandeln; beim ersten Abruf wird nur der Bestand gemerkt.
+    try {
+        $have = $pdo->prepare('SELECT k,first_seen FROM work_seen WHERE subject_id=?'); $have->execute([$sid]); $H = $have->fetchAll(PDO::FETCH_KEY_PAIR); $first = !$H;
+        $insS = $pdo->prepare('INSERT IGNORE INTO work_seen (subject_id,k,first_seen) VALUES (?,?,?)');
+        $today = date('Y-m-d'); $limit = date('Y-m-d', strtotime('-28 days')); $nNew = 0; $relT = []; foreach ($rel as $x) $relT[mb_strtolower($x[0])] = 1;
+        foreach ($works as $x) {
+            $k = sha1(mb_strtolower($x[0]));
+            if (!isset($H[$k])) { $H[$k] = $first ? '2000-01-01' : $today; $insS->execute([$sid, $k, $H[$k]]); }
+            if ($H[$k] >= $limit && $nNew < 10 && !isset($relT[mb_strtolower($x[0])])) { $nNew++; $rel[] = [$x[0], (string) ($x[1] ?: $y), 'Buch', 'neu hinzugefügt']; }
+        }
+    } catch (Throwable $e) {}
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
@@ -206,7 +217,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_slice($works, 0, 200) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
         $q = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
-        foreach (array_slice($rel, 0, 20) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        foreach (array_slice($rel, 0, 30) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3] ?? null]);
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt'];
