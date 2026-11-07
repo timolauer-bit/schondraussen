@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Einträge (z. B. Serien): Der Beschreibungstext nutzt jetzt die volle Breite der Karte statt einer schmaleren Spalte',
     'U|Einheitlicher Abstand (10 Pixel) zwischen Hinweis- oder Beschriftungstexten und den darunterstehenden Eingabefeldern in Einstellungen, Admin und Infoseiten',
     'U|Adminmenü: Die Bereiche sind jetzt auf Reiter verteilt (Nutzer, Inhalte, Mails, Sicherheit). Bei „Nutzer“ zeigt eine Marke, wie viele Konten auf Freischaltung warten; der gewählte Reiter bleibt beim Neuladen im selben Tab erhalten',
     'A|Admin: Systemnachrichten. Im Adminmenü schreibst du eine Nachricht mit Überschrift und Text; sie erscheint allen Nutzern beim nächsten Seitenbesuch als Fenster mit X oben rechts. Darunter die letzten 20 Nachrichten mit Zahl der Nutzer, die sie weggeklickt haben, und Löschen. Neue Konten sehen nur Nachrichten, die nach ihrer Anmeldung erschienen sind. Erfordert Migration 040',

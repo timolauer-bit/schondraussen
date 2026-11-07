@@ -435,3 +435,4 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 /* einheitlicher Abstand zwischen Hinweis/Beschriftung und Eingabe */
 .panel .hint+.inline,.setcard .hint+.inline,.panel .hint+.add,.setcard .hint+.add,.panel .hint+.field,.setcard .hint+.field,.panel .hint+.chatform,.setcard .hint+.chatform,.panel .hint+form,.setcard .hint+form,.panel .hint+input,.setcard .hint+input,.panel .hint+textarea,.setcard .hint+textarea,.panel .hint+select,.setcard .hint+select,.panel .label+.inline,.setcard .label+.inline,.panel .label+.add,.setcard .label+.add,.panel .label+.field,.setcard .label+.field,.panel .label+.chatform,.setcard .label+.chatform,.panel .label+form,.setcard .label+form,.panel .label+input,.setcard .label+input,.panel .label+textarea,.setcard .label+textarea,.panel .label+select,.setcard .label+select{margin-top:10px!important}
 .panel .label+.hint,.setcard .label+.hint{margin-top:4px}
+.card .sum{max-width:none}
