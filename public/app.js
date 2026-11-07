@@ -4,10 +4,10 @@
   var CL = window.CHANGELOG || [], LATEST = CL.length ? CL[0].v : 1;
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
   var TYPES = {
-    author: { label: 'Autor:in', plural: 'Autor:innen', ph: 'z. B. Terry Pratchett', idx: 'stripbooks', work: 'Bücher' },
-    artist: { label: 'Musiker:in', plural: 'Musiker:innen', ph: 'z. B. Radiohead', idx: 'music', work: 'Alben' },
-    film: { label: 'Film', plural: 'Filme', ph: 'z. B. Dune', idx: 'video', work: 'Filme' },
-    series: { label: 'Serie', plural: 'Serien', ph: 'z. B. Severance', idx: 'video', work: 'Staffeln' }
+    author: { label: 'Bücher', plural: 'Bücher', who: 'Autor:innen', ph: 'z. B. Terry Pratchett', idx: 'stripbooks', work: 'Bücher' },
+    artist: { label: 'Musik', plural: 'Musik', who: 'Musiker:innen', ph: 'z. B. Radiohead', idx: 'music', work: 'Alben' },
+    film: { label: 'Film', plural: 'Filme', who: 'Filme', ph: 'z. B. Dune', idx: 'video', work: 'Filme' },
+    series: { label: 'Serie', plural: 'Serien', who: 'Serien', ph: 'z. B. Severance', idx: 'video', work: 'Staffeln' }
   };
   var ORDER = ['author', 'artist', 'film', 'series'], MAXN = 100;
   var CATCOL = { author: 'var(--c-author)', artist: 'var(--c-artist)', film: 'var(--c-film)', series: 'var(--c-series)' };
@@ -389,7 +389,7 @@
   }
   function renderSimilar(e) {
     var t = TYPES[e.type], sec = h('section', { class: 'similar' }), body = h('div', null);
-    sec.append(h('h3', { class: 'sec' }, 'Ähnliche ' + t.plural), body);
+    sec.append(h('h3', { class: 'sec' }, 'Ähnliche ' + t.who), body);
     function ask(fresh) {
       body.textContent = ''; body.append(h('p', { class: 'state pulse' }, 'Suche Vorschläge …'));
       api('/api/suggest.php?a=similar&id=' + e.id + (fresh ? '&fresh=1' : '')).then(function (r) {
@@ -404,7 +404,7 @@
   }
   function popularBox(cat) {
     var t = TYPES[cat], sec = h('section', { class: 'similar' }), chips = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Genre wählen' }), out = h('div', null), cur = null;
-    sec.append(h('h3', { class: 'sec' }, 'Beliebte ' + t.plural + ' entdecken'));
+    sec.append(h('h3', { class: 'sec' }, 'Beliebte ' + t.who + ' entdecken'));
     if (!POP[cat]) { sec.append(h('p', { class: 'hint' }, 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.')); return sec; }
     sec.append(h('p', { class: 'hint' }, 'Wähle ein Genre und bekomme bis zu 10 typische Vorschläge, die du mit einem Klick auf deine Liste setzt.'), chips, out);
     function draw() { chips.textContent = ''; POP[cat].forEach(function (g) { chips.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(cur === g[1]), onclick: function () { cur = g[1]; draw(); go2(g); } }, g[0])); }); }
@@ -764,8 +764,8 @@
       '<section class="infosec"><h3>Zum Testen</h3><p>Trage bitte möglichst unterschiedliche Musiker:innen, Autor:innen und Serien ein, am besten auch solche mit angekündigten Neuerscheinungen. So sehe ich, wo die Angaben stimmen und wo etwas fehlt. Schau außerdem, ob der Kalender die Termine zeigt, ob die Mails ankommen und ob die Seite auf deinem Handy gut aussieht. Die Daten kommen aus den Quellen unten und können noch Lücken haben; manchmal tauchen auch fremdsprachige Ergebnisse auf. Fällt dir etwas auf, schreib mir über „Kontakt“.</p></section>' +
       '<section class="infosec"><h3>Wann werden Einträge erneuert?</h3><p>Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf. Beim Hinzufügen eines Eintrags und über „Aktualisieren“ werden die Daten sofort geladen. Das Datum steht als „Stand“ am Eintrag.</p><p class="muted" id="lastrun"></p><p class="muted"><a href="https://stats.uptimerobot.com/hWI2Kjc0jq" target="_blank" rel="noopener">Systemstatus ansehen</a> (zeigt, ob die Seite erreichbar ist)</p></section>' +
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
-      '<div class="infocat"><h4>Autor:innen</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
-      '<div class="infocat"><h4>Musiker:innen</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
+      '<div class="infocat"><h4>Bücher</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
+      '<div class="infocat"><h4>Musik</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
       '<div class="infocat"><h4>Filme</h4><p>Die Datenquelle wird noch angebunden, vorgesehen ist <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Einträge kannst du schon anlegen.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen.</p></div>' +
       '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div></section>';

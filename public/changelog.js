@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Kategorien heißen jetzt „Bücher“ und „Musik“ statt „Autor:innen“ und „Musiker:innen“ (Menü, Übersicht, Info und Anmeldeseite); die Einträge selbst bleiben Autor:innen und Musiker:innen',
     'A|Nutzerverwaltung: Tooltip am Benutzernamen mit den letzten drei Namensänderungen und Datum (ab jetzt erfasst)',
     'U|Obere Leiste: Einstellungen, Ideen, Bugs, Info und Kontakt zeigen für alle nur Symbole; der Name steht nur bei der geöffneten Seite',
     'O|Neue „Nerdoption“ in den Einstellungen: zeigt die Zahl neuer Änderungen an der Versionsnummer und im Versionsverlauf die neuen Einträge seit dem letzten Besuch (für Admin und Alphatester immer an)',
