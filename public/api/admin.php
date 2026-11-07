@@ -18,6 +18,12 @@ if ($a === 'users') {
         if (!empty($x['hide_activity']) && $x['role'] !== 'admin') { $x['seen_label'] = seen_bucket($x['last_seen_at']); $x['last_seen_at'] = null; }
     }
     unset($x);
+    try { // letzte Namensänderungen (bis zu 3 je Nutzer)
+        $hist = [];
+        foreach ($pdo->query('SELECT user_id,old_name,new_name,changed_at FROM username_log ORDER BY id DESC LIMIT 2000')->fetchAll() as $h) { if (count($hist[$h['user_id']] ?? []) < 3) $hist[$h['user_id']][] = ['from' => $h['old_name'], 'to' => $h['new_name'], 'at' => $h['changed_at']]; }
+        foreach ($r as &$x) $x['name_hist'] = $hist[$x['id']] ?? [];
+        unset($x);
+    } catch (Throwable $e) {}
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
 if ($a === 'reveal' && $_SERVER['REQUEST_METHOD'] === 'POST') { // E-Mail eines Nutzers aufdecken, wird protokolliert
