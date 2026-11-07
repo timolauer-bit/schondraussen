@@ -387,3 +387,6 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .gonename{text-decoration:line-through;text-decoration-color:var(--muted)}
 
 .fbacts .fbdel{margin-left:auto}
+.fbacts .vote{flex-direction:row;gap:6px;min-width:0;padding:4px 10px;min-height:32px;border-radius:8px}
+.fbacts .vote svg{width:16px;height:16px}
+.fbacts .btn.small{min-height:32px}
