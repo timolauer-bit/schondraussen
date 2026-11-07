@@ -37,6 +37,24 @@ if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Testmail im
     $ok = send_mail($to, 'Neuerscheinungen bei deinen Einträgen (Testmail)', $text . mail_footer($unsub), ["List-Unsubscribe: <$unsub>", 'List-Unsubscribe-Post: List-Unsubscribe=One-Click']);
     json_out(['ok' => (bool) $ok, 'error' => $ok ? null : 'Die Mail konnte nicht gesendet werden.']);
 }
+if ($a === 'news_list') {
+    try { $r = $pdo->query('SELECT n.id,n.title,n.body,n.created_at,(SELECT COUNT(*) FROM announcement_reads r WHERE r.ann_id=n.id) AS reads_n FROM announcements n ORDER BY n.id DESC LIMIT 20')->fetchAll(); }
+    catch (Throwable $e) { json_out(['news' => [], 'needs_migration' => true]); }
+    json_out(['news' => $r]);
+}
+if ($a === 'news_create' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Systemnachricht: erscheint allen Nutzern beim nächsten Besuch als Hinweisfenster
+    $t = trim((string) ($b['title'] ?? '')); $x = trim((string) ($b['body'] ?? ''));
+    if (mb_strlen($t) < 3 || mb_strlen($t) > 120) json_out(['error' => 'Die Überschrift braucht 3 bis 120 Zeichen.'], 400);
+    if (mb_strlen($x) < 3 || mb_strlen($x) > 2000) json_out(['error' => 'Der Text braucht 3 bis 2000 Zeichen.'], 400);
+    try { $pdo->prepare('INSERT INTO announcements (title,body) VALUES (?,?)')->execute([$t, $x]); }
+    catch (Throwable $e) { json_out(['error' => 'Bitte zuerst Migration 040 einspielen.'], 500); }
+    json_out(['ok' => true]);
+}
+if ($a === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $i = (int) ($b['id'] ?? 0);
+    try { $pdo->prepare('DELETE FROM announcements WHERE id=?')->execute([$i]); $pdo->prepare('DELETE FROM announcement_reads WHERE ann_id=?')->execute([$i]); } catch (Throwable $e) {}
+    json_out(['ok' => true]);
+}
 if ($a === 'invite_list') {
     try { $r = $pdo->query("SELECT id,email,created_at,expires_at FROM invites WHERE used_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 50")->fetchAll(); }
     catch (Throwable $e) { json_out(['invites' => [], 'needs_migration' => true]); }

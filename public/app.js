@@ -1054,7 +1054,12 @@
     var tmMail = h('input', { type: 'email', maxlength: '120', placeholder: 'Adresse, z. B. von mail-tester.com', 'aria-label': 'Empfängeradresse der Testmail', autocomplete: 'off', style: 'flex:1;min-width:220px' }), tmMsg = h('p', { class: 'msg', role: 'status' });
     var tmBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Schickt eine Mail im Format der echten Benachrichtigungen (mit Abmeldelink und List-Unsubscribe-Kopfzeile, der Link ist ein Platzhalter). Damit kannst du die Zustellbarkeit prüfen, zum Beispiel mit der Testadresse von mail-tester.com.'),
       h('form', { class: 'inline', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); tmMsg.className = 'msg'; tmMsg.textContent = 'Sende …'; api('/api/admin.php?a=testmail', { email: tmMail.value }).then(function (r) { if (r.ok) tmMsg.textContent = 'Testmail wurde gesendet.'; else { tmMsg.className = 'msg err'; tmMsg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, tmMail, h('button', { class: 'btn', type: 'submit' }, 'Testmail senden')), tmMsg);
-    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Neue Konten sehen erst Inhalte, wenn du sie freischaltest. Beim Löschen verschwinden Konto und Liste.'));
+    var nwT = h('input', { type: 'text', maxlength: '120', placeholder: 'Überschrift', 'aria-label': 'Überschrift der Systemnachricht', autocomplete: 'off' }), nwB = h('textarea', { rows: '4', maxlength: '2000', placeholder: 'Haupttext', 'aria-label': 'Text der Systemnachricht' }), nwMsg = h('p', { class: 'msg', role: 'status' }), nwList = h('div', { style: 'margin-top:10px;display:grid;gap:8px' });
+    function nwLoad() { api('/api/admin.php?a=news_list').then(function (r) { nwList.textContent = ''; if (r.needs_migration) { nwList.append(h('p', { class: 'hint' }, 'Bitte zuerst Migration 040 einspielen.')); return; } if (!(r.news || []).length) nwList.append(h('p', { class: 'hint' }, 'Noch keine Systemnachrichten.')); (r.news || []).forEach(function (n) { nwList.append(h('div', { class: 'cfgpanel', style: 'margin:0' }, h('b', null, n.title), h('div', { class: 'hint', style: 'margin:2px 0 4px' }, String(n.created_at).slice(0, 16).replace('T', ' ') + ' · von ' + n.reads_n + ' Nutzern weggeklickt'), h('div', { style: 'white-space:pre-wrap' }, n.body), h('button', { class: 'btn ghost small', type: 'button', style: 'margin-top:8px', onclick: function () { if (!confirm('Nachricht löschen?')) return; api('/api/admin.php?a=news_delete', { id: n.id }).then(nwLoad); } }, 'Löschen'))); }); }); }
+    var nwBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Die Nachricht erscheint allen Nutzern beim nächsten Seitenbesuch als Fenster, das sie mit dem X schließen. Neue Konten sehen nur Nachrichten, die nach ihrer Anmeldung erschienen sind.'),
+      h('form', { autocomplete: 'off', style: 'display:grid;gap:8px', onsubmit: function (ev) { ev.preventDefault(); nwMsg.className = 'msg'; nwMsg.textContent = 'Veröffentliche …'; api('/api/admin.php?a=news_create', { title: nwT.value, body: nwB.value }).then(function (r) { if (r.ok) { nwT.value = ''; nwB.value = ''; nwMsg.textContent = 'Veröffentlicht.'; nwLoad(); } else { nwMsg.className = 'msg err'; nwMsg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, nwT, nwB, h('div', null, h('button', { class: 'btn', type: 'submit' }, 'Veröffentlichen'))), nwMsg, nwList);
+    nwLoad();
+    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Neue Konten sehen erst Inhalte, wenn du sie freischaltest. Beim Löschen verschwinden Konto und Liste.'));
     var box = h('div', { class: 'adm' }), ulast = null, usearch = h('input', { type: 'search', maxlength: '40', placeholder: 'Suchen nach Nummer oder Benutzername', 'aria-label': 'Nutzer suchen', style: 'width:100%;max-width:360px;margin:8px 0', oninput: function () { paint(); } });
     p.append(usearch, box); mainEl.append(p);
     function users() { api('/api/admin.php?a=users').then(function (r) { ulast = r; S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); paint(); }); }
@@ -1119,6 +1124,18 @@
         h('button', { class: 'btn ghost', type: 'button', onclick: function () { try { sessionStorage.setItem('unskip', '1'); } catch (_) {} box.remove(); } }, 'Später'))));
     document.body.append(box); inp.focus();
   }
+  function showNews() {
+    if (S.preview) return;
+    api('/api/data.php?a=news').then(function (r) {
+      var l = r.news || []; if (!l.length) return;
+      var ids = l.map(function (n) { return n.id; });
+      var box = h('div', { class: 'unmodal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'nwh0' }), card = h('div', { class: 'unbox newsbox' });
+      var x = h('button', { class: 'newsx', type: 'button', 'aria-label': 'Schließen', onclick: function () { api('/api/data.php?a=news_read', { ids: ids }); box.remove(); } }, '×');
+      card.append(x);
+      l.forEach(function (n, i) { card.append(h('h2', { id: 'nwh' + i, style: 'margin:' + (i ? '18px' : '0') + ' 28px 6px 0;font-size:20px' }, n.title), h('p', { style: 'margin:0;white-space:pre-wrap' }, n.body)); });
+      box.append(card); document.body.append(box); x.focus();
+    });
+  }
   // Nach F5 wieder dort starten, wo man war (nur im selben Tab und höchstens 8 Stunden; sonst Kalender)
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
@@ -1127,5 +1144,5 @@
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); askName(); unreadPoll(); setInterval(unreadPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  load(function () { render(); showNews(); askName(); unreadPoll(); setInterval(unreadPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();

@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'A|Admin: Systemnachrichten. Im Adminmenü schreibst du eine Nachricht mit Überschrift und Text; sie erscheint allen Nutzern beim nächsten Seitenbesuch als Fenster mit X oben rechts. Darunter die letzten 20 Nachrichten mit Zahl der Nutzer, die sie weggeklickt haben, und Löschen. Neue Konten sehen nur Nachrichten, die nach ihrer Anmeldung erschienen sind. Erfordert Migration 040',
     'F|Bücher: Bücher, die in den letzten 4 Wochen neu bei der Quelle aufgetaucht sind, stehen bei „Kommende Veröffentlichungen“ (Vermerk „neu hinzugefügt“) und gelten für die Mails als neu; beim ersten Abruf eines Eintrags wird nur der Bestand gemerkt. Dazu ein Hinweis (beim Autor und auf der Bücher-Übersicht), dass die freien Schnittstellen kaum zukünftige Bücher liefern. Erfordert Migration 039',
     'F|Bücher: Werke ohne deutsche Ausgabe werden ausgeblendet (Open Library); bei Google Books zählen nur deutsche Titel. Wirkt beim nächsten Aktualisieren des Eintrags',
     'U|„Treffer ändern“: Das Eingabefeld ragt nicht mehr in die Knöpfe „Suchen“ und „Abbrechen“ hinein (bei schmalen Fenstern rutschen die Knöpfe in die nächste Zeile)',

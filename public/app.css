@@ -430,3 +430,4 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .fbedit input,.fbedit textarea{font:inherit}
 .mystats{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;margin:8px 0 0}.mystats dt{color:var(--muted,#666)}.mystats dd{margin:0;font-weight:600}
 #list{margin-top:10px}
+.newsbox{position:relative;max-width:520px;max-height:85vh;overflow:auto}.newsx{position:absolute;top:8px;right:10px;width:32px;height:32px;border:0;background:transparent;color:var(--ink);font-size:26px;line-height:1;cursor:pointer;border-radius:8px}.newsx:hover{background:var(--line)}

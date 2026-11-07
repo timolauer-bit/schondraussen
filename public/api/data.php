@@ -6,6 +6,16 @@ if (!$u) json_out(['error' => 'Bitte anmelden.'], 401);
 if (empty($u['approved'])) json_out(['error' => 'Dein Konto wartet auf Freischaltung.', 'pending' => true], 403);
 $pdo = db(); $a = $_GET['a'] ?? '';
 
+if ($a === 'news') { // ungelesene Systemnachrichten (nur ab dem Anmeldedatum des Kontos)
+    try {
+        $s = $pdo->prepare('SELECT n.id,n.title,n.body,n.created_at FROM announcements n WHERE n.created_at >= (SELECT created_at FROM users WHERE id=?) AND NOT EXISTS (SELECT 1 FROM announcement_reads r WHERE r.ann_id=n.id AND r.user_id=?) ORDER BY n.id DESC LIMIT 3');
+        $s->execute([$u['id'], $u['id']]); json_out(['news' => $s->fetchAll()]);
+    } catch (Throwable $e) { json_out(['news' => []]); }
+}
+if ($a === 'news_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    foreach ((array) (body()['ids'] ?? []) as $i) { try { $pdo->prepare('INSERT IGNORE INTO announcement_reads (user_id,ann_id) VALUES (?,?)')->execute([$u['id'], (int) $i]); } catch (Throwable $e) {} }
+    json_out(['ok' => true]);
+}
 if ($a === 'lastrun') { // grobe Angabe für alle, ohne Namen oder Zahlen einzelner Einträge
     $m = $pdo->query('SELECT TIMESTAMPDIFF(MINUTE, MAX(fetched_at), NOW()) FROM subjects')->fetchColumn();
     json_out(['minutes' => $m === null || $m === false ? null : max(0, (int) $m)]);
