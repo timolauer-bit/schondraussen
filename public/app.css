@@ -411,3 +411,8 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .chatform.fbmode textarea{flex:1 1 100%;width:auto}
 .chatform.fbmode .attach{margin-left:auto}
 .chatform .fbtitle{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit}
+
+.fbacts .fbright{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.fbacts .fbdel{margin-left:0}
+.fbrow.unreleased{border-style:dashed}
+.fbdiv{margin:18px 0 6px;font:650 14px var(--font-body);color:var(--muted)}

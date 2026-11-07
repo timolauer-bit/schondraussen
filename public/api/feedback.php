@@ -13,19 +13,22 @@ $kinds = ['feature' => 'Idee', 'bug' => 'Bugmeldung'];
 if ($a === 'list') {
     $kind = (string) ($_GET['kind'] ?? 'feature');
     if (!isset($kinds[$kind])) json_out(['error' => 'Unbekannte Liste.'], 400);
-    if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
     $doneSel = ''; $doneOrd = '';
+    $relSel = ''; $relOrd = ''; $vis = ''; $hasRel = false;
+    try { $pdo->query('SELECT released_at FROM feedback LIMIT 1'); $hasRel = true; $relSel = ',f.released_at'; $relOrd = 'f.released_at IS NULL, '; } catch (Throwable $e) {}
+    // Ohne Freigabe-Spalte (Migration fehlt) bleibt alles wie früher nur für Admin und Alphatester sichtbar
+    if (!$alpha) { if (!$hasRel) json_out(['items' => [], 'error' => 'Die Liste ist noch nicht freigeschaltet.']); $vis = ' AND (f.released_at IS NOT NULL OR f.user_id=' . (int) $u['id'] . ')'; }
     $noSel = ''; try { $pdo->query('SELECT bug_no FROM feedback LIMIT 1'); $noSel = ',f.bug_no'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone,uu.delete_requested_at AS author_del'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
     try {
-        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel,
+        $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel$relSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id AND v.user_id=?) AS mine_vote
-            FROM feedback f LEFT JOIN users uu ON uu.id=f.user_id WHERE f.kind=? " . ($kind === 'bug'
-                ? "ORDER BY {$doneOrd}FIELD(f.priority,'urgent','normal','low'), f.created_at DESC"
-                : "ORDER BY {$doneOrd}votes DESC, f.created_at DESC") . " LIMIT 300");
+            FROM feedback f LEFT JOIN users uu ON uu.id=f.user_id WHERE f.kind=?$vis " . ($kind === 'bug'
+                ? "ORDER BY {$relOrd}{$doneOrd}FIELD(f.priority,'urgent','normal','low'), f.created_at DESC"
+                : "ORDER BY {$relOrd}{$doneOrd}votes DESC, f.created_at DESC") . " LIMIT 300");
         $s->execute([$u['id'], $kind]); $rows = $s->fetchAll();
     } catch (Throwable $e) { json_out(['items' => [], 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
     foreach ($rows as &$r) {
@@ -85,7 +88,18 @@ if ($a === 'add') {
 $id = (int) ($b['id'] ?? 0);
 $f = $pdo->prepare('SELECT kind FROM feedback WHERE id=?'); $f->execute([$id]); $kind = $f->fetchColumn();
 if (!$kind) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
-if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
+if ($a === 'vote') { // Abstimmen dürfen alle, aber nur bei freigegebenen Ideen
+    $rl = null; try { $q = $pdo->prepare('SELECT released_at FROM feedback WHERE id=?'); $q->execute([$id]); $rl = $q->fetchColumn(); } catch (Throwable $e) {}
+    if (!$alpha && !$rl) json_out(['error' => 'Nicht erlaubt.'], 403);
+} else require_alpha($u);
+if ($a === 'release') {
+    $on = !empty($b['on']);
+    try {
+        $pdo->prepare('UPDATE feedback SET released_at=' . ($on ? 'COALESCE(released_at,NOW())' : 'NULL') . ' WHERE id=?')->execute([$id]);
+        if ($on) $pdo->prepare("UPDATE images SET status='approved' WHERE scope='feedback' AND ref_id=?")->execute([$id]);
+    } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
 
 if ($a === 'vote') {
     if ($kind !== 'feature') json_out(['error' => 'Nur Ideen haben Stimmen.'], 422);

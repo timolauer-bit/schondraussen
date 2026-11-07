@@ -15,9 +15,9 @@ if ($a === 'get') {
         elseif ($im['ref_id'] !== null && $im['scope'] === 'chat') {
             $m = $pdo->prepare('SELECT user_id FROM messages WHERE id=?'); $m->execute([$im['ref_id']]); $ok = (int) $m->fetchColumn() === (int) $u['id'];
         } elseif ($im['ref_id'] !== null && $im['scope'] === 'feedback') {
-            $f = $pdo->prepare('SELECT kind FROM feedback WHERE id=?'); $f->execute([$im['ref_id']]); $kind = $f->fetchColumn();
-            if ($kind === 'bug') $ok = $alpha;                       // Bugs sieht nur Admin/Alpha (Admin oben schon erledigt)
-            elseif ($kind === 'feature') $ok = $alpha; // Ideen sind noch Alpha
+            // Anhänge sehen Admin/Alpha immer, alle anderen nur bei freigegebenen Beiträgen und freigegebenen Anhängen
+            $ok = $alpha;
+            if (!$ok && $im['status'] === 'approved') { try { $f = $pdo->prepare('SELECT released_at FROM feedback WHERE id=?'); $f->execute([$im['ref_id']]); $ok = (bool) $f->fetchColumn(); } catch (Throwable $e) { $ok = false; } }
         }
     }
     if (!$ok) { http_response_code(404); exit; }

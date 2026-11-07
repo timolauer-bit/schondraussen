@@ -122,7 +122,7 @@
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
   // Funktionsstatus: 'alpha' = nur für Admins und Alphatester sichtbar (mit auffälliger Markierung), sonst für alle.
-  var FEATURES = { feat: 'alpha', bugs: 'alpha' }; // Ideen: noch Alpha
+  var FEATURES = {}; // Ideen und Bugs sind für alle sichtbar (freigegebene Beiträge)
   function isAlpha() { return !S.preview && !!D.alpha; }
   function feat(key) { return (FEATURES[key] || 'live') !== 'alpha' || isAlpha(); }
   function alphaBadge() { return h('span', { class: 'alphabadge', title: 'Alpha: Diese Funktion ist noch in Entwicklung und nur für Alphatester sichtbar' }, 'Alpha'); }
@@ -146,7 +146,7 @@
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
     topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
     if (feat('feat')) topbar.append(btn('feat', 'Ideen', 0, ' feat'));
-    if (isAlpha()) topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
+    topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
     topbar.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
     renderVer();
@@ -165,7 +165,7 @@
     saveView();
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug' && isAlpha()) feedbackView('bug');
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug');
   }
 
   /* ---------- Kalender ---------- */
@@ -846,11 +846,11 @@
     }
     function send() {
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (kindSel !== 'chat' && !admin) { var ti = titleIn.value.trim(); if (ti.length < 3) { msg.className = 'msg err'; msg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; titleIn.focus(); return; } } else if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
-      if (!admin && kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (kd === 'feature' ? (feat('feat') ? 'Danke! Deine Idee steht jetzt in der Liste „Ideen“.' : 'Danke! Deine Idee ist angekommen.') : 'Danke! Deine Bugmeldung ist beim Admin angekommen.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
+      if (!admin && kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (kd === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.') + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; drafts = []; drawDrafts(); api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids }).then(function (r) { msg.textContent = r.ok ? '' : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok ? '' : ' err'); pull(); });
     }
     var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
-    var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Idee', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', isAlpha() ? 'Deine Idee landet in der Liste „Ideen“, alle können dafür abstimmen.' : 'Deine Idee landet beim Admin. Die Liste der Ideen ist noch in Entwicklung und für dich noch nicht sichtbar.'], ['bug', 'Bugmeldung', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bugmeldungen sehen nur der Admin und die Alphatester.']];
+    var KINDS = [['chat', 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Idee', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Der Admin schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.'], ['bug', 'Bugmeldung', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Der Admin schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.']];
     function drawKinds() { kindBox.textContent = ''; KINDS.forEach(function (k) { kindBox.append(h('button', { class: 'kindbtn', type: 'button', role: 'radio', 'aria-checked': String(kindSel === k[0]), onclick: function () { var was = scopeOf(); kindSel = k[0]; if (scopeOf() !== was && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = 'Die angehängten Bilder wurden entfernt, weil du die Art gewechselt hast.'; } inp.placeholder = k[2]; kindHint.textContent = k[3]; inp.maxLength = k[0] === 'chat' ? 1000 : 2000; titleIn.hidden = k[0] === 'chat'; form.classList.toggle('fbmode', k[0] !== 'chat'); inp.rows = k[0] === 'chat' ? 2 : 6; fileIn.accept = k[0] === 'chat' ? 'image/jpeg,image/png,image/webp' : 'image/jpeg,image/png,image/webp,text/plain,.txt,.log,.md,.csv,.json'; drawKinds(); drawDrafts(); } }, k[1])); }); }
     drawKinds(); drawNote();
     var fileIn = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: true, hidden: true, onchange: function () { addFiles(fileIn.files); fileIn.value = ''; } });
@@ -879,8 +879,8 @@
     grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [admin ? null : kindBox, admin ? null : kindHint, form, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
-    var bug = kind === 'bug', p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
-      h('p', { class: 'hint' }, bug ? 'Meldungen von Nutzern. Du siehst sie als Admin oder Alphatester. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).')),
+    var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
+      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen stehen unten, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen stehen unten, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
@@ -888,6 +888,7 @@
       box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
       if (!l.length) { box.append(h('p', { class: 'hint' }, bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.')); return; }
+      var pendHead = false;
       l.forEach(function (x) {
         var pics = h('div', { class: 'pics' });
         (x.images || []).forEach(function (im) {
@@ -914,16 +915,21 @@
         var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, x.title, nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null));
         var acts = h('div', { class: 'fbacts' });
         var dbtn = h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!x.done_at), title: x.done_at ? 'Als offen markieren' : 'Als erledigt markieren', onclick: function () { api('/api/feedback.php?a=done', { id: x.id, on: !x.done_at }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, +x.rejected ? 'Abgelehnt' : 'Erledigt');
-        if (bug) acts.append(dbtn);
-        if (bug) ['urgent', 'normal', 'low'].forEach(function (k) { acts.append(h('button', { class: 'btn ghost small prio-' + k, type: 'button', 'aria-pressed': String(x.priority === k), onclick: function () { api('/api/feedback.php?a=priority', { id: x.id, priority: k }).then(function () { reload(); }); } }, PRIO[k][0])); });
+        if (bug && staff) acts.append(dbtn);
+        if (bug) { if (staff) ['urgent', 'normal', 'low'].forEach(function (k) { acts.append(h('button', { class: 'btn ghost small prio-' + k, type: 'button', 'aria-pressed': String(x.priority === k), onclick: function () { api('/api/feedback.php?a=priority', { id: x.id, priority: k }).then(function () { reload(); }); } }, PRIO[k][0])); }); }
         else {
           var on = +x.mine_vote > 0;
-          acts.append(h('button', { class: 'vote' + (on ? ' on' : ''), type: 'button', title: on ? 'Stimme zurücknehmen' : 'Dafür stimmen', 'aria-pressed': String(on), onclick: function () { api('/api/feedback.php?a=vote', { id: x.id, on: !on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, ico(ICONS.thumb), h('b', null, String(x.votes))));
-          acts.append(dbtn);
+          if (x.released_at || staff) acts.append(h('button', { class: 'vote' + (on ? ' on' : ''), type: 'button', title: on ? 'Stimme zurücknehmen' : 'Dafür stimmen', 'aria-pressed': String(on), onclick: function () { api('/api/feedback.php?a=vote', { id: x.id, on: !on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, ico(ICONS.thumb), h('b', null, String(x.votes))));
+          if (staff) acts.append(dbtn);
           if (D.admin && !S.preview) acts.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!+x.rejected), onclick: function () { api('/api/feedback.php?a=reject', { id: x.id, on: !+x.rejected }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, +x.rejected ? 'Ablehnung zurücknehmen' : 'Ablehnen'));
         }
-        if (D.admin && !S.preview) acts.append(h('button', { class: 'btn warn small fbdel', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen'));
-        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') }, h('div', { class: 'fbmain' }, head, body, acts));
+        if (staff) {
+          var rg2 = h('span', { class: 'fbright' }, h('button', { class: 'btn small' + (x.released_at ? ' ghost' : ''), type: 'button', title: x.released_at ? 'Beitrag wieder ausblenden' : 'Beitrag für alle sichtbar machen', onclick: function () { api('/api/feedback.php?a=release', { id: x.id, on: !x.released_at }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, x.released_at ? 'Freigabe zurücknehmen' : 'Freigeben'));
+          if (D.admin) rg2.append(h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen'));
+          acts.append(rg2);
+        }
+        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') }, h('div', { class: 'fbmain' }, head, body, acts.childNodes.length ? acts : null));
+        if (!x.released_at && !pendHead) { pendHead = true; box.append(h('h3', { class: 'fbdiv' }, staff ? 'Noch nicht freigegeben (nur für Admin und Alphatester sichtbar)' : 'Deine Beiträge, die noch auf Freigabe warten')); }
         box.append(row);
       });
     }
@@ -1030,7 +1036,7 @@
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
-      var okv = { cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: isAlpha() && feat('feat'), bug: isAlpha() };
+      var okv = { cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true };
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}

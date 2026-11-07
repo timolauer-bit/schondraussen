@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Ideen und Bugs: Neue Beiträge stehen unten und sind nur für Admin und Alphatester sichtbar (die Verfasser sehen ihre eigenen). Mit „Freigeben“ rücken sie nach oben und sind für alle sichtbar; normale Nutzer können dort nur bei Ideen mit dem Daumen abstimmen',
     'F|Trakt-Import in den Einstellungen: Export-ZIP oder JSON-Dateien hochladen, Serien und Filme kommen auf die Liste, gesehene Folgen werden abgehakt',
     'F|Ideen und Bugmeldungen bestehen jetzt aus Kurzbeschreibung (Titel in der Liste) und Details (im Rahmen beim Aufklappen); die Zahl der Anhänge steht am Titel',
     'F|Bei Ideen und Bugmeldungen lassen sich neben Bildern auch Textdateien anhängen (.txt, .log, .md, .csv, .json, bis 200 KB); insgesamt bis zu 3 Anhänge',
