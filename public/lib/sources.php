@@ -151,7 +151,7 @@ function googlebooks_upcoming(string $name, array $seen): array {
     $known = []; foreach ($seen as $k => $_) $known[$norm((string) $k)] = 1;
     foreach (($r['items'] ?? []) as $it) {
         $v = $it['volumeInfo'] ?? []; $t = trim((string) ($v['title'] ?? '')); $d = (string) ($v['publishedDate'] ?? '');
-        if (!in_array($v['language'] ?? 'de', ['de', 'en'], true)) continue;
+        if (!in_array($v['language'] ?? 'de', ['de'], true)) continue;
         if ($t === '' || !preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $d)) continue;
         $has = false; foreach (($v['authors'] ?? []) as $a) if (mb_strtolower(trim($a)) === mb_strtolower($name)) $has = true;
         if (!$has) continue;
@@ -189,7 +189,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     $seen = []; $works = []; $rel = []; $y = (int) date('Y');
     foreach (($r['docs'] ?? []) as $d) {
         $t = trim((string) ($d['title'] ?? '')); if ($t === '') continue;
-        $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'eng', 'mul'])) continue; // nur deutsch- oder englischsprachige Werke (ohne Angabe bleibt es drin)
+        $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'mul'])) continue; // nur Werke mit deutscher Ausgabe (ohne Sprachangabe bleibt es drin)
         $k = mb_strtolower($t); if (isset($seen[$k])) continue; $seen[$k] = 1;
         $yr = (int) ($d['first_publish_year'] ?? 0);
         if ($yr > $y) $rel[] = [$t, (string) $yr, 'Buch'];
