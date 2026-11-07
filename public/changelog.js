@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Anmeldeseite: Neue, anonymisierte Vorschaubilder (Kalender, Musik, Serie mit deutscher Beschreibung) ersetzen die beiden alten; eigene Bilder bleiben dahinter erhalten. Erfordert Migration 043',
     'B|Beschreibungstexte (Wikipedia-Vorstellung bei Autor:innen und Bands) wurden bei 400 Zeichen mitten im Satz abgeschnitten, das Feld ist jetzt größer. Erfordert Migration 041; die Texte sind nach dem nächsten Aktualisieren des Eintrags vollständig',
     'F|Bücher: Auch bei Autor:innen steht jetzt eine kurze Vorstellung aus der Wikipedia (deutsch bevorzugt, englische Texte werden übersetzt), gefunden über die Wikidata-Nummer bei Open Library. Wirkt beim nächsten Aktualisieren des Eintrags',
     'F|Übersetzung: Englische Beschreibungen bei Serien (TVmaze) und englische Wikipedia-Texte bei Bands werden über DeepL ins Deutsche übersetzt und gespeichert (nur öffentliche Texte, höchstens einmal pro Text). Ohne Schlüssel oder bei einem Ausfall bleibt der englische Text. Wirkt beim nächsten Aktualisieren des Eintrags; Datenschutzerklärung ergänzt',

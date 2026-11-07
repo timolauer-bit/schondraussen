@@ -280,6 +280,21 @@ foreach ($M as $name => $stmts) {
     $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute([$name]);
     echo "eingespielt: $name\n";
 }
+// Neue (anonymisierte) Bilder der Anmeldeseite: ersetzen die beiden mitgelieferten Bilder, eigene Bilder bleiben dahinter erhalten
+$q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute(['043_site_images_v2']);
+if (!$q->fetch()) {
+    try {
+        $new = [['v2_kalender.webp', 'Kalender mit allen angekündigten Veröffentlichungen'], ['v2_musik.webp', 'Musikübersicht mit Liste, Alben und kommenden Veröffentlichungen'], ['v2_serie.webp', 'Serie mit Beschreibung auf Deutsch, Staffeln, Folgen und Sendeterminen']];
+        $ok = true; foreach ($new as $n) if (!is_file(__DIR__ . '/shots/' . $n[0])) $ok = false;
+        if ($ok) {
+            $pdo->prepare('DELETE FROM site_images WHERE title IN (?,?)')->execute(['Kalender mit allen angekündigten Veröffentlichungen', 'Serienübersicht mit Liste und kommenden Veröffentlichungen']);
+            $pdo->exec('UPDATE site_images SET position=position+3');
+            foreach ($new as $i => $n) $pdo->prepare('INSERT INTO site_images (title,position,mime,data) VALUES (?,?,?,?)')->execute([$n[1], $i + 1, 'image/webp', file_get_contents(__DIR__ . '/shots/' . $n[0])]);
+            $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute(['043_site_images_v2']);
+            echo "eingespielt: 043_site_images_v2\n";
+        }
+    } catch (Throwable $e) { echo "Fehler bei 043_site_images_v2: " . $e->getMessage() . "\n"; }
+}
 // Startseiten-Bilder einmalig aus den mitgelieferten Dateien übernehmen
 $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute(['016_site_images_seed']);
 if (!$q->fetch()) {
