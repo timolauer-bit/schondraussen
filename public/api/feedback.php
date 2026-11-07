@@ -18,6 +18,7 @@ if ($a === 'list') {
     $noSel = ''; try { $pdo->query('SELECT bug_no FROM feedback LIMIT 1'); $noSel = ',f.bug_no'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone,uu.delete_requested_at AS author_del'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
     try {
         $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
@@ -94,6 +95,7 @@ if ($a === 'done') {
     try {
         $q = $pdo->prepare('SELECT user_id,title,bug_no,done_at FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET done_at=' . ($on ? 'NOW()' : 'NULL') . ' WHERE id=?')->execute([$id]);
+        try { $pdo->prepare('UPDATE feedback SET rejected=0 WHERE id=?')->execute([$id]); } catch (Throwable $e) {}
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     // Systemnachricht an die Person, die den Eintrag geschrieben hat (nur wenn der Admin abhakt, nur beim ersten Abhaken, nicht bei eigenen Einträgen)
     if ($on && $admin && $it && empty($it['done_at']) && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
@@ -101,6 +103,20 @@ if ($a === 'done') {
         $txt = $kind === 'bug' ? 'Systemnachricht: Deine Bugmeldung' . ($it['bug_no'] ? ' #' . (int) $it['bug_no'] : '') . ' „' . $t . '“ ist als erledigt markiert. Danke für den Hinweis!'
             : 'Systemnachricht: Deine Idee „' . $t . '“ ist als erledigt markiert. Danke für deinen Vorschlag!';
         try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], $txt]); } catch (Throwable $e) {}
+    }
+    json_out(['ok' => true]);
+}
+if ($a === 'reject') {
+    if (!$admin) json_out(['error' => 'Nicht erlaubt.'], 403);
+    if ($kind !== 'feature') json_out(['error' => 'Nur Ideen lassen sich ablehnen.'], 422);
+    $on = !empty($b['on']);
+    try {
+        $q = $pdo->prepare('SELECT user_id,title,done_at,rejected FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
+        $pdo->prepare('UPDATE feedback SET rejected=?, done_at=' . ($on ? 'COALESCE(done_at,NOW())' : 'NULL') . ' WHERE id=?')->execute([$on ? 1 : 0, $id]);
+    } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    if ($on && $it && empty($it['rejected']) && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
+        $t = (string) $it['title']; $t = mb_strlen($t) > 70 ? mb_substr($t, 0, 69) . '…' : $t;
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], 'Systemnachricht: Deine Idee „' . $t . '“ wird vorerst nicht umgesetzt. Danke trotzdem für deinen Vorschlag!']); } catch (Throwable $e) {}
     }
     json_out(['ok' => true]);
 }

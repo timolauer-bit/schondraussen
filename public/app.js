@@ -154,14 +154,8 @@
   function welcome() {
     var w = $('welcome'); if (!w) { w = h('section', { class: 'warnbox', id: 'welcome', style: 'margin:12px 0' }); $('topbar').before(w); }
     w.textContent = '';
-    if (S.preview || !S.ready || D.sample_asked || S.entries.length) { w.hidden = true; return; }
-    w.hidden = false;
-    var msg = h('p', { class: 'msg', role: 'status' }), bs = [];
-    function ask(mode) { bs.forEach(function (b) { b.disabled = true; }); msg.textContent = 'Einen Moment …'; api('/api/data.php?a=samples', { mode: mode }).then(function (r) { if (!r.ok) { bs.forEach(function (b) { b.disabled = false; }); msg.className = 'msg err'; msg.textContent = r.msg || 'Das hat nicht geklappt. Bitte versuche es noch einmal.'; return; } D.sample_asked = 1; load(function () { render(); if (r.added) say(pl(r.added, 'Beispieleintrag', 'Beispieleinträge') + ' angelegt.'); }); }); }
-    bs = [h('button', { class: 'btn small', type: 'button', onclick: function () { ask('add'); } }, 'Ja, Beispiele anlegen'), h('button', { class: 'btn small ghost', type: 'button', onclick: function () { ask('skip'); } }, 'Nein, leer starten')];
-    w.append(h('b', null, 'Willkommen bei Schondraussen.de! '), 'Lege deine Autor:innen, Musiker:innen, Filme und Serien an und behalte ihre Neuerscheinungen im Blick. Damit die Seite für alle schnell bleibt, sind pro Liste höchstens 100 Einträge möglich. Wenn du die Grenze erreichst, lösche bitte zuerst nicht mehr benötigte Einträge.',
-      h('p', { style: 'margin:10px 0 0' }, h('b', null, 'Möchtest du mit Beispielen starten? '), 'Ich lege dir in jeder Kategorie bis zu 10 Beispieleinträge an, damit du sofort siehst, wie Kalender und Übersicht aussehen. Du kannst sie jederzeit wieder entfernen.'),
-      h('div', { class: 'add', style: 'margin-top:8px' }, bs[0], bs[1]), msg);
+    w.hidden = true;
+    w.hidden = true;
   }
   function render() {
     nav(); welcome(); mainEl.textContent = '';
@@ -826,13 +820,14 @@
         });
         if (+x.pending_hidden) pics.append(h('p', { class: 'hint', style: 'margin:0' }, pl(x.pending_hidden, 'Bild wartet', 'Bilder warten') + ' auf Freigabe.'));
         var body = h('div', { class: 'fbbody', hidden: true }, h('p', { style: 'white-space:pre-wrap;margin:0 0 10px' }, x.body), pics, h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (x.author && !x.gone ? ' · von ' + x.author : '') + (x.mine ? ' · von dir' : ''), x.gone ? [' · von ', h('s', { title: 'Das Konto wurde gelöscht' }, x.author), ' (Konto gelöscht)'] : null, x.author_tier === 'admin' ? [' ', h('span', { class: 'tier' }, 'Admin')] : x.author_tier === 'alpha' ? [' ', h('span', { class: 'tier alpha' }, 'Alphatester')] : null, bug && x.done_at ? ' · erledigt am ' + when(x.done_at) : null));
-        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, x.title), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : null);
+        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, x.title), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null));
         var side;
         if (bug) side = h('div', { class: 'fbacts' }, ['urgent', 'normal', 'low'].map(function (k) { return h('button', { class: 'btn ghost small prio-' + k, type: 'button', 'aria-pressed': String(x.priority === k), onclick: function () { api('/api/feedback.php?a=priority', { id: x.id, priority: k }).then(function () { reload(); }); } }, PRIO[k][0]); }));
         else { var on = +x.mine_vote > 0, vb = h('button', { class: 'vote' + (on ? ' on' : ''), type: 'button', title: on ? 'Stimme zurücknehmen' : 'Dafür stimmen', 'aria-pressed': String(on), onclick: function () { api('/api/feedback.php?a=vote', { id: x.id, on: !on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, ico(ICONS.thumb), h('b', null, String(x.votes))); side = vb; }
         var chk = null;
         { chk = h('input', { type: 'checkbox', class: 'fbchk', 'aria-label': 'Erledigt', title: x.done_at ? 'Als offen markieren' : 'Als erledigt abhaken', onchange: function () { var on = this.checked; api('/api/feedback.php?a=done', { id: x.id, on: on }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }); chk.checked = !!x.done_at; }
-        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') }, bug ? chk : side, h('div', { class: 'fbmain' }, head, body, bug ? side : h('label', { class: 'fbdone' }, chk, ' Erledigt')));
+        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') }, bug ? chk : side, h('div', { class: 'fbmain' }, head, body, bug ? side : h('label', { class: 'fbdone' }, chk, +x.rejected ? ' Abgelehnt' : ' Erledigt')));
+        if (D.admin && !S.preview && !bug) body.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/feedback.php?a=reject', { id: x.id, on: !+x.rejected }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, +x.rejected ? 'Ablehnung zurücknehmen' : 'Ablehnen')));
         if (D.admin && !S.preview) body.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen')));
         box.append(row);
       });

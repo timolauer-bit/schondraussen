@@ -200,6 +200,9 @@ $M = [
   '024_site_state' => [
   "CREATE TABLE site_state (k VARCHAR(40) PRIMARY KEY, v VARCHAR(255) NOT NULL DEFAULT '', updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '030_feedback_rejected' => [
+  "ALTER TABLE feedback ADD COLUMN rejected TINYINT(1) NOT NULL DEFAULT 0",
+ ],
   '029_admin_deleted' => [
   "ALTER TABLE users ADD COLUMN admin_deleted TINYINT(1) NOT NULL DEFAULT 0",
  ],
