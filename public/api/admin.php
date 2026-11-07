@@ -28,6 +28,12 @@ if ($a === 'reveal' && $_SERVER['REQUEST_METHOD'] === 'POST') { // E-Mail eines 
     catch (Throwable $e) { json_out(['error' => 'Protokoll nicht möglich (migrate.php einspielen).'], 500); }
     json_out(['ok' => true, 'email' => $em]);
 }
+if ($a === 'adminlog') {
+    try {
+        $r = $pdo->query("SELECT l.created_at,l.action,l.target_id,a.username AS admin_name,a.email AS admin_email,t.username AS target_name FROM admin_log l LEFT JOIN users a ON a.id=l.admin_id LEFT JOIN users t ON t.id=l.target_id ORDER BY l.id DESC LIMIT 100")->fetchAll();
+    } catch (Throwable $e) { json_out(['error' => 'Protokoll nicht lesbar (migrate.php einspielen).'], 500); }
+    json_out(['log' => $r]);
+}
 if ($a === 'cron') {
     $o = ['runs' => null, 'stats' => [], 'stale' => [], 'empty' => []];
     try { $o['runs'] = $pdo->query('SELECT started_at,duration_ms,ok_count,fail_count,left_count,stopped_early,details FROM cron_runs ORDER BY id DESC LIMIT 8')->fetchAll(); } catch (Throwable $e) { $o['needs_migration'] = true; }
