@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'B|Beschreibungstexte (Wikipedia-Vorstellung bei Autor:innen und Bands) wurden bei 400 Zeichen mitten im Satz abgeschnitten, das Feld ist jetzt größer. Erfordert Migration 041; die Texte sind nach dem nächsten Aktualisieren des Eintrags vollständig',
     'F|Bücher: Auch bei Autor:innen steht jetzt eine kurze Vorstellung aus der Wikipedia (deutsch bevorzugt, englische Texte werden übersetzt), gefunden über die Wikidata-Nummer bei Open Library. Wirkt beim nächsten Aktualisieren des Eintrags',
     'F|Übersetzung: Englische Beschreibungen bei Serien (TVmaze) und englische Wikipedia-Texte bei Bands werden über DeepL ins Deutsche übersetzt und gespeichert (nur öffentliche Texte, höchstens einmal pro Text). Ohne Schlüssel oder bei einem Ausfall bleibt der englische Text. Wirkt beim nächsten Aktualisieren des Eintrags; Datenschutzerklärung ergänzt',
     'F|Musik: Bei Bands und Künstler:innen steht jetzt eine kurze Vorstellung (bis ca. 420 Zeichen) aus der Wikipedia unter dem Namen, gefunden über den Verweis bei MusicBrainz (deutsch bevorzugt, sonst englisch, mit Quellenangabe). Sie wird einmal pro Eintrag geholt; wo es keinen Wikipedia-Verweis gibt, bleibt die bisherige Kurzzeile. Wirkt beim nächsten Aktualisieren des Eintrags und erscheint auch in den Mails',
