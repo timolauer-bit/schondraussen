@@ -34,7 +34,7 @@
 <li>Versand: über den Mailserver von ALL-INKL.COM (Auftragsverarbeitungsvertrag wie unter Punkt 3).</li>
 </ul>
 <h2>6. Kontakt und Chat</h2>
-<p>Nachrichten über den Bereich „Kontakt“ und per E-Mail werden gespeichert, um deine Anfrage zu bearbeiten (Art. 6 Abs. 1 lit. b oder f DSGVO). Der Verlauf ist für dich und mich sichtbar. Ich lösche Anfragen, sobald sie erledigt sind und keine Aufbewahrungspflicht besteht.</p>
+<p>Nachrichten über den Bereich „Kontakt“ und per E-Mail werden gespeichert, um deine Anfrage zu bearbeiten (Art. 6 Abs. 1 lit. b oder f DSGVO). Der Verlauf ist für dich und mich sichtbar. Der Chatverlauf bleibt gespeichert, solange dein Konto besteht, und wird mit dem Konto gelöscht (siehe Punkt 4). Auf Wunsch lösche ich einzelne Nachrichten auch früher, sofern keine Aufbewahrungspflicht besteht.</p>
 <p><b>Nachrichten vom Betreiber:</b> Der Betreiber kann dir im Bereich „Kontakt“ schreiben und die Nachricht zusätzlich per E-Mail an dich schicken. Deine E-Mail-Adresse bleibt dabei auf dem Server und wird nicht angezeigt.</p>
 <p><b>Ideen, Bugmeldungen und Anhänge:</b> Beiträge samt hochgeladener Bilder oder Textdateien sind zunächst nur für den Betreiber und die Alphatester sichtbar, nach der Freigabe auch für andere Nutzer, jeweils mit deinem Benutzernamen. Bilder werden vor der Freigabe geprüft, und der Betreiber kann Anhänge entfernen. Du kannst deine Texte nachträglich bearbeiten; frühere Fassungen bleiben für andere sichtbar. Die Beiträge bleiben auch nach der Löschung deines Kontos erhalten (siehe Punkt 4).</p>
 <h2>7. Datenquellen für Neuerscheinungen</h2>
