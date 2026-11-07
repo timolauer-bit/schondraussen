@@ -180,6 +180,10 @@ function wiki_intro_for_mbid(string $mbid): ?string {
         if (($rel['type'] ?? '') === 'wikipedia' && preg_match('#^https://(de|en)\.wikipedia\.org/wiki/([^?\#]+)#', $u, $m)) $pages[$m[1]] = urldecode($m[2]);
         if (($rel['type'] ?? '') === 'wikidata' && preg_match('#/(Q\d+)$#', $u, $m)) $qid = $m[1];
     }
+    return wiki_intro_from($pages, $qid);
+}
+// Gemeinsamer Teil: Seiten (de/en) und/oder Wikidata-Nummer -> Kurztext.
+function wiki_intro_from(array $pages, ?string $qid): ?string {
     if (empty($pages['de']) && $qid) {
         $w = http_json('https://www.wikidata.org/wiki/Special:EntityData/' . $qid . '.json', 10);
         $sl = $w['entities'][$qid]['sitelinks'] ?? [];
@@ -235,6 +239,15 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         if (!empty($best['top_work'])) $bits[] = 'bekannt für „' . $best['top_work'] . '“';
         $summary = implode(' · ', $bits);
     }
+    // Kurzvorstellung aus der Wikipedia (über die Wikidata-Nummer bei Open Library); bei Misserfolg frühestens nach 30 Tagen erneut
+    if (empty($ext['bits'])) $ext['bits'] = (string) $summary;
+    if (!isset($ext['intro_t']) || (empty($ext['intro']) && (int) $ext['intro_t'] < time() - 30 * 86400)) {
+        $ext['intro_t'] = time(); $ext['intro'] = '';
+        $a = http_json('https://openlibrary.org/authors/' . rawurlencode(basename((string) $ext['olid'])) . '.json', 10);
+        $qid = $a['remote_ids']['wikidata'] ?? null;
+        if ($qid && preg_match('/^Q\d+$/', (string) $qid)) $ext['intro'] = wiki_intro_from([], $qid) ?: '';
+    }
+    if (!empty($ext['intro'])) $summary = $ext['bits'] . ' – ' . $ext['intro'];
     $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&author=' . rawurlencode($ext['olid']));
     if (!$r) {
         $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&q=author_key:' . rawurlencode($ext['olid']));
