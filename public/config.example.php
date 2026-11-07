@@ -9,6 +9,7 @@ return [
     ],
     'base_url' => 'https://schondraussen.de',
     'tmdb_key' => '',
+    'deepl_key' => '', // optional: DeepL-API-Free-Schlüssel (endet auf :fx) für die Übersetzung englischer Beschreibungen
     'mail' => [
         'from'      => 'benachrichtigung@schondraussen.de',
         'from_name' => 'Schondraussen.de',

@@ -10,6 +10,21 @@ function http_json(string $url, int $timeout = 12): ?array {
     return is_array($j) ? $j : null;
 }
 
+// Übersetzung ins Deutsche über DeepL (Schlüssel 'deepl_key' in config.php). Gibt null zurück, wenn kein Schlüssel da ist oder der Dienst nicht antwortet.
+function translate_de(string $text, string $from = 'EN'): ?string {
+    $key = trim((string) cfg('deepl_key', '')); $text = trim($text);
+    if ($key === '' || $text === '') return null;
+    $host = substr($key, -3) === ':fx' ? 'api-free.deepl.com' : 'api.deepl.com';
+    $ch = curl_init('https://' . $host . '/v2/translate');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12, CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Authorization: DeepL-Auth-Key ' . $key, 'Content-Type: application/json', 'User-Agent: Schondraussen.de/1.0'],
+        CURLOPT_POSTFIELDS => json_encode(['text' => [mb_substr($text, 0, 1500)], 'source_lang' => $from, 'target_lang' => 'DE'], JSON_UNESCAPED_UNICODE)]);
+    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($r === false || $code >= 400) return null;
+    $j = json_decode($r, true); $t = trim((string) ($j['translations'][0]['text'] ?? ''));
+    return $t !== '' ? $t : null;
+}
+
 function clean_text(?string $h, int $max = 380): string {
     $t = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $h), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
     return mb_strlen($t) > $max ? mb_substr($t, 0, $max - 1) . '…' : $t;
@@ -56,8 +71,14 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     try {
         $ext['tvmaze'] = (int) $show['id']; $ext['tv_status'] = (string) ($show['status'] ?? '');
         $genres = $show['genres'] ?? [];
+        $sumTxt = clean_text($show['summary'] ?? '');
+        if ($sumTxt !== '' && !in_array((string) ($show['language'] ?? ''), ['German', ''], true)) { // englische Beschreibung einmal übersetzen und merken
+            $hh = sha1($sumTxt);
+            if (($ext['sum_h'] ?? '') === $hh && !empty($ext['sum_de'])) $sumTxt = $ext['sum_de'];
+            elseif (($tr = translate_de($sumTxt, 'EN')) !== null) { $ext['sum_h'] = $hh; $ext['sum_de'] = $tr; $sumTxt = $tr; }
+        }
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
-            ->execute([json_encode($ext), clean_text($show['summary'] ?? ''), json_encode($genres, JSON_UNESCAPED_UNICODE), count($seasons), $sid]);
+            ->execute([json_encode($ext), $sumTxt, json_encode($genres, JSON_UNESCAPED_UNICODE), count($seasons), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
@@ -170,6 +191,7 @@ function wiki_intro_for_mbid(string $mbid): ?string {
         $t = trim((string) ($p['extract'] ?? ''));
         if (!$p || ($p['type'] ?? '') === 'disambiguation' || mb_strlen($t) < 60) continue;
         if (mb_strlen($t) > 420) { $cut = mb_substr($t, 0, 420); $i = max(mb_strrpos($cut, '. '), mb_strrpos($cut, '! ')); $t = $i > 150 ? mb_substr($cut, 0, $i + 1) : rtrim($cut, " ,;") . '…'; }
+        if ($l === 'en' && ($tr = translate_de($t, 'EN')) !== null) $t = $tr; // englischen Text ins Deutsche übersetzen, falls möglich
         return $t . ' (Quelle: Wikipedia)';
     }
     return null;

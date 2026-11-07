@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Übersetzung: Englische Beschreibungen bei Serien (TVmaze) und englische Wikipedia-Texte bei Bands werden über DeepL ins Deutsche übersetzt und gespeichert (nur öffentliche Texte, höchstens einmal pro Text). Ohne Schlüssel oder bei einem Ausfall bleibt der englische Text. Wirkt beim nächsten Aktualisieren des Eintrags; Datenschutzerklärung ergänzt',
     'F|Musik: Bei Bands und Künstler:innen steht jetzt eine kurze Vorstellung (bis ca. 420 Zeichen) aus der Wikipedia unter dem Namen, gefunden über den Verweis bei MusicBrainz (deutsch bevorzugt, sonst englisch, mit Quellenangabe). Sie wird einmal pro Eintrag geholt; wo es keinen Wikipedia-Verweis gibt, bleibt die bisherige Kurzzeile. Wirkt beim nächsten Aktualisieren des Eintrags und erscheint auch in den Mails',
     'U|Einträge (z. B. Serien): Der Beschreibungstext nutzt jetzt die volle Breite der Karte statt einer schmaleren Spalte',
     'U|Einheitlicher Abstand (10 Pixel) zwischen Hinweis- oder Beschriftungstexten und den darunterstehenden Eingabefeldern in Einstellungen, Admin und Infoseiten',
