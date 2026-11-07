@@ -44,8 +44,9 @@ if ($a === 'list') {
     if ($rows) { // Bilder: Freigegebene für alle, Wartende für Absender und Admin/Alpha (dort mit status)
         try {
             $ids = implode(',', array_map('intval', array_column($rows, 'id'))); $by = []; $pend = [];
-            foreach ($pdo->query("SELECT id,ref_id,status,user_id FROM images WHERE scope='feedback' AND ref_id IN ($ids) ORDER BY id")->fetchAll() as $im) {
-                if ($im['status'] === 'approved' || $alpha || (int) $im['user_id'] === (int) $u['id']) $by[$im['ref_id']][] = ['id' => (int) $im['id'], 'status' => $im['status']];
+            $kc = ''; try { $pdo->query('SELECT kind FROM images LIMIT 1'); $kc = ',kind,name'; } catch (Throwable $e) {}
+            foreach ($pdo->query("SELECT id,ref_id,status,user_id$kc FROM images WHERE scope='feedback' AND ref_id IN ($ids) ORDER BY id")->fetchAll() as $im) {
+                if ($im['status'] === 'approved' || $alpha || (int) $im['user_id'] === (int) $u['id']) $by[$im['ref_id']][] = ['id' => (int) $im['id'], 'status' => $im['status'], 'kind' => $im['kind'] ?? 'image', 'name' => $im['name'] ?? null];
                 else $pend[$im['ref_id']] = ($pend[$im['ref_id']] ?? 0) + 1;
             }
             foreach ($rows as &$r) { $r['images'] = $by[$r['id']] ?? []; $r['pending_hidden'] = $pend[$r['id']] ?? 0; }
@@ -57,13 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 
 $b = body();
 
 if ($a === 'add') {
-    $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? ''));
+    $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? '')); $given = trim((string) ($b['title'] ?? ''));
     if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Idee oder Bugmeldung.'], 422);
-    if (mb_strlen($text) < 5 || mb_strlen($text) > 2000) json_out(['error' => 'Bitte beschreibe es in 5 bis 2000 Zeichen.'], 422);
+    if ($given !== '') { // Kurzbeschreibung und Details getrennt
+        if (mb_strlen($given) < 3 || mb_strlen($given) > 120) json_out(['error' => 'Die Kurzbeschreibung braucht 3 bis 120 Zeichen.'], 422);
+        if (mb_strlen($text) > 2000) json_out(['error' => 'Die Details dürfen höchstens 2000 Zeichen haben.'], 422);
+    } elseif (mb_strlen($text) < 5 || mb_strlen($text) > 2000) json_out(['error' => 'Bitte beschreibe es in 5 bis 2000 Zeichen.'], 422);
     try {
         $c = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
         if ((int) $c->fetchColumn() >= 10) json_out(['error' => 'Bitte etwas später weiterschreiben.'], 429);
-        $first = trim(strtok($text, "\n")); $title = mb_strlen($first) > 80 ? mb_substr($first, 0, 79) . '…' : $first;
+        if ($given !== '') $title = $given; else { $first = trim(strtok($text, "\n")); $title = mb_strlen($first) > 80 ? mb_substr($first, 0, 79) . '…' : $first; }
         $bn = null; if ($kind === 'bug') { try { $bn = 1 + (int) $pdo->query("SELECT COALESCE(MAX(bug_no),0) FROM feedback WHERE kind='bug'")->fetchColumn(); } catch (Throwable $e) { $bn = null; } }
         if ($bn !== null) $pdo->prepare('INSERT INTO feedback (user_id,kind,title,body,bug_no) VALUES (?,?,?,?,?)')->execute([$u['id'], $kind, $title, $text, $bn]);
         else $pdo->prepare('INSERT INTO feedback (user_id,kind,title,body) VALUES (?,?,?,?)')->execute([$u['id'], $kind, $title, $text]);
@@ -74,7 +78,7 @@ if ($a === 'add') {
     try {
         $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
         foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-            send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . $text . "\n\nZur Liste: $base/\n");
+            send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . ($given !== '' ? $given . "\n\n" : '') . $text . "\n\nZur Liste: $base/\n");
     } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }

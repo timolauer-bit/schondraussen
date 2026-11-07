@@ -400,3 +400,14 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .logold>summary{cursor:pointer;list-style:none}.logold>summary::-webkit-details-marker{display:none}.logold>summary h3{margin:0;display:flex;align-items:baseline;gap:8px}.logold>summary h3::before{content:'▸';color:var(--muted);font-size:13px}.logold[open]>summary h3::before{content:'▾'}.logold>summary:hover h3{color:var(--accent)}
 .fbhead::before{content:'▸';color:var(--muted);font-size:13px;flex:0 0 auto}
 .fbhead[aria-expanded=true]::before{content:'▾'}
+
+.fbdetail{white-space:pre-wrap;margin:0 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14.5px}
+.attchip{font:500 12px var(--font-mono);color:var(--muted);margin-left:8px;white-space:nowrap}
+.txtatt{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px}
+.draft.txt{display:inline-flex;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.fbtitle{width:100%;margin:0 0 8px}
+.chatform.fbmode{flex-wrap:wrap}
+.chatform.fbmode .fbtitle{flex:1 1 100%;width:auto;margin:0}
+.chatform.fbmode textarea{flex:1 1 100%;width:auto}
+.chatform.fbmode .attach{margin-left:auto}
+.chatform .fbtitle{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit}

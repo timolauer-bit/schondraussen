@@ -21,7 +21,9 @@ if ($a === 'get') {
         }
     }
     if (!$ok) { http_response_code(404); exit; }
-    header('Content-Type: image/jpeg'); header('X-Content-Type-Options: nosniff');
+    $isText = ($im['kind'] ?? 'image') === 'text';
+    header('Content-Type: ' . ($isText ? 'text/plain; charset=utf-8' : 'image/jpeg')); header('X-Content-Type-Options: nosniff');
+    if ($isText) header('Content-Disposition: inline; filename="anhang.txt"');
     header("Content-Security-Policy: default-src 'none'; sandbox"); header('Cache-Control: private, max-age=3600');
     header('Content-Length: ' . strlen($im['data'])); echo $im['data']; exit;
 }
@@ -31,6 +33,17 @@ if ($a === 'upload') {
     $scope = ($_GET['scope'] ?? '') === 'feedback' ? 'feedback' : 'chat';
     $c = $pdo->prepare('SELECT COUNT(*) FROM images WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
     if ((int) $c->fetchColumn() >= 15) json_out(['error' => 'Bitte etwas später weitere Bilder hochladen.'], 429);
+    if (($_GET['kind'] ?? '') === 'text') { // Textdatei als Anhang (nur bei Ideen und Bugs)
+        if ($scope !== 'feedback') json_out(['error' => 'Textdateien sind nur bei Ideen und Bugs möglich.'], 422);
+        $raw = file_get_contents('php://input', false, null, 0, 200 * 1024 + 1);
+        if ($raw === '' || strlen($raw) > 200 * 1024) json_out(['error' => 'Die Textdatei ist leer oder zu groß (höchstens 200 KB).'], 422);
+        if (strpos($raw, "\0") !== false || !mb_check_encoding($raw, 'UTF-8')) json_out(['error' => 'Das ist keine Textdatei (UTF-8).'], 422);
+        $raw = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $raw);
+        $nm = preg_replace('/[^\p{L}\p{N}._ -]/u', '', basename((string) ($_GET['name'] ?? 'anhang.txt'))); $nm = mb_substr($nm !== '' ? $nm : 'anhang.txt', 0, 100);
+        try { $pdo->prepare("INSERT INTO images (user_id,scope,data,kind,name) VALUES (?,?,?,'text',?)")->execute([$u['id'], 'feedback', $raw, $nm]); }
+        catch (Throwable $e) { json_out(['error' => 'Textdateien sind noch nicht freigeschaltet (migrate.php einspielen).'], 500); }
+        json_out(['ok' => true, 'id' => (int) $pdo->lastInsertId(), 'name' => $nm]);
+    }
     $raw = file_get_contents('php://input', false, null, 0, IMG_MAX_BYTES + 1);
     try { $jpg = image_clean((string) $raw); } catch (RuntimeException $e) { json_out(['error' => $e->getMessage()], 422); }
     $pdo->prepare('INSERT INTO images (user_id,scope,data) VALUES (?,?,?)')->execute([$u['id'], $scope, $jpg]);
