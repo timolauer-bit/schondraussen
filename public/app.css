@@ -424,3 +424,7 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .fbline{display:flex;align-items:center;gap:10px}.fbline .fbhead{flex:1;min-width:0;width:auto}
 .fbline .vote{flex-direction:row;gap:6px;min-width:0;padding:4px 10px;min-height:32px;border-radius:8px;flex:0 0 auto}
 .fbline .vote svg{width:16px;height:16px}
+
+.edited{text-decoration:underline dotted;text-underline-offset:3px;cursor:help}
+.edmark{font-size:.7em;opacity:.7}
+.fbedit input,.fbedit textarea{font:inherit}

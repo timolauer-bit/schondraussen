@@ -56,6 +56,17 @@ if ($a === 'list') {
             foreach ($rows as &$r) { $r['images'] = $by[$r['id']] ?? []; $r['pending_hidden'] = $pend[$r['id']] ?? 0; }
         } catch (Throwable $e) {}
     }
+    if ($rows) { // Bearbeitungsverlauf (bis zu 3 frühere Fassungen je Feld)
+        try {
+            $ids2 = implode(',', array_map('intval', array_column($rows, 'id'))); $ed = [];
+            foreach ($pdo->query("SELECT feedback_id,field,old_text,edited_at FROM feedback_edits WHERE feedback_id IN ($ids2) ORDER BY id DESC")->fetchAll() as $e) {
+                $n = 0; foreach ($ed[$e['feedback_id']] ?? [] as $q) if ($q['field'] === $e['field']) $n++;
+                if ($n < 3) $ed[$e['feedback_id']][] = ['field' => $e['field'], 'old' => $e['old_text'], 'at' => $e['edited_at']];
+            }
+            foreach ($rows as &$r) $r['edits'] = $ed[$r['id']] ?? [];
+            unset($r);
+        } catch (Throwable $e) {}
+    }
     json_out(['items' => $rows, 'admin' => $admin, 'alpha' => $alpha]);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
@@ -89,6 +100,25 @@ if ($a === 'add') {
 $id = (int) ($b['id'] ?? 0);
 $f = $pdo->prepare('SELECT kind FROM feedback WHERE id=?'); $f->execute([$id]); $kind = $f->fetchColumn();
 if (!$kind) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
+if ($a === 'edit') { // Die einreichende Person darf Kurzbeschreibung und Details nachträglich ändern; frühere Fassungen bleiben für alle sichtbar
+    $q = $pdo->prepare('SELECT user_id,title,body,done_at,rejected FROM feedback WHERE id=?'); $q->execute([$id]); $cur = $q->fetch();
+    if (!$cur || (int) $cur['user_id'] !== (int) $u['id']) json_out(['error' => 'Nur die einreichende Person kann den Beitrag ändern.'], 403);
+    if (!empty($cur['done_at']) || !empty($cur['rejected'])) json_out(['error' => 'Erledigte oder abgelehnte Beiträge lassen sich nicht mehr ändern.'], 422);
+    $nt = trim((string) ($b['title'] ?? '')); $nb = trim((string) ($b['text'] ?? ''));
+    if (mb_strlen($nt) < 3 || mb_strlen($nt) > 120) json_out(['error' => 'Die Kurzbeschreibung braucht 3 bis 120 Zeichen.'], 422);
+    if (mb_strlen($nb) > 2000) json_out(['error' => 'Die Details dürfen höchstens 2000 Zeichen haben.'], 422);
+    $ch = [];
+    if ($nt !== (string) $cur['title']) $ch['title'] = [$cur['title'], $nt];
+    if ($nb !== (string) $cur['body']) $ch['body'] = [$cur['body'], $nb];
+    if (!$ch) json_out(['ok' => true, 'unchanged' => true]);
+    try {
+        $c = $pdo->prepare('SELECT COUNT(*) FROM feedback_edits WHERE feedback_id=? AND edited_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$id]);
+        if ((int) $c->fetchColumn() >= 10) json_out(['error' => 'Bitte etwas später weiter bearbeiten.'], 429);
+        foreach ($ch as $fld => $v) $pdo->prepare('INSERT INTO feedback_edits (feedback_id,field,old_text) VALUES (?,?,?)')->execute([$id, $fld, (string) $v[0]]);
+        $pdo->prepare('UPDATE feedback SET title=?, body=?, edited_at=NOW() WHERE id=?')->execute([$nt, $nb, $id]);
+    } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
 if ($a === 'vote') { // Abstimmen dürfen alle, aber nur bei freigegebenen Ideen
     $rl = null; try { $q = $pdo->prepare('SELECT released_at FROM feedback WHERE id=?'); $q->execute([$id]); $rl = $q->fetchColumn(); } catch (Throwable $e) {}
     if (!$alpha && !$rl) json_out(['error' => 'Nicht erlaubt.'], 403);

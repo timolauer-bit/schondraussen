@@ -940,9 +940,19 @@
         if (+x.pending_hidden) pics.append(h('p', { class: 'hint', style: 'margin:0' }, pl(x.pending_hidden, 'Bild wartet', 'Bilder warten') + ' auf Freigabe.'));
         var liveImgs = (x.images || []).filter(function (im) { return !im.removed_by; }), nImg = liveImgs.filter(function (im) { return im.kind !== 'text'; }).length, nTxt = liveImgs.length - nImg, nAtt = nImg + nTxt;
         var attInfo = nAtt ? h('p', { class: 'hint', style: 'margin:0 0 8px' }, 'Anhänge: ' + [nImg ? pl(nImg, 'Bild', 'Bilder') : '', nTxt ? pl(nTxt, 'Textdatei', 'Textdateien') : ''].filter(Boolean).join(', ')) : null;
-        var body = h('div', { class: 'fbbody', hidden: true }, x.body ? h('div', { class: 'fbdetail' }, x.body) : null, attInfo, pics, h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (x.author && !x.gone ? ' · von ' + x.author : '') + (x.mine ? ' · von dir' : ''), x.gone ? [' · von ', h('s', { title: 'Das Konto wurde gelöscht' }, x.author), ' (Konto gelöscht)'] : null, x.author_tier === 'admin' ? [' ', h('span', { class: 'tier' }, 'Admin')] : x.author_tier === 'alpha' ? [' ', h('span', { class: 'tier alpha' }, 'Alphatester')] : null, bug && x.done_at ? ' · erledigt am ' + when(x.done_at) : null));
-        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, x.title, nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null));
+        var body = h('div', { class: 'fbbody', hidden: true }, x.body ? h('div', { class: 'fbdetail' }, editedSpan(x, 'body', x.body)) : null, attInfo, pics, h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (x.author && !x.gone ? ' · von ' + x.author : '') + (x.mine ? ' · von dir' : ''), x.gone ? [' · von ', h('s', { title: 'Das Konto wurde gelöscht' }, x.author), ' (Konto gelöscht)'] : null, x.author_tier === 'admin' ? [' ', h('span', { class: 'tier' }, 'Admin')] : x.author_tier === 'alpha' ? [' ', h('span', { class: 'tier alpha' }, 'Alphatester')] : null, bug && x.done_at ? ' · erledigt am ' + when(x.done_at) : null));
+        var editBtn = null;
+        if (x.mine && !x.gone && !x.done_at && !+x.rejected) {
+          var eT = h('input', { type: 'text', maxlength: '120', value: x.title, 'aria-label': 'Kurzbeschreibung', style: 'width:100%' }), eB = h('textarea', { rows: '6', maxlength: '2000', 'aria-label': 'Details', style: 'width:100%;margin-top:8px' }), eM = h('span', { class: 'msg', style: 'margin:0' }), eBox = h('div', { class: 'fbedit', hidden: true, style: 'margin:10px 0' });
+          eB.value = x.body || '';
+          eBox.append(h('p', { class: 'hint', style: 'margin:0 0 6px' }, 'Andere Nutzer sehen, dass der Text bearbeitet wurde, und können die frühere Fassung per Maus-Hinweis ansehen.'), eT, eB,
+            h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn small', type: 'button', onclick: function () { eM.className = 'msg'; eM.textContent = 'Speichere …'; api('/api/feedback.php?a=edit', { id: x.id, title: eT.value, text: eB.value }).then(function (r2) { if (r2.ok) reload(); else { eM.className = 'msg err'; eM.textContent = r2.error || 'Das hat nicht geklappt.'; } }); } }, 'Speichern'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { eBox.hidden = true; } }, 'Abbrechen'), eM));
+          body.append(eBox);
+          editBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Meinen Beitrag bearbeiten', onclick: function () { body.hidden = false; eBox.hidden = !eBox.hidden; } }, 'Bearbeiten');
+        }
+        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null));
         var acts = h('div', { class: 'fbacts' });
+        if (editBtn) acts.append(editBtn);
         var voteBtn = null;
         var dbtn = h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!x.done_at), title: x.done_at ? 'Als offen markieren' : 'Als erledigt markieren', onclick: function () { api('/api/feedback.php?a=done', { id: x.id, on: !x.done_at }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, +x.rejected ? 'Abgelehnt' : 'Erledigt');
         if (bug && staff) acts.append(dbtn);
@@ -965,6 +975,12 @@
     }
     function reload() { api('/api/feedback.php?a=list&kind=' + kind).then(draw); }
     reload();
+  }
+  function editedSpan(x, field, text) {
+    var ed = (x.edits || []).filter(function (e) { return e.field === field; });
+    if (!ed.length) return text;
+    var tip = 'Bearbeitet. Frühere Fassung' + (ed.length > 1 ? 'en' : '') + ':\n' + ed.map(function (e) { var d = new Date(String(e.at).replace(' ', 'T')); return '„' + (e.old.length > 400 ? e.old.slice(0, 400) + '…' : (e.old || '(leer)')) + '“ (bis ' + d.toLocaleDateString('de-DE') + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr)'; }).join('\n');
+    return h('span', { class: 'edited', title: tip }, text, h('sup', { class: 'edmark', 'aria-label': 'bearbeitet' }, ' ✎'));
   }
   function unreadPoll() { api('/api/chat.php?a=unread').then(function (r) { var n = +r.unread || 0; if (n !== S.unread) { S.unread = n; var k = topbar.querySelector('.support'); if (k) { var b = k.querySelector('.badge'); if (b) b.remove(); if (n && S.view !== 'sup') k.append(h('span', { class: 'badge' }, n > 99 ? '99+' : String(n))); } } }); }
 
