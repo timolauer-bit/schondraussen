@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Öffentliches Kontaktformular (kontakt.php) für Besucher ohne Konto; im Impressum verlinkt, die Nachricht geht per Mail an den Admin (höchstens 3 Nachrichten pro Stunde und IP, nichts wird in der Datenbank gespeichert); gemerkte IP-Adressen für Anmelde- und Formularbegrenzung werden nach 2 Tagen gelöscht',
     'D|Impressum und Datenschutzerklärung sind jetzt ausgefüllt (u. a. 7 Tage Aufbewahrung nach Kontolöschung, Ideen und Bugs bleiben erhalten, Anhänge, Privatsphäre gegenüber dem Admin, Import, Sicherung)',
     'U|Registrierung und Passwort zurücksetzen: Hinweise zu Passwort (10 bis 72 Zeichen, alle Zeichen erlaubt) und Benutzername sowie eine Live-Rückmeldung beim Tippen; Fehler erscheinen auf Deutsch direkt unter dem Formular statt als Browser-Sprechblase',
     'U|Benutzername: Auf der Seite zur Namensänderung, bei der Registrierung und in den Einstellungen steht jetzt, welche Zeichen erlaubt sind und warum ein Name abgelehnt werden kann (vergeben, anstößig, mit dem Betreiber verwechselbar); der Grund erscheint direkt unter dem Feld',

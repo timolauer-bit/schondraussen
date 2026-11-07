@@ -5,7 +5,7 @@
 <h3>Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG)</h3>
 <p>Timo Lauer<br>Peter-Friedhofen-Straße 2<br>54292 Trier<br>Deutschland</p>
 <h3>Kontakt</h3>
-<p>E-Mail: <a href="mailto:admin@schondraussen.de">admin@schondraussen.de</a><br>Kontaktformular in der Seite</p>
+<p>E-Mail: <a href="mailto:admin@schondraussen.de">admin@schondraussen.de</a><br>Kontaktformular: <a href="/kontakt.php">schondraussen.de/kontakt.php</a> (ohne Konto nutzbar)</p>
 <h3>Verantwortlich für den Inhalt nach § 18 Abs. 2 Medienstaatsvertrag (MStV)</h3>
 <p>Timo Lauer, Anschrift wie oben</p>
 <h3>Amazon-Partnerprogramm</h3>

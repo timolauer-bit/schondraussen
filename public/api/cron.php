@@ -36,6 +36,7 @@ try {
     $pdo->exec('DELETE FROM cron_runs WHERE id < (SELECT m FROM (SELECT MAX(id)-60 AS m FROM cron_runs) x)');
 } catch (Throwable $e) {}
 try { [$m, $f] = run_digests($pdo); echo "Mails: $m versendet, $f fehlgeschlagen\n"; } catch (Throwable $e) { echo "Mails: übersprungen (" . $e->getMessage() . ")\n"; }
+try { $pdo->exec('DELETE FROM login_attempts WHERE at < NOW() - INTERVAL 2 DAY'); } catch (Throwable $e) {}
 try { $pdo->exec('DELETE FROM invites WHERE expires_at < NOW() - INTERVAL 1 DAY OR used_at < NOW() - INTERVAL 30 DAY'); } catch (Throwable $e) {}
 try { $pdo->exec("DELETE FROM images WHERE ref_id IS NULL AND created_at < NOW() - INTERVAL 1 DAY"); } catch (Throwable $e) {}
 try {
