@@ -117,7 +117,7 @@
   function markSeen() { try { localStorage.setItem('sd-seen', String(LOGTOTAL)); } catch (_) {} }
   function renderVer() {
     var v = $('ver'); if (!v) return; var n = logBadge();
-    v.textContent = 'Version ' + LATEST; if (n) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
+    v.textContent = 'Version ' + LATEST; if (n && (D.admin || D.alpha)) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
     v.setAttribute('aria-pressed', String(S.view === 'log')); v.title = 'Versionsverlauf';
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
