@@ -2,6 +2,7 @@ window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
     'F|Vom Admin gelöschte Konten sind sofort gesperrt, ihre Daten (Chatverlauf, Ideen, Bugs) bleiben noch 7 Tage lesbar und werden dann endgültig entfernt (Ideen und Bugs bleiben dabei erhalten)',
+    'U|Nach F5 öffnet die Seite wieder dort, wo du warst (im selben Browser-Tab, bis zu 8 Stunden); ein neuer Tag oder ein neuer Aufruf startet weiter mit dem Kalender',
     'U|Beim Löschwunsch steht eine Abschiedszeile in der Mail und auf der Seite: Dauer des Kontos und Zahl der Einträge je Kategorie',
     'F|Wird ein Konto gelöscht, bleiben seine Ideen und Bugmeldungen erhalten; der Name erscheint dann durchgestrichen mit dem Hinweis „Konto gelöscht“, Chat-Bilder und Chatverlauf werden entfernt',
     'U|Anmeldeseite in drei Kästen nebeneinander: Infotext, Screenshots übereinander, Anmeldung (auf dem Handy untereinander, die Anmeldung zuerst)',

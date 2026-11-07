@@ -168,6 +168,7 @@
     if (!S.ready) { mainEl.append(h('p', { class: 'state pulse' }, 'Lade deine Liste …')); return; }
     clearInterval(supTimer);
     var v = S.view;
+    saveView();
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
     else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug' && isAlpha()) feedbackView('bug');
@@ -276,7 +277,9 @@
         n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null));
     });
   }
+  function saveView() { try { sessionStorage.setItem('sd_view', JSON.stringify({ v: S.view, c: S.cat, s: S.sel, t: Date.now() })); } catch (_) {} }
   function content() {
+    saveView();
     var box = $('content'); box.textContent = '';
     var es = entriesOf(S.cat), t = TYPES[S.cat];
     if (!es.length) { box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural), h('p', null, 'Gib links einen Namen ein und wähle den passenden Treffer. Werke und angekündigte Neuerscheinungen werden dann automatisch geladen.'))); box.append(popularBox(S.cat)); return; }
@@ -922,5 +925,13 @@
         h('button', { class: 'btn ghost', type: 'button', onclick: function () { try { sessionStorage.setItem('unskip', '1'); } catch (_) {} box.remove(); } }, 'Später'))));
     document.body.append(box); inp.focus();
   }
+  // Nach F5 wieder dort starten, wo man war (nur im selben Tab und höchstens 8 Stunden; sonst Kalender)
+  try {
+    var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
+    if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
+      var okv = { cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: isAlpha() && feat('feat'), bug: isAlpha() };
+      if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
+    }
+  } catch (_) {}
   load(function () { render(); askName(); unreadPoll(); setInterval(unreadPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();
