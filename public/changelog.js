@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Obere Leiste: Einstellungen, Ideen, Bugs, Info und Kontakt zeigen für alle nur Symbole; der Name steht nur bei der geöffneten Seite',
     'O|Neue „Nerdoption“ in den Einstellungen: zeigt die Zahl neuer Änderungen an der Versionsnummer und im Versionsverlauf die neuen Einträge seit dem letzten Besuch (für Admin und Alphatester immer an)',
     'A|Versionsverlauf: Für Admin und Alphatester steht oben ein Feld „Änderungen seit deinem letzten Besuch dieser Seite“ mit den neuen Einträgen',
     'A|Admin und Alphatester können Bilder und Dateien aus Ideen und Bugs entfernen; an der Stelle steht danach „Bild/Datei wurde von … entfernt“',
