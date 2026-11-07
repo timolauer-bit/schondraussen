@@ -298,7 +298,7 @@
     wrap.append(h('h3', { class: 'sec' }, 'Kommende Veröffentlichungen' + (items.length > 10 ? ' (die nächsten 10 von ' + items.length + ')' : '')));
     if (!items.length) wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.'));
     items.slice(0, 10).forEach(function (it) {
-      var p = it.p, d = p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? String(p.m).padStart(2, '0') + '.' + p.y : p.prec === 'none' ? 'Datum offen' : String(p.y);
+      var p = it.p, d = p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? MSHORT.format(p.start).replace('.', '') + ' ' + p.y : p.prec === 'none' ? 'Datum offen' : String(p.y);
       wrap.append(h('div', { class: 'ovrow' }, h('span', { class: 'ovd', title: p.prec === 'month' ? 'Nur der Monat ist bekannt' : p.prec === 'year' ? 'Nur das Jahr ist bekannt' : null }, d), h('span', { class: 'ovt' }, h('b', null, nameLink(it.e)), ' – ' + it.u.title + (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : ''))));
     });
     wrap.append(h('p', { class: 'hint' }, 'Wähle links einen Eintrag, um Werke und Termine zu sehen.'));
