@@ -85,9 +85,9 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <button id="canceldel" type="button">Löschung abbrechen</button> <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php elseif (!empty($u['rename'])): ?>
   <p><b>Bitte wähle einen neuen Benutzernamen.</b> Dein bisheriger Name entspricht nicht den Regeln. Bis du einen neuen gewählt hast, kannst du die Seite nicht nutzen.</p>
-  <p class="fine">3 bis 20 Zeichen. Erlaubt sind Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich und Bindestrich, ohne Leerzeichen und nicht am Anfang oder Ende.</p>
+  <p class="fine">3 bis 20 Zeichen. Erlaubt sind Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich und Bindestrich, ohne Leerzeichen und nicht am Anfang oder Ende. Nicht möglich sind außerdem Namen, die schon vergeben sind, die mit Betreiber oder Support verwechselt werden könnten oder die anstößig sind. Klappt ein Name nicht, steht der Grund direkt unter dem Feld.</p>
   <form id="f-rename"><label for="rn">Neuer Benutzername (3 bis 20 Zeichen)</label><input id="rn" type="text" maxlength="20" minlength="3" required autocomplete="off">
-    <button type="submit">Speichern</button> <button id="logout" type="button" class="ghost">Abmelden</button></form><div class="msg" id="msg" role="status"></div></div>
+    <button type="submit">Speichern</button> <button id="logout" type="button" class="ghost">Abmelden</button></form><div class="msg" id="msg" role="alert" aria-live="assertive"></div></div>
 <?php else: ?>
   <p><b>Dein Konto wartet auf Freischaltung.</b> Die Seite ist noch im Testbetrieb. Sobald der Admin dich freigeschaltet hat, siehst du hier deine Listen. Schau später einfach noch einmal vorbei.</p>
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
