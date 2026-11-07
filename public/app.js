@@ -276,7 +276,7 @@
     saveView();
     var box = $('content'); box.textContent = '';
     var es = entriesOf(S.cat), t = TYPES[S.cat];
-    if (!es.length) { box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural), h('p', null, 'Gib links einen Namen ein und wähle den passenden Treffer. Werke und angekündigte Neuerscheinungen werden dann automatisch geladen.'))); box.append(popularBox(S.cat)); return; }
+    if (!es.length) { box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural), h('p', null, 'Gib links einen Namen ein und wähle den passenden Treffer. Werke und angekündigte Neuerscheinungen werden dann automatisch geladen.'), h('p', { class: 'hint' }, 'Tipp: In den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' kannst du unter „Import“ ganze Listen oder Exporte (zum Beispiel von Spotify oder Trakt) einspielen und eigene Sammellisten hinzufügen.'))); box.append(popularBox(S.cat)); return; }
     var cur = es.filter(function (e) { return e.id === S.sel; })[0];
     if (!cur) { box.append(overview(S.cat)); return; }
     box.append(h('button', { class: 'backlink', type: 'button', onclick: function () { S.sel = null; S.confirm = null; rows(); content(); } }, '← Alle ' + t.plural));
