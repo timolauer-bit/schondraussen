@@ -117,7 +117,7 @@
   function markSeen() { try { localStorage.setItem('sd-seen', String(LOGTOTAL)); } catch (_) {} }
   function renderVer() {
     var v = $('ver'); if (!v) return; var n = logBadge();
-    v.textContent = 'Version ' + LATEST; if (n && (D.admin || D.alpha)) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
+    v.textContent = 'Version ' + LATEST; if (n && (D.admin || D.alpha || D.nerd)) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
     v.setAttribute('aria-pressed', String(S.view === 'log')); v.title = 'Versionsverlauf';
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
@@ -522,7 +522,9 @@
       h('div', { class: 'inline' }, un, h('button', { class: 'btn', type: 'button', disabled: unLeft > 0, onclick: function () { api('/api/auth.php?a=username', { username: un.value }).then(function (r) { if (r.ok) { D.username = r.username; D.uname_left = 30; unMsg.className = 'msg'; unMsg.textContent = 'Gespeichert.'; var w = $('who'); if (w) { var t = w.lastChild; if (t && t.nodeType === 3) t.textContent = r.username + ' · ' + D.email; } render(); } else { unMsg.className = 'msg err'; unMsg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, 'Speichern')), unMsg));
     var skins = h('div', { class: 'skins', role: 'group', 'aria-label': 'Oberfläche wählen' });
     SKINS.forEach(function (k) { skins.append(h('button', { class: 'skin', type: 'button', 'aria-pressed': String((S.skin || '') === k[0]), onclick: function () { setSkin(k[0]); api('/api/data.php?a=skin', { skin: k[0] }); render(); } }, h('span', { class: 'dots' }, k[2].map(function (c) { var i = h('i'); i.style.background = c; return i; })), h('b', null, k[1]))); });
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Oberfläche'), skins));
+    var nerdMsg = h('span', { class: 'msg', style: 'margin:0' }), nerdCk = h('input', { type: 'checkbox', onchange: function () { var on = this.checked; api('/api/auth.php?a=nerd', { on: on }).then(function (r) { if (r.ok) { D.nerd = on; nerdMsg.className = 'msg'; nerdMsg.textContent = 'Gespeichert.'; renderVer(); } else { nerdCk.checked = !on; nerdMsg.className = 'msg err'; nerdMsg.textContent = r.error || 'Speichern nicht möglich.'; } }); } }); nerdCk.checked = !!D.nerd;
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Oberfläche'), skins,
+      h('div', { style: 'margin-top:14px' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge.'), nerdMsg)));
     var tm = h('span', { class: 'msg', style: 'margin:0' }), cb = h('input', { type: 'checkbox', id: 'ntf', onchange: function () { S.notify = this.checked; api('/api/data.php?a=notify', { on: this.checked }); opts.style.opacity = this.checked ? '1' : '.5'; } }); cb.checked = !!S.notify;
     var sv = h('span', { class: 'msg', style: 'margin:0' });
     function saveN() { api('/api/data.php?a=notifyset', { 'new': S.n['new'], day: S.n.day, week: S.n.week, mode: S.n.mode, weekday: S.n.weekday, bell_default: S.n.bell_default }).then(function (r) { sv.className = 'msg' + (r.ok ? '' : ' err'); sv.textContent = r.ok ? 'Gespeichert.' : (r.msg || r.error || 'Speichern nicht möglich.'); setTimeout(function () { sv.textContent = ''; }, 2500); }); }
@@ -776,7 +778,7 @@
     mainEl.append(d);
   }
   function logView() {
-    var staffLog = !!(D.admin || D.alpha) && !S.preview, nNew = staffLog ? logBadge() : 0;
+    var staffLog = !!(D.admin || D.alpha || D.nerd) && !S.preview, nNew = staffLog ? logBadge() : 0;
     markSeen(); renderVer();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Versionsverlauf'), h('p', { class: 'hint' }, 'Was sich in welcher Version geändert hat.'));
     var CATS = [['F', 'Neue Funktionen'], ['O', 'Optionen'], ['U', 'Oberfläche'], ['B', 'Bugfixes'], ['A', 'Admin'], ['D', 'Datenschutz und Sicherheit'], ['T', 'Technik']];
