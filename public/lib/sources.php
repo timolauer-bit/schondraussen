@@ -143,6 +143,24 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
     return ['ok' => true, 'msg' => count($works) . ' Alben, ' . count($rel) . ' kommende Veröffentlichungen'];
 }
 
+// Google Books: angekündigte Bücher einer Person (Datum als JJJJ, JJJJ-MM oder JJJJ-MM-TT). $seen = bereits bekannte Titel (klein geschrieben).
+function googlebooks_upcoming(string $name, array $seen): array {
+    $r = http_json('https://www.googleapis.com/books/v1/volumes?maxResults=40&orderBy=newest&printType=books&q=' . rawurlencode('inauthor:"' . str_replace('"', '', $name) . '"'), 8);
+    $out = []; $today = date('Y-m-d'); $ym = date('Y-m'); $y = date('Y');
+    $norm = fn($t) => trim(mb_strtolower(preg_split('/\s*[:–-]\s/u', $t)[0]));
+    $known = []; foreach ($seen as $k => $_) $known[$norm((string) $k)] = 1;
+    foreach (($r['items'] ?? []) as $it) {
+        $v = $it['volumeInfo'] ?? []; $t = trim((string) ($v['title'] ?? '')); $d = (string) ($v['publishedDate'] ?? '');
+        if ($t === '' || !preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $d)) continue;
+        $has = false; foreach (($v['authors'] ?? []) as $a) if (mb_strtolower(trim($a)) === mb_strtolower($name)) $has = true;
+        if (!$has) continue;
+        $future = strlen($d) === 10 ? $d > $today : (strlen($d) === 7 ? $d > $ym : $d > $y);
+        if (!$future || isset($known[$norm($t)])) continue;
+        $known[$norm($t)] = 1; $out[] = [$t, $d, 'Buch'];
+    }
+    return $out;
+}
+
 // Open Library (Autor:innen). Kommende Bücher liefert diese Quelle kaum; dafür kommt später eine zweite.
 function openlibrary_refresh(PDO $pdo, array $sub): array {
     $sid = (int) $sub['id'];
@@ -175,6 +193,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         if ($yr > $y) $rel[] = [$t, (string) $yr, 'Buch'];
         else $works[] = [$t, $yr ?: null, 'Buch'];
     }
+    foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
     $pdo->beginTransaction();
     try {
