@@ -27,3 +27,9 @@ function delete_user_keep_feedback(PDO $pdo, int $uid): void {
     } catch (Throwable $e) {}
     $pdo->prepare('DELETE FROM users WHERE id=?')->execute([$uid]);
 }
+
+/** Vom Admin gelöscht: Konto sofort gesperrt, Daten (z. B. Chatverlauf) bleiben noch 7 Tage lesbar, danach löscht der Cron endgültig. */
+function soft_delete_user(PDO $pdo, int $uid): void {
+    try { $pdo->prepare("UPDATE users SET delete_requested_at=COALESCE(delete_requested_at,NOW()), admin_deleted=1, approved_at=NULL, notify=0 WHERE id=? AND role<>'admin'")->execute([$uid]); }
+    catch (Throwable $e) { delete_user_keep_feedback($pdo, $uid); }
+}

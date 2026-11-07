@@ -16,7 +16,7 @@ if ($a === 'list') {
     if ($kind === 'bug' || FEATURE_ALPHA) require_alpha($u);
     $doneSel = ''; $doneOrd = '';
     $noSel = ''; try { $pdo->query('SELECT bug_no FROM feedback LIMIT 1'); $noSel = ',f.bug_no'; } catch (Throwable $e) {}
-    try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone,uu.delete_requested_at AS author_del'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try {
         $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel,
@@ -36,8 +36,9 @@ if ($a === 'list') {
             $nm = $r['author_name'] ?: 'Mitglied Nr. ' . (int) $r['user_id'];
             $r['author'] = $nm . ($admin ? ($r['author_name'] ? ' (Nr. ' . (int) $r['user_id'] . ')' : '') . ($r['author_email'] && empty($r['author_hide']) ? ' · ' . $r['author_email'] : '') : '');
         }
+        if (!empty($r['author_del'])) $r['gone'] = 1;
         $r['author_tier'] = $r['author_role'] === 'admin' ? 'admin' : (!empty($r['author_alpha']) ? 'alpha' : '');
-        unset($r['user_id'], $r['author_hide'], $r['author_email'], $r['author_name'], $r['author_role'], $r['author_alpha']);
+        unset($r['author_del'], $r['user_id'], $r['author_hide'], $r['author_email'], $r['author_name'], $r['author_role'], $r['author_alpha']);
     }
     if ($rows) { // Bilder: Freigegebene für alle, Wartende für Absender und Admin/Alpha (dort mit status)
         try {

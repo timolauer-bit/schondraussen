@@ -5,10 +5,10 @@ $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
 if ($a === 'users') {
-    $cols = 'u.id,u.email,u.username,u.name_change_required,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at';
+    $cols = 'u.id,u.email,u.username,u.name_change_required,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at,u.delete_requested_at';
     $sql = " FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC";
     $ent = ',(SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) AS entries';
-    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha,u.hide_email,u.hide_activity' . $ent . $sql)->fetchAll(); }
+    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha,u.hide_email,u.hide_activity,u.admin_deleted' . $ent . $sql)->fetchAll(); }
     catch (Throwable $e) {
         try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha' . $ent . $sql)->fetchAll(); }
         catch (Throwable $e2) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
@@ -64,7 +64,7 @@ if ($a === 'block' || $a === 'unblock') {
         else {
             if (strcasecmp($mail, $u['email']) === 0) json_out(['error' => 'Die eigene Adresse kann nicht gesperrt werden.'], 422);
             $pdo->prepare('INSERT IGNORE INTO blocked_emails (email) VALUES (?)')->execute([$mail]);
-            $x = $pdo->prepare("SELECT id FROM users WHERE email=? AND role<>'admin'"); $x->execute([$mail]); foreach ($x->fetchAll(PDO::FETCH_COLUMN) as $xid) delete_user_keep_feedback($pdo, (int) $xid);
+            $x = $pdo->prepare("SELECT id FROM users WHERE email=? AND role<>'admin'"); $x->execute([$mail]); foreach ($x->fetchAll(PDO::FETCH_COLUMN) as $xid) soft_delete_user($pdo, (int) $xid);
         }
     } catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
@@ -93,6 +93,6 @@ if ($a === 'approve') { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE 
 if ($a === 'revoke')  { $pdo->prepare("UPDATE users SET approved_at=NULL WHERE id=? AND role<>'admin'")->execute([$id]); json_out(['ok' => true]); }
 if ($a === 'delete')  {
     if (!empty($b['block'])) { try { $pdo->prepare("INSERT IGNORE INTO blocked_emails (email) SELECT email FROM users WHERE id=? AND role<>'admin'")->execute([$id]); } catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); } }
-    $ad = $pdo->prepare("SELECT id FROM users WHERE id=? AND role<>'admin'"); $ad->execute([$id]); if ($ad->fetch()) delete_user_keep_feedback($pdo, (int) $id); json_out(['ok' => true]);
+    $ad = $pdo->prepare("SELECT id FROM users WHERE id=? AND role<>'admin'"); $ad->execute([$id]); if ($ad->fetch()) soft_delete_user($pdo, (int) $id); json_out(['ok' => true]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);

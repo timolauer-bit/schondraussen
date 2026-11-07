@@ -39,7 +39,7 @@ function current_user(): ?array {
     $s = db()->prepare('SELECT * FROM users WHERE id=? AND email_verified_at IS NOT NULL');
     $s->execute([$_SESSION['uid']]);
     $u = $s->fetch();
-    if (!$u) return null;
+    if (!$u || !empty($u['admin_deleted'])) return null;
     unset($u['pass_hash']);
     $u['totp_on'] = (int) ($u['totp_enabled'] ?? 0) === 1; unset($u['totp_secret'], $u['totp_codes'], $u['totp_step']);
     $u['deleting'] = !empty($u['delete_requested_at']);

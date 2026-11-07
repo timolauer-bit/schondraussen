@@ -94,9 +94,10 @@ try {
     if ($a === 'login') {
         if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
         $email = strtolower(trim((string) ($b['email'] ?? ''))); $pw = (string) ($b['password'] ?? '');
-        $s = $pdo->prepare('SELECT id,pass_hash,email_verified_at FROM users WHERE email=?'); $s->execute([$email]); $u = $s->fetch();
+        $s = $pdo->prepare('SELECT id,pass_hash,email_verified_at,admin_deleted FROM users WHERE email=?'); $s->execute([$email]); $u = $s->fetch();
         $ok = $u && password_verify($pw, $u['pass_hash']);
         if (!$ok) { note($pdo, 'login'); json_out(['error' => 'E-Mail-Adresse oder Passwort stimmt nicht.'], 401); }
+        if (!empty($u['admin_deleted'])) json_out(['error' => 'Dieses Konto wurde gelöscht.'], 403);
         if (!$u['email_verified_at']) json_out(['error' => 'Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.'], 403);
         try { $t = $pdo->prepare('SELECT totp_enabled FROM users WHERE id=?'); $t->execute([$u['id']]); if ((int) $t->fetchColumn() === 1) { $_SESSION['mfa_uid'] = (int) $u['id']; $_SESSION['mfa_at'] = time(); json_out(['ok' => true, 'mfa' => true]); } } catch (Throwable $e) {}
         session_regenerate_id(true);
