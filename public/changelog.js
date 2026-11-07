@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Anmeldeseite: Der doppelte Hinweis auf die Prüfung neuer Konten im linken Kasten entfällt (er steht groß im rechten Kasten)',
     'F|Ideen und Bugs: Die einreichende Person kann Kurzbeschreibung und Details nachträglich bearbeiten (solange der Beitrag nicht erledigt oder abgelehnt ist). Bearbeitete Stellen sind gepunktet unterstrichen und mit ✎ markiert; per Maus-Hinweis sieht jeder die frühere Fassung samt Zeitpunkt',
     'A|Admin: Personen einladen. Im Adminmenü erzeugst du einen Einmal-Einladungslink (14 Tage gültig), optional mit direktem Mailversand; wer sich darüber registriert, ist sofort freigeschaltet. Für weitere Personen erzeugst du einen neuen Link; offene Einladungen lassen sich widerrufen',
     'A|Nutzerverwaltung: aufsteigend nach Mitgliedsnummer sortiert, darüber ein Suchfeld (Nummer oder Benutzername)',

@@ -132,9 +132,6 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
       <li><b>Erinnerung per Mail:</b> Du wählst selbst, ob du bei der Ankündigung, am Erscheinungstag oder als Wochenübersicht informiert wirst.</li>
     </ul>
     <p>Registrieren, Einträge hinzufügen, fertig. Du wählst einen Benutzernamen, und dein Konto lässt sich jederzeit selbst löschen.</p>
-    <!-- HINWEIS-FREISCHALTUNG: Absatz zum Start der Seite entfernen (zusammen mit der Freischaltung) -->
-    <p class="fine">Dein Konto wird kurz geprüft und von Hand freigeschaltet, bevor du Inhalte siehst.</p>
-    <!-- /HINWEIS-FREISCHALTUNG -->
   </section>
   <?php if ($shots): ?><section class="card shots land-shots" aria-labelledby="shots-h">
     <h2 id="shots-h">So sieht es aus</h2>
