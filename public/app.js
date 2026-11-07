@@ -542,7 +542,7 @@
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benachrichtigungen'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'), opts,
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
-    var imp = h('div', { class: 'wide2' });
+    var imp = h('div', { class: 'wide2' }), impBtns = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }), impPanels = h('div'); imp.append(impBtns, impPanels);
     function splitCsv(l, dl) { var o = [], cur = '', q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === dl && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; }
     function namesFrom(text, fname) {
       var out = [];
@@ -578,7 +578,7 @@
         api('/api/data.php?a=import', { names: l, type: c[0] }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = r.added + ' ' + (r.added === 1 ? c[2] : (c[0] === 'artist' ? 'Musiker:innen' : c[1])) + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
       } }, 'Importieren'), imsg));
       ipanel.append.apply(ipanel, kids); refresh();
-      imp.append(h('button', { class: 'btn ghost small' + (cls ? ' ' + cls : ''), type: 'button', style: 'margin-right:8px', 'aria-expanded': 'false', onclick: function () { var open = ipanel.hidden; document.querySelectorAll('.imppanel').forEach(function (p) { p.hidden = true; }); ipanel.hidden = !open; } }, label), ipanel);
+      impBtns.append(h('button', { class: 'btn ghost small' + (cls ? ' ' + cls : ''), type: 'button', 'aria-expanded': 'false', onclick: function () { var open = ipanel.hidden; document.querySelectorAll('.imppanel').forEach(function (p) { p.hidden = true; }); ipanel.hidden = !open; impBtns.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); }); if (open) this.setAttribute('aria-expanded', 'true'); } }, label)); impPanels.append(ipanel);
       ipanel.classList.add('imppanel');
     }
     mkImporter('Listen importieren', null, function (c) { return 'Wähle die Kategorie und füge ' + c[3] + ' ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text). Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern. Die Angaben dazu werden danach nach und nach geladen, bei langen Listen kann das einige Stunden dauern.'; });
