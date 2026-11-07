@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Info, „Zum Testen“: Hinweis, dass die Daten aus den Quellen stammen, Lücken haben können und manchmal fremdsprachige Ergebnisse enthalten',
     'F|Ideen lassen sich zusätzlich als „abgelehnt“ markieren (nur Admin); die einreichende Person bekommt dazu eine eigene Systemnachricht im Kontakt',
     'U|Die Frage „Möchtest du mit Beispielen starten?“ beim ersten Start entfällt',
     'F|Vom Admin gelöschte Konten sind sofort gesperrt, ihre Daten (Chatverlauf, Ideen, Bugs) bleiben noch 7 Tage lesbar und werden dann endgültig entfernt (Ideen und Bugs bleiben dabei erhalten)',
