@@ -21,6 +21,7 @@ if ($a === 'get') {
         }
     }
     if (!$ok) { http_response_code(404); exit; }
+    if (!empty($im['removed_at'])) { http_response_code(410); exit; }
     $isText = ($im['kind'] ?? 'image') === 'text';
     header('Content-Type: ' . ($isText ? 'text/plain; charset=utf-8' : 'image/jpeg')); header('X-Content-Type-Options: nosniff');
     if ($isText) header('Content-Disposition: inline; filename="anhang.txt"');
@@ -57,6 +58,13 @@ if ($a === 'approve' || $a === 'reject') {
     if (!$alpha || $im['scope'] !== 'feedback') json_out(['error' => 'Nicht erlaubt.'], 403);
     if ($a === 'approve') $pdo->prepare("UPDATE images SET status='approved' WHERE id=?")->execute([$id]);
     else $pdo->prepare('DELETE FROM images WHERE id=?')->execute([$id]);
+    json_out(['ok' => true]);
+}
+if ($a === 'strike') { // Admin/Alpha entfernt ein Medium aus einem Beitrag; der Hinweis „entfernt von …“ bleibt stehen
+    if (!$alpha || $im['scope'] !== 'feedback' || $im['ref_id'] === null) json_out(['error' => 'Nicht erlaubt.'], 403);
+    $who = $admin ? 'Admin' : (!empty($u['username']) ? (string) $u['username'] : 'Mitglied Nr. ' . (int) $u['id']);
+    try { $pdo->prepare("UPDATE images SET data='', name=NULL, removed_by=?, removed_at=NOW() WHERE id=?")->execute([mb_substr($who, 0, 60), $id]); }
+    catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
 if ($a === 'remove') { // Admin immer; Absender nur, solange das Bild noch an keinem Beitrag hängt

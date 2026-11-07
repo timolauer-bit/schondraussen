@@ -48,8 +48,9 @@ if ($a === 'list') {
         try {
             $ids = implode(',', array_map('intval', array_column($rows, 'id'))); $by = []; $pend = [];
             $kc = ''; try { $pdo->query('SELECT kind FROM images LIMIT 1'); $kc = ',kind,name'; } catch (Throwable $e) {}
+            try { $pdo->query('SELECT removed_by FROM images LIMIT 1'); $kc .= ',removed_by'; } catch (Throwable $e) {}
             foreach ($pdo->query("SELECT id,ref_id,status,user_id$kc FROM images WHERE scope='feedback' AND ref_id IN ($ids) ORDER BY id")->fetchAll() as $im) {
-                if ($im['status'] === 'approved' || $alpha || (int) $im['user_id'] === (int) $u['id']) $by[$im['ref_id']][] = ['id' => (int) $im['id'], 'status' => $im['status'], 'kind' => $im['kind'] ?? 'image', 'name' => $im['name'] ?? null];
+                if ($im['status'] === 'approved' || $alpha || (int) $im['user_id'] === (int) $u['id']) $by[$im['ref_id']][] = ['id' => (int) $im['id'], 'status' => $im['status'], 'kind' => $im['kind'] ?? 'image', 'name' => $im['name'] ?? null, 'removed_by' => $im['removed_by'] ?? null];
                 else $pend[$im['ref_id']] = ($pend[$im['ref_id']] ?? 0) + 1;
             }
             foreach ($rows as &$r) { $r['images'] = $by[$r['id']] ?? []; $r['pending_hidden'] = $pend[$r['id']] ?? 0; }

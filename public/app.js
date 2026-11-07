@@ -896,10 +896,13 @@
         var pics = h('div', { class: 'pics' });
         (x.images || []).forEach(function (im) {
           var pend = im.status === 'pending', priv = D.admin || D.alpha, isT = im.kind === 'text';
+          if (im.removed_by) { pics.append(h('p', { class: 'hint fbremoved' }, (isT ? 'Datei' : 'Bild') + ' wurde von ' + im.removed_by + ' entfernt')); return; }
+          var rmBtn = staff ? h('button', { class: 'btn ghost small', type: 'button', title: (isT ? 'Datei' : 'Bild') + ' aus dem Beitrag entfernen', onclick: function () { if (confirm((isT ? 'Datei' : 'Bild') + ' wirklich entfernen? Im Beitrag bleibt ein Hinweis stehen, dass sie entfernt wurde.')) api('/api/image.php?a=strike', { id: im.id }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, 'Entfernen') : null;
           if (isT) {
             var tl = h('span', { class: 'txtatt' }, h('a', { href: imgUrl(im.id), target: '_blank', rel: 'noopener' }, '📄 ' + (im.name || 'Textdatei')));
             if (pend && priv) tl.append(' ', h('span', { class: 'hint' }, 'wartet auf Freigabe'), ' ', h('button', { class: 'btn small', type: 'button', onclick: function () { api('/api/image.php?a=approve', { id: im.id }).then(function () { reload(); }); } }, 'Freigeben'), ' ', h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Datei ablehnen und löschen?')) api('/api/image.php?a=reject', { id: im.id }).then(function () { reload(); }); } }, 'Ablehnen'));
             else if (pend) tl.append(' ', h('span', { class: 'hint' }, 'wartet auf Freigabe, nur für dich sichtbar'));
+            if (rmBtn) tl.append(' ', rmBtn);
             pics.append(tl); return;
           }
           var a1 = picLink(im.id, pend && priv ? 'blur' : '');
@@ -909,10 +912,11 @@
             h('button', { class: 'btn small', type: 'button', onclick: function () { api('/api/image.php?a=approve', { id: im.id }).then(function () { reload(); }); } }, 'Freigeben'),
             h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Bild ablehnen und löschen?')) api('/api/image.php?a=reject', { id: im.id }).then(function () { reload(); }); } }, 'Ablehnen')));
           else if (pend) fig.append(h('figcaption', null, h('span', null, 'Wartet auf Freigabe, nur für dich sichtbar')));
+          if (rmBtn) fig.append(h('div', { class: 'fbrm' }, rmBtn));
           pics.append(fig);
         });
         if (+x.pending_hidden) pics.append(h('p', { class: 'hint', style: 'margin:0' }, pl(x.pending_hidden, 'Bild wartet', 'Bilder warten') + ' auf Freigabe.'));
-        var nImg = (x.images || []).filter(function (im) { return im.kind !== 'text'; }).length, nTxt = (x.images || []).length - nImg, nAtt = nImg + nTxt;
+        var liveImgs = (x.images || []).filter(function (im) { return !im.removed_by; }), nImg = liveImgs.filter(function (im) { return im.kind !== 'text'; }).length, nTxt = liveImgs.length - nImg, nAtt = nImg + nTxt;
         var attInfo = nAtt ? h('p', { class: 'hint', style: 'margin:0 0 8px' }, 'Anhänge: ' + [nImg ? pl(nImg, 'Bild', 'Bilder') : '', nTxt ? pl(nTxt, 'Textdatei', 'Textdateien') : ''].filter(Boolean).join(', ')) : null;
         var body = h('div', { class: 'fbbody', hidden: true }, x.body ? h('div', { class: 'fbdetail' }, x.body) : null, attInfo, pics, h('p', { class: 'hint', style: 'margin:0' }, when(x.created_at) + (x.author && !x.gone ? ' · von ' + x.author : '') + (x.mine ? ' · von dir' : ''), x.gone ? [' · von ', h('s', { title: 'Das Konto wurde gelöscht' }, x.author), ' (Konto gelöscht)'] : null, x.author_tier === 'admin' ? [' ', h('span', { class: 'tier' }, 'Admin')] : x.author_tier === 'alpha' ? [' ', h('span', { class: 'tier alpha' }, 'Alphatester')] : null, bug && x.done_at ? ' · erledigt am ' + when(x.done_at) : null));
         var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, x.title, nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null));

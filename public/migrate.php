@@ -200,6 +200,9 @@ $M = [
   '024_site_state' => [
   "CREATE TABLE site_state (k VARCHAR(40) PRIMARY KEY, v VARCHAR(255) NOT NULL DEFAULT '', updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '033_media_removed' => [
+  "ALTER TABLE images ADD COLUMN removed_by VARCHAR(60) NULL, ADD COLUMN removed_at DATETIME NULL",
+ ],
   '032_feedback_released' => [
   "ALTER TABLE feedback ADD COLUMN released_at DATETIME NULL",
  ],
