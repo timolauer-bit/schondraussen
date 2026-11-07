@@ -32,6 +32,7 @@
 <li>Rechtsgrundlage: deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Die Adresse wird per Bestätigungslink verifiziert (Double-Opt-in).</li>
 <li>Du kannst jederzeit widerrufen: über den Abmeldelink in jeder E-Mail, durch das Zurücknehmen der Markierung in deiner Liste oder per E-Mail an mich. Der Widerruf wirkt für die Zukunft.</li>
 <li>Versand: über den Mailserver von ALL-INKL.COM (Auftragsverarbeitungsvertrag wie unter Punkt 3).</li>
+<li>Schlagzeilen in den Mails: Für neue Titel suche ich beim Versand über die Google-News-Suche nach aktuellen Meldungen. Dabei werden nur der Name des Eintrags und der Titel des Werks an Google übermittelt, keine Angaben zu dir. Die Links in der Mail führen zu den jeweiligen Nachrichtenseiten (über Google News).</li>
 </ul>
 <h2>6. Kontakt und Chat</h2>
 <p>Nachrichten über den Bereich „Kontakt“ und per E-Mail werden gespeichert, um deine Anfrage zu bearbeiten (Art. 6 Abs. 1 lit. b oder f DSGVO). Der Verlauf ist für dich und mich sichtbar. Der Chatverlauf bleibt gespeichert, solange dein Konto besteht, und wird mit dem Konto gelöscht (siehe Punkt 4). Auf Wunsch lösche ich einzelne Nachrichten auch früher, sofern keine Aufbewahrungspflicht besteht.</p>

@@ -1,6 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'F|Benachrichtigungsmails: Unter jedem neu angekündigten oder heute erscheinenden Titel steht jetzt eine Kurzinfo aus den Datenquellen (höchstens 8 Zeilen) und, wenn gefunden, bis zu zwei aktuelle Schlagzeilen mit Link aus der Google-News-Suche (je Mail für die ersten 8 Titel; Ergebnisse werden 12 Stunden zwischengespeichert). Die Vorschau-Mail weist darauf hin. Erfordert Migration 038',
+    'O|Einstellungen: Neue Auswahl „Wie möchtest du informiert werden?“: morgens bei Neuigkeiten, morgens plus Wochenübersicht, oder nur die Wochenübersicht (eine Mail pro Woche). Die Einzelschalter darunter bleiben für eigene Kombinationen',
     'A|Admin: „Testmail senden“ schickt eine Mail im Format der echten Benachrichtigungen an eine beliebige Adresse, um die Zustellbarkeit zu prüfen (zum Beispiel mit mail-tester.com)',
     'F|Öffentliches Kontaktformular (kontakt.php) für Besucher ohne Konto; im Impressum verlinkt, die Nachricht geht per Mail an den Admin (höchstens 3 Nachrichten pro Stunde und IP, nichts wird in der Datenbank gespeichert); gemerkte IP-Adressen für Anmelde- und Formularbegrenzung werden nach 2 Tagen gelöscht',
     'D|Impressum und Datenschutzerklärung sind jetzt ausgefüllt (u. a. 7 Tage Aufbewahrung nach Kontolöschung, Ideen und Bugs bleiben erhalten, Anhänge, Privatsphäre gegenüber dem Admin, Import, Sicherung)',

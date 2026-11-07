@@ -28,6 +28,43 @@ function fmt_date(string $d): string {
     return $d;
 }
 
+// Kurzinfo und aktuelle Schlagzeilen (Google-News-Suche, kostenlos) zu einem Titel für die Benachrichtigungsmail. Höchstens 8 Zeilen.
+function news_for(PDO $pdo, string $name, string $title): array {
+    static $fetches = 0;
+    $q = '"' . str_replace('"', '', $name) . '"' . (preg_match('/^S\d+E\d+/i', $title) ? '' : ' ' . str_replace('"', '', $title)) . ' when:90d';
+    $key = sha1($q); $json = null;
+    try { $s = $pdo->prepare('SELECT data FROM news_cache WHERE k=? AND fetched_at > (NOW() - INTERVAL 12 HOUR)'); $s->execute([$key]); $json = $s->fetchColumn() ?: null; } catch (Throwable $e) {}
+    if ($json !== null) return json_decode($json, true) ?: [];
+    if ($fetches >= 25) return []; // pro Lauf begrenzen
+    $fetches++;
+    $ch = curl_init('https://news.google.com/rss/search?q=' . rawurlencode($q) . '&hl=de&gl=DE&ceid=DE:de');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 6, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
+    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    $out = [];
+    if ($r !== false && $code < 400 && ($x = @simplexml_load_string($r)) && isset($x->channel->item)) {
+        foreach ($x->channel->item as $it) {
+            $head = trim((string) $it->title); $src = trim((string) ($it->source ?? '')); $link = trim((string) $it->link);
+            if ($src !== '' && substr($head, -strlen($src) - 3) === ' - ' . $src) $head = substr($head, 0, -strlen($src) - 3);
+            if ($head === '' || $link === '' || mb_stripos($head, $name) === false) continue; // nur Treffer, die den Namen nennen
+            $ts = strtotime((string) $it->pubDate); if ($ts && $ts < time() - 180 * 86400) continue;
+            $out[] = [mb_substr($head, 0, 110), $src, $link];
+            if (count($out) >= 2) break;
+        }
+        try { $pdo->prepare('REPLACE INTO news_cache (k,data) VALUES (?,?)')->execute([$key, json_encode($out, JSON_UNESCAPED_UNICODE)]); } catch (Throwable $e) {}
+    }
+    return $out;
+}
+function item_info(PDO $pdo, string $name, string $title, ?string $summary): string {
+    $lines = [];
+    $sum = trim((string) $summary);
+    if ($sum !== '') {
+        $w = explode("\n", wordwrap('Über ' . $name . ': ' . mb_substr($sum, 0, 240) . (mb_strlen($sum) > 240 ? '…' : ''), 74, "\n", true));
+        foreach (array_slice($w, 0, 3) as $l) $lines[] = '  ' . $l;
+    }
+    foreach (news_for($pdo, $name, $title) as $nw) { $lines[] = '  Presse: ' . $nw[0] . ($nw[1] !== '' ? ' (' . $nw[1] . ')' : ''); $lines[] = '  ' . $nw[2]; }
+    return $lines ? "\n" . implode("\n", array_slice($lines, 0, 8)) : '';
+}
+
 // Gibt [versendete Mails, Fehler] zurück.
 // Einstellungen je Nutzer: n_new, n_day, n_week, n_mode ('digest' = eine Sammelmail täglich ab 7 Uhr, 'instant' = bei jedem Lauf),
 // n_weekday (1=Mo..7=So), Glocke je Eintrag (user_entries.bell).
@@ -37,14 +74,15 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     $hour = (int) date('G'); $today = date('Y-m-d'); $dow = (int) date('N'); $weekTo = date('Y-m-d', strtotime('+14 days'));
     $users = $pdo->query("SELECT id,email,unsub_token,n_new,n_day,n_week,n_mode,n_weekday,last_morning,last_weekly FROM users
         WHERE notify=1 AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL) AND delete_requested_at IS NULL")->fetchAll();
-    $subs = $pdo->prepare('SELECT s.id,s.name FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.bell=1 AND s.fetched_at IS NOT NULL');
+    $subs = $pdo->prepare('SELECT s.id,s.name,s.summary FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.bell=1 AND s.fetched_at IS NOT NULL');
     $rels = $pdo->prepare("SELECT title,release_date FROM releases WHERE subject_id=? AND release_date<>'' AND release_date IS NOT NULL");
     $known = $pdo->prepare('SELECT key_hash FROM notified WHERE user_id=?');
     $seenSub = $pdo->prepare('SELECT DISTINCT subject_id FROM notified WHERE user_id=?');
     $ins = $pdo->prepare('INSERT IGNORE INTO notified (user_id,subject_id,key_hash,kind) VALUES (?,?,?,?)');
     $h = fn($uid, $sid, $t, $d, $k) => sha1("$uid|$sid|$t|$d|$k");
     $sort = fn($a, $b) => strcmp($a[0], $b[0]);
-    $fmt = function (array $l) { usort($l, fn($a, $b) => strcmp($a[0], $b[0])); $o = array_map(fn($x) => '- ' . $x[1], array_slice($l, 0, 40)); if (count($l) > 40) $o[] = '… und ' . (count($l) - 40) . ' weitere'; return implode("\n", $o); };
+    $bud = 0; // Zahl der Titel mit Kurzinfo je Mail (nur Neu angekündigt und Heute erscheint)
+    $fmt = function (array $l) use ($pdo, &$bud) { usort($l, fn($a, $b) => strcmp($a[0], $b[0])); $o = array_map(function ($x) use ($pdo, &$bud) { $t = '- ' . $x[1]; if (isset($x[3]) && $bud > 0) { $bud--; $t .= item_info($pdo, $x[3], $x[4], $x[5] ?? null); } return $t; }, array_slice($l, 0, 40)); if (count($l) > 40) $o[] = '… und ' . (count($l) - 40) . ' weitere'; return implode("\n", $o); };
     foreach ($users as $u) {
         $uid = (int) $u['id']; $digest = $u['n_mode'] !== 'instant';
         $known->execute([$uid]); $K = array_flip($known->fetchAll(PDO::FETCH_COLUMN));
@@ -62,11 +100,11 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
                 $d = $r['release_date']; $line = $s['name'] . ' – ' . $r['title'] . ' (' . fmt_date($d) . ')';
                 $kn = $h($uid, $sid, $r['title'], $d, 'new'); $kd = $h($uid, $sid, $r['title'], $d, 'day');
                 if (!isset($K[$kn])) {
-                    if ($u['n_new']) { $new[] = [$d, $line]; $mark[] = [$sid, $kn, 'new']; }
+                    if ($u['n_new']) { $new[] = [$d, $line, $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kn, 'new']; }
                     else $ins->execute([$uid, $sid, $kn, 'new']); // still merken, damit später nichts auf einmal kommt
                 }
                 if (strlen($d) === 10) {
-                    if ($d === $today && $u['n_day'] && !isset($K[$kd])) { $day[] = [$d, $s['name'] . ' – ' . $r['title']]; $mark[] = [$sid, $kd, 'day']; }
+                    if ($d === $today && $u['n_day'] && !isset($K[$kd])) { $day[] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kd, 'day']; }
                     if ($d >= $today && $d <= $weekTo) $week[] = [$d, $line];
                 }
             }
@@ -76,10 +114,11 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
         if (!$canMorning) $day = []; // Erscheinungstag-Mails erst ab 7 Uhr
         if ($window && ($new || $day)) {
             if ($sent >= $maxMails) break;
+            $bud = 8;
             $text = "Hallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
             if ($day) $text .= "\nHEUTE ERSCHEINT\n" . $fmt($day) . "\n";
             if ($new) $text .= "\nNEU ANGEKÜNDIGT\n" . $fmt($new) . "\n";
-            $text .= "\nAlles im Überblick: " . base_url() . "/\n";
+            $text .= "\nAlles im Überblick: " . base_url() . "/\n" . ($new || $day ? "\nDie Schlagzeilen stammen aus der Google-News-Suche, die Kurzinfos aus den Datenquellen der Seite.\n" : '');
             $subj = (count($day) && !count($new)) ? (count($day) === 1 ? 'Heute erscheint 1 Titel' : 'Heute erscheinen ' . count($day) . ' Titel') : ((count($new) + count($day)) === 1 ? '1 Neuigkeit' : (count($new) + count($day)) . ' Neuigkeiten');
             if (send_user_mail($pdo, $u, 'Schondraussen.de: ' . $subj, $text)) {
                 foreach ($mark as $m) $ins->execute([$uid, $m[0], $m[1], $m[2]]);
@@ -90,6 +129,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
         if ($u['n_week'] && $canMorning && $dow === (int) $u['n_weekday'] && $u['last_weekly'] !== $today) {
             if ($sent >= $maxMails) break;
             $pdo->prepare('UPDATE users SET last_weekly=? WHERE id=?')->execute([$today, $uid]);
+            $bud = 0;
             if ($week) {
                 $text = "Hallo,\n\nhier sind die Termine der nächsten 14 Tage aus deinen Listen:\n\n" . $fmt($week) . "\n\nAlles im Überblick: " . base_url() . "/\n";
                 if (send_user_mail($pdo, $u, 'Schondraussen.de: Deine Wochenübersicht (' . count($week) . ($week && count($week) === 1 ? ' Termin)' : ' Termine)'), $text)) $sent++; else $fail++;
@@ -118,6 +158,7 @@ function build_preview(PDO $pdo, array $u): array {
             "--- Morgenmail ---\n\nHallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
     if ($nDay) $text .= "\nHEUTE ERSCHEINT\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . '- Beispiel-Serie – S01E01 Folgentitel' . "\n";
     if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n[Beispiel: Hier steht jeder neue Termin nur einmal.]\n" . implode("\n", array_map($line, array_slice($R, 0, 6))) . "\n";
+    if ($nNew || $nDay) $text .= "\n[Beispiel: In der echten Mail folgt unter jedem neuen Titel eine Kurzinfo (höchstens 8 Zeilen) und, wenn vorhanden, bis zu zwei aktuelle Schlagzeilen mit Link.]\n";
     if (!$nDay && !$nNew) $text .= "\n(Du hast gerade weder „Neu angekündigt“ noch „Am Erscheinungstag“ eingeschaltet, deshalb gäbe es keine solche Mail.)\n";
     $text .= "\nAlles im Überblick: " . base_url() . "/\n";
     $wk = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][max(1, min(7, (int) ($u['n_weekday'] ?? 1))) - 1];
