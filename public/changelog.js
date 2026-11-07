@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'U|Linke Leiste: Mehr Abstand zwischen dem Feld „Liste durchsuchen“ und dem ersten Eintrag',
     'F|Benachrichtigungsmails: Unter jedem neu angekündigten oder heute erscheinenden Titel steht jetzt eine Kurzinfo aus den Datenquellen (höchstens 8 Zeilen) und, wenn gefunden, bis zu zwei Schlagzeilen der letzten 7 Tage mit Link aus der Google-News-Suche (je Mail für die ersten 8 Titel; Ergebnisse werden 12 Stunden zwischengespeichert). Die Vorschau-Mail weist darauf hin. Erfordert Migration 038',
     'O|Einstellungen: Neue Auswahl „Wie möchtest du informiert werden?“: morgens bei Neuigkeiten, morgens plus Wochenübersicht, oder nur die Wochenübersicht (eine Mail pro Woche). Die Einzelschalter darunter bleiben für eigene Kombinationen',
     'A|Admin: „Testmail senden“ schickt eine Mail im Format der echten Benachrichtigungen an eine beliebige Adresse, um die Zustellbarkeit zu prüfen (zum Beispiel mit mail-tester.com)',
