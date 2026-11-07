@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 8, d: '07.11.2026', t: [
+    'A|Versionsverlauf: Für Admin und Alphatester steht oben ein Feld „Änderungen seit deinem letzten Besuch dieser Seite“ mit den neuen Einträgen',
     'A|Admin und Alphatester können Bilder und Dateien aus Ideen und Bugs entfernen; an der Stelle steht danach „Bild/Datei wurde von … entfernt“',
     'F|Admin kann unter Kontakt jeden Nutzer anschreiben (Auswahl ohne E-Mail-Adressen); die Nachricht erscheint im Chat des Nutzers und optional zusätzlich per E-Mail mit „[Direkt vom Admin]“ im Betreff und dem Hinweis, nicht per Mail zu antworten',
     'D|E-Mail-Adressen sind für den Admin grundsätzlich ausgeblendet (auch in Ideen, Bugs, Mails und der Sperrliste, dort nur maskiert); aufdecken geht nur einzeln und wird protokolliert; die Option „E-Mail-Adresse ausblenden“ in den Einstellungen entfällt',

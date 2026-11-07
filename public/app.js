@@ -776,9 +776,16 @@
     mainEl.append(d);
   }
   function logView() {
+    var staffLog = !!(D.admin || D.alpha) && !S.preview, nNew = staffLog ? logBadge() : 0;
     markSeen(); renderVer();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Versionsverlauf'), h('p', { class: 'hint' }, 'Was sich in welcher Version geändert hat.'));
     var CATS = [['F', 'Neue Funktionen'], ['O', 'Optionen'], ['U', 'Oberfläche'], ['B', 'Bugfixes'], ['A', 'Admin'], ['D', 'Datenschutz und Sicherheit'], ['T', 'Technik']];
+    if (staffLog) { // Neue Einträge seit dem letzten Besuch: die neuesten stehen in der Liste jeweils oben
+      var flat = []; CL.forEach(function (c) { if (c.base) return; c.t.forEach(function (x) { var m = /^([FOUBADT])\|/.exec(x); flat.push({ v: c.v, k: m ? m[1] : 'F', t: m ? x.slice(2) : x }); }); });
+      var fresh = flat.slice(0, nNew), catName = {}; CATS.forEach(function (k) { catName[k[0]] = k[1]; });
+      p.append(h('div', { class: 'lognew' }, h('h3', null, 'Änderungen seit deinem letzten Besuch dieser Seite'),
+        fresh.length ? h('ul', null, fresh.map(function (x) { return h('li', null, h('b', null, catName[x.k] + ' (Version ' + x.v + '): '), x.t); })) : h('p', { class: 'hint', style: 'margin:0' }, 'Keine neuen Änderungen seit deinem letzten Besuch.')));
+    }
     CL.forEach(function (c, ci) {
       var by = {}; c.t.forEach(function (x) { var m = /^([FOUBADT])\|/.exec(x), k = m ? m[1] : 'F'; (by[k] = by[k] || []).push(m ? x.slice(2) : x); });
       var hd = h('h3', null, 'Version ' + c.v, h('small', null, c.d)), old = ci >= 3, v = old ? h('details', { class: 'logv logold' }, h('summary', null, hd)) : h('div', { class: 'logv' }, hd);
