@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Ideen und Bugs: Admin und Alphatester können den Status „Im Brainstorming“ und „In Bearbeitung“ setzen (nochmal klicken setzt ihn zurück). Der Status steht für alle sichtbar als Marke neben dem Titel, solange der Beitrag nicht erledigt oder abgelehnt ist (Migration 046)',
     'B|Bücher hinzufügen: Autorennamen, die die Quelle nur in Großbuchstaben liefert (z. B. HARUKI MURAKAMI), werden in normale Groß- und Kleinschreibung umgewandelt',
     'F|Bücher: Genres bei Autor:innen (aus Wikidata, ersatzweise häufige Themen bei Open Library; bei Reihen noch keine). Sie erscheinen nach der nächsten Aktualisierung des Eintrags und sind im Filter nutzbar',
     'F|Bücher: Im Filter-Menü der Bücherliste gibt es jetzt die Auswahl „Art“ (Alle, Autor:innen, Reihen), damit Reihen und Autor:innen getrennt betrachtet werden können',

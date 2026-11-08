@@ -456,3 +456,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 /* Trefferliste beim Hinzufügen: Abstände zwischen den Kästen und zum Suchfeld */
 #sugg{margin-top:14px}#sugg>.hint{margin:0 0 12px}
 .suggest{gap:10px}.suggest .row-btn{margin-bottom:0;padding:12px 14px}
+/* Status von Ideen und Bugs: im Brainstorming, in Bearbeitung */
+.prio.ph-brainstorm{color:#2a5d8f;border-color:#2a5d8f;background:#e7f1fb}.prio.ph-progress{color:#8a4b00;border-color:#c77a00;background:#fbefd9}
+.btn.ph-brainstorm[aria-pressed=true]{background:#e7f1fb;border-color:#2a5d8f;color:#2a5d8f}.btn.ph-progress[aria-pressed=true]{background:#fbefd9;border-color:#c77a00;color:#8a4b00}
+.fbhead .prio+.prio{margin-left:6px}

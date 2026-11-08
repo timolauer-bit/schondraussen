@@ -22,6 +22,7 @@ if ($a === 'list') {
     try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone,uu.delete_requested_at AS author_del'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT phase FROM feedback LIMIT 1'); $noSel .= ',f.phase'; } catch (Throwable $e) {}
     try {
         $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel$relSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
@@ -173,6 +174,12 @@ if ($a === 'priority') {
     if ($kind !== 'bug') json_out(['error' => 'Nur Bugmeldungen haben eine Dringlichkeit.'], 422);
     $p = (string) ($b['priority'] ?? 'normal'); if (!in_array($p, ['urgent', 'normal', 'low'], true)) json_out(['error' => 'Ungültig.'], 422);
     $pdo->prepare('UPDATE feedback SET priority=? WHERE id=?')->execute([$p, $id]);
+    json_out(['ok' => true]);
+}
+if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbeitung (leer = offen)
+    if (!$alpha) json_out(['error' => 'Nicht erlaubt.'], 403);
+    $ph = (string) ($b['phase'] ?? ''); if ($ph !== '' && !in_array($ph, ['brainstorm', 'progress'], true)) json_out(['error' => 'Ungültig.'], 422);
+    try { $pdo->prepare('UPDATE feedback SET phase=? WHERE id=?')->execute([$ph === '' ? null : $ph, $id]); } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
 if ($a === 'delete') {
