@@ -806,6 +806,7 @@
     }
     return h('section', { class: 'infosec' }, h('h3', null, 'Entstehung und Aufwand'),
       h('p', { class: 'hint' }, 'Stand 08.11.2026. Alle Zahlen außer dem Umfang sind grobe Schätzungen und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
+      h('p', null, 'Diese Seite ist mit Hilfe einer KI entstanden: Der Betreiber hat sie gemeinsam mit Claude (Anthropic) entwickelt. Die Idee, die Entscheidungen, das Testen und die Freigaben liegen beim Betreiber, den Code hat überwiegend die KI geschrieben.'),
       h('p', null, 'Umfang (gemessen): rund 7.300 Zeilen PHP, JavaScript und CSS, 12 API-Dateien, 197 Änderungen in der Versionsverwaltung seit dem 03.11.2026. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa dreieinhalb Wochen.'),
       tbl(['Größe', 'Schätzung'], [
         ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', 'etwa 30–50 Stunden'],

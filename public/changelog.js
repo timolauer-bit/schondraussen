@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'U|Info, Entstehung und Aufwand: Hinweis, dass die Seite mit Hilfe der KI Claude (Anthropic) entwickelt wurde',
     'B|Bücher hinzufügen, Suche über den Buchtitel: Bücher mit genau diesem Titel und vielen Ausgaben stehen zuerst, Sekundärliteratur (z. B. Bücher über den Roman) kommt danach; bei den Treffern steht die Zahl der Ausgaben',
     'A|Admin, Aktualisierung der Einträge: Der Kasten „Schnittstellen“ listet jetzt alle Datenquellen auf, mit „keine Schnittstellenfehler“ oder dem aktuellen Fehler (rot)',
     'A|Admin, Aktualisierung der Einträge: Neuer Kasten „Fehler der Datenquellen“. Komplettfehler der Schnittstellen (nicht erreichbar, Tageslimit oder Kontingent erreicht, Zugang abgelehnt oder gesperrt, Fehler beim Dienst) werden pro Quelle gezählt und mit der Meldung der Quelle angezeigt; einzelne „nicht gefunden“ erscheinen dort nicht. Die Liste lässt sich leeren (Migration 045)',
