@@ -9,6 +9,13 @@ $pdo = db(); $a = $_GET['a'] ?? ''; $admin = $u['role'] === 'admin'; $alpha = is
 // Ideen sind noch Alpha (nur Admin und Alphatester); auf false setzen, um sie für alle zu öffnen
 const FEATURE_ALPHA = true;
 $kinds = ['feature' => 'Idee', 'bug' => 'Bugmeldung'];
+/** Kurze Anmerkung zu Zurückgestellt/Abgelehnt: eine Zeile, höchstens 300 Zeichen. */
+function note_clean($t): string { $t = trim(preg_replace('/\s+/u', ' ', (string) $t)); return mb_strlen($t) > 300 ? mb_substr($t, 0, 299) . '…' : $t; }
+function set_status_note(PDO $pdo, int $id, string $note, array $u, bool $admin): void {
+    if ($note === '') { $pdo->prepare('UPDATE feedback SET status_note=NULL, status_note_by=NULL, status_note_tier=NULL, status_note_at=NULL WHERE id=?')->execute([$id]); return; }
+    $by = trim((string) ($u['username'] ?? '')) ?: 'Mitglied Nr. ' . (int) $u['id'];
+    $pdo->prepare('UPDATE feedback SET status_note=?, status_note_by=?, status_note_tier=?, status_note_at=NOW() WHERE id=?')->execute([$note, $by, $admin ? 'admin' : 'alpha', $id]);
+}
 
 if ($a === 'list') {
     $kind = (string) ($_GET['kind'] ?? 'feature');
@@ -23,6 +30,7 @@ if ($a === 'list') {
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT phase FROM feedback LIMIT 1'); $noSel .= ',f.phase'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT status_note FROM feedback LIMIT 1'); $noSel .= ',f.status_note,f.status_note_by,f.status_note_tier,f.status_note_at'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT withdrawn_at FROM feedback LIMIT 1'); $noSel .= ',f.withdrawn_at,(f.withdrawn_at > NOW() - INTERVAL 24 HOUR) AS new_wd'; } catch (Throwable $e) {}
     try {
         $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel$relSel,
@@ -179,10 +187,12 @@ if ($a === 'reject') {
     try {
         $q = $pdo->prepare('SELECT user_id,title,done_at,rejected FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET rejected=?, done_at=' . ($on ? 'COALESCE(done_at,NOW())' : 'NULL') . ' WHERE id=?')->execute([$on ? 1 : 0, $id]);
+        $note = $on ? note_clean($b['note'] ?? '') : '';
+        try { set_status_note($pdo, $id, $note, $u, $admin); } catch (Throwable $e) {}
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     if ($on && $it && empty($it['rejected']) && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
         $t = (string) $it['title']; $t = mb_strlen($t) > 70 ? mb_substr($t, 0, 69) . '…' : $t;
-        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], 'Systemnachricht: Deine Idee „' . $t . '“ wird vorerst nicht umgesetzt. Danke trotzdem für deinen Vorschlag!']); } catch (Throwable $e) {}
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], 'Systemnachricht: Deine Idee „' . $t . '“ wird vorerst nicht umgesetzt.' . ($note !== '' ? ' Anmerkung: „' . $note . '“.' : '') . ' Danke trotzdem für deinen Vorschlag!']); } catch (Throwable $e) {}
     }
     json_out(['ok' => true]);
 }
@@ -205,6 +215,8 @@ if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbei
     try {
         $q = $pdo->prepare('SELECT user_id,title,bug_no,phase FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET phase=? WHERE id=?')->execute([$ph === '' ? null : $ph, $id]);
+        $note = $ph === 'postponed' ? note_clean($b['note'] ?? '') : '';
+        try { set_status_note($pdo, $id, $note, $u, $admin); } catch (Throwable $e) {}
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     // Systemnachricht an die Person, die den Beitrag geschrieben hat: bei jedem Wechsel auf einen neuen Status, nicht bei eigenen Beiträgen
     if ($ph !== '' && $it && ($it['phase'] ?? '') !== $ph && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
@@ -212,7 +224,7 @@ if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbei
         $what = $kind === 'bug' ? 'Deine Bugmeldung' . ($it['bug_no'] ? ' #' . (int) $it['bug_no'] : '') . ' „' . $t . '“' : 'Deine Idee „' . $t . '“';
         $thanks = ' Danke für ' . ($kind === 'bug' ? 'den Hinweis!' : 'deinen Vorschlag!');
         if ($ph === 'brainstorm') $txt = 'Systemnachricht: ' . $what . ' ist im Brainstorming. Es wird gerade überlegt, ' . ($kind === 'bug' ? 'woran es liegt und wie sich das lösen lässt.' : 'ob und wie sich das umsetzen lässt.') . $thanks;
-        elseif ($ph === 'postponed') $txt = 'Systemnachricht: ' . $what . ' ist zurückgestellt. Sie wird eventuell später wieder aufgegriffen, aktuell aber nicht umgesetzt.' . $thanks;
+        elseif ($ph === 'postponed') $txt = 'Systemnachricht: ' . $what . ' ist zurückgestellt. Sie wird eventuell später wieder aufgegriffen, aktuell aber nicht umgesetzt.' . ($note !== '' ? ' Anmerkung: „' . $note . '“.' : '') . $thanks;
         else $txt = 'Systemnachricht: ' . $what . ' ist in Bearbeitung. Sobald sie fertig ist, bekommst du Bescheid.' . $thanks;
         try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], $txt]); } catch (Throwable $e) {}
     }

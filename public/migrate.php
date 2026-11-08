@@ -200,6 +200,9 @@ $M = [
   '024_site_state' => [
   "CREATE TABLE site_state (k VARCHAR(40) PRIMARY KEY, v VARCHAR(255) NOT NULL DEFAULT '', updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '051_feedback_note' => [
+  "ALTER TABLE feedback ADD COLUMN status_note VARCHAR(400) NULL, ADD COLUMN status_note_by VARCHAR(60) NULL, ADD COLUMN status_note_tier VARCHAR(8) NULL, ADD COLUMN status_note_at DATETIME NULL",
+ ],
   '050_feedback_seen' => [
   "ALTER TABLE users ADD COLUMN fb_seen_feature DATETIME NULL, ADD COLUMN fb_seen_bug DATETIME NULL",
  ],

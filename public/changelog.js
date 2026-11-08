@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Ideen und Bugs: Beim Zurückstellen und Ablehnen kann Admin und Alphatester eine kurze Anmerkung dazuschreiben. Sie steht für alle sichtbar unter dem Haupttext des Beitrags (mit Datum, Name und Rolle rechts oben) und ist Teil der Systemnachricht an die einreichende Person (Migration 051)',
     'U|Fußzeile: Die Linie und der Text über dem Impressum-Link sind jetzt so breit wie die Seite statt nur etwa 80 Zeichen',
     'U|Community: Mehr Abstand zwischen der letzten Tabelle und dem Seitenende',
     'F|Ideen und Bugs: Admin und Alphatester sehen an den Knöpfen „Ideen“ und „Bugs“ in der oberen Leiste eine rote Zahl mit den neuen Beiträgen anderer seit dem letzten Besuch der Seite (Migration 050)',

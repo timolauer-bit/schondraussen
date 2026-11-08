@@ -491,3 +491,10 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .sortbtn[aria-pressed=true]{color:var(--ink);font-weight:700}
 .commlast{margin-bottom:6px}
 .commpanel::after{content:"";display:block;height:28px}
+
+/* Anmerkung zu Zurückgestellt / Abgelehnt */
+.fbnote{margin:10px 0 0;padding:8px 12px;border-left:3px solid var(--line);background:rgba(127,127,127,.08);border-radius:0 8px 8px 0;font-size:14.5px;overflow-wrap:anywhere}
+.fbnote .fbnh{display:flex;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:3px}
+.fbnote .fbnh b{font-weight:650}
+.fbnoteform{margin-top:8px}.fbnoteform textarea{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:inherit}
+.fbnoteacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
