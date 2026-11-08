@@ -468,9 +468,15 @@
     });
     return box;
   }
+  function toast(msg) {
+    var old = document.getElementById('sdtoast'); if (old) old.remove();
+    var d = h('div', { id: 'sdtoast', class: 'sdtoast', role: 'status' }, msg); document.body.append(d);
+    setTimeout(function () { if (d.parentNode) d.remove(); }, 7000);
+  }
   function refresh(cur, auto) {
     var b = $('rfr'); if (b) { b.disabled = true; b.lastChild.textContent = 'Lädt …'; }
     api('/api/data.php?a=refresh&id=' + cur.id, {}).then(function (x) {
+      if (!auto) toast((x.ok ? (x.msg || 'Aktualisiert.') : (x.msg || x.error || 'Das hat nicht geklappt.')) + (x.wait ? ' Eine weitere Aktualisierung dieses Eintrags ist erst nach 10 Minuten möglich.' : ''));
       if (x.ok) load(function () { S.ready = true; if (S.view === 'list') { nav(); if ($('list')) { filt(); rows(); content(); } } }); else { var st = $('st'); if (st) { st.classList.remove('pulse'); st.textContent = x.msg || x.error || 'Das hat nicht geklappt.'; } if (b) { b.disabled = false; b.lastChild.textContent = 'Aktualisieren'; } load(function () { nav(); }); }
     });
   }

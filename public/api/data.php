@@ -252,8 +252,10 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $f = $pdo->prepare('SELECT fetched_at FROM subjects WHERE id=?'); $f->execute([$id]);
     $t = $f->fetchColumn();
     $hasData = (int) $pdo->query('SELECT (SELECT COUNT(*) FROM works WHERE subject_id=' . (int) $id . ') + (SELECT COUNT(*) FROM releases WHERE subject_id=' . (int) $id . ')')->fetchColumn() > 0;
-    if ($t && $hasData && time() - strtotime($t) < 600) json_out(['ok' => true, 'msg' => 'Wurde gerade erst aktualisiert.']);
-    json_out(refresh_subject($pdo, $id));
+    if ($t && $hasData && time() - strtotime($t) < 600) json_out(['ok' => true, 'wait' => true, 'msg' => 'Dieser Eintrag wurde gerade erst aktualisiert.']);
+    $res = refresh_subject($pdo, $id);
+    $res['wait'] = (int) $pdo->query('SELECT (SELECT COUNT(*) FROM works WHERE subject_id=' . (int) $id . ') + (SELECT COUNT(*) FROM releases WHERE subject_id=' . (int) $id . ')')->fetchColumn() > 0;
+    json_out($res);
 }
 if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $ext = [];

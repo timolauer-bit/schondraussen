@@ -443,3 +443,6 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 
 /* Hinweiskästen in Einträgen: etwas mehr Luft zu Überschrift und Knopfzeile */
 .card .warnbox{margin:14px 0 !important}
+
+/* Kurzmeldung nach „Aktualisieren“ */
+.sdtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(560px,calc(100vw - 32px));background:var(--ink);color:var(--surface);padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.4;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:60}
