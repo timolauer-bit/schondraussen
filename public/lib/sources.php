@@ -298,7 +298,7 @@ function lobid_series(string $title): array {
             $nPart++;
             if (preg_match('/[;,]\s*(?:Band\s*)?(\d{1,4})\s*$/iu', trim($hit), $mm)) $num = $mm[1];
             $full = $title . ($num !== '' ? ', Band ' . $num : '') . ': ' . $full;
-        }
+        } else { $nTitle++; continue; } // Titel beginnt nur zufällig mit dem Reihennamen (Sachbuch, Rezeptbuch, Roman): keine Reihenzugehörigkeit im Katalog, also kein Band
         $yr = 0; foreach ((array) ($m['publication'] ?? []) as $pb) { if (preg_match('/\d{4}/', (string) ($pb['startDate'] ?? ''), $mm)) { $yr = (int) $mm[0]; break; } }
         if (!$yr) { $nDate++; continue; }
         $k = mb_strtolower($full); if (isset($seen[$k])) continue; $seen[$k] = 1;
