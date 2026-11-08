@@ -115,6 +115,14 @@ function refresh_subject(PDO $pdo, int $sid): array {
     $r = refresh_subject_run($pdo, $sid);
     // Auch bei Misserfolg Zeitpunkt merken, damit nicht bei jedem Aufruf und jedem Cron-Lauf neu versucht wird.
     if (empty($r['ok'])) $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]);
+    try { // Grund des letzten Fehlschlags merken (wird bei leeren Einträgen angezeigt), bei Erfolg entfernen
+        $q = $pdo->prepare('SELECT external_ids FROM subjects WHERE id=?'); $q->execute([$sid]); $x = json_decode((string) $q->fetchColumn(), true);
+        if (is_array($x) || empty($r['ok'])) {
+            $x = is_array($x) ? $x : [];
+            if (empty($r['ok'])) $x['err'] = mb_substr((string) ($r['msg'] ?? ''), 0, 300); else unset($x['err']);
+            $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($x, JSON_UNESCAPED_UNICODE), $sid]);
+        }
+    } catch (Throwable $e) {}
     return $r;
 }
 function refresh_subject_run(PDO $pdo, int $sid): array {

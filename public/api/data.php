@@ -251,7 +251,8 @@ if (!$own->fetch()) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
 if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $f = $pdo->prepare('SELECT fetched_at FROM subjects WHERE id=?'); $f->execute([$id]);
     $t = $f->fetchColumn();
-    if ($t && time() - strtotime($t) < 600) json_out(['ok' => true, 'msg' => 'Wurde gerade erst aktualisiert.']);
+    $hasData = (int) $pdo->query('SELECT (SELECT COUNT(*) FROM works WHERE subject_id=' . (int) $id . ') + (SELECT COUNT(*) FROM releases WHERE subject_id=' . (int) $id . ')')->fetchColumn() > 0;
+    if ($t && $hasData && time() - strtotime($t) < 600) json_out(['ok' => true, 'msg' => 'Wurde gerade erst aktualisiert.']);
     json_out(refresh_subject($pdo, $id));
 }
 if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -286,7 +287,7 @@ if ($a === 'done' && $_SERVER['REQUEST_METHOD'] === 'POST') { // gesehen / geles
 if ($a === 'entry') {
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
     $e = $s->fetch(); $e['genres'] = json_decode($e['genres'] ?: '[]', true);
-    $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['anilist'] = $x['anilist'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; unset($e['external_ids']);
+    $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['anilist'] = $x['anilist'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); unset($e['external_ids']);
     $eps = [];
     if ($e['type'] === 'series') { try { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); $eps = $q->fetchAll(); } catch (Throwable $t) {} }
     $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);

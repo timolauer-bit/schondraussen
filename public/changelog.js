@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'B|Einträge ohne Daten: „Aktualisieren“ wartet nicht mehr 10 Minuten, wenn der Eintrag noch leer ist, und der Hinweis „keine Daten gefunden“ nennt jetzt die Rückmeldung der Datenquelle (z. B. warum eine Buchreihe nichts lieferte)',
     'U|Hinweiskästen in Einträgen haben jetzt mehr Abstand zu Überschrift und Knöpfen',
     'B|Bücher-Reihen: Wird nichts gefunden, nennt die Meldung jetzt, wie viele Treffer Google Books lieferte und warum sie aussortiert wurden (andere Sprache oder Reihentitel fehlt im Namen); ein leeres Ergebnis wird mit dem zweiten Versuch ohne Filter wiederholt',
     'B|Bücher-Reihen: Meldet Google Books einen Fehler, steht jetzt der Grund in der Meldung (Statuscode); es wird automatisch ein zweiter Versuch ohne Zusatzfilter gemacht. Optional kann ein Google-Books-Schlüssel (google_books_key) in der config.php hinterlegt werden',
