@@ -465,3 +465,5 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 /* Absender und Datum rechts in der Kopfzeile eines Beitrags */
 .fbhead .fbmeta{margin-left:auto;font:400 12px var(--font-body);color:var(--muted);white-space:nowrap;text-align:right;flex:0 0 auto}
 @media (max-width:760px){.fbhead{flex-wrap:wrap}.fbhead .fbmeta{margin-left:0;flex-basis:100%;white-space:normal;text-align:left}}
+/* Neu zurückgezogen: 24 Stunden lang gelbe Marke statt der grauen (nur Admin und Alphatester) */
+.prio.newwd{background:#f5c400;color:#1a1400;border-color:#1a1400;font-weight:800}
