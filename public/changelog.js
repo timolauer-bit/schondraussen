@@ -1,9 +1,11 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
-  { v: 8, d: '07.11.2026', t: [
+  { v: 9, d: '08.11.2026', t: [
     'B|Der alphabetisch letzte Eintrag einer Liste fehlte in der Übersicht (nur bei den Terminen war er noch sichtbar) und ließ sich nicht erneut hinzufügen. Ursache war ein Programmierfehler beim Laden der Liste in Verbindung mit den Amazon-Einstellungen, behoben',
     'A|Admin: Neue Prüffunktion „Eintrag prüfen“ im Reiter Sicherheit. Sie zeigt zu einem Namen, wie der Eintrag gespeichert ist (Typ, Stand, Termine, Werke) und auf welchen Nutzerlisten er steht (nur Nummern, keine Adressen)',
     'T|Absicherung: Enthält ein gespeicherter Text ein ungültiges Zeichen, bricht die Antwort der Seite nicht mehr ab, das Zeichen wird ersetzt',
+  ] },
+  { v: 8, d: '07.11.2026', t: [
     'A|Admin: Auf der Kontakt-Seite gibt es jetzt auch für dich die Auswahl „Antwort“, „Idee“ und „Bugmeldung“, damit du Ideen und Bugs wie alle anderen melden kannst (mit Kurzbeschreibung, Details und Anhängen)',
     'U|Serien: Die Beschreibung ist jetzt bis zu rund 600 statt 380 Zeichen lang (wirkt beim nächsten Aktualisieren, der Text wird neu übersetzt); der Quellenlink „TVmaze“ nutzt die Seitenfarben',
     'U|Anmeldeseite: Neue, anonymisierte Vorschaubilder (Kalender, Musik, Serie mit deutscher Beschreibung) ersetzen die beiden alten; eigene Bilder bleiben dahinter erhalten. Erfordert Migration 043',
