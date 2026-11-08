@@ -847,6 +847,18 @@
       'Hochgeladene Bilder werden geprüft; Anhänge sind erst nach Freigabe für andere sichtbar',
       'Löschung: Konto sofort gesperrt, Daten nach 7 Tagen endgültig weg; Ideen und Bugmeldungen bleiben ohne E-Mail-Verknüpfung (Name durchgestrichen)',
       'Mails nur mit Einwilligung (Double-Opt-in), Widerruf per Abmeldelink in jeder Mail']));
+    sec('Entstehung und Aufwand',
+      h('p', { class: 'hint' }, 'Stand 08.11.2026. Alle Zahlen außer dem Umfang sind grobe Schätzungen und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
+      h('p', null, 'Umfang (gemessen): rund 7.300 Zeilen PHP, JavaScript und CSS, 12 API-Dateien, 197 Änderungen in der Versionsverwaltung seit dem 03.11.2026. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa dreieinhalb Wochen.'),
+      tbl(['Größe', 'Schätzung'], [
+        ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', 'etwa 30–50 Stunden'],
+        ['Ausgabe der KI (Code und Texte)', 'grob 2–4 Mio. Tokens'],
+        ['Eingabe der KI inklusive wiederholt gelesenem Kontext', 'einige hundert Mio. Tokens, überwiegend aus dem Zwischenspeicher'],
+        ['Rechnerischer Wert nach API-Listenpreisen', 'grob 200–600 €; im Abo pauschal enthalten, der genaue Preis des Modells ist nicht bekannt'],
+        ['Wasserverbrauch der Rechenzentren', 'sehr unsicher, etwa 2–100 Liter, realistisch einige bis niedrige zweistellige Liter; Anbieter veröffentlichen dazu keine belastbaren Werte'],
+        ['Erfahrener Entwickler allein', 'etwa 350–600 Stunden, also 9–15 Wochen in Vollzeit'],
+        ['Laie ohne Unterstützung', 'etwa 1.000–2.000 Stunden, viele würden vorher aufgeben']]),
+      h('p', { class: 'hint' }, 'Die Angaben zu Entwickler und Laie sind Erfahrungswerte für den gleichen Funktionsumfang (Mehrnutzerverwaltung, Anmeldung mit Zwei-Faktor-Schritt, Cronjobs, Mailversand mit SPF/DKIM, Benachrichtigungen, Admin-Bereich, Kalender-Abo, Web-App, Datenschutz und rund zehn Datenquellen). Aus Codezeilen lässt sich der Aufwand nur grob ableiten.'));
     return P;
   }
   function info() {
