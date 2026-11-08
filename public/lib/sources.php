@@ -230,10 +230,10 @@ function googlebooks_upcoming(string $name, array $seen): array {
 
 // Deutsche Nationalbibliothek über lobid.org (freie Schnittstelle, deutsche Titel auch mit angekündigtem Erscheinungsjahr).
 function lobid_series(string $title): array {
-    $works = []; $rel = []; $seen = []; $n = 0; $nLang = 0; $nTitle = 0; $nDate = 0; $nNum = 0; $total = 0; $y = (int) date('Y');
+    $works = []; $rel = []; $seen = []; $n = 0; $nLang = 0; $nTitle = 0; $nDate = 0; $nNum = 0; $nPart = 0; $total = 0; $y = (int) date('Y');
     $startRe = '/^\W*' . preg_quote($title, '/') . '(?![\p{L}\p{N}])/iu'; // Titel muss mit dem Reihennamen beginnen (nicht „…zwanzig One Piece Flow…“)
     for ($from = 0; $from < 300; $from += 100) {
-        $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . '&sort=newest&q=' . rawurlencode('title:"' . str_replace('"', '', $title) . '"');
+        $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . '&sort=newest&q=' . rawurlencode(($tq = '"' . str_replace('"', '', $title) . '"') ? 'title:' . $tq . ' OR isPartOf.label:' . $tq . ' OR hasSuperordinate.label:' . $tq . ' OR otherTitleInformation:' . $tq : '');
         $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
         $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
         $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;
@@ -246,7 +246,15 @@ function lobid_series(string $title): array {
             if ($langs && !in_array('ger', $langs, true)) { $nLang++; continue; }
             $oti = (array) ($m['otherTitleInformation'] ?? []); $sub = trim((string) ($oti[0] ?? ''));
             $full = $t . ($sub !== '' && mb_stripos($sub, $t) === false ? ': ' . $sub : '');
-            if (!preg_match($startRe, $full)) { $nTitle++; continue; }
+            $viaPart = false; $partNum = '';
+            if (!preg_match($startRe, $full)) { // Band einer Reihe: Reihenname steht beim übergeordneten Werk
+                foreach (array_merge((array) ($m['isPartOf'] ?? []), (array) ($m['hasSuperordinate'] ?? [])) as $ip) {
+                    if (is_array($ip) && preg_match($startRe, (string) ($ip['label'] ?? ''))) { $viaPart = true; foreach ((array) ($ip['numbering'] ?? []) as $nb) if (is_string($nb) && $nb !== '') { $partNum = $nb; break; } break; }
+                }
+                if (!$viaPart) { $nTitle++; continue; }
+                $nPart++;
+                $full = $title . ', ' . ($partNum !== '' ? 'Band ' . preg_replace('/^\D*(?=\d)/u', '', $partNum) . ': ' : '') . $full;
+            }
             $num = ''; // Bandzählung, falls der Katalog sie getrennt führt
             foreach ((array) ($m['isPartOf'] ?? []) as $ip) { foreach ((array) ($ip['numbering'] ?? []) as $nb) if (is_string($nb) && $nb !== '') { $num = $nb; break 2; } }
             if ($num === '' && !empty($m['volumeNumber'])) $num = is_array($m['volumeNumber']) ? (string) reset($m['volumeNumber']) : (string) $m['volumeNumber'];
@@ -258,7 +266,7 @@ function lobid_series(string $title): array {
         }
         if (count($mem) < 100) break;
     }
-    return [$works, $rel, 'DNB: ' . $total . ' Treffer insgesamt, ' . $n . ' geprüft, ' . $nLang . ' andere Sprache, ' . $nTitle . ' Titel beginnt anders, ' . $nDate . ' ohne Jahr, ' . $nNum . ' mit Bandzählung'];
+    return [$works, $rel, 'DNB: ' . $total . ' Treffer insgesamt, ' . $n . ' geprüft, ' . $nLang . ' andere Sprache, ' . $nTitle . ' Titel beginnt anders, ' . $nDate . ' ohne Jahr, ' . $nNum . ' mit Bandzählung, ' . $nPart . ' über übergeordnetes Werk'];
 }
 
 // Buchreihe über den Titel (z. B. Manga): Google Books, nur deutsche Ausgaben, deren Titel den Reihennamen enthält.

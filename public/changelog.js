@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'B|Bücher-Reihen: Der Katalog der Nationalbibliothek wird jetzt auch über das übergeordnete Werk durchsucht, damit Einzelbände (z. B. Manga-Bände mit eigener Bandnummer) gefunden werden',
     'B|Bücher-Reihen: Der Titel muss mit dem Reihennamen beginnen (keine Fachbücher mehr, in denen der Name nur vorkommt), es werden bis zu 300 Katalogtreffer gelesen, Bandzählungen des Katalogs werden übernommen, und die Beschreibung nennt kurz, was die Abfrage lieferte (zur Fehlersuche)',
     'F|Bücher-Reihen: Die Bände kommen jetzt zuerst aus dem Katalog der Deutschen Nationalbibliothek (über lobid.org, mit angekündigten Jahren); Google Books ist nur noch die Ausweichquelle, weil es für deutsche Manga kaum Treffer liefert',
     'B|Bücher-Reihen: Google Books wird jetzt mit drei Suchvarianten abgefragt (Titelsuche, Volltextsuche, jeweils auf deutsch, zuletzt ohne Sprachfilter); findet sich nichts, nennt die Meldung die Sprachen und Beispieltitel der Treffer',
