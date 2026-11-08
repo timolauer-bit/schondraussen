@@ -124,6 +124,7 @@ if ($a === 'edit') { // Die einreichende Person darf Kurzbeschreibung und Detail
 if ($a === 'vote') { // Abstimmen dürfen alle, aber nur bei freigegebenen Ideen
     $rl = null; try { $q = $pdo->prepare('SELECT released_at FROM feedback WHERE id=?'); $q->execute([$id]); $rl = $q->fetchColumn(); } catch (Throwable $e) {}
     if (!$alpha && !$rl) json_out(['error' => 'Nicht erlaubt.'], 403);
+} elseif ($a === 'withdraw') { // Zurückziehen darf die einreichende Person, auch ohne Alpha-Rechte (Prüfung im Block unten)
 } else require_alpha($u);
 if ($a === 'release') {
     $on = !empty($b['on']);
