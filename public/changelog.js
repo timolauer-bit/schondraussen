@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Bücher hinzufügen: Neben „<Titel> (Reihe)“ gibt es „<Titel> (Buchtitel)“. Es sucht nach einem einzelnen Buch (z. B. „Endymion“) und bietet die Autor:innen der gefundenen Bücher zur Auswahl an (Quelle: Open Library)',
     'U|Bücher hinzufügen: Mehr Abstand zwischen den Trefferkästen und zum Suchfeld',
     'U|Bücher hinzufügen: Passt der Suchbegriff auf keinen Autor, steht der Eintrag „<Titel> (Reihe)“ jetzt ganz oben in der Trefferliste statt ganz unten',
     'B|Bücher-Reihen: Bandtitel werden bereinigt. Ein Untertitel, der bei vielen Bänden gleich lautet („Piraten, Abenteuer und der größte Schatz der Welt!“), wird weggelassen, ebenso eine angehängte oder allein stehende Bandnummer im Titel',

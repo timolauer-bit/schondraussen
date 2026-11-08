@@ -496,9 +496,11 @@
   function drawSugg() {
     var box = $('sugg'); if (!box) return; box.textContent = ''; var s = S.sugg; if (!s) return;
     if (s.loading) { box.append(h('p', { class: 'hint pulse' }, 'Suche …')); return; }
-    box.append(h('p', { class: 'hint' }, s.list.length ? 'Welcher Treffer ist gemeint?' : 'Keine Treffer.'));
+    box.append(h('p', { class: 'hint' }, s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
     var list = h('div', { class: 'suggest' });
-    s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(x.name, x.ext); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
+    s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
+      if (x.title_search) { S.sugg = { loading: true }; drawSugg(); api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { S.sugg = { q: s.q, list: r.results || [], byTitle: true }; drawSugg(); }); return; }
+      addNow(x.name, x.ext); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
     list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
     box.append(list);
   }

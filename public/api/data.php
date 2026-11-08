@@ -123,6 +123,16 @@ if ($a === 'search') {
             $h = array_filter([$x['disambiguation'] ?? '', $x['area']['name'] ?? '', !empty($x['life-span']['begin']) ? 'seit ' . substr($x['life-span']['begin'], 0, 4) : '']);
             $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['mbid' => $x['id']]]; }
     }
+    elseif ($type === 'author' && ($_GET['mode'] ?? '') === 'title') { // Suche über den Buchtitel: Treffer sind die Autor:innen der gefundenen Bücher
+        $r = http_json('https://openlibrary.org/search.json?limit=30&fields=title,author_name,author_key,first_publish_year&title=' . rawurlencode($q)) ?? [];
+        $seenA = [];
+        foreach (($r['docs'] ?? []) as $x) {
+            $an = (array) ($x['author_name'] ?? []); $ak = (array) ($x['author_key'] ?? []); if (!$an || !$ak) continue;
+            $k = (string) $ak[0]; if (isset($seenA[$k])) continue; $seenA[$k] = 1;
+            $out[] = ['name' => (string) $an[0], 'hint' => '„' . mb_substr((string) ($x['title'] ?? $q), 0, 80) . '“' . (!empty($x['first_publish_year']) ? ' · ' . $x['first_publish_year'] : ''), 'ext' => ['olid' => $k]];
+            if (count($out) >= 8) break;
+        }
+    }
     elseif ($type === 'author') {
         $r = http_json('https://openlibrary.org/search/authors.json?limit=8&q=' . rawurlencode($q)) ?? [];
         foreach (($r['docs'] ?? []) as $x) {
@@ -132,7 +142,8 @@ if ($a === 'search') {
         $tok = function (string $x): array { return array_values(array_filter(preg_split('/[\s,.\-]+/u', mb_strtolower($x)))); };
         $qt = $tok($q); $isAuthor = false; // Suchbegriff passt auf einen Personennamen: alle Wörter kommen vor, höchstens vier Namensteile, keine Ziffern oder Satzzeichen
         foreach ($out as $o) { $nt = $tok((string) $o['name']); if ($qt && !array_diff($qt, $nt) && count($nt) <= 4 && !preg_match('/[\d():;]/', (string) $o['name'])) { $isAuthor = true; break; } }
-        if ($isAuthor) $out[] = $reihe; else array_unshift($out, $reihe); // kein Autor gefunden: die Reihe über den Titel steht ganz oben
+        $buch = ['name' => $q . ' (Buchtitel)', 'hint' => 'Nach einem einzelnen Buch suchen und dessen Autor:in übernehmen', 'title_search' => true];
+        if ($isAuthor) { $out[] = $reihe; $out[] = $buch; } else { array_unshift($out, $buch); array_unshift($out, $reihe); } // kein Autor gefunden: Reihe und Buchtitel stehen ganz oben
     }
     json_out(['results' => $out]);
 }
