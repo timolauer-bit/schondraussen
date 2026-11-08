@@ -29,7 +29,7 @@ if ($a === 'list') {
     try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone,uu.delete_requested_at AS author_del'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
-    try { $pdo->query('SELECT phase FROM feedback LIMIT 1'); $noSel .= ',f.phase'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT phase FROM feedback LIMIT 1'); $noSel .= ',f.phase'; $doneOrd .= "f.phase='postponed', "; } catch (Throwable $e) {}
     try { $pdo->query('SELECT status_note FROM feedback LIMIT 1'); $noSel .= ',f.status_note,f.status_note_by,f.status_note_tier,f.status_note_at'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT withdrawn_at FROM feedback LIMIT 1'); $noSel .= ',f.withdrawn_at,(f.withdrawn_at > NOW() - INTERVAL 24 HOUR) AS new_wd'; } catch (Throwable $e) {}
     try {
