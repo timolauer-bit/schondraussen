@@ -61,19 +61,8 @@ if ($a === 'export') { // alle eigenen Daten, als JSON oder (nur die Liste) als 
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); exit;
 }
 if ($a === 'list') {
-    $bellSql = 'e.bell';
-    try { $pdo->query('SELECT bell FROM user_entries LIMIT 1'); } catch (Throwable $e) { $bellSql = '1'; }
-    $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,$bellSql AS bell,
-        (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
-        (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
-        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming,
-        s.total_works,
-        (SELECT MAX(w.year) FROM works w WHERE w.subject_id=s.id) AS last_year,
-        (SELECT SUM(CAST(SUBSTRING_INDEX(w.note,' ',1) AS UNSIGNED)) FROM works w WHERE w.subject_id=s.id AND w.kind='Staffel') AS episodes
-        FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? ORDER BY s.name");
-    $s->execute([$u['id']]);
-    $rows = $s->fetchAll();
-    foreach ($rows as &$r) { $r['genres'] = json_decode($r['genres'] ?: '[]', true) ?: []; }
+    require_once __DIR__ . '/../lib/entries.php';
+    $rows = list_entries($pdo, (int) $u['id']);
     $site = ['tag' => '', 'domain' => 'amazon.de'];
     try { foreach ($pdo->query('SELECT k,v FROM site_settings')->fetchAll() as $r) $site[$r['k']] = $r['v']; } catch (Throwable $e) {}
     json_out(['entries' => $rows, 'site' => $site]);
