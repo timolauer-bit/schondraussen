@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'U|Bücher: Der Hinweis bei „Kommende Veröffentlichungen“ passt sich an: Ist nichts angekündigt, steht dort, dass zurzeit nichts angekündigt und nichts Neues dazugekommen ist, statt vom „neu hinzugefügt“-Vermerk zu sprechen',
     'F|Bücher: Reihen über den Titel hinzufügen (z. B. Manga oder Comics, bei denen man die Zeichner:in nicht kennt). Bei der Suche steht unter den Autor:innen der Eintrag „<Titel> (Reihe)“; die Bände und angekündigten Bände kommen aus Google Books (nur deutsche Ausgaben, deren Titel den Reihennamen enthält)',
     'U|Hinweis „Zu diesem Eintrag wurden keine Daten gefunden“: Der Knopf „Treffer ändern“ steht jetzt mit Abstand in einer eigenen Zeile',
     'F|Anime: Bei „Serien“ liefert die Suche jetzt auch Anime-Treffer aus AniList (mit Vermerk Anime-Serie, -Film, OVA …). Folgen mit Sendedatum erscheinen wie bei Serien in Liste und Kalender, die Beschreibung wird ins Deutsche übersetzt. Der Sendeplan umfasst bis zu 200 Folgen; Manga und Comics bleiben bei Bücher (Google Books, Open Library). Die Datenquelle AniList steht in Info und Datenschutz',
