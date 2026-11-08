@@ -199,7 +199,7 @@ if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbei
         $what = $kind === 'bug' ? 'Deine Bugmeldung' . ($it['bug_no'] ? ' #' . (int) $it['bug_no'] : '') . ' „' . $t . '“' : 'Deine Idee „' . $t . '“';
         $thanks = ' Danke für ' . ($kind === 'bug' ? 'den Hinweis!' : 'deinen Vorschlag!');
         if ($ph === 'brainstorm') $txt = 'Systemnachricht: ' . $what . ' ist im Brainstorming. Es wird gerade überlegt, ' . ($kind === 'bug' ? 'woran es liegt und wie sich das lösen lässt.' : 'ob und wie sich das umsetzen lässt.') . $thanks;
-        elseif ($ph === 'postponed') $txt = 'Systemnachricht: ' . $what . ' ist zurückgestellt. Sie bleibt auf der Liste und wird später wieder aufgegriffen.' . $thanks;
+        elseif ($ph === 'postponed') $txt = 'Systemnachricht: ' . $what . ' ist zurückgestellt. Sie wird eventuell später wieder aufgegriffen, aktuell aber nicht umgesetzt.' . $thanks;
         else $txt = 'Systemnachricht: ' . $what . ' ist in Bearbeitung. Sobald sie fertig ist, bekommst du Bescheid.' . $thanks;
         try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], $txt]); } catch (Throwable $e) {}
     }
