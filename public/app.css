@@ -490,3 +490,4 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .sortbtn{background:none;border:0;padding:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer}
 .sortbtn[aria-pressed=true]{color:var(--ink);font-weight:700}
 .commlast{margin-bottom:6px}
+.commpanel::after{content:"";display:block;height:28px}

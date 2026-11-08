@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'U|Community: Mehr Abstand zwischen der letzten Tabelle und dem Seitenende',
     'F|Ideen und Bugs: Admin und Alphatester sehen an den Knöpfen „Ideen“ und „Bugs“ in der oberen Leiste eine rote Zahl mit den neuen Beiträgen anderer seit dem letzten Besuch der Seite (Migration 050)',
     'U|Community: Die Überschriften der Top-Tabellen zeigen „Top 15“ und nach dem Aufklappen „Top 50“',
     'B|Community: Top- und Newcomer-Tabellen zählen nur noch Nutzer mit Zustimmung; wer die Einwilligung zurücknimmt, ist sofort überall herausgerechnet',
