@@ -498,3 +498,5 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .fbnote .fbnh b{font-weight:650}
 .fbnoteform{margin-top:8px}.fbnoteform textarea{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:inherit}
 .fbnoteacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+/* Admin-Listen auf schmalen Bildschirmen: Aktionen unter den Text statt daneben */
+@media(max-width:760px){.arow{grid-template-columns:minmax(0,1fr)}.arow .acts{justify-content:flex-start}.arow .nm2{overflow-wrap:anywhere}}

@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'B|Admin-Listen (Nutzerverwaltung u. a.) auf dem Handy: Der Text wurde durch die breite Knopfreihe zerquetscht (ein Wort pro Zeile); die Knöpfe stehen jetzt unter dem Text',
     'F|Registrierung ohne E-Mail-Adresse: Benutzername und Passwort genügen. Die Seite zeigt einmalig einen Wiederherstellungscode, mit dem man das Passwort später auch ohne Mail zurücksetzt (Anmeldeseite, „Passwort vergessen“). Anmelden geht mit E-Mail-Adresse oder Benutzername',
     'D|Konten ohne E-Mail: höchstens ein Konto je Anschluss und 24 Stunden und insgesamt 5 pro Stunde; ohne Adresse gibt es keine Benachrichtigungsmails. Datenschutzerklärung ergänzt',
     'A|Admin → Registrierung: Schalter „Registrierung ohne E-Mail-Adresse erlauben“. Im Kontakt-Bereich gibt es die Unterhaltung „System“ mit automatischen Meldungen (neues Konto ohne Adresse, Limit erreicht) (Migration 053)',
