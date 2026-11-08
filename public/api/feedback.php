@@ -149,10 +149,20 @@ if ($a === 'vote') { // Abstimmen dürfen alle, aber nur bei freigegebenen Ideen
 } else require_alpha($u);
 if ($a === 'release') {
     $on = !empty($b['on']);
+    $it = null;
     try {
+        $q = $pdo->prepare('SELECT user_id,title,bug_no,released_at FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET released_at=' . ($on ? 'COALESCE(released_at,NOW())' : 'NULL') . ' WHERE id=?')->execute([$id]);
         if ($on) $pdo->prepare("UPDATE images SET status='approved' WHERE scope='feedback' AND ref_id=?")->execute([$id]);
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    // Systemnachricht an die Person, die den Beitrag geschrieben hat: bei der Freigabe, nicht bei eigenen Beiträgen
+    if ($on && $it && empty($it['released_at']) && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
+        $t = (string) $it['title']; $t = mb_strlen($t) > 70 ? mb_substr($t, 0, 69) . '…' : $t;
+        $txt = $kind === 'bug'
+            ? 'Systemnachricht: Deine Bugmeldung' . ($it['bug_no'] ? ' #' . (int) $it['bug_no'] : '') . ' „' . $t . '“ wurde freigegeben und ist jetzt für alle unter „Bugs“ sichtbar. Danke für den Hinweis!'
+            : 'Systemnachricht: Deine Idee „' . $t . '“ wurde freigegeben und ist jetzt für alle unter „Ideen“ sichtbar. Andere können dafür abstimmen. Danke für deinen Vorschlag!';
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], $txt]); } catch (Throwable $e) {}
+    }
     json_out(['ok' => true]);
 }
 
