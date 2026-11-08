@@ -520,3 +520,4 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
   .navrest .nav.ionly[aria-current=page] .badge{position:absolute;margin:0}
   .nav.rg::before{display:none}.nav.rg{margin-left:0}
 }
+@media(max-width:700px){.nerdtbl.fit{overflow-x:visible}.nerdtbl.fit table{min-width:0;width:100%;table-layout:fixed}.nerdtbl.fit th,.nerdtbl.fit td{padding:8px 6px;overflow-wrap:anywhere;hyphens:auto}.nerdtbl.fit td.k{width:42%}}

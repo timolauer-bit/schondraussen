@@ -822,7 +822,7 @@
   /* ---------- Entstehung und Aufwand (Info-Seite, für alle) ---------- */
   function effortSection() {
     function tbl(head, rows) {
-      return h('div', { class: 'nerdtbl' }, h('table', null, h('thead', null, h('tr', null, head.map(function (x) { return h('th', null, x); }))),
+      return h('div', { class: 'nerdtbl fit' }, h('table', null, h('thead', null, h('tr', null, head.map(function (x) { return h('th', null, x); }))),
         h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, x); })); }))));
     }
     var BASE = 5406, START = new Date(2026, 9, 14), nf = new Intl.NumberFormat('de-DE');
