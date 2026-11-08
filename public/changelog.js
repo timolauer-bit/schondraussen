@@ -3,7 +3,7 @@ window.CHANGELOG = [
   { v: 9, d: '08.11.2026', t: [
     'B|Community: Die Seite meldete fälschlich „Datenbank nicht aktualisiert“ (falscher Spaltenname bei der Freischaltungsprüfung)',
     'F|Community (vorerst nur Admin und Alphatester): neue Seite mit dem Personen-Symbol neben dem Admin-Bereich. Je Kategorie die Top 15 (aufklappbar bis Top 50) und die Newcomer der letzten 14 Tage, dazu die aktivsten Nutzer (gesamt und 14 Tage, sortierbar nach Gesamt und Kategorie). Nutzer sind anklickbar (Listen, letzte 20 hinzugefügte Positionen), Einträge lassen sich mit „+“ in die eigene Liste übernehmen',
-    'O|Einstellungen: „Meine Einträge für die Community nutzen“ (Standard aus; für Admin und Alphatester anfangs an). Nutzerbezogene Übersichten enthalten nur Nutzer mit Zustimmung; beim ersten Start fragt die Seite danach. Ohne Zustimmung erscheint auf der Community-Seite ein Hinweis',
+    'O|Einstellungen: „Meine Einträge für die Community nutzen“ (Standard aus; nur beim Admin anfangs an, Alphatester entscheiden selbst und werden beim Start gefragt). Nutzerbezogene Übersichten enthalten nur Nutzer mit Zustimmung; beim ersten Start fragt die Seite danach. Ohne Zustimmung erscheint auf der Community-Seite ein Hinweis',
     'D|Datenschutzerklärung um die Community-Einwilligung ergänzt',
     'T|Info-Seite „Entstehung und Aufwand“: Umfangszahlen werden jeden Sonntagmorgen vom Cronjob neu gemessen, die Schätzungen darunter wachsen im gleichen Verhältnis mit (Migration 048 für die Community-Einstellung nötig)',
     'F|Ideen und Bugs: Neben „Im Brainstorming“ und „In Bearbeitung“ gibt es den Status „Zurückgestellt“ (gleiche Bedienung, Marke für alle sichtbar, Systemnachricht an die einreichende Person)',

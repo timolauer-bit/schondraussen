@@ -6,8 +6,8 @@ if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 require_alpha($u);
 $pdo = db(); $a = $_GET['a'] ?? '';
 $TYPES = ['author', 'artist', 'film', 'series'];
-// Zustimmung: ausdrücklich 1, oder noch nicht entschieden und Admin/Alphatester (Startmodus)
-$CONSENT = "(u.community=1 OR (u.community IS NULL AND (u.role='admin' OR u.alpha=1)))";
+// Zustimmung: ausdrücklich 1, oder noch nicht entschieden und Admin (Startmodus)
+$CONSENT = "(u.community=1 OR (u.community IS NULL AND u.role='admin'))";
 $UOK = "(u.role='admin' OR u.approved_at IS NOT NULL) AND u.username IS NOT NULL AND u.username<>''";
 
 function q_all(PDO $pdo, string $sql, array $p = []): array {
