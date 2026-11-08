@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'B|Bücher-Reihen: Meldet Google Books einen Fehler, steht jetzt der Grund in der Meldung (Statuscode); es wird automatisch ein zweiter Versuch ohne Zusatzfilter gemacht. Optional kann ein Google-Books-Schlüssel (google_books_key) in der config.php hinterlegt werden',
     'U|Bücher: Der Hinweis bei „Kommende Veröffentlichungen“ passt sich an: Ist nichts angekündigt, steht dort, dass zurzeit nichts angekündigt und nichts Neues dazugekommen ist, statt vom „neu hinzugefügt“-Vermerk zu sprechen',
     'F|Bücher: Reihen über den Titel hinzufügen (z. B. Manga oder Comics, bei denen man die Zeichner:in nicht kennt). Bei der Suche steht unter den Autor:innen der Eintrag „<Titel> (Reihe)“; die Bände und angekündigten Bände kommen aus Google Books (nur deutsche Ausgaben, deren Titel den Reihennamen enthält)',
     'U|Hinweis „Zu diesem Eintrag wurden keine Daten gefunden“: Der Knopf „Treffer ändern“ steht jetzt mit Abstand in einer eigenen Zeile',

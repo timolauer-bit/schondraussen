@@ -298,9 +298,17 @@ function googlebooks_upcoming(string $name, array $seen): array {
 function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     $sid = (int) $sub['id']; $title = trim((string) $ext['gbs']);
     $works = []; $rel = []; $seen = []; $got = false; $today = date('Y-m-d');
+    $key = trim((string) cfg('google_books_key', '')); $lastErr = '';
     for ($p = 0; $p < 2; $p++) {
-        $r = http_json('https://www.googleapis.com/books/v1/volumes?maxResults=40&startIndex=' . ($p * 40) . '&orderBy=newest&langRestrict=de&printType=books&q=' . rawurlencode('intitle:"' . str_replace('"', '', $title) . '"'), 10);
-        if ($r === null) { if ($p === 0) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar.']; break; }
+        $r = null;
+        foreach (['&orderBy=newest&langRestrict=de', ''] as $extra) { // zweiter Versuch ohne Zusatzfilter (Filter erfolgt ohnehin im Code)
+            $url = 'https://www.googleapis.com/books/v1/volumes?maxResults=40&startIndex=' . ($p * 40) . '&printType=books' . $extra . ($key !== '' ? '&key=' . rawurlencode($key) : '') . '&q=' . rawurlencode('intitle:"' . str_replace('"', '', $title) . '"');
+            $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
+            $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+            if ($raw !== false && $code < 400 && is_array($j = json_decode($raw, true))) { $r = $j; break; }
+            $lastErr = $raw === false ? ('Verbindungsfehler: ' . $cerr) : ('Status ' . $code . (($m = json_decode((string) $raw, true)['error']['message'] ?? '') ? ', ' . mb_substr($m, 0, 120) : ''));
+        }
+        if ($r === null) { if ($p === 0) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar (' . $lastErr . ').']; break; }
         $got = true; $items = $r['items'] ?? []; if (!$items) break;
         foreach ($items as $it) {
             $v = $it['volumeInfo'] ?? []; $t = trim((string) ($v['title'] ?? '')); $d = (string) ($v['publishedDate'] ?? '');
@@ -312,7 +320,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
         }
         if (count($items) < 40) break;
     }
-    if (!$got) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar.'];
+    if (!$got) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar (' . $lastErr . ').'];
     $num = function ($t) { return preg_match('/(\d+)\s*$/', $t, $m) ? (int) $m[1] : 0; };
     usort($works, fn($a, $b) => $num($b[0]) <=> $num($a[0]) ?: strcmp($a[0], $b[0]));
     $pdo->beginTransaction();
