@@ -845,11 +845,11 @@
   }
 
   /* ---------- Community (vorerst Admin und Alphatester) ---------- */
-  function commOn() { return !S.preview && !!D.alpha; }
+  function commOn() { return true; }
   function commDate(s) { var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
   function community() {
     var C = S.comm = S.comm || { open: {}, sort: 'all', period: 'all', uid: null, data: null, ud: null };
-    var p = h('section', { class: 'panel commpanel' }, h('h2', { class: 'sec' }, 'Community ', alphaBadge()));
+    var p = h('section', { class: 'panel commpanel' }, h('h2', { class: 'sec' }, 'Community'));
     mainEl.append(p);
     if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
     var body = h('div'); p.append(body);
@@ -1406,7 +1406,7 @@
     if (S.preview || D.community_asked) return;
     var box = h('div', { class: 'unmodal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'cmh' }, h('div', { class: 'unbox' },
       h('h2', { id: 'cmh', style: 'margin:0 0 6px;font-size:20px' }, 'Community: Deine Einträge teilen?'),
-      h('p', { class: 'hint' }, 'Wir bauen eine Community-Seite mit Ranglisten und den aktivsten Nutzern. Wenn du zustimmst, können andere Teilnehmende mit deinem Benutzernamen deine Listen und deine zuletzt hinzugefügten Einträge sehen und Einträge übernehmen. Ohne Zustimmung bleibst du dort unsichtbar.'),
+      h('p', { class: 'hint' }, 'Die Community-Seite zeigt Ranglisten und die aktivsten Nutzer. Wenn du zustimmst, können andere Teilnehmende mit deinem Benutzernamen deine Listen und deine zuletzt hinzugefügten Einträge sehen und Einträge übernehmen. Ohne Zustimmung bleibst du dort unsichtbar.'),
       h('p', { class: 'hint' }, 'Du kannst das jederzeit unter Einstellungen ändern („Meine Einträge für die Community nutzen“).'),
       h('div', { class: 'inline', style: 'margin-top:10px' },
         h('button', { class: 'btn', type: 'button', onclick: function () { choose(true); } }, 'Zustimmen'),

@@ -1,9 +1,8 @@
 <?php
-// Community: Ranglisten (anonym) und Nutzerübersichten (nur mit ausdrücklicher Zustimmung). Vorerst nur Admin und Alphatester.
+// Community: Ranglisten (anonym) und Nutzerübersichten (nur mit ausdrücklicher Zustimmung). Für alle freigeschalteten Nutzer.
 require __DIR__ . '/../lib/bootstrap.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
-require_alpha($u);
 $pdo = db(); $a = $_GET['a'] ?? '';
 $TYPES = ['author', 'artist', 'film', 'series'];
 // Zustimmung: ausdrücklich 1, oder noch nicht entschieden und Admin (Startmodus)
