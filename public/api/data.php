@@ -139,7 +139,7 @@ if ($a === 'search') {
             $nm = (string) $an[0]; $orig = '';
             if (!preg_match('/\p{Latin}/u', $nm) && $lat < 3) { // Name nur in fremder Schrift (z. B. 村上春樹): lateinische Schreibweise aus dem Autoreneintrag holen
                 $lat++; $aj = http_json('https://openlibrary.org/authors/' . rawurlencode($k) . '.json', 5) ?? [];
-                foreach (array_merge((array) ($aj['alternate_names'] ?? []), [(string) ($aj['fuller_name'] ?? ''), (string) ($aj['personal_name'] ?? '')]) as $alt) { if (is_string($alt) && preg_match('/\p{Latin}/u', $alt) && !preg_match('/[\d\/]/', $alt)) { $orig = $nm; $nm = trim($alt); break; } }
+                foreach (array_merge((array) ($aj['alternate_names'] ?? []), [(string) ($aj['fuller_name'] ?? ''), (string) ($aj['personal_name'] ?? '')]) as $alt) { if (is_string($alt) && preg_match('/\p{Latin}/u', $alt) && !preg_match('/[\d\/]/', $alt)) { $orig = $nm; $nm = trim($alt); if ($nm === mb_strtoupper($nm)) $nm = mb_convert_case(mb_strtolower($nm), MB_CASE_TITLE); break; } }
             }
             $out[] = ['name' => $nm, 'hint' => ($orig !== '' ? $orig . ' · ' : '') . '„' . mb_substr((string) ($x['title'] ?? $q), 0, 80) . '“' . (!empty($x['first_publish_year']) ? ' · ' . $x['first_publish_year'] : '') . ($d['ed'] > 1 ? ' · ' . $d['ed'] . ' Ausgaben' : ''), 'ext' => ['olid' => $k]];
             if (count($out) >= 8) break;
@@ -161,6 +161,7 @@ if ($a === 'search') {
 }
 if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $type = $b['type'] ?? ''; $name = trim(preg_replace('/\s+/', ' ', (string) ($b['name'] ?? '')));
+    if (mb_strlen($name) > 3 && preg_match('/\p{Lu}{2}/u', $name) && $name === mb_strtoupper($name) && preg_match('/\s/', $name) && preg_match('/\p{L}/u', $name) && ($type === 'author')) $name = mb_convert_case(mb_strtolower($name), MB_CASE_TITLE); // Autorenname nur in Großbuchstaben: Groß-/Kleinschreibung herstellen
     if (!in_array($type, $TYPES, true) || $name === '' || mb_strlen($name) > 190) json_out(['error' => 'Bitte einen Namen eingeben.'], 422);
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
     if ((int) $n->fetchColumn() >= 100) json_out(['error' => 'Du hast die Grenze von 100 Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
