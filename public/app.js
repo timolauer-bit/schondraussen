@@ -876,7 +876,7 @@
     }
     function drawOverview() {
       var d = C.data; body.textContent = '';
-      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen.'));
+      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
       var g = h('div', { class: 'commgrid' });
       ORDER.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + TYPES[t].plural, d.top[t] || [], 'Nutzer')); });
       body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));

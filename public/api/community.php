@@ -27,9 +27,9 @@ function consenting_user(PDO $pdo, int $id, string $CONSENT, string $UOK): ?arra
 if ($a === 'overview') {
     $out = ['top' => [], 'new' => [], 'users' => [], 'me' => (int) $u['id']];
     foreach ($TYPES as $t) {
-        // Ranglisten zählen alle Nutzer, aber nur als Summe pro Titel, ohne Namen
-        $out['top'][$t] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.is_sample=0 AND s.type=? AND (u.role='admin' OR u.approved_at IS NOT NULL) GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id'], $t]);
-        $out['new'][$t] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.is_sample=0 AND s.type=? AND (u.role='admin' OR u.approved_at IS NOT NULL) AND e.added_at >= (NOW() - INTERVAL 14 DAY) GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id'], $t]);
+        // Ranglisten zählen nur Nutzer mit Zustimmung, als Summe pro Titel ohne Namen
+        $out['top'][$t] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.is_sample=0 AND s.type=? AND (u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id'], $t]);
+        $out['new'][$t] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.is_sample=0 AND s.type=? AND (u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT AND e.added_at >= (NOW() - INTERVAL 14 DAY) GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id'], $t]);
     }
     // Aktivste Nutzer: nur mit Zustimmung
     $rows = q_all($pdo, "SELECT u.id, u.username, s.type, COUNT(*) AS c, SUM(e.added_at >= (NOW() - INTERVAL 14 DAY)) AS r FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id WHERE e.is_sample=0 AND $UOK AND $CONSENT GROUP BY u.id, u.username, s.type");
