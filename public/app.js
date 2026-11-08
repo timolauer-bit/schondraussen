@@ -1174,17 +1174,27 @@
   function feedbackView(kind) {
     if (!S.preview && (D.admin || D.alpha)) { S.fbNew = S.fbNew || {}; S.fbNew[kind === 'bug' ? 'bug' : 'feat'] = 0; fbPoll(); }
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
-      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen stehen unten, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen stehen unten, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
+      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
+    S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null;
+    function grp(x) { return staff && !x.released_at ? 'rel' : (x.done_at ? 'done' : 'cur'); }
+    var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen']].concat(staff ? [['rel', 'Freischaltungen']] : []), tbtn = {};
+    if (!TABS.some(function (t) { return t[0] === S.fbTab[tabKey]; })) S.fbTab[tabKey] = 'cur';
+    var tbar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': bug ? 'Bugs' : 'Ideen' });
+    TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
+    mainEl.prepend(tbar);
     function draw(r) {
-      box.textContent = ''; var l = r.items || [];
+      lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
-      if (!l.length) { box.append(h('p', { class: 'hint' }, bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.')); return; }
+      var cnt = { cur: 0, done: 0, rel: 0 }; l.forEach(function (x) { cnt[grp(x)]++; });
+      TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); });
+      var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
+      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? 'Nichts wartet auf Freischaltung.' : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
       var pendHead = false;
-      l.forEach(function (x) {
+      shown.forEach(function (x) {
         var pics = h('div', { class: 'pics' });
         (x.images || []).forEach(function (im) {
           var pend = im.status === 'pending', priv = D.admin || D.alpha, isT = im.kind === 'text';
@@ -1254,7 +1264,7 @@
           acts.append(rg2);
         } else if (ownBtns.length) acts.append(h('span', { class: 'fbright' }, ownBtns));
         var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
-        if (!x.released_at && !pendHead) { pendHead = true; box.append(h('h3', { class: 'fbdiv' }, staff ? 'Noch nicht freigegeben (nur für Admin und Alphatester sichtbar)' : 'Deine Beiträge, die noch auf Freigabe warten')); }
+        if (!x.released_at && !staff && !pendHead) { pendHead = true; box.append(h('h3', { class: 'fbdiv' }, staff ? 'Noch nicht freigegeben (nur für Admin und Alphatester sichtbar)' : 'Deine Beiträge, die noch auf Freigabe warten')); }
         box.append(row);
       });
     }
