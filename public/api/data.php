@@ -128,7 +128,11 @@ if ($a === 'search') {
         foreach (($r['docs'] ?? []) as $x) {
             $h = array_filter([!empty($x['top_work']) ? '„' . $x['top_work'] . '“' : '', !empty($x['work_count']) ? $x['work_count'] . ' Werke' : '', $x['birth_date'] ?? '']);
             $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['olid' => $x['key']]]; }
-        $out[] = ['name' => $q . ' (Reihe)', 'hint' => 'Reihe über den Titel suchen, z. B. Manga oder Comics (Google Books, deutsche Ausgaben)', 'ext' => ['gbs' => $q]];
+        $reihe = ['name' => $q . ' (Reihe)', 'hint' => 'Reihe über den Titel suchen, z. B. Manga oder Comics (Katalog der Deutschen Nationalbibliothek, deutsche Ausgaben)', 'ext' => ['gbs' => $q]];
+        $tok = function (string $x): array { return array_values(array_filter(preg_split('/[\s,.\-]+/u', mb_strtolower($x)))); };
+        $qt = $tok($q); $isAuthor = false; // Suchbegriff passt auf einen Personennamen: alle Wörter kommen vor, höchstens vier Namensteile, keine Ziffern oder Satzzeichen
+        foreach ($out as $o) { $nt = $tok((string) $o['name']); if ($qt && !array_diff($qt, $nt) && count($nt) <= 4 && !preg_match('/[\d():;]/', (string) $o['name'])) { $isAuthor = true; break; } }
+        if ($isAuthor) $out[] = $reihe; else array_unshift($out, $reihe); // kein Autor gefunden: die Reihe über den Titel steht ganz oben
     }
     json_out(['results' => $out]);
 }
