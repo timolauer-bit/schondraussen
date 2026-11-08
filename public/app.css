@@ -500,3 +500,8 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .fbnoteacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
 /* Admin-Listen auf schmalen Bildschirmen: Aktionen unter den Text statt daneben */
 @media(max-width:760px){.arow{grid-template-columns:minmax(0,1fr)}.arow .acts{justify-content:flex-start}.arow .nm2{overflow-wrap:anywhere}}
+/* Info-Seite auf dem Handy: Inhalt darf nie breiter als der Bildschirm werden (Tabellen scrollen in sich) */
+.panel,.infopanel,.infopanel>*,.infosec,.nerdtbl{min-width:0;max-width:100%}
+.infosec,.infosec p,.infosec li,.infosec td{overflow-wrap:anywhere}
+.nerdtbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:700px){.nerdtbl th{white-space:normal}.nerdtbl td.k{min-width:0}.nerdtbl table{min-width:480px}}
