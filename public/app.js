@@ -532,7 +532,7 @@
     SKINS.forEach(function (k) { skins.append(h('button', { class: 'skin', type: 'button', 'aria-pressed': String((S.skin || '') === k[0]), onclick: function () { setSkin(k[0]); api('/api/data.php?a=skin', { skin: k[0] }); render(); } }, h('span', { class: 'dots' }, k[2].map(function (c) { var i = h('i'); i.style.background = c; return i; })), h('b', null, k[1]))); });
     var nerdMsg = h('span', { class: 'msg', style: 'margin:0' }), nerdCk = h('input', { type: 'checkbox', onchange: function () { var on = this.checked; api('/api/auth.php?a=nerd', { on: on }).then(function (r) { if (r.ok) { D.nerd = on; nerdMsg.className = 'msg'; nerdMsg.textContent = 'Gespeichert.'; renderVer(); } else { nerdCk.checked = !on; nerdMsg.className = 'msg err'; nerdMsg.textContent = r.error || 'Speichern nicht möglich.'; } }); } }); nerdCk.checked = !!D.nerd;
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Oberfläche'), skins,
-      h('div', { style: 'margin-top:14px' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge.'), nerdMsg)));
+      h('div', { style: 'margin-top:14px' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg)));
     var tm = h('span', { class: 'msg', style: 'margin:0' }), cb = h('input', { type: 'checkbox', id: 'ntf', onchange: function () { S.notify = this.checked; api('/api/data.php?a=notify', { on: this.checked }); opts.style.opacity = this.checked ? '1' : '.5'; } }); cb.checked = !!S.notify;
     var sv = h('span', { class: 'msg', style: 'margin:0' });
     function saveN() { api('/api/data.php?a=notifyset', { 'new': S.n['new'], day: S.n.day, week: S.n.week, mode: S.n.mode, weekday: S.n.weekday, bell_default: S.n.bell_default }).then(function (r) { sv.className = 'msg' + (r.ok ? '' : ' err'); sv.textContent = r.ok ? 'Gespeichert.' : (r.msg || r.error || 'Speichern nicht möglich.'); setTimeout(function () { sv.textContent = ''; }, 2500); }); }
@@ -781,6 +781,74 @@
     cronLoad();
     return h('section', { class: 'infosec' }, h('h3', null, 'Aktualisierung der Einträge'), h('p', { class: 'hint' }, 'Nur für dich als Admin sichtbar. Der Cron-Job aktualisiert die ältesten Einträge zuerst und arbeitet reihum Serien, Musiker:innen und Autor:innen ab, solange sein Zeitbudget (80 Sekunden) reicht. Danach laufen die Mails. Die Werte werden beim Öffnen der Seite neu geladen.'), cronBox);
   }
+
+  /* ---------- Nerdinfos (Projektübersicht) ---------- */
+  function nerdOn() { return !!(D.admin || D.alpha || D.nerd) && !S.preview; }
+  function nerdPage() {
+    var P = h('section', { class: 'panel infopanel nerdinfo' }, h('h2', { class: 'sec' }, 'Nerdinfos'),
+      h('p', { class: 'hint' }, 'Wie Schondraussen.de gebaut ist, woher die Daten kommen und welche Dienste im Hintergrund laufen. Stand 08.11.2026.'));
+    function sec(title) { var s = h('section', { class: 'infosec' }, h('h3', null, title)); for (var i = 1; i < arguments.length; i++) s.append(arguments[i]); P.append(s); }
+    function ul(items) { return h('ul', { class: 'nerdul' }, items.map(function (x) { return h('li', null, x); })); }
+    function cell(x) { return (x && x.href) ? h('a', { href: x.href, target: '_blank', rel: 'noopener noreferrer' }, x.t) : x; }
+    function tbl(head, rows) {
+      return h('div', { class: 'nerdtbl' }, h('table', null, h('thead', null, h('tr', null, head.map(function (x) { return h('th', null, x); }))),
+        h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, cell(x)); })); }))));
+    }
+    sec('Kurzüberblick', h('p', null, 'Schondraussen.de ist ein kostenloser Medien-Tracker: Nutzer legen Autor:innen, Musiker:innen, Filme und Serien auf eine Liste und werden per Mail und Kalender über Neuerscheinungen informiert. Die Seite ist am 08.11.2026 offiziell gestartet.'),
+      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt; Einnahmen nur über Amazon-Partnerlinks)', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Filme warten auf die Freigabe der Datenquelle (TMDB)']));
+    sec('Funktionen für Nutzer', ul([
+      'Konto mit E-Mail-Bestätigung, frei wählbarem Benutzernamen und optionaler Zwei-Faktor-Anmeldung; Konto jederzeit löschbar (endgültig nach 7 Tagen)',
+      'Vier Listen (Bücher, Musik, Filme, Serien, je bis zu 100 Einträge) mit Werkübersicht, Beschreibung (deutsch, übersetzt) und Markierung als gesehen, gelesen oder gehört',
+      'Kalender aller angekündigten Veröffentlichungen, dazu ein persönliches Kalender-Abo (ICS)',
+      'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
+      'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',
+      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Trakt und Spotify; Datenexport',
+      'Ideen, Bugmeldungen und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
+      'Mehrere Oberflächen (Skins), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster']));
+    sec('Funktionen für den Admin', ul([
+      'Nutzerverwaltung (freischalten, sperren, Alphatester, Einladen per Link), Option „Neue Konten manuell freischalten“ (Standard aus)',
+      'Systemnachrichten an alle Nutzer, Bilder der Anmeldeseite, Amazon-Partner-Daten, Testmail',
+      'Sicherheit: Protokoll der Admin-Zugriffe, Ansicht als normaler Nutzer, Eintrag prüfen (Diagnose)',
+      'Cron-Status, Versionsverlauf (Changelog) mit Kategorien, Meldung bei neuen Ideen und Bugs']));
+    sec('Technik und Betrieb', tbl(['Bereich', 'Umsetzung'], [
+      ['Hosting', 'ALL-INKL (Webspace, MySQL, Mailserver), HTTPS erzwungen'],
+      ['Sprache und Datenbank', 'PHP und MySQL; Oberfläche in JavaScript ohne Framework'],
+      ['Bereitstellung', 'Privates GitHub-Repository; jeder Push auf den Hauptzweig wird per GitHub Actions auf den Server übertragen (rund 1,5 Minuten)'],
+      ['Aktualisierung der Daten', 'Ein geplanter Server-Job (Cron) stößt die Aktualisierung an; älteste Einträge zuerst, je Lauf etwa 80 Sekunden Zeitbudget, Einträge werden alle 12 Stunden erneuert; danach laufen die Mails'],
+      ['Mailversand', 'SMTP über den Mailserver des Hosters, Double-Opt-in, Abmeldelink und List-Unsubscribe-Kopfzeile'],
+      ['Versionsverlauf', 'Eine Sammelversion je Kalendertag, Kategorien F, O, U, B, A, D, T']]));
+    sec('Externe Datenquellen und Schnittstellen', h('p', null, 'Alle Abfragen laufen serverseitig und nur für Titel, die Nutzer wirklich anlegen. An die Dienste gehen nie E-Mail-Adressen oder Kontodaten.'),
+      tbl(['Quelle', 'Wofür', 'Schlüssel', 'Auflagen und Hinweise'], [
+        [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
+        [{ t: 'MusicBrainz', href: 'https://musicbrainz.org' }, 'Musik: Künstler:innen, Alben, Termine', 'keiner', 'höchstens eine Anfrage pro Sekunde, daher gebremste Abfrage'],
+        ['ListenBrainz', 'Musik: Vorschläge ähnlicher Künstler:innen', 'keiner', '–'],
+        [{ t: 'Open Library', href: 'https://openlibrary.org' }, 'Bücher: Autor:innen und Werke, Wikidata-Verweis', 'keiner', 'liefert kaum angekündigte Bücher; Werke ohne deutsche Ausgabe werden ausgeblendet'],
+        ['Google Books', 'Bücher: angekündigte Titel (deutsche Ausgaben)', 'API-Schlüssel', 'Eigener Schlüssel, begrenzte Abfragemenge pro Tag; für deutsche Manga kaum Treffer'],
+        ['Deutsche Nationalbibliothek (lobid.org)', 'Bücher-Reihen über den Titel, mit Jahr', 'keiner', 'freie Schnittstelle; Antwortstruktur noch in Erprobung'],
+        ['Wikipedia und Wikidata', 'Kurzvorstellung von Bands und Autor:innen', 'keiner', 'deutsch bevorzugt, sonst englisch und übersetzt'],
+        [{ t: 'DeepL', href: 'https://www.deepl.com' }, 'Übersetzung englischer Beschreibungen ins Deutsche', 'API-Schlüssel (Free-Tarif)', 'nur öffentliche Texte, Ergebnis wird gespeichert (je Text eine Übersetzung)'],
+        ['Google News (RSS-Suche)', 'aktuelle Schlagzeilen in den Benachrichtigungsmails (höchstens 7 Tage alt)', 'keiner', 'nur Name des Eintrags und Titel des Werks gehen an Google'],
+        ['TMDB', 'Filme (geplant)', 'API-Schlüssel', 'offen: private oder kommerzielle Nutzung; erst danach wird die Anbindung gebaut'],
+        ['Amazon-Partnerprogramm', 'Kauflinks mit Partner-ID', 'Partner-ID', 'Kennzeichnung als Werbung im Footer, im Impressum und im Datenschutz']]));
+    sec('Dienste und Konten', tbl(['Dienst', 'Zweck'], [
+      ['ALL-INKL (Hoster)', 'Webspace, Datenbank, Mailserver, Cron-Job, Fehler- und Zugriffslogs (7 Tage)'],
+      ['GitHub (privates Repository, Actions)', 'Quellcode und automatische Bereitstellung bei jedem Push'],
+      [{ t: 'UptimeRobot', href: 'https://stats.uptimerobot.com/hWI2Kjc0jq' }, 'Erreichbarkeitsprüfung; die öffentliche Statusseite ist auf der Infoseite verlinkt'],
+      ['Google Search Console', 'Domain angemeldet, Sitemap bereitgestellt, später Auswertung der Suchanfragen'],
+      ['Google Cloud (Projekt für die Books API)', 'API-Schlüssel für Google Books, auf diese API beschränkt'],
+      ['DeepL-Konto (API Free)', 'Schlüssel für die Übersetzung'],
+      ['Amazon-Partnerprogramm', 'Partner-ID für die Kauflinks']]),
+      h('p', { class: 'hint' }, 'Schlüssel und Passwörter sind nur auf dem Server hinterlegt und hier bewusst nicht genannt.'));
+    sec('Datenschutz, Sicherheit und Rechtliches', ul([
+      'Impressum und Datenschutzerklärung (Stand 07.11.2026) sind online; sie nennen alle Quellen, DeepL, die Google-News-Schlagzeilen, Amazon-Partnerlinks, Aufbewahrungsfristen und die Rechte der Nutzer',
+      'Es gibt nur ein Sitzungs-Cookie, keine Werbe- oder Analyse-Dienste, und die Seite lädt nur von der eigenen Domain (keine externen Schriften, Skripte oder CDNs)',
+      'E-Mail-Adressen sieht der Admin in der Nutzerverwaltung nicht; ein Aufdecken im Ausnahmefall wird protokolliert',
+      'Passwörter nur als Hash; optionale Zwei-Faktor-Anmeldung; Anmeldeversuche und Kontaktformular sind mengenbegrenzt',
+      'Hochgeladene Bilder werden geprüft; Anhänge sind erst nach Freigabe für andere sichtbar',
+      'Löschung: Konto sofort gesperrt, Daten nach 7 Tagen endgültig weg; Ideen und Bugmeldungen bleiben ohne E-Mail-Verknüpfung (Name durchgestrichen)',
+      'Mails nur mit Einwilligung (Double-Opt-in), Widerruf per Abmeldelink in jeder Mail']));
+    return P;
+  }
   function info() {
     var d = document.createElement('section'); d.className = 'panel infopanel';
     d.innerHTML = '<h2 class="sec">Info</h2><div class="intro"><p class="lead">Du bist hier richtig, wenn du irgendwann angefangen hast zu arbeiten und einfach keine Zeit mehr hast, deinen Lieblingsmusiker:innen, Autor:innen oder Serien zu folgen. Wenn du überrascht feststellst, dass die Band deiner Jugend schon vor zwei Jahren ein neues Album veröffentlicht hat.</p>' +
@@ -810,7 +878,14 @@
       if (r.top_percent) mine.append(h('p', { style: 'margin:6px 0 10px;font-weight:600' }, 'Du gehörst zu den ' + r.top_percent + ' % der aktivsten Nutzer.'), h('p', { class: 'hint', style: 'margin:-6px 0 10px' }, 'Gezählt werden Einträge, eingereichte Ideen und Bugs sowie gesendete Chatnachrichten, im Vergleich mit allen aktiven Nutzern.')); var dl = h('dl', { class: 'mystats' }); rows.forEach(function (x) { dl.append(h('dt', null, x[0]), h('dd', null, x[1])); }); mine.append(dl);
     });
     if (isAdm()) d.append(cronSection());
-    mainEl.append(d);
+    if (!nerdOn()) { mainEl.append(d); return; }
+    var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
+    function showTab(k) {
+      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : d);
+      btns.forEach(function (b) { var on = b.k === k; b.el.className = 'admtab' + (on ? ' on' : ''); b.el.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    }
+    [['info', 'Info'], ['nerd', 'Nerdinfos']].forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); btns.push({ k: x[0], el: b }); bar.append(b); });
+    mainEl.append(bar, holder); showTab(S.infoTab === 'nerd' ? 'nerd' : 'info');
   }
   function logView() {
     var staffLog = !!(D.admin || D.alpha || D.nerd) && !S.preview, nNew = staffLog ? logBadge() : 0;
