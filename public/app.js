@@ -117,7 +117,7 @@
   function markSeen() { try { localStorage.setItem('sd-seen', String(LOGTOTAL)); } catch (_) {} }
   function renderVer() {
     var v = $('ver'); if (!v) return; var n = logBadge();
-    v.textContent = 'Version ' + LATEST; if (n && (D.admin || D.alpha || D.nerd)) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
+    v.textContent = 'Version ' + LATEST; if (n && D.nerd) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
     v.setAttribute('aria-pressed', String(S.view === 'log')); v.title = 'Versionsverlauf';
   }
   function pl(n, one, many) { n = +n || 0; return n + ' ' + (n === 1 ? one : many); }
@@ -783,7 +783,7 @@
   }
 
   /* ---------- Nerdinfos (Projektübersicht) ---------- */
-  function nerdOn() { return !!(D.admin || D.alpha || D.nerd) && !S.preview; }
+  function nerdOn() { return !!D.nerd && !S.preview; }
   function nerdPage() {
     var P = h('section', { class: 'panel infopanel nerdinfo' }, h('h2', { class: 'sec' }, 'Nerdinfos'),
       h('p', { class: 'hint' }, 'Wie Schondraussen.de gebaut ist, woher die Daten kommen und welche Dienste im Hintergrund laufen. Stand 08.11.2026.'));
@@ -888,7 +888,7 @@
     mainEl.append(bar, holder); showTab(S.infoTab === 'nerd' ? 'nerd' : 'info');
   }
   function logView() {
-    var staffLog = !!(D.admin || D.alpha || D.nerd) && !S.preview, nNew = staffLog ? logBadge() : 0;
+    var staffLog = !!D.nerd && !S.preview, nNew = staffLog ? logBadge() : 0;
     markSeen(); renderVer();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Versionsverlauf'), h('p', { class: 'hint' }, 'Was sich in welcher Version geändert hat.'));
     var CATS = [['F', 'Neue Funktionen'], ['O', 'Optionen'], ['U', 'Oberfläche'], ['B', 'Bugfixes'], ['A', 'Admin'], ['D', 'Datenschutz und Sicherheit'], ['T', 'Technik']];

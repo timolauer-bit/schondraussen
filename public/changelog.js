@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'O|Nerdoption: Für Admin und Alphatester ist der Haken anfangs gesetzt. Nehmen sie ihn weg, verschwinden bei ihnen die Nerd-Anzeigen (Zähler an der Versionsnummer, neue Einträge im Versionsverlauf, Reiter „Nerdinfos“); ihre Rechte und die Alpha-Funktionen bleiben unverändert. Erfordert Migration 044',
     'F|Info-Seite: Neuer Reiter „Nerdinfos“ mit der Projektübersicht (Funktionen, Technik, Datenquellen, Dienste, Datenschutz). Sichtbar für Admin und Alphatester sowie für alle, die in den Einstellungen die Nerdoption eingeschaltet haben',
     'B|Bücher-Reihen: Der Katalog der Nationalbibliothek wird jetzt auch über das übergeordnete Werk durchsucht, damit Einzelbände (z. B. Manga-Bände mit eigener Bandnummer) gefunden werden',
     'B|Bücher-Reihen: Der Titel muss mit dem Reihennamen beginnen (keine Fachbücher mehr, in denen der Name nur vorkommt), es werden bis zu 300 Katalogtreffer gelesen, Bandzählungen des Katalogs werden übernommen, und die Beschreibung nennt kurz, was die Abfrage lieferte (zur Fehlersuche)',

@@ -200,6 +200,10 @@ $M = [
   '024_site_state' => [
   "CREATE TABLE site_state (k VARCHAR(40) PRIMARY KEY, v VARCHAR(255) NOT NULL DEFAULT '', updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '044_nerd_default' => [
+  "ALTER TABLE users MODIFY nerd_changes TINYINT(1) NULL DEFAULT NULL",
+  "UPDATE users SET nerd_changes=NULL WHERE nerd_changes=0",
+ ],
   '042_refetch_cut_summaries' => [
   "UPDATE subjects SET fetched_at=NULL WHERE type IN ('author','artist') AND CHAR_LENGTH(summary) >= 399",
  ],
