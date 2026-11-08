@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Bücher-Reihen: Die Bände kommen jetzt direkt aus der Katalogschnittstelle der Deutschen Nationalbibliothek (vollständiger als lobid.org, mit angekündigten Bänden). Als Band zählt, was eine Bandnummer trägt; Doppel aus Druck- und E-Book-Ausgabe oder Neuauflagen werden zusammengefasst (ältestes Jahr). lobid.org und Google Books bleiben als Ersatz',
     'B|Bücher-Reihen: Als Band zählt nur noch, was im Katalog der Reihe zugeordnet ist; Sach-, Rezept- und Fachbücher, deren Titel nur mit dem Reihennamen beginnt, werden nicht mehr aufgelistet',
     'B|Bücher-Reihen: Die Abfrage nutzt jetzt die Gesamtaufnahme der Reihe im Katalog (z. B. „One piece“ von Carlsen) und liest die Einzelbände samt Bandnummer über die Reihenzugehörigkeit; DVDs, Zeitschriften und die Gesamtaufnahme selbst werden aussortiert',
     'B|Bücher-Reihen: Die Bände der Nationalbibliothek haben oft einen eigenen Titel und tragen den Reihennamen nur in der Reihenangabe; die Abfrage erkennt sie jetzt daran und lässt Übersetzungen mit japanischer Originalsprache nicht mehr weg',

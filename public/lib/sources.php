@@ -235,6 +235,78 @@ function lobid_strings($v, array $skip, string $key = ''): array { // alle Textw
     $o = []; if (is_array($v)) foreach ($v as $k => $x) $o = array_merge($o, lobid_strings($x, $skip, is_string($k) ? $k : $key));
     return $o;
 }
+// Deutsche Nationalbibliothek (SRU, MARC21): nummerierte Bände einer Reihe, auch angekündigte (Erscheinungsjahr in der Zukunft).
+function dnb_sru(string $query, int $start): array {
+    $url = 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&recordSchema=MARC21-xml&maximumRecords=100&startRecord=' . $start . '&query=' . rawurlencode($query);
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
+    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($raw === false || $code >= 400) return ['err' => $raw === false ? 'Verbindungsfehler: ' . $cerr : 'Status ' . $code];
+    $dom = new DOMDocument(); $prev = libxml_use_internal_errors(true); $ok = $dom->loadXML($raw); libxml_clear_errors(); libxml_use_internal_errors($prev);
+    if (!$ok) return ['err' => 'Antwort nicht lesbar'];
+    $xp = new DOMXPath($dom);
+    $total = (int) $xp->evaluate("string(//*[local-name()='numberOfRecords'])");
+    $diag = trim((string) $xp->evaluate("string((//*[local-name()='diagnostic']//*[local-name()='message'])[1])")) ?: trim((string) $xp->evaluate("string((//*[local-name()='diagnostic']//*[local-name()='details'])[1])"));
+    $recs = [];
+    foreach ($xp->query("//*[local-name()='record'][*[local-name()='datafield']]") as $r) {
+        $sf = function (string $tag, string $c) use ($xp, $r): array {
+            $o = []; foreach ($xp->query("./*[local-name()='datafield'][@tag='" . $tag . "']/*[local-name()='subfield'][@code='" . $c . "']", $r) as $n) $o[] = trim($n->textContent); return $o;
+        };
+        $recs[] = [
+            'a' => $sf('245', 'a')[0] ?? '', 'b' => $sf('245', 'b')[0] ?? '', 'n' => $sf('245', 'n')[0] ?? '', 'p' => $sf('245', 'p')[0] ?? '',
+            'year' => ($sf('264', 'c') ?: $sf('260', 'c'))[0] ?? '',
+            'ser' => array_merge($sf('490', 'a'), $sf('830', 'a')), 'serv' => array_merge($sf('490', 'v'), $sf('830', 'v')),
+            'lang' => $sf('041', 'a'),
+        ];
+    }
+    return ['total' => $total, 'diag' => $diag, 'recs' => $recs];
+}
+
+function dnb_series(string $title): array {
+    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim($s, " \t\n\r\0\x0B/:;,=-–")));
+    $q = str_replace('"', '', $title); $ser = preg_quote($title, '/');
+    $startRe = '/^\W*' . $ser . '(?![\p{L}\p{N}])/iu';
+    $volRe = '/^\W*' . $ser . '\s*,?\s*(?:Band|Bd\.?|Vol\.?|Nr\.?)?\s*(\d{1,4})(?!\d)\s*[:\-–.]?\s*(.*)$/isu';
+    $recs = []; $total = 0; $info = '';
+    foreach (['tit="' . $q . '" and spr=ger', 'tit="' . $q . '"'] as $qi => $query) { // zweiter Versuch ohne Sprachindex, falls der erste nichts oder einen Fehler liefert
+        $recs = []; $total = 0; $info = '';
+        for ($st = 1; $st <= 401; $st += 100) {
+            $r = dnb_sru($query, $st);
+            if (isset($r['err'])) { $info = $r['err']; break; }
+            if ($r['diag'] !== '' && !$r['recs']) { $info = 'Fehlermeldung: ' . mb_substr($r['diag'], 0, 120); break; }
+            $total = $r['total']; foreach ($r['recs'] as $x) $recs[] = $x;
+            if (count($r['recs']) < 100 || count($recs) >= $total) break;
+        }
+        if ($recs) break;
+    }
+    if (!$recs) return [[], [], 'DNB-SRU: ' . ($info !== '' ? $info : 'keine Treffer')];
+    $byNum = []; $nOther = 0; $nDate = 0; $nLang = 0; $y = (int) date('Y');
+    foreach ($recs as $x) {
+        if ($x['lang'] && !array_intersect(array_map('strtolower', $x['lang']), ['ger', 'jpn', 'mul', 'und'])) { $nLang++; continue; }
+        $a = $clean($x['a']); $n = $clean($x['n']); $p = $clean($x['p']); $b = $clean($x['b']);
+        $num = 0; $rest = '';
+        if (preg_match($volRe, trim($a . ' ' . $n), $mm)) { $num = (int) $mm[1]; $rest = $clean($mm[2]); if ($p !== '') $rest = $rest !== '' ? $rest . ': ' . $p : $p; elseif ($b !== '' && $rest === '') $rest = $b; }
+        else { // Band mit eigenem Titel, Reihenname und Zählung stehen in der Reihenangabe
+            foreach ($x['ser'] as $i => $s) {
+                if (preg_match($startRe, trim($s))) {
+                    $v = (string) ($x['serv'][$i] ?? ''); if (!preg_match('/(\d{1,4})/', $v . ' ' . $s, $m2)) continue;
+                    $num = (int) $m2[1]; $rest = $clean($a . ($n !== '' ? ' ' . $n : '') . ($p !== '' ? ': ' . $p : '')); break;
+                }
+            }
+        }
+        if ($num <= 0) { $nOther++; continue; }
+        if (!preg_match('/\d{4}/', $x['year'], $my)) { $nDate++; continue; }
+        $yr = (int) $my[0];
+        if (!isset($byNum[$num])) $byNum[$num] = ['y' => $yr, 'rest' => $rest];
+        else { $byNum[$num]['y'] = min($byNum[$num]['y'], $yr); if ($byNum[$num]['rest'] === '') $byNum[$num]['rest'] = $rest; } // Druck- und E-Book-Ausgaben, Neuauflagen: ältestes Jahr zählt
+    }
+    $works = []; $rel = [];
+    foreach ($byNum as $num => $v) {
+        $name = mb_substr($title . ', Band ' . $num . ($v['rest'] !== '' ? ': ' . $v['rest'] : ''), 0, 255);
+        if ($v['y'] > $y) $rel[] = [$name, (string) $v['y'], 'Buch']; else $works[] = [$name, $v['y'], 'Band'];
+    }
+    return [$works, $rel, 'DNB-SRU: ' . $total . ' Treffer, ' . count($recs) . ' geprüft, ' . count($byNum) . ' nummerierte Bände, ' . $nOther . ' ohne Bandnummer oder Reihenbezug, ' . $nLang . ' andere Sprache, ' . $nDate . ' ohne Jahr'];
+}
+
 function lobid_fetch(string $q, int $from, string $sort = ''): ?array {
     $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . ($sort !== '' ? '&sort=' . $sort : '') . '&q=' . rawurlencode($q);
     $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
@@ -312,7 +384,8 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     $sid = (int) $sub['id']; $title = trim((string) $ext['gbs']);
     $works = []; $rel = []; $seen = []; $got = false; $today = date('Y-m-d');
     $key = trim((string) cfg('google_books_key', '')); $lastErr = ''; $nItems = 0; $nLang = 0; $nTitle = 0; $langs = []; $sample = [];
-    [$works, $rel, $ldInfo] = lobid_series($title); // zuerst Deutsche Nationalbibliothek, nur bei Misserfolg Google Books
+    [$works, $rel, $ldInfo] = dnb_series($title); // zuerst der Katalog der Deutschen Nationalbibliothek (SRU)
+    if (!$works && !$rel) { [$works, $rel, $ld2] = lobid_series($title); $ldInfo .= ' | ' . $ld2; } // dann lobid.org, zuletzt Google Books
     if (!$works && !$rel) {
     for ($p = 0; $p < 2; $p++) {
         $items = null;
@@ -341,12 +414,12 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     }
     if (!$works && !$rel) return ['ok' => false, 'msg' => 'Keine deutschen Bände gefunden (' . $ldInfo . '; Google Books lieferte ' . $nItems . ' Treffer, davon ' . $nLang . ' in anderer Sprache und ' . $nTitle . ' ohne den Reihentitel im Namen; Sprachen: ' . ($langs ? implode(', ', array_map(fn($k, $n) => $k . ' ' . $n, array_keys($langs), $langs)) : 'keine') . '; Beispiele: ' . ($sample ? implode(', ', $sample) : 'keine') . '). Versuche einen anderen oder genaueren Titel.'];
     if (!$got && !$works && !$rel) return ['ok' => false, 'msg' => 'Weder DNB noch Google Books erreichbar (' . $ldInfo . '; ' . $lastErr . ').'];
-    $num = function ($t) { return preg_match('/(\d+)\s*$/', $t, $m) ? (int) $m[1] : 0; };
+    $num = function ($t) { return preg_match('/Band\s+(\d+)/', $t, $m) || preg_match('/(\d+)\s*$/', $t, $m) ? (int) $m[1] : 0; };
     usort($works, fn($a, $b) => $num($b[0]) <=> $num($a[0]) ?: strcmp($a[0], $b[0]));
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
-            ->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), 'Reihe „' . $title . '“ · Bände nach Titel aus dem Katalog der Deutschen Nationalbibliothek bzw. Google Books (deutsche Ausgaben). Abfrage: ' . ($ldInfo ?? ''), '[]', count($works), $sid]);
+            ->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), 'Reihe „' . $title . '“ · Bände nach Titel aus dem Katalog der Deutschen Nationalbibliothek (nummerierte deutsche Ausgaben, auch angekündigte). Abfrage: ' . ($ldInfo ?? ''), '[]', count($works), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');

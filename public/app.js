@@ -824,7 +824,7 @@
         ['ListenBrainz', 'Musik: Vorschläge ähnlicher Künstler:innen', 'keiner', '–'],
         [{ t: 'Open Library', href: 'https://openlibrary.org' }, 'Bücher: Autor:innen und Werke, Wikidata-Verweis', 'keiner', 'liefert kaum angekündigte Bücher; Werke ohne deutsche Ausgabe werden ausgeblendet'],
         ['Google Books', 'Bücher: angekündigte Titel (deutsche Ausgaben)', 'API-Schlüssel', 'Eigener Schlüssel, begrenzte Abfragemenge pro Tag; für deutsche Manga kaum Treffer'],
-        ['Deutsche Nationalbibliothek (lobid.org)', 'Bücher-Reihen über den Titel, mit Jahr', 'keiner', 'freie Schnittstelle; Antwortstruktur noch in Erprobung'],
+        ['Deutsche Nationalbibliothek (SRU, ersatzweise lobid.org)', 'Bücher-Reihen über den Titel: nummerierte Bände mit Jahr, auch angekündigte', 'keiner', 'freie Schnittstelle; Antwortstruktur noch in Erprobung'],
         ['Wikipedia und Wikidata', 'Kurzvorstellung von Bands und Autor:innen', 'keiner', 'deutsch bevorzugt, sonst englisch und übersetzt'],
         [{ t: 'DeepL', href: 'https://www.deepl.com' }, 'Übersetzung englischer Beschreibungen ins Deutsche', 'API-Schlüssel (Free-Tarif)', 'nur öffentliche Texte, Ergebnis wird gespeichert (je Text eine Übersetzung)'],
         ['Google News (RSS-Suche)', 'aktuelle Schlagzeilen in den Benachrichtigungsmails (höchstens 7 Tage alt)', 'keiner', 'nur Name des Eintrags und Titel des Werks gehen an Google'],
