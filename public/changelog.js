@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'A|Admin, Aktualisierung der Einträge: Der Kasten „Schnittstellen“ listet jetzt alle Datenquellen auf, mit „keine Schnittstellenfehler“ oder dem aktuellen Fehler (rot)',
     'A|Admin, Aktualisierung der Einträge: Neuer Kasten „Fehler der Datenquellen“. Komplettfehler der Schnittstellen (nicht erreichbar, Tageslimit oder Kontingent erreicht, Zugang abgelehnt oder gesperrt, Fehler beim Dienst) werden pro Quelle gezählt und mit der Meldung der Quelle angezeigt; einzelne „nicht gefunden“ erscheinen dort nicht. Die Liste lässt sich leeren (Migration 045)',
     'U|Bücher hinzufügen: „(Reihe)“ und „(Buchtitel)“ stehen bei Suchbegriffen aus einem Wort (z. B. „Endymion“) immer oben; unten nur, wenn ein Autorenname mit mindestens zwei Wörtern passt',
     'F|Bücher hinzufügen: Neben „<Titel> (Reihe)“ gibt es „<Titel> (Buchtitel)“. Es sucht nach einem einzelnen Buch (z. B. „Endymion“) und bietet die Autor:innen der gefundenen Bücher zur Auswahl an (Quelle: Open Library)',
