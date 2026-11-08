@@ -117,7 +117,6 @@ if ($a === 'search') {
         $r = http_json('https://api.tvmaze.com/search/shows?q=' . rawurlencode($q)) ?? [];
         foreach (array_slice($r, 0, 8) as $x) { $s = $x['show'] ?? []; if (empty($s['name'])) continue;
             $out[] = ['name' => $s['name'], 'hint' => trim(substr((string) ($s['premiered'] ?? ''), 0, 4) . ' ' . implode(', ', array_slice($s['genres'] ?? [], 0, 2))), 'ext' => ['tvmaze' => (int) $s['id']]]; }
-        try { require_once __DIR__ . '/../lib/sources.php'; foreach (anilist_search($q) as $x) { if (count($out) >= 12) break; $dup = false; foreach ($out as $o) if (mb_strtolower($o['name']) === mb_strtolower($x['name'])) $dup = true; if (!$dup) $out[] = $x; } } catch (Throwable $e) {}
     } elseif ($type === 'artist') {
         $r = http_json('https://musicbrainz.org/ws/2/artist/?fmt=json&limit=8&query=' . rawurlencode($q)) ?? [];
         foreach (($r['artists'] ?? []) as $x) {
@@ -139,7 +138,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
     if ((int) $n->fetchColumn() >= 100) json_out(['error' => 'Du hast die Grenze von 100 Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
-    foreach (['tvmaze' => 'int', 'anilist' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    foreach (['tvmaze' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
     $sid = (int) $pdo->lastInsertId();
@@ -259,7 +258,7 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $ext = [];
-    foreach (['tvmaze' => 'int', 'anilist' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    foreach (['tvmaze' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     if (!$ext) json_out(['ok' => false, 'msg' => 'Kein Treffer gewählt.']);
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
@@ -289,7 +288,7 @@ if ($a === 'done' && $_SERVER['REQUEST_METHOD'] === 'POST') { // gesehen / geles
 if ($a === 'entry') {
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
     $e = $s->fetch(); $e['genres'] = json_decode($e['genres'] ?: '[]', true);
-    $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['anilist'] = $x['anilist'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); unset($e['external_ids']);
+    $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); unset($e['external_ids']);
     $eps = [];
     if ($e['type'] === 'series') { try { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); $eps = $q->fetchAll(); } catch (Throwable $t) {} }
     $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);
