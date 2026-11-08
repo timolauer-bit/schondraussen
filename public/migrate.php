@@ -200,6 +200,9 @@ $M = [
   '024_site_state' => [
   "CREATE TABLE site_state (k VARCHAR(40) PRIMARY KEY, v VARCHAR(255) NOT NULL DEFAULT '', updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '050_feedback_seen' => [
+  "ALTER TABLE users ADD COLUMN fb_seen_feature DATETIME NULL, ADD COLUMN fb_seen_bug DATETIME NULL",
+ ],
   '049_community_reset' => [
   "UPDATE users SET community=NULL WHERE role<>'admin'",
  ],

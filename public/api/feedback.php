@@ -121,6 +121,19 @@ if ($a === 'edit') { // Die einreichende Person darf Kurzbeschreibung und Detail
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
+if ($a === 'newcount') { // rote Zahl an „Ideen“ und „Bugs“: neue Beiträge anderer seit dem letzten Besuch (nur Admin und Alphatester)
+    $o = ['feature' => 0, 'bug' => 0];
+    if (!$alpha) json_out(['ok' => true, 'n' => $o]);
+    $cur = (string) ($_GET['cur'] ?? '');
+    try {
+        $row = $pdo->prepare('SELECT fb_seen_feature, fb_seen_bug FROM users WHERE id=?'); $row->execute([$u['id']]); $seen = $row->fetch(PDO::FETCH_ASSOC) ?: [];
+        foreach (['feature' => 'fb_seen_feature', 'bug' => 'fb_seen_bug'] as $k => $col) {
+            if ($seen[$col] === null || $cur === $k) { $pdo->prepare("UPDATE users SET $col=NOW() WHERE id=?")->execute([$u['id']]); continue; }
+            $c = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE kind=? AND created_at > ? AND user_id<>?'); $c->execute([$k, $seen[$col], $u['id']]); $o[$k] = (int) $c->fetchColumn();
+        }
+    } catch (Throwable $e) { json_out(['ok' => true, 'n' => $o]); }
+    json_out(['ok' => true, 'n' => $o]);
+}
 if ($a === 'vote') { // Abstimmen dürfen alle, aber nur bei freigegebenen Ideen
     $rl = null; try { $q = $pdo->prepare('SELECT released_at FROM feedback WHERE id=?'); $q->execute([$id]); $rl = $q->fetchColumn(); } catch (Throwable $e) {}
     if (!$alpha && !$rl) json_out(['error' => 'Nicht erlaubt.'], 403);

@@ -147,8 +147,9 @@
     if (commOn()) { topbar.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
     topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
-    if (feat('feat')) topbar.append(btn('feat', 'Ideen', 0, ' feat'));
-    topbar.append(btn('bug', 'Bugs', 0, ' bugs'));
+    function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' neu seit deinem letzten Besuch' }, n > 99 ? '99+' : String(n))); return b; }
+    if (feat('feat')) topbar.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
+    topbar.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
     topbar.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
     renderVer();
@@ -1171,6 +1172,7 @@
     grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
+    if (!S.preview && (D.admin || D.alpha)) { S.fbNew = S.fbNew || {}; S.fbNew[kind === 'bug' ? 'bug' : 'feat'] = 0; fbPoll(); }
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
       h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen stehen unten, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen stehen unten, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
@@ -1254,6 +1256,14 @@
     if (!ed.length) return text;
     var tip = 'Bearbeitet. Frühere Fassung' + (ed.length > 1 ? 'en' : '') + ':\n' + ed.map(function (e) { var d = new Date(String(e.at).replace(' ', 'T')); return '„' + (e.old.length > 400 ? e.old.slice(0, 400) + '…' : (e.old || '(leer)')) + '“ (bis ' + d.toLocaleDateString('de-DE') + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr)'; }).join('\n');
     return h('span', { class: 'edited', title: tip }, text, h('sup', { class: 'edmark', 'aria-label': 'bearbeitet' }, ' ✎'));
+  }
+  function fbPoll() {
+    if (S.preview || !(D.admin || D.alpha)) return;
+    var cur = S.view === 'feat' ? 'feature' : (S.view === 'bug' ? 'bug' : '');
+    api('/api/feedback.php?a=newcount&cur=' + cur).then(function (r) {
+      if (!r || !r.n) return; var n = { feat: +r.n.feature || 0, bug: +r.n.bug || 0 }, o = S.fbNew || {};
+      if (n.feat !== (o.feat || 0) || n.bug !== (o.bug || 0)) { S.fbNew = n; nav(); }
+    });
   }
   function unreadPoll() { api('/api/chat.php?a=unread').then(function (r) { var n = +r.unread || 0; if (n !== S.unread) { S.unread = n; var k = topbar.querySelector('.support'); if (k) { var b = k.querySelector('.badge'); if (b) b.remove(); if (n && S.view !== 'sup') k.append(h('span', { class: 'badge' }, n > 99 ? '99+' : String(n))); } } }); }
 
@@ -1435,5 +1445,5 @@
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); setInterval(unreadPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();
