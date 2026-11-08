@@ -42,6 +42,14 @@ if ($a === 'entry_check') { // Diagnose: Einträge zu einem Namen samt Besitzern
     $s = $pdo->prepare('SELECT id,type,name,fetched_at,external_ids,CHAR_LENGTH(summary) AS sum_len FROM subjects WHERE name LIKE ? ORDER BY id LIMIT 20'); $s->execute(['%' . $q . '%']); $out = [];
     foreach ($s->fetchAll() as $r) {
         $o = $pdo->prepare('SELECT user_id,is_sample,bell,added_at FROM user_entries WHERE subject_id=? ORDER BY user_id LIMIT 50'); $o->execute([$r['id']]); $r['owners'] = $o->fetchAll();
+        $r['list_check'] = []; // Wie sieht die Liste für jeden Besitzer aus? (gleiche Abfrage wie die Seite)
+        foreach (array_slice($r['owners'], 0, 3) as $ow) {
+            try {
+                $l = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,e.bell AS bell,(SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,(SELECT SUM(CAST(SUBSTRING_INDEX(w.note,' ',1) AS UNSIGNED)) FROM works w WHERE w.subject_id=s.id AND w.kind='Staffel') AS episodes FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? ORDER BY s.name");
+                $l->execute([$ow['user_id']]); $rows = $l->fetchAll(); $has = false; foreach ($rows as $x) if ((int) $x['id'] === (int) $r['id']) $has = $x['type'];
+                $enc = json_encode($rows, JSON_UNESCAPED_UNICODE); $r['list_check'][] = 'Nr. ' . $ow['user_id'] . ': ' . count($rows) . ' Einträge, dieser ' . ($has ? 'enthalten (Typ ' . $has . ')' : 'NICHT enthalten') . ', JSON ' . ($enc === false ? 'FEHLER: ' . json_last_error_msg() : 'ok');
+            } catch (Throwable $e) { $r['list_check'][] = 'Nr. ' . $ow['user_id'] . ': Abfrage fehlgeschlagen: ' . $e->getMessage(); }
+        }
         foreach (['releases' => 'releases', 'works' => 'works'] as $k => $t) { $c = $pdo->prepare("SELECT COUNT(*) FROM $t WHERE subject_id=?"); $c->execute([$r['id']]); $r[$k] = (int) $c->fetchColumn(); }
         $out[] = $r;
     }
