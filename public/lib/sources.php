@@ -294,10 +294,47 @@ function googlebooks_upcoming(string $name, array $seen): array {
     return $out;
 }
 
+// Buchreihe über den Titel (z. B. Manga): Google Books, nur deutsche Ausgaben, deren Titel den Reihennamen enthält.
+function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
+    $sid = (int) $sub['id']; $title = trim((string) $ext['gbs']);
+    $works = []; $rel = []; $seen = []; $got = false; $today = date('Y-m-d');
+    for ($p = 0; $p < 2; $p++) {
+        $r = http_json('https://www.googleapis.com/books/v1/volumes?maxResults=40&startIndex=' . ($p * 40) . '&orderBy=newest&langRestrict=de&printType=books&q=' . rawurlencode('intitle:"' . str_replace('"', '', $title) . '"'), 10);
+        if ($r === null) { if ($p === 0) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar.']; break; }
+        $got = true; $items = $r['items'] ?? []; if (!$items) break;
+        foreach ($items as $it) {
+            $v = $it['volumeInfo'] ?? []; $t = trim((string) ($v['title'] ?? '')); $d = (string) ($v['publishedDate'] ?? '');
+            if ($t === '' || ($v['language'] ?? 'de') !== 'de' || mb_stripos($t, $title) === false) continue;
+            $full = $t . (!empty($v['subtitle']) ? ': ' . $v['subtitle'] : '');
+            $k = mb_strtolower($full); if (isset($seen[$k])) continue; $seen[$k] = 1;
+            if (!preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $d)) { $works[] = [$full, null, 'Band']; continue; }
+            if (date_is_future($d)) $rel[] = [$full, $d, 'Buch']; else $works[] = [$full, (int) substr($d, 0, 4), 'Band'];
+        }
+        if (count($items) < 40) break;
+    }
+    if (!$got) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar.'];
+    $num = function ($t) { return preg_match('/(\d+)\s*$/', $t, $m) ? (int) $m[1] : 0; };
+    usort($works, fn($a, $b) => $num($b[0]) <=> $num($a[0]) ?: strcmp($a[0], $b[0]));
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
+            ->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), 'Reihe „' . $title . '“ · Bände nach Titel aus Google Books (deutsche Ausgaben)', '[]', count($works), $sid]);
+        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
+        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
+        foreach (array_slice($works, 0, 200) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        $q = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
+        foreach (array_slice($rel, 0, 30) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        $pdo->commit();
+    } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    return ['ok' => true, 'msg' => count($works) . ' Bände, ' . count($rel) . ' angekündigt'];
+}
+
 // Open Library (Autor:innen). Kommende Bücher liefert diese Quelle kaum; dafür kommt später eine zweite.
 function openlibrary_refresh(PDO $pdo, array $sub): array {
     $sid = (int) $sub['id'];
     $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    if (!empty($ext['gbs'])) return bookseries_refresh($pdo, $sub, $ext);
     $summary = $sub['summary'];
     if (empty($ext['olid'])) {
         $r = http_json('https://openlibrary.org/search/authors.json?limit=10&q=' . rawurlencode($sub['name']));

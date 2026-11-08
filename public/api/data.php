@@ -129,6 +129,7 @@ if ($a === 'search') {
         foreach (($r['docs'] ?? []) as $x) {
             $h = array_filter([!empty($x['top_work']) ? '„' . $x['top_work'] . '“' : '', !empty($x['work_count']) ? $x['work_count'] . ' Werke' : '', $x['birth_date'] ?? '']);
             $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['olid' => $x['key']]]; }
+        $out[] = ['name' => $q . ' (Reihe)', 'hint' => 'Reihe über den Titel suchen, z. B. Manga oder Comics (Google Books, deutsche Ausgaben)', 'ext' => ['gbs' => $q]];
     }
     json_out(['results' => $out]);
 }
@@ -139,6 +140,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ((int) $n->fetchColumn() >= 100) json_out(['error' => 'Du hast die Grenze von 100 Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
     foreach (['tvmaze' => 'int', 'anilist' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
     $sid = (int) $pdo->lastInsertId();
     if ($ext) { // Kennung ergänzen, falls der Titel bisher keine hat
@@ -255,6 +257,7 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $ext = [];
     foreach (['tvmaze' => 'int', 'anilist' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     if (!$ext) json_out(['ok' => false, 'msg' => 'Kein Treffer gewählt.']);
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
     json_out(refresh_subject($pdo, $id));

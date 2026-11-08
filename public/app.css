@@ -437,3 +437,6 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 .panel .label+.hint,.setcard .label+.hint{margin-top:4px}
 .card .sum{max-width:none}
 .note a{color:var(--accent)}
+
+/* Hinweis mit Knopf: Knopf in eigener Zeile mit Abstand */
+p.warnbox>.btn{display:block;margin:10px 0 0 !important}
