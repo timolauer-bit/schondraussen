@@ -941,7 +941,7 @@
       var last = h('section', { class: 'commbox commlast' }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
       if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));
       else last.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, d.last.map(function (r) {
-        return h('tr', null, h('td', { class: 'dt' }, commDate(r.added_at)), h('td', { class: 'ty' }, TYPES[r.type] ? TYPES[r.type].label : ''), h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r)));
+        return h('tr', null, h('td', { class: 'ty' }, TYPES[r.type] ? TYPES[r.type].label : ''), h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r)));
       })))));
       body.append(last);
       var g = h('div', { class: 'commgrid' });
