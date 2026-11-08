@@ -140,8 +140,8 @@ if ($a === 'search') {
             $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['olid' => $x['key']]]; }
         $reihe = ['name' => $q . ' (Reihe)', 'hint' => 'Reihe über den Titel suchen, z. B. Manga oder Comics (Katalog der Deutschen Nationalbibliothek, deutsche Ausgaben)', 'ext' => ['gbs' => $q]];
         $tok = function (string $x): array { return array_values(array_filter(preg_split('/[\s,.\-]+/u', mb_strtolower($x)))); };
-        $qt = $tok($q); $isAuthor = false; // Suchbegriff passt auf einen Personennamen: alle Wörter kommen vor, höchstens vier Namensteile, keine Ziffern oder Satzzeichen
-        foreach ($out as $o) { $nt = $tok((string) $o['name']); if ($qt && !array_diff($qt, $nt) && count($nt) <= 4 && !preg_match('/[\d():;]/', (string) $o['name'])) { $isAuthor = true; break; } }
+        $qt = $tok($q); $isAuthor = false; // Suchbegriff passt auf einen Personennamen: mindestens zwei Wörter, die alle im Namen vorkommen (oder ein Einwortname, der genau stimmt), höchstens vier Namensteile, keine Ziffern oder Satzzeichen
+        foreach ($out as $o) { $nt = $tok((string) $o['name']); if ($qt && !array_diff($qt, $nt) && (count($qt) >= 2 || $nt === $qt) && count($nt) <= 4 && !preg_match('/[\d():;]/', (string) $o['name'])) { $isAuthor = true; break; } }
         $buch = ['name' => $q . ' (Buchtitel)', 'hint' => 'Nach einem einzelnen Buch suchen und dessen Autor:in übernehmen', 'title_search' => true];
         if ($isAuthor) { $out[] = $reihe; $out[] = $buch; } else { array_unshift($out, $buch); array_unshift($out, $reihe); } // kein Autor gefunden: Reihe und Buchtitel stehen ganz oben
     }

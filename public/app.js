@@ -762,6 +762,16 @@
           cronBox.append(h('p', { class: o.cron_overdue ? 'warnbox' : 'hint' }, 'Cron-Job: letzter Lauf ' + hr(o.cron_minutes) + (o.cron_overdue ? ' – überfällig, eine Warnmail ist unterwegs oder bereits verschickt.' : ' – in Ordnung.')),
             h('p', { class: o.backup_overdue || o.backup_error ? 'warnbox' : 'hint' }, 'Datenbanksicherung: ' + (o.backup_info ? 'zuletzt ' + o.backup_info + ' (' + hr(o.backup_minutes) + ')' : 'noch keine') + (o.backup_error ? ' – Fehler: ' + o.backup_error : '') + (o.backup_overdue ? ' – überfällig.' : '')),
             h('p', { class: 'hint' }, 'Überwachung von außen: Adresse /api/status.php (mit ?strict=1 meldet sie auch Cron- und Sicherungsausfall) in einem Dienst wie UptimeRobot eintragen.')); }
+        if (r.api_errors === null) cronBox.append(h('p', { class: 'warnbox' }, 'Für das Fehlerprotokoll der Datenquellen fehlt noch die Migration 045 (migrate.php einmal aufrufen).'));
+        else if (r.api_errors) {
+          cronBox.append(h('h4', null, 'Fehler der Datenquellen (letzte 7 Tage)'));
+          if (!r.api_errors.length) cronBox.append(h('p', { class: 'hint' }, 'Keine Komplettfehler gemeldet (Limits, gesperrter Zugang, Ausfälle). Einzelne „nicht gefunden“ stehen hier nicht.'));
+          else {
+            var ae = h('ul', { class: 'cronruns' });
+            r.api_errors.forEach(function (x) { ae.append(h('li', null, h('b', null, x.source), ' · ' + x.kind + ' · ' + x.cnt + '×, zuletzt ' + ts(x.last_at) + (x.first_at && String(x.first_at).slice(0, 10) !== String(x.last_at).slice(0, 10) ? ', seit ' + ts(x.first_at) : ''), x.message ? h('div', { class: 'hint' }, x.message) : null)); });
+            cronBox.append(ae, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=apierrors_clear', {}).then(function () { cronLoad(); }); } }, 'Liste leeren'));
+          }
+        }
         var tbl = h('table', { class: 'crontbl' }, h('thead', null, h('tr', null, ['Kategorie', 'Einträge', 'nie geladen', 'älter als 12 h', 'ohne Werke', 'ältester Stand'].map(function (x) { return h('th', null, x); }))));
         var tb = h('tbody'); (r.stats || []).forEach(function (x) { tb.append(h('tr', { class: +x.old12 || +x.never ? 'warnrow' : '' }, h('td', null, (TYPES[x.type] ? TYPES[x.type].plural : x.type)), h('td', null, x.total), h('td', null, x.never), h('td', null, x.old12), h('td', null, x.empty), h('td', null, ts(x.oldest)))); });
         tbl.append(tb); cronBox.append(h('div', { class: 'tblwrap' }, tbl));

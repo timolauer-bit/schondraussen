@@ -118,7 +118,12 @@ if ($a === 'cron') {
     $o['empty'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0) ORDER BY fetched_at LIMIT 40")->fetchAll();
     $o['now'] = date('Y-m-d H:i:s');
     require_once __DIR__ . '/../lib/watchdog.php'; $o['ops'] = ops_health($pdo);
+    try { $o['api_errors'] = $pdo->query("SELECT source,kind,http_code,message,cnt,first_at,last_at FROM api_errors WHERE last_at > NOW() - INTERVAL 7 DAY ORDER BY last_at DESC LIMIT 30")->fetchAll(); } catch (Throwable $e) { $o['api_errors'] = null; }
     json_out($o);
+}
+if ($a === 'apierrors_clear' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    try { $pdo->exec('DELETE FROM api_errors'); } catch (Throwable $e) {}
+    json_out(['ok' => true]);
 }
 if ($a === 'site') {
     $o = ['tag' => '', 'domain' => 'amazon.de'];

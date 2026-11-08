@@ -1,11 +1,36 @@
 <?php
 // Datenquellen. Bisher angebunden: TVmaze (Serien). Weitere folgen (MusicBrainz, Open Library, TMDB).
+// Fehlerprotokoll der Datenquellen: nur Komplettfehler (nicht erreichbar, Limit/Kontingent, Zugang abgelehnt, Dienst-Fehler), keine Einzelfälle wie „nicht gefunden“.
+function api_note(string $url, $code, $raw, string $cerr = ''): void {
+    $code = (int) $code; $kind = null;
+    if ($raw === false || $code === 0) $kind = 'nicht erreichbar';
+    elseif (in_array($code, [402, 429, 456], true)) $kind = 'Limit oder Kontingent erreicht';
+    elseif (in_array($code, [401, 403], true)) $kind = 'Zugang abgelehnt oder gesperrt';
+    elseif ($code >= 500) $kind = 'Fehler beim Dienst';
+    if ($kind === null || !function_exists('db')) return;
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+    $map = ['musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
+    $src = $host; foreach ($map as $d => $n) if ($host === $d || substr($host, -strlen($d) - 1) === '.' . $d) { $src = $n; break; }
+    $msg = $raw === false ? mb_substr($cerr, 0, 160) : '';
+    if ($raw !== false && $raw !== '') {
+        $j = json_decode((string) $raw, true);
+        $msg = is_array($j) ? (string) ($j['error']['message'] ?? $j['message'] ?? $j['detail'] ?? $j['error'] ?? '') : '';
+        if (!is_string($msg) || $msg === '') $msg = trim(preg_replace('/\s+/', ' ', strip_tags((string) $raw)));
+        $msg = mb_substr($msg, 0, 160);
+    }
+    $msg = ($code ? 'Status ' . $code : '') . ($msg !== '' ? ($code ? ': ' : '') . $msg : '');
+    try {
+        db()->prepare('INSERT INTO api_errors (source,kind,http_code,message,cnt,first_at,last_at) VALUES (?,?,?,?,1,NOW(),NOW()) ON DUPLICATE KEY UPDATE first_at=IF(last_at < NOW() - INTERVAL 1 DAY, NOW(), first_at), cnt=IF(last_at < NOW() - INTERVAL 1 DAY, 1, cnt + 1), http_code=VALUES(http_code), message=VALUES(message), last_at=NOW()')
+            ->execute([$src, $kind, $code, $msg]);
+    } catch (Throwable $e) {}
+}
+
 function http_json(string $url, int $timeout = 12): ?array {
     $ch = curl_init($url);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
-    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-    if ($r === false || $code >= 400) return null;
+    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($r === false || $code >= 400) { api_note($url, $code, $r, $cerr); return null; }
     $j = json_decode($r, true);
     return is_array($j) ? $j : null;
 }
@@ -19,8 +44,8 @@ function translate_de(string $text, string $from = 'EN'): ?string {
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12, CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => ['Authorization: DeepL-Auth-Key ' . $key, 'Content-Type: application/json', 'User-Agent: Schondraussen.de/1.0'],
         CURLOPT_POSTFIELDS => json_encode(['text' => [mb_substr($text, 0, 1500)], 'source_lang' => $from, 'target_lang' => 'DE'], JSON_UNESCAPED_UNICODE)]);
-    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-    if ($r === false || $code >= 400) return null;
+    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($r === false || $code >= 400) { api_note('https://' . $host . '/v2/translate', $code, $r, $cerr); return null; }
     $j = json_decode($r, true); $t = trim((string) ($j['translations'][0]['text'] ?? ''));
     return $t !== '' ? $t : null;
 }
@@ -240,7 +265,7 @@ function dnb_sru(string $query, int $start): array {
     $url = 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&recordSchema=MARC21-xml&maximumRecords=100&startRecord=' . $start . '&query=' . rawurlencode($query);
     $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
     $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
-    if ($raw === false || $code >= 400) return ['err' => $raw === false ? 'Verbindungsfehler: ' . $cerr : 'Status ' . $code];
+    if ($raw === false || $code >= 400) { api_note($url, $code, $raw, $cerr); return ['err' => $raw === false ? 'Verbindungsfehler: ' . $cerr : 'Status ' . $code]; }
     $dom = new DOMDocument(); $prev = libxml_use_internal_errors(true); $ok = $dom->loadXML($raw); libxml_clear_errors(); libxml_use_internal_errors($prev);
     if (!$ok) return ['err' => 'Antwort nicht lesbar'];
     $xp = new DOMXPath($dom);
@@ -314,7 +339,8 @@ function dnb_series(string $title): array {
 function lobid_fetch(string $q, int $from, string $sort = ''): ?array {
     $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . ($sort !== '' ? '&sort=' . $sort : '') . '&q=' . rawurlencode($q);
     $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
-    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($raw === false || $code >= 400) api_note($url, $code, $raw, $cerr);
     $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;
     return is_array($j) ? $j : (['_err' => $code ?: 0]);
 }
@@ -398,6 +424,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
             $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
             $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
             if ($raw !== false && $code < 400 && is_array($j = json_decode($raw, true))) { $got = true; $items = $j['items'] ?? []; if ($items) break; continue; }
+            api_note($url, $code, $raw, $cerr);
             $lastErr = $raw === false ? ('Verbindungsfehler: ' . $cerr) : ('Status ' . $code . (($m = json_decode((string) $raw, true)['error']['message'] ?? '') ? ', ' . mb_substr($m, 0, 120) : ''));
         }
         if ($items === null) { if ($p === 0) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar (' . $lastErr . ').']; break; }
