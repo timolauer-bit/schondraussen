@@ -17,7 +17,8 @@ if ($a === 'users') {
         catch (Throwable $e2) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
     }
     foreach ($r as &$x) {
-        if ($x['role'] !== 'admin') { $x['email'] = null; $x['email_hidden'] = 1; } // Adressen sind für den Admin grundsätzlich ausgeblendet (Aufdecken nur einzeln und protokolliert)
+        $x['no_email'] = $x['email'] === null || $x['email'] === '' ? 1 : 0;
+        if ($x['role'] !== 'admin') { $x['email'] = null; $x['email_hidden'] = $x['no_email'] ? 0 : 1; } // Adressen sind für den Admin grundsätzlich ausgeblendet (Aufdecken nur einzeln und protokolliert)
         if (!empty($x['hide_activity']) && $x['role'] !== 'admin') { $x['seen_label'] = seen_bucket($x['last_seen_at']); $x['last_seen_at'] = null; }
     }
     unset($x);
@@ -74,6 +75,11 @@ if ($a === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('DELETE FROM announcements WHERE id=?')->execute([$i]); $pdo->prepare('DELETE FROM announcement_reads WHERE ann_id=?')->execute([$i]); } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }
+if ($a === 'anon_get') { require_once __DIR__ . '/../lib/anon.php'; json_out(['enabled' => anon_enabled($pdo)]); }
+if ($a === 'anon_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['anon_signup', !empty($b['on']) ? '1' : '0']);
+    json_out(['ok' => true]);
+}
 if ($a === 'invite_text_get') {
     $d = invite_text_default(); $t = invite_text($pdo);
     json_out(['text' => $t, 'is_default' => $t === $d, 'footer' => invite_text_footer('(dein Einladungslink)')]);
@@ -113,7 +119,7 @@ if ($a === 'invite_create' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Einlad
 if ($a === 'reveal' && $_SERVER['REQUEST_METHOD'] === 'POST') { // E-Mail eines Nutzers aufdecken, wird protokolliert
     $id = (int) ($b['id'] ?? 0);
     $s = $pdo->prepare('SELECT email FROM users WHERE id=?'); $s->execute([$id]); $em = $s->fetchColumn();
-    if (!$em) json_out(['error' => 'Nutzer nicht gefunden.'], 404);
+    if (!$em) json_out(['error' => 'Dieses Konto hat keine E-Mail-Adresse hinterlegt.'], 404);
     try { $pdo->prepare('INSERT INTO admin_log (admin_id,action,target_id) VALUES (?,?,?)')->execute([$u['id'], 'reveal_email', $id]); }
     catch (Throwable $e) { json_out(['error' => 'Protokoll nicht möglich (migrate.php einspielen).'], 500); }
     json_out(['ok' => true, 'email' => $em]);
@@ -209,7 +215,7 @@ if ($a === 'renamereq') {
 if ($a === 'approve') { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$id]); json_out(['ok' => true]); }
 if ($a === 'revoke')  { $pdo->prepare("UPDATE users SET approved_at=NULL WHERE id=? AND role<>'admin'")->execute([$id]); json_out(['ok' => true]); }
 if ($a === 'delete')  {
-    if (!empty($b['block'])) { try { $pdo->prepare("INSERT IGNORE INTO blocked_emails (email) SELECT email FROM users WHERE id=? AND role<>'admin'")->execute([$id]); } catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); } }
+    if (!empty($b['block'])) { try { $pdo->prepare("INSERT IGNORE INTO blocked_emails (email) SELECT email FROM users WHERE id=? AND role<>'admin' AND email IS NOT NULL")->execute([$id]); } catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); } }
     $ad = $pdo->prepare("SELECT id FROM users WHERE id=? AND role<>'admin'"); $ad->execute([$id]); if ($ad->fetch()) soft_delete_user($pdo, (int) $id); json_out(['ok' => true]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);

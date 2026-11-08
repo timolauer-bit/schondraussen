@@ -1,6 +1,10 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Registrierung ohne E-Mail-Adresse: Benutzername und Passwort genügen. Die Seite zeigt einmalig einen Wiederherstellungscode, mit dem man das Passwort später auch ohne Mail zurücksetzt (Anmeldeseite, „Passwort vergessen“). Anmelden geht mit E-Mail-Adresse oder Benutzername',
+    'D|Konten ohne E-Mail: höchstens ein Konto je Anschluss und 24 Stunden und insgesamt 5 pro Stunde; ohne Adresse gibt es keine Benachrichtigungsmails. Datenschutzerklärung ergänzt',
+    'A|Admin → Registrierung: Schalter „Registrierung ohne E-Mail-Adresse erlauben“. Im Kontakt-Bereich gibt es die Unterhaltung „System“ mit automatischen Meldungen (neues Konto ohne Adresse, Limit erreicht) (Migration 053)',
+    'O|Einstellungen: „Wiederherstellungscode“ lässt sich jederzeit neu erzeugen (der alte wird ungültig)',
     'A|Einladen: Der Text der Einladungsmail lässt sich im Adminmenü bearbeiten (mit Standardtext zum Wiederherstellen). Unter dem Text hängt die Seite automatisch Einladungslink, Gültigkeit und Hinweise an (Migration 052)',
     'F|Benutzername: Nach der ersten Namenswahl kann man den Namen 60 Minuten lang einmal ohne die 30-Tage-Sperre ändern, falls man sich verschrieben hat',
     'F|Ideen und Bugs: Wer einen Beitrag eingereicht hat, bekommt bei der Freigabe jetzt eine Systemnachricht (nicht bei eigenen Beiträgen)',

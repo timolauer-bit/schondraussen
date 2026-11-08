@@ -3,12 +3,13 @@
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/mail.php';
 require __DIR__ . '/../lib/images.php';
+require_once __DIR__ . '/../lib/anon.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $admin = $u['role'] === 'admin'; $a = $_GET['a'] ?? '';
 
 if ($a === 'unread') {
-    if ($admin) $n = $pdo->query('SELECT COUNT(*) FROM messages WHERE from_admin=0 AND read_at IS NULL')->fetchColumn();
+    if ($admin) { $n = $pdo->query('SELECT COUNT(*) FROM messages WHERE from_admin=0 AND read_at IS NULL')->fetchColumn(); try { $n += (int) $pdo->query('SELECT COUNT(*) FROM admin_notices WHERE read_at IS NULL')->fetchColumn(); } catch (Throwable $e) {} }
     else { $s = $pdo->prepare('SELECT COUNT(*) FROM messages WHERE user_id=? AND from_admin=1 AND read_at IS NULL'); $s->execute([$u['id']]); $n = $s->fetchColumn(); }
     json_out(['unread' => (int) $n]);
 }
@@ -19,6 +20,10 @@ if ($a === 'threads' && $admin) {
         (SELECT MAX(created_at) FROM messages m WHERE m.user_id=u.id) AS last_at,
         (SELECT COUNT(*) FROM messages m WHERE m.user_id=u.id AND m.from_admin=0 AND m.read_at IS NULL) AS unread
         FROM users u WHERE EXISTS (SELECT 1 FROM messages m WHERE m.user_id=u.id) ORDER BY last_at DESC")->fetchAll();
+    try { // Unterhaltung „System“: automatische Meldungen der Seite an den Admin
+        $sys = $pdo->query("SELECT (SELECT body FROM admin_notices ORDER BY id DESC LIMIT 1) AS last_body, (SELECT MAX(created_at) FROM admin_notices) AS last_at, (SELECT COUNT(*) FROM admin_notices WHERE read_at IS NULL) AS unread")->fetch();
+        if ($sys && $sys['last_at']) { array_unshift($rows, ['id' => 'sys', 'username' => 'System', 'last_body' => $sys['last_body'], 'last_admin' => 0, 'last_at' => $sys['last_at'], 'unread' => (int) $sys['unread']]); }
+    } catch (Throwable $e) {}
     json_out(['threads' => $rows]);
 }
 if ($a === 'users' && $admin) { // Auswahlliste für neue Unterhaltungen (ohne E-Mail-Adressen)
@@ -26,6 +31,14 @@ if ($a === 'users' && $admin) { // Auswahlliste für neue Unterhaltungen (ohne E
     catch (Throwable $e) { $rows = $pdo->query("SELECT id,username FROM users WHERE role<>'admin' AND approved_at IS NOT NULL ORDER BY username IS NULL, username, id LIMIT 1000")->fetchAll(); }
     json_out(['users' => $rows]);
 }
+if ($admin && $a === 'thread' && ($_GET['uid'] ?? '') === 'sys') {
+    try {
+        $pdo->exec('UPDATE admin_notices SET read_at=NOW() WHERE read_at IS NULL');
+        $msgs = $pdo->query('SELECT id, 0 AS from_admin, body, created_at, read_at, kind FROM admin_notices ORDER BY id DESC LIMIT 200')->fetchAll(); $msgs = array_reverse($msgs);
+    } catch (Throwable $e) { $msgs = []; }
+    json_out(['messages' => $msgs, 'system' => true]);
+}
+if ($admin && $a === 'send' && (($_GET['uid'] ?? '') === 'sys' || (body()['uid'] ?? '') === 'sys')) json_out(['error' => 'Die Systemmeldungen sind nur zum Lesen. Wähle links einen Nutzer, um zu antworten.'], 422);
 $uid = $admin ? (int) ($_GET['uid'] ?? body()['uid'] ?? 0) : (int) $u['id'];
 if ($a === 'thread') {
     if (!$uid) json_out(['messages' => []]);

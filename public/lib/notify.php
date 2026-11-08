@@ -17,6 +17,7 @@ function mail_footer(string $unsub): string {
 }
 
 function send_user_mail(PDO $pdo, array $u, string $subject, string $text): bool {
+    if (empty($u['email'])) return false; // Konten ohne E-Mail-Adresse bekommen keine Mails
     $unsub = base_url() . '/unsubscribe.php?t=' . user_unsub_token($pdo, $u);
     return send_mail($u['email'], $subject, $text . mail_footer($unsub), ["List-Unsubscribe: <$unsub>", 'List-Unsubscribe-Post: List-Unsubscribe=One-Click']);
 }
@@ -74,7 +75,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     $sent = 0; $fail = 0;
     $hour = (int) date('G'); $today = date('Y-m-d'); $dow = (int) date('N'); $weekTo = date('Y-m-d', strtotime('+14 days'));
     $users = $pdo->query("SELECT id,email,unsub_token,n_new,n_day,n_week,n_mode,n_weekday,last_morning,last_weekly FROM users
-        WHERE notify=1 AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL) AND delete_requested_at IS NULL")->fetchAll();
+        WHERE notify=1 AND email IS NOT NULL AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL) AND delete_requested_at IS NULL")->fetchAll();
     $subs = $pdo->prepare('SELECT s.id,s.name,s.summary FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.bell=1 AND s.fetched_at IS NOT NULL');
     $rels = $pdo->prepare("SELECT title,release_date FROM releases WHERE subject_id=? AND release_date<>'' AND release_date IS NOT NULL");
     $known = $pdo->prepare('SELECT key_hash FROM notified WHERE user_id=?');

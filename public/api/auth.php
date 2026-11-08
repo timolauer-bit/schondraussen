@@ -2,6 +2,7 @@
 function email_blocked(PDO $pdo, string $email): bool { try { $s = $pdo->prepare('SELECT 1 FROM blocked_emails WHERE email=?'); $s->execute([$email]); return (bool) $s->fetchColumn(); } catch (Throwable $e) { return false; } }
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/mail.php';
+require_once __DIR__ . '/../lib/anon.php';
 start_session();
 $a = $_GET['a'] ?? '';
 $pdo = db();
@@ -46,6 +47,61 @@ try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST erforderlich'], 405);
     if (stripos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') === false) json_out(['error' => 'Ungültige Anfrage'], 400);
     $b = body();
+
+    if ($a === 'register' && !empty($b['anon'])) { // Konto ohne E-Mail-Adresse
+        if (!anon_enabled($pdo)) json_out(['error' => 'Die Anmeldung ohne E-Mail-Adresse ist gerade nicht möglich. Bitte registriere dich mit einer E-Mail-Adresse.'], 403);
+        if (limited($pdo, 'register', 5, 60)) json_out(['error' => 'Zu viele Versuche, bitte später erneut.'], 429);
+        note($pdo, 'register');
+        $pw = (string) ($b['password'] ?? '');
+        if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422); if (strlen($pw) > 72) json_out(['error' => 'Das Passwort darf höchstens 72 Zeichen haben.'], 422);
+        if (empty($b['accept'])) json_out(['error' => 'Bitte Datenschutzerklärung und Nutzungsbedingungen bestätigen.'], 422);
+        $uname = trim((string) ($b['username'] ?? ''));
+        if ($err = username_error($uname)) json_out(['error' => $err], 422);
+        if ((int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn() === 0) json_out(['error' => 'Das erste Konto braucht eine E-Mail-Adresse.'], 422);
+        $t = $pdo->prepare('SELECT 1 FROM users WHERE username=?'); $t->execute([$uname]);
+        if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
+        // Grenzen: ein Konto je Anschluss und 24 Stunden, insgesamt höchstens 5 pro Stunde
+        if (limited($pdo, 'anon', 1, 1440)) json_out(['error' => 'Von deinem Anschluss aus wurde in den letzten 24 Stunden schon ein Konto ohne E-Mail-Adresse angelegt. Bitte melde dich damit an oder registriere dich mit einer E-Mail-Adresse.'], 429);
+        $g = $pdo->query("SELECT COUNT(*) FROM login_attempts WHERE kind='anon_all' AND at > (NOW() - INTERVAL 60 MINUTE)")->fetchColumn();
+        if ((int) $g >= 5) {
+            admin_notice($pdo, 'anon_limit', 'Das Limit für Konten ohne E-Mail-Adresse ist erreicht (5 pro Stunde). Weitere Anmeldungen ohne Adresse werden bis zur vollen Stunde abgelehnt. Ungewöhnlich viele Anmeldungen können auf Missbrauch hindeuten; prüfe die Nutzerverwaltung oder schalte die Option unter Admin → Registrierung ab.', 60);
+            json_out(['error' => 'Heute sind schon viele Konten ohne E-Mail-Adresse angelegt worden. Bitte versuche es in einer Stunde noch einmal oder registriere dich mit einer E-Mail-Adresse.', 'limit' => true], 429);
+        }
+        $code = recovery_code_new();
+        try {
+            $pdo->prepare('INSERT INTO users (email,pass_hash,role,username,username_changed_at,email_verified_at,recovery_hash) VALUES (NULL,?,?,?,NOW(),NOW(),?)')->execute([password_hash($pw, PASSWORD_DEFAULT), 'user', $uname, password_hash(recovery_norm($code), PASSWORD_DEFAULT)]);
+        } catch (PDOException $e) {
+            if (stripos($e->getMessage(), 'username') !== false && stripos($e->getMessage(), 'Unknown column') === false) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
+            json_out(['error' => 'Das hat nicht geklappt. Ist die Datenbank aktualisiert (migrate.php)?'], 500);
+        }
+        $nid = (int) $pdo->lastInsertId();
+        if (!approval_required()) { try { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$nid]); } catch (Throwable $e) {} }
+        try { $pdo->prepare('UPDATE users SET hide_email=1, hide_activity=1 WHERE id=?')->execute([$nid]); } catch (Throwable $e) {}
+        note($pdo, 'anon'); note($pdo, 'anon_all');
+        admin_notice($pdo, 'anon_new', 'Neues Konto ohne E-Mail-Adresse: ' . $uname . (approval_required() ? ' (wartet auf deine Freischaltung)' : ''));
+        json_out(['ok' => true, 'recovery_code' => $code, 'message' => approval_required() ? 'Dein Konto ist angelegt und wartet auf die Freischaltung durch den Admin.' : 'Dein Konto ist angelegt. Du kannst dich jetzt mit Benutzername und Passwort anmelden.']);
+    }
+
+    if ($a === 'recover') { // Passwort mit Wiederherstellungscode zurücksetzen
+        if (limited($pdo, 'recover', 5, 60)) json_out(['error' => 'Zu viele Versuche, bitte später erneut.'], 429);
+        $uname = trim((string) ($b['username'] ?? '')); $pw = (string) ($b['password'] ?? '');
+        if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422); if (strlen($pw) > 72) json_out(['error' => 'Das Passwort darf höchstens 72 Zeichen haben.'], 422);
+        $s = $pdo->prepare('SELECT id,recovery_hash FROM users WHERE username=? AND email_verified_at IS NOT NULL'); $s->execute([$uname]); $row = $s->fetch();
+        if (!$row || empty($row['recovery_hash']) || !password_verify(recovery_norm((string) ($b['code'] ?? '')), $row['recovery_hash'])) { note($pdo, 'recover'); json_out(['error' => 'Benutzername oder Wiederherstellungscode stimmt nicht.'], 401); }
+        $code = recovery_code_new();
+        $pdo->prepare('UPDATE users SET pass_hash=?, recovery_hash=? WHERE id=?')->execute([password_hash($pw, PASSWORD_DEFAULT), password_hash(recovery_norm($code), PASSWORD_DEFAULT), $row['id']]);
+        json_out(['ok' => true, 'recovery_code' => $code, 'message' => 'Dein Passwort wurde geändert. Der alte Code ist verbraucht, bitte notiere den neuen.']);
+    }
+    if ($a === 'recovery_new') { // neuen Code erzeugen (angemeldet, mit Passwort)
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
+        $s = $pdo->prepare('SELECT pass_hash FROM users WHERE id=?'); $s->execute([$cu['id']]); $row = $s->fetch();
+        if (!$row || !password_verify((string) ($b['password'] ?? ''), $row['pass_hash'])) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
+        $code = recovery_code_new();
+        try { $pdo->prepare('UPDATE users SET recovery_hash=? WHERE id=?')->execute([password_hash(recovery_norm($code), PASSWORD_DEFAULT), $cu['id']]); }
+        catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+        json_out(['ok' => true, 'recovery_code' => $code]);
+    }
 
     if ($a === 'register') {
         if (limited($pdo, 'register', 5, 60)) json_out(['error' => 'Zu viele Versuche, bitte später erneut.'], 429);
@@ -115,9 +171,10 @@ try {
     if ($a === 'login') {
         if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
         $email = strtolower(trim((string) ($b['email'] ?? ''))); $pw = (string) ($b['password'] ?? '');
-        $s = $pdo->prepare('SELECT id,pass_hash,email_verified_at,admin_deleted FROM users WHERE email=?'); $s->execute([$email]); $u = $s->fetch();
+        $byName = strpos($email, '@') === false; // ohne @: Benutzername (für Konten ohne E-Mail-Adresse)
+        $s = $pdo->prepare('SELECT id,pass_hash,email_verified_at,admin_deleted FROM users WHERE ' . ($byName ? 'username' : 'email') . '=?'); $s->execute([$byName ? trim((string) ($b['email'] ?? '')) : $email]); $u = $s->fetch();
         $ok = $u && password_verify($pw, $u['pass_hash']);
-        if (!$ok) { note($pdo, 'login'); json_out(['error' => 'E-Mail-Adresse oder Passwort stimmt nicht.'], 401); }
+        if (!$ok) { note($pdo, 'login'); json_out(['error' => 'E-Mail-Adresse bzw. Benutzername oder Passwort stimmt nicht.'], 401); }
         if (!empty($u['admin_deleted'])) json_out(['error' => 'Dieses Konto wurde gelöscht.'], 403);
         if (!$u['email_verified_at']) json_out(['error' => 'Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.'], 403);
         try { $t = $pdo->prepare('SELECT totp_enabled FROM users WHERE id=?'); $t->execute([$u['id']]); if ((int) $t->fetchColumn() === 1) { $_SESSION['mfa_uid'] = (int) $u['id']; $_SESSION['mfa_at'] = time(); json_out(['ok' => true, 'mfa' => true]); } } catch (Throwable $e) {}
@@ -214,7 +271,7 @@ try {
         if (!$row || !password_verify((string) ($b['password'] ?? ''), $row['pass_hash'])) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
         $pdo->prepare('UPDATE users SET delete_requested_at=NOW() WHERE id=? AND delete_requested_at IS NULL')->execute([$cu['id']]);
         $until = date('d.m.Y', time() + 7 * 86400);
-        try { send_mail($cu['email'], 'Dein Konto wird gelöscht', farewell_line($pdo, (int) $cu['id']) . "\n\nDu hast die Löschung deines Kontos bei Schondraussen.de beantragt.\n\nDeine Daten bleiben noch eine Woche gespeichert und werden nach dem $until endgültig gelöscht. Wenn du dich bis dahin wieder anmeldest, kannst du die Löschung mit einem Klick abbrechen.\n\nWenn du das nicht warst, melde dich an und brich die Löschung ab, und ändere dann dein Passwort.\n"); } catch (Throwable $e) {}
+        try { if (!empty($cu['email'])) send_mail($cu['email'], 'Dein Konto wird gelöscht', farewell_line($pdo, (int) $cu['id']) . "\n\nDu hast die Löschung deines Kontos bei Schondraussen.de beantragt.\n\nDeine Daten bleiben noch eine Woche gespeichert und werden nach dem $until endgültig gelöscht. Wenn du dich bis dahin wieder anmeldest, kannst du die Löschung mit einem Klick abbrechen.\n\nWenn du das nicht warst, melde dich an und brich die Löschung ab, und ändere dann dein Passwort.\n"); } catch (Throwable $e) {}
         json_out(['ok' => true]);
     }
 

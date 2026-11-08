@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/lib/bootstrap.php';
 require_once __DIR__ . '/lib/seo.php';
+require_once __DIR__ . '/lib/anon.php';
 header('Content-Type: text/html; charset=utf-8');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
@@ -59,7 +60,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 <?php if ($app): ?>
 <div class="wrap">
   <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Bücher, Musik, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
-  <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><?= !empty($u['username']) ? htmlspecialchars($u['username']) : 'Mitglied Nr. ' . (int) $u['id'] ?> · <?= htmlspecialchars($u['email']) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
+  <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><?= !empty($u['username']) ? htmlspecialchars($u['username']) : 'Mitglied Nr. ' . (int) $u['id'] ?> · <?= htmlspecialchars((string) ($u['email'] ?: 'ohne E-Mail')) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
   <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
   <div id="appview"></div>
@@ -77,7 +78,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 <h1>Schondraussen<span>.de</span></h1>
 <p>Deine Bücher, Musik, Filme und Serien an einem Ort.</p>
 <?php if ($u): ?>
-  <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars($u['email']) ?></b> (Mitglied Nr. <?= (int) $u['id'] ?>).</p>
+  <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars((string) ($u['email'] ?: $u['username'])) ?></b> (Mitglied Nr. <?= (int) $u['id'] ?>).</p>
 <?php if (!empty($u['deleting'])): $until = date('d.m.Y', strtotime($u['delete_requested_at']) + 7 * 86400); ?>
   <p><?= htmlspecialchars(farewell_line(db(), (int) $u['id'])) ?></p>
   <p><b>Dein Konto ist zur Löschung vorgemerkt.</b> Deine Daten werden nach dem <?= $until ?> endgültig gelöscht. Bis dahin kannst du es behalten, wenn du die Löschung abbrichst.</p>
@@ -96,7 +97,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <div class="card land-login">
 <?php if (approval_required()): ?>    <div class="note"><b>Hinweis:</b> Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
 <?php endif; ?>    <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
-      <label for="le">E-Mail-Adresse</label><input id="le" type="email" autocomplete="email" required>
+      <label for="le">E-Mail-Adresse oder Benutzername</label><input id="le" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
       <label for="lp">Passwort</label><input id="lp" type="password" autocomplete="current-password" required>
       <button type="submit">Anmelden</button>
       <div class="row"><button class="link" type="button" data-show="f-register">Neu registrieren</button><button class="link" type="button" data-show="f-forgot">Passwort vergessen</button></div></form>
@@ -105,16 +106,31 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
       <button type="submit">Bestätigen</button>
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück</button></div></form>
     <form id="f-register" hidden novalidate><h2 style="margin:0 0 4px;font-size:20px">Registrieren</h2>
-      <label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required>
+<?php if (anon_enabled(db())): ?>      <div class="chk"><input id="rn0" type="checkbox"><label for="rn0" style="margin:0">Ohne E-Mail-Adresse registrieren</label></div>
+      <p class="fine" id="rn0h" hidden style="margin:2px 0 6px">Du meldest dich dann mit Benutzername und Passwort an und bekommst einen Wiederherstellungscode, falls du das Passwort vergisst. Wichtig: Ohne Adresse gibt es keine Benachrichtigungen per Mail, und ohne Passwort und Code kommt niemand mehr in das Konto.</p>
+<?php endif; ?>      <div id="rew"><label for="re">E-Mail-Adresse</label><input id="re" type="email" autocomplete="email" required></div>
       <label for="ru">Benutzername (wird anderen Nutzern angezeigt, nicht für die Anmeldung)</label><input id="ru" type="text" autocomplete="username" minlength="3" maxlength="20" required title="3 bis 20 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich"><p class="fine" style="margin:4px 0 0">3 bis 20 Zeichen: Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich, Bindestrich, ohne Leerzeichen, nicht am Anfang oder Ende. <span id="ruh" role="status"></span></p>
       <label for="rp">Passwort (10 bis 72 Zeichen)</label><input id="rp" type="password" autocomplete="new-password" minlength="10" required><p class="fine" style="margin:4px 0 0">Alle Zeichen sind erlaubt, auch Leerzeichen und Sonderzeichen. <span id="rph" role="status"></span></p>
       <label for="rp2">Passwort wiederholen</label><input id="rp2" type="password" autocomplete="new-password" minlength="10" required>
       <div class="chk"><input id="ra" type="checkbox" required><label for="ra" style="margin:0">Ich habe die <a href="/datenschutz.php" target="_blank">Datenschutzerklärung</a> gelesen.</label></div>
       <button type="submit">Konto anlegen</button>
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück zur Anmeldung</button></div></form>
+    <div id="f-code" hidden><h2 style="margin:0 0 4px;font-size:20px">Dein Wiederherstellungscode</h2>
+      <p>Schreib dir diesen Code auf oder speichere ihn an einem sicheren Ort. Er wird <b>nur jetzt einmal</b> angezeigt. Wenn du dein Passwort vergisst, kommst du nur mit diesem Code wieder in dein Konto.</p>
+      <p><code id="codebox" style="display:block;padding:12px;border:1px solid var(--line);border-radius:10px;font:600 20px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-align:center;user-select:all"></code></p>
+      <p><button type="button" class="ghost" id="codecopy">Code kopieren</button></p>
+      <div class="chk"><input id="codeok" type="checkbox"><label for="codeok" style="margin:0">Ich habe den Code notiert.</label></div>
+      <button type="button" id="codego" disabled>Weiter zur Anmeldung</button></div>
     <form id="f-forgot" hidden><h2 style="margin:0 0 4px;font-size:20px">Passwort vergessen</h2>
       <label for="fe">E-Mail-Adresse</label><input id="fe" type="email" autocomplete="email" required>
       <button type="submit">Link anfordern</button>
+      <div class="row"><button class="link" type="button" data-show="f-login">Zurück zur Anmeldung</button><button class="link" type="button" data-show="f-recover">Ohne E-Mail: Wiederherstellungscode</button></div></form>
+    <form id="f-recover" hidden novalidate><h2 style="margin:0 0 4px;font-size:20px">Mit Wiederherstellungscode</h2>
+      <label for="vu">Benutzername</label><input id="vu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <label for="vc">Wiederherstellungscode</label><input id="vc" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX" required>
+      <label for="vp">Neues Passwort (10 bis 72 Zeichen)</label><input id="vp" type="password" autocomplete="new-password" minlength="10" required>
+      <label for="vp2">Neues Passwort wiederholen</label><input id="vp2" type="password" autocomplete="new-password" minlength="10" required>
+      <button type="submit">Passwort ändern</button>
       <div class="row"><button class="link" type="button" data-show="f-login">Zurück zur Anmeldung</button></div></form>
     <form id="f-reset" hidden novalidate><h2 style="margin:0 0 4px;font-size:20px">Neues Passwort</h2>
       <label for="np">Neues Passwort (10 bis 72 Zeichen)</label><input id="np" type="password" autocomplete="new-password" minlength="10" required><p class="fine" style="margin:4px 0 0">Alle Zeichen sind erlaubt, auch Leerzeichen und Sonderzeichen. <span id="nph" role="status"></span></p>
@@ -170,16 +186,25 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     return fetch('/api/auth.php?a=' + a, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}), credentials: 'same-origin' })
       .then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); });
   }
-  function show(id) { ['f-login', 'f-mfa', 'f-register', 'f-forgot', 'f-reset'].forEach(function (f) { var e = document.getElementById(f); if (e) e.hidden = f !== id; }); say(''); }
+  function show(id) { ['f-login', 'f-mfa', 'f-register', 'f-forgot', 'f-reset', 'f-recover', 'f-code'].forEach(function (f) { var e = document.getElementById(f); if (e) e.hidden = f !== id; }); say(''); }
   document.querySelectorAll('[data-show]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.show); }); });
   function pwErr(v) { var n = Array.from(v).length; if (n < 10) return 'Das Passwort ist zu kurz: ' + (n ? 'es fehlen noch ' + (10 - n) + ' Zeichen (mindestens 10).' : 'bitte mindestens 10 Zeichen eingeben.'); if (new TextEncoder().encode(v).length > 72) return 'Das Passwort ist zu lang (höchstens 72 Zeichen).'; return ''; }
   function unErr(v) { var n = Array.from(v).length; if (n < 3 || n > 20) return 'Der Benutzername braucht 3 bis 20 Zeichen' + (n ? ' (aktuell ' + n + ').' : '.'); if (/\s/.test(v)) return 'Leerzeichen sind nicht erlaubt.'; if (!/^[\p{L}\p{N}][\p{L}\p{N}_.\-]*[\p{L}\p{N}]$/u.test(v)) return 'Erlaubt sind nur Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich, nicht am Anfang oder Ende.'; return ''; }
   function live(inp, out, fn, okText) { if (!inp || !out) return; inp.addEventListener('input', function () { var e = inp.value ? fn(inp.value) : ''; out.textContent = inp.value ? (e || okText) : ''; out.style.color = e ? 'var(--bad,#b3261e)' : ''; }); }
   live(document.getElementById('ru'), document.getElementById('ruh'), unErr, 'Passt.'); live(document.getElementById('rp'), document.getElementById('rph'), pwErr, 'Passt.'); live(document.getElementById('np'), document.getElementById('nph'), pwErr, 'Passt.');
   function on(id, fn) { var f = document.getElementById(id); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); say('…'); fn(); }); }
-  on('f-login', function () { api('login', { email: le.value, password: lp.value }).then(function (r) { if (r.ok && r.mfa) { show('f-mfa'); document.getElementById('lc').focus(); } else if (r.ok) location.reload(); else say(r.error, true); }); });
+  on('f-login', function () { api('login', { email: le.value.trim(), password: lp.value }).then(function (r) { if (r.ok && r.mfa) { show('f-mfa'); document.getElementById('lc').focus(); } else if (r.ok) location.reload(); else say(r.error, true); }); });
   on('f-mfa', function () { api('login2', { code: document.getElementById('lc').value }).then(function (r) { if (r.ok) location.reload(); else { if (r.restart) show('f-login'); say(r.error, true); } }); });
-  on('f-register', function () { var e1 = unErr(ru.value.trim()) || pwErr(rp.value); if (e1) { say(e1, true); return; } if (!ra.checked) { say('Bitte bestätige die Datenschutzerklärung.', true); return; } if (rp.value !== rp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('register', { email: re.value, username: ru.value, password: rp.value, accept: ra.checked, invite: inviteTok }).then(function (r) { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); }); });
+  on('f-register', function () { var e1 = unErr(ru.value.trim()) || pwErr(rp.value); if (e1) { say(e1, true); return; } if (!ra.checked) { say('Bitte bestätige die Datenschutzerklärung.', true); return; } if (rp.value !== rp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } var anon = !!(document.getElementById('rn0') && rn0.checked); api('register', { email: anon ? '' : re.value, anon: anon, username: ru.value, password: rp.value, accept: ra.checked, invite: inviteTok }).then(function (r) { if (r.ok && r.recovery_code) { showCode(r.recovery_code, r.message); } else { r.ok ? (say(r.message), show('f-login'), say(r.message)) : say(r.error, true); } }); });
+  var rn0 = document.getElementById('rn0');
+  if (rn0) rn0.addEventListener('change', function () { var on = rn0.checked, w = document.getElementById('rew'); w.hidden = on; document.getElementById('re').required = !on; document.getElementById('rn0h').hidden = !on; });
+  var afterCode = '';
+  function showCode(c, m) { show('f-code'); document.getElementById('codebox').textContent = c; afterCode = m || ''; say(''); }
+  var cok = document.getElementById('codeok'), cgo = document.getElementById('codego');
+  if (cok) cok.addEventListener('change', function () { cgo.disabled = !cok.checked; });
+  if (cgo) cgo.addEventListener('click', function () { document.getElementById('codebox').textContent = ''; cok.checked = false; cgo.disabled = true; show('f-login'); say(afterCode); });
+  var ccp = document.getElementById('codecopy'); if (ccp) ccp.addEventListener('click', function () { var t = document.getElementById('codebox').textContent; try { navigator.clipboard.writeText(t); ccp.textContent = 'Kopiert'; } catch (_) {} });
+  on('f-recover', function () { var e1 = pwErr(vp.value); if (e1) { say(e1, true); return; } if (vp.value !== vp2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('recover', { username: vu.value, code: vc.value, password: vp.value }).then(function (r) { if (r.ok) { vp.value = vp2.value = vc.value = ''; showCode(r.recovery_code, r.message); } else say(r.error, true); }); });
   on('f-forgot', function () { api('forgot', { email: fe.value }).then(function (r) { say(r.message || r.error, !r.ok); }); });
   var q = new URLSearchParams(location.search), tok = q.get('reset');
   on('f-reset', function () { var e1 = pwErr(np.value); if (e1) { say(e1, true); return; } if (np.value !== np2.value) { say('Die beiden Passwörter sind nicht gleich.', true); return; } api('reset', { token: tok, password: np.value }).then(function (r) { if (r.ok) { history.replaceState(null, '', '/'); show('f-login'); say(r.message); } else say(r.error, true); }); });
