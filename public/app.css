@@ -330,8 +330,6 @@ button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}
 .setcard>*+*{margin-top:10px}
 .setcard>.wide2+.wide2{border-top:1px dashed var(--line);padding-top:14px;margin-top:14px}
 .setcard.solo .label{display:none}
-.setcard.danger{border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
-.setcard.danger>h3{border-bottom-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
 .setcard .msg:empty{display:none}
 
 /* Kontakt: Unterhaltung und Eingabe klar trennen */
