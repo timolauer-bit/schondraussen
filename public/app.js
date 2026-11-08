@@ -34,7 +34,7 @@
     refresh: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8M3 3v5h5M3 12a9 9 0 0 0 15 6.7L21 16M21 21v-5h-5"/></svg>'
   };
 
-  var S = { n: D.n || { 'new': 1, day: 1, week: 0, mode: 'digest', weekday: 1, bell_default: 1 }, relink: null, epTried: {}, view: 'cal', cat: 'cal', sel: null, entries: [], rels: [], site: { tag: '', domain: 'amazon.de' }, ready: false, filter: '', sort: {}, genre: {}, confirm: null, menuFor: null,
+  var S = { n: D.n || { 'new': 1, day: 1, week: 0, mode: 'digest', weekday: 1, bell_default: 1 }, relink: null, epTried: {}, view: 'cal', cat: 'cal', sel: null, entries: [], rels: [], site: { tag: '', domain: 'amazon.de' }, ready: false, filter: '', sort: {}, genre: {}, kind: {}, confirm: null, menuFor: null,
     unread: 0, pend: 0, adding: false, sugg: null, msg: '', msgErr: false, notify: D.notify, skin: D.skin === 'auto' ? '' : (D.skin || ''), sup: { sel: null, threads: [] } };
   var $ = function (id) { return document.getElementById(id); };
   var topbar = $('topbar'), mainEl = root, supTimer = null;
@@ -244,9 +244,13 @@
   }
   function genresOf(cat) { var c = {}; entriesOf(cat).forEach(function (e) { (e.genres || []).forEach(function (g) { c[g] = (c[g] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b, 'de'); }).slice(0, 25).map(function (g) { return [g, c[g]]; }); }
   function filt() {
-    var cur = S.sort[S.cat] || 'alpha', g = S.genre[S.cat] || '', n = (cur !== 'alpha' ? 1 : 0) + (g ? 1 : 0), pop = $('filtPop'); pop.textContent = '';
+    var cur = S.sort[S.cat] || 'alpha', g = S.genre[S.cat] || '', kd = S.cat === 'author' ? (S.kind.author || '') : '', n = (cur !== 'alpha' ? 1 : 0) + (g ? 1 : 0) + (kd ? 1 : 0), pop = $('filtPop'); pop.textContent = '';
     pop.append(h('p', { class: 'label' }, 'Sortieren nach'));
     SORTS.forEach(function (o) { pop.append(h('button', { class: 'fopt', type: 'button', 'aria-pressed': String(cur === o[0]), onclick: function () { S.sort[S.cat] = o[0]; filt(); rows(); } }, o[1])); });
+    if (S.cat === 'author') {
+      pop.append(h('p', { class: 'label', style: 'margin-top:14px' }, 'Art'));
+      [['', 'Alle'], ['author', 'Autor:innen'], ['series', 'Reihen']].forEach(function (o) { pop.append(h('button', { class: 'fopt', type: 'button', 'aria-pressed': String(kd === o[0]), onclick: function () { S.kind.author = o[0]; filt(); rows(); } }, o[1])); });
+    }
     var gl = genresOf(S.cat);
     { pop.append(h('p', { class: 'label', style: 'margin-top:14px' }, 'Genre'));
       var sel = h('select', { 'aria-label': 'Nach Genre filtern', disabled: gl.length ? null : true, onchange: function () { S.genre[S.cat] = this.value; filt(); rows(); } }, h('option', { value: '' }, gl.length ? 'Alle Genres' : 'Keine Genres vorhanden'), gl.map(function (x) { return h('option', { value: x[0] }, x[0] + ' (' + x[1] + ')'); }));
@@ -254,6 +258,7 @@
     var b = $('fbadge'); b.hidden = !n; b.textContent = String(n);
     var ch = $('fchips'); ch.textContent = '';
     if (cur !== 'alpha') ch.append(h('button', { class: 'fchip', type: 'button', title: 'Sortierung zurücksetzen', onclick: function () { S.sort[S.cat] = 'alpha'; filt(); rows(); } }, SORTS.filter(function (o) { return o[0] === cur; })[0][1] + ' ×'));
+    if (kd) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Filter zurücksetzen', onclick: function () { S.kind.author = ''; filt(); rows(); } }, (kd === 'series' ? 'Reihen' : 'Autor:innen') + ' ×'));
     if (g) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Genre-Filter zurücksetzen', onclick: function () { S.genre[S.cat] = ''; filt(); rows(); } }, g + ' ×'));
   }
   function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? pl(e.works, 'Album', 'Alben') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
@@ -261,9 +266,11 @@
     var box = $('list'); box.textContent = '';
     var es = sortedEntries(S.cat), t = TYPES[S.cat], gq = S.genre[S.cat] || '', fq = (S.filter || '').trim().toLowerCase();
     if (!es.length) { box.append(h('p', { class: 'hint' }, 'Noch keine ' + t.plural + ' auf der Liste.')); return; }
+    var kq = S.cat === 'author' ? (S.kind.author || '') : '';
+    if (kq) es = es.filter(function (e) { return kq === 'series' ? +e.is_series === 1 : +e.is_series !== 1; });
     if (gq) es = es.filter(function (e) { return (e.genres || []).indexOf(gq) >= 0; });
     if (fq) es = es.filter(function (e) { return e.name.toLowerCase().indexOf(fq) >= 0; });
-    if (!es.length) { box.append(h('p', { class: 'hint' }, fq ? 'Keine Treffer für „' + S.filter.trim() + '“.' : 'Keine Einträge im Genre „' + gq + '“.')); return; }
+    if (!es.length) { box.append(h('p', { class: 'hint' }, fq ? 'Keine Treffer für „' + S.filter.trim() + '“.' : (kq && !gq ? 'Keine Einträge in dieser Auswahl.' : 'Keine Einträge im Genre „' + gq + '“.'))); return; }
     es.forEach(function (e) {
       var mode = S.sort[S.cat], n = e.upcoming;
       box.append(h('button', { class: 'row-btn', type: 'button', 'aria-current': String(S.sel === e.id), onclick: function () { S.sel = e.id; S.confirm = null; S.menuFor = null; rows(); content(); if (window.innerWidth < 900) $('content').scrollIntoView({ behavior: 'smooth' }); } },

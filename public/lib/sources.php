@@ -462,6 +462,32 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     return ['ok' => true, 'msg' => count($works) . ' Bände, ' . count($rel) . ' angekündigt'];
 }
 
+// Genres für Autor:innen: zuerst das Genre (P136) aus Wikidata auf Deutsch, ersatzweise häufige Themen der Bücher bei Open Library.
+function author_genres(string $qid, string $olid): array {
+    $g = [];
+    if (preg_match('/^Q\d+$/', $qid)) {
+        $j = http_json('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=claims&ids=' . $qid, 8);
+        $ids = [];
+        foreach (($j['entities'][$qid]['claims']['P136'] ?? []) as $c) { $v = $c['mainsnak']['datavalue']['value']['id'] ?? null; if (is_string($v) && preg_match('/^Q\d+$/', $v)) $ids[] = $v; }
+        $ids = array_slice(array_values(array_unique($ids)), 0, 6);
+        if ($ids) {
+            $l = http_json('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=de|en&ids=' . implode('|', $ids), 8);
+            foreach ($ids as $id) { $lab = trim((string) ($l['entities'][$id]['labels']['de']['value'] ?? ($l['entities'][$id]['labels']['en']['value'] ?? ''))); if ($lab !== '') $g[] = mb_strtoupper(mb_substr($lab, 0, 1)) . mb_substr($lab, 1); }
+        }
+    }
+    if (!$g && $olid !== '') {
+        $r = http_json('https://openlibrary.org/search.json?limit=60&fields=subject&author=' . rawurlencode($olid), 10);
+        $cnt = []; $bad = '/(large type|large print|accessible|protected daisy|lending|in library|new york times|nyt |reading level|open library|overdrive|bestsell|translations?|^[a-z]{1,2}$|\d{3,})/i';
+        $de = ['fiction' => 'Belletristik', 'science fiction' => 'Science-Fiction', 'fantasy' => 'Fantasy', 'horror' => 'Horror', 'mystery' => 'Krimi', 'thriller' => 'Thriller', 'suspense' => 'Thriller', 'romance' => 'Liebesroman', 'historical fiction' => 'Historischer Roman', 'biography' => 'Biografie', 'juvenile fiction' => 'Kinder- und Jugendbuch', "children's fiction" => 'Kinder- und Jugendbuch', 'young adult fiction' => 'Jugendbuch', 'humor' => 'Humor', 'poetry' => 'Lyrik', 'comics & graphic novels' => 'Comics', 'manga' => 'Manga', 'crime' => 'Krimi', 'detective and mystery stories' => 'Krimi', 'short stories' => 'Kurzgeschichten', 'american fiction' => 'Belletristik', 'english fiction' => 'Belletristik'];
+        foreach (($r['docs'] ?? []) as $d) foreach (array_slice((array) ($d['subject'] ?? []), 0, 12) as $sj) {
+            $sj = trim((string) $sj); if ($sj === '' || mb_strlen($sj) > 40 || preg_match($bad, $sj)) continue;
+            $k = mb_strtolower($sj); $lab = $de[$k] ?? mb_strtoupper(mb_substr($sj, 0, 1)) . mb_substr($sj, 1); $cnt[$lab] = ($cnt[$lab] ?? 0) + 1;
+        }
+        arsort($cnt); foreach ($cnt as $lab => $n) { if ($n < 3) break; $g[] = $lab; if (count($g) >= 4) break; }
+    }
+    return array_slice(array_values(array_unique($g)), 0, 4);
+}
+
 // Open Library (Autor:innen). Kommende Bücher liefert diese Quelle kaum; dafür kommt später eine zweite.
 function openlibrary_refresh(PDO $pdo, array $sub): array {
     $sid = (int) $sub['id'];
@@ -488,7 +514,13 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $ext['intro_t'] = time(); $ext['intro'] = '';
         $a = http_json('https://openlibrary.org/authors/' . rawurlencode(basename((string) $ext['olid'])) . '.json', 10);
         $qid = $a['remote_ids']['wikidata'] ?? null;
-        if ($qid && preg_match('/^Q\d+$/', (string) $qid)) $ext['intro'] = wiki_intro_from([], $qid) ?: '';
+        if ($qid && preg_match('/^Q\d+$/', (string) $qid)) { $ext['qid'] = (string) $qid; $ext['intro'] = wiki_intro_from([], $qid) ?: ''; }
+    }
+    // Genres (Wikidata, ersatzweise Open Library); bei leerem Ergebnis frühestens nach 30 Tagen, sonst nach 90 Tagen neu
+    if (!isset($ext['gen_t']) || (empty($ext['gen']) && (int) $ext['gen_t'] < time() - 30 * 86400) || (int) $ext['gen_t'] < time() - 90 * 86400) {
+        $ext['gen_t'] = time();
+        if (!isset($ext['qid']) && !isset($ext['qid_t'])) { $ext['qid_t'] = time(); $a2 = http_json('https://openlibrary.org/authors/' . rawurlencode(basename((string) $ext['olid'])) . '.json', 8); $q2 = $a2['remote_ids']['wikidata'] ?? null; if ($q2 && preg_match('/^Q\d+$/', (string) $q2)) $ext['qid'] = (string) $q2; }
+        $ext['gen'] = author_genres((string) ($ext['qid'] ?? ''), basename((string) $ext['olid']));
     }
     if (!empty($ext['intro'])) $summary = $ext['bits'] . ' – ' . $ext['intro'];
     $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&author=' . rawurlencode($ext['olid']));
@@ -521,7 +553,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
-            ->execute([json_encode($ext), $summary, $sub['genres'] ?: '[]', (int) ($r['numFound'] ?? count($works)), $sid]);
+            ->execute([json_encode($ext), $summary, !empty($ext['gen']) ? json_encode($ext['gen'], JSON_UNESCAPED_UNICODE) : ($sub['genres'] ?: '[]'), (int) ($r['numFound'] ?? count($works)), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
