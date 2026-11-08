@@ -132,11 +132,16 @@ if ($a === 'search') {
             $docs[] = ['x' => $x, 'exact' => $nz((string) ($x['title'] ?? '')) === $nz($q) ? 1 : 0, 'ed' => (int) ($x['edition_count'] ?? 0), 'i' => $i];
         }
         usort($docs, fn($a, $b) => $b['exact'] <=> $a['exact'] ?: $b['ed'] <=> $a['ed'] ?: $a['i'] <=> $b['i']); // Bücher mit genau diesem Titel und vielen Ausgaben zuerst, Sekundärliteratur danach
-        $seenA = [];
+        $seenA = []; $lat = 0;
         foreach ($docs as $d) {
             $x = $d['x']; $an = (array) $x['author_name']; $ak = (array) $x['author_key'];
             $k = (string) $ak[0]; if (isset($seenA[$k])) continue; $seenA[$k] = 1;
-            $out[] = ['name' => (string) $an[0], 'hint' => '„' . mb_substr((string) ($x['title'] ?? $q), 0, 80) . '“' . (!empty($x['first_publish_year']) ? ' · ' . $x['first_publish_year'] : '') . ($d['ed'] > 1 ? ' · ' . $d['ed'] . ' Ausgaben' : ''), 'ext' => ['olid' => $k]];
+            $nm = (string) $an[0]; $orig = '';
+            if (!preg_match('/\p{Latin}/u', $nm) && $lat < 3) { // Name nur in fremder Schrift (z. B. 村上春樹): lateinische Schreibweise aus dem Autoreneintrag holen
+                $lat++; $aj = http_json('https://openlibrary.org/authors/' . rawurlencode($k) . '.json', 5) ?? [];
+                foreach (array_merge((array) ($aj['alternate_names'] ?? []), [(string) ($aj['fuller_name'] ?? ''), (string) ($aj['personal_name'] ?? '')]) as $alt) { if (is_string($alt) && preg_match('/\p{Latin}/u', $alt) && !preg_match('/[\d\/]/', $alt)) { $orig = $nm; $nm = trim($alt); break; } }
+            }
+            $out[] = ['name' => $nm, 'hint' => ($orig !== '' ? $orig . ' · ' : '') . '„' . mb_substr((string) ($x['title'] ?? $q), 0, 80) . '“' . (!empty($x['first_publish_year']) ? ' · ' . $x['first_publish_year'] : '') . ($d['ed'] > 1 ? ' · ' . $d['ed'] . ' Ausgaben' : ''), 'ext' => ['olid' => $k]];
             if (count($out) >= 8) break;
         }
     }
