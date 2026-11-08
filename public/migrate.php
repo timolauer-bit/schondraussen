@@ -200,6 +200,9 @@ $M = [
   '024_site_state' => [
   "CREATE TABLE site_state (k VARCHAR(40) PRIMARY KEY, v VARCHAR(255) NOT NULL DEFAULT '', updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+  '047_feedback_withdrawn' => [
+  "ALTER TABLE feedback ADD COLUMN withdrawn_at DATETIME NULL",
+ ],
   '046_feedback_phase' => [
   "ALTER TABLE feedback ADD COLUMN phase VARCHAR(12) NULL",
  ],

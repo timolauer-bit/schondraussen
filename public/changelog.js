@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Ideen und Bugs: Die einreichende Person kann ihren Beitrag zurückziehen (Knopf „Zurückziehen“, danach „zurückgezogen“ und erledigt). Admin und Alphatester sehen 24 Stunden lang die Markierung „Neu zurückgezogen“ am Beitrag (Migration 047). Der Knopf „Bearbeiten“ steht jetzt rechts neben den anderen Knöpfen',
     'F|Ideen und Bugs: Admin und Alphatester können den Status „Im Brainstorming“ und „In Bearbeitung“ setzen (nochmal klicken setzt ihn zurück). Der Status steht für alle sichtbar als Marke neben dem Titel, solange der Beitrag nicht erledigt oder abgelehnt ist (Migration 046). Beim Wechsel auf einen neuen Status bekommt die einreichende Person eine Systemnachricht',
     'B|Bücher hinzufügen: Autorennamen, die die Quelle nur in Großbuchstaben liefert (z. B. HARUKI MURAKAMI), werden in normale Groß- und Kleinschreibung umgewandelt',
     'F|Bücher: Genres bei Autor:innen (aus Wikidata, ersatzweise häufige Themen bei Open Library; bei Reihen noch keine). Sie erscheinen nach der nächsten Aktualisierung des Eintrags und sind im Filter nutzbar',

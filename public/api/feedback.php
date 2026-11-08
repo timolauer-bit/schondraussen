@@ -23,6 +23,7 @@ if ($a === 'list') {
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT phase FROM feedback LIMIT 1'); $noSel .= ',f.phase'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT withdrawn_at FROM feedback LIMIT 1'); $noSel .= ',f.withdrawn_at,(f.withdrawn_at > NOW() - INTERVAL 24 HOUR) AS new_wd'; } catch (Throwable $e) {}
     try {
         $s = $pdo->prepare("SELECT f.id,f.title,f.body,f.priority,f.created_at,f.user_id,uu.email AS author_email,uu.username AS author_name," . (users_have_privacy($pdo) ? 'uu.hide_email AS author_hide,' : '0 AS author_hide,') . "uu.role AS author_role,uu.alpha AS author_alpha$doneSel$noSel$relSel,
             (SELECT COUNT(*) FROM feedback_votes v WHERE v.feedback_id=f.id) AS votes,
@@ -146,6 +147,7 @@ if ($a === 'done') {
         $q = $pdo->prepare('SELECT user_id,title,bug_no,done_at FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET done_at=' . ($on ? 'NOW()' : 'NULL') . ' WHERE id=?')->execute([$id]);
         try { $pdo->prepare('UPDATE feedback SET rejected=0 WHERE id=?')->execute([$id]); } catch (Throwable $e) {}
+        if (!$on) { try { $pdo->prepare('UPDATE feedback SET withdrawn_at=NULL WHERE id=?')->execute([$id]); } catch (Throwable $e) {} }
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     // Systemnachricht an die Person, die den Eintrag geschrieben hat (nur wenn der Admin abhakt, nur beim ersten Abhaken, nicht bei eigenen Einträgen)
     if ($on && $admin && $it && empty($it['done_at']) && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
@@ -174,6 +176,13 @@ if ($a === 'priority') {
     if ($kind !== 'bug') json_out(['error' => 'Nur Bugmeldungen haben eine Dringlichkeit.'], 422);
     $p = (string) ($b['priority'] ?? 'normal'); if (!in_array($p, ['urgent', 'normal', 'low'], true)) json_out(['error' => 'Ungültig.'], 422);
     $pdo->prepare('UPDATE feedback SET priority=? WHERE id=?')->execute([$p, $id]);
+    json_out(['ok' => true]);
+}
+if ($a === 'withdraw') { // Die einreichende Person zieht ihren Beitrag zurück: gilt als erledigt, Admin und Alphatester sehen 24 Stunden lang eine Markierung
+    $q = $pdo->prepare('SELECT user_id,done_at,rejected FROM feedback WHERE id=?'); $q->execute([$id]); $cur = $q->fetch();
+    if (!$cur || (int) $cur['user_id'] !== (int) $u['id']) json_out(['error' => 'Nur die einreichende Person kann den Beitrag zurückziehen.'], 403);
+    if (!empty($cur['done_at']) || !empty($cur['rejected'])) json_out(['error' => 'Der Beitrag ist schon erledigt oder abgelehnt.'], 422);
+    try { $pdo->prepare('UPDATE feedback SET done_at=NOW(), withdrawn_at=NOW(), phase=NULL WHERE id=?')->execute([$id]); } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
 if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbeitung (leer = offen)
