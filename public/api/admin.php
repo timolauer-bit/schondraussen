@@ -37,6 +37,16 @@ if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Testmail im
     $ok = send_mail($to, 'Neuerscheinungen bei deinen Einträgen (Testmail)', $text . mail_footer($unsub), ["List-Unsubscribe: <$unsub>", 'List-Unsubscribe-Post: List-Unsubscribe=One-Click']);
     json_out(['ok' => (bool) $ok, 'error' => $ok ? null : 'Die Mail konnte nicht gesendet werden.']);
 }
+if ($a === 'entry_check') { // Diagnose: Einträge zu einem Namen samt Besitzern (ohne E-Mail-Adressen)
+    $q = trim((string) ($_GET['q'] ?? '')); if (mb_strlen($q) < 2) json_out(['error' => 'Bitte mindestens 2 Zeichen eingeben.'], 400);
+    $s = $pdo->prepare('SELECT id,type,name,fetched_at,external_ids,CHAR_LENGTH(summary) AS sum_len FROM subjects WHERE name LIKE ? ORDER BY id LIMIT 20'); $s->execute(['%' . $q . '%']); $out = [];
+    foreach ($s->fetchAll() as $r) {
+        $o = $pdo->prepare('SELECT user_id,is_sample,bell,added_at FROM user_entries WHERE subject_id=? ORDER BY user_id LIMIT 50'); $o->execute([$r['id']]); $r['owners'] = $o->fetchAll();
+        foreach (['releases' => 'releases', 'works' => 'works'] as $k => $t) { $c = $pdo->prepare("SELECT COUNT(*) FROM $t WHERE subject_id=?"); $c->execute([$r['id']]); $r[$k] = (int) $c->fetchColumn(); }
+        $out[] = $r;
+    }
+    json_out(['subjects' => $out, 'hint' => 'user_id ist die Nutzernummer (Nr. in der Nutzerverwaltung).']);
+}
 if ($a === 'news_list') {
     try { $r = $pdo->query('SELECT n.id,n.title,n.body,n.created_at,(SELECT COUNT(*) FROM announcement_reads r WHERE r.ann_id=n.id) AS reads_n FROM announcements n ORDER BY n.id DESC LIMIT 20')->fetchAll(); }
     catch (Throwable $e) { json_out(['news' => [], 'needs_migration' => true]); }
