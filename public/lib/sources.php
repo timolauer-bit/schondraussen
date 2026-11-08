@@ -269,7 +269,7 @@ function dnb_series(string $title): array {
     $recs = []; $total = 0; $info = '';
     foreach (['tit="' . $q . '" and spr=ger', 'tit="' . $q . '"'] as $qi => $query) { // zweiter Versuch ohne Sprachindex, falls der erste nichts oder einen Fehler liefert
         $recs = []; $total = 0; $info = '';
-        for ($st = 1; $st <= 401; $st += 100) {
+        for ($st = 1; $st <= 901; $st += 100) {
             $r = dnb_sru($query, $st);
             if (isset($r['err'])) { $info = $r['err']; break; }
             if ($r['diag'] !== '' && !$r['recs']) { $info = 'Fehlermeldung: ' . mb_substr($r['diag'], 0, 120); break; }
