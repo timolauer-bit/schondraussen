@@ -188,7 +188,7 @@ if ($a === 'withdraw') { // Die einreichende Person zieht ihren Beitrag zurück:
 }
 if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbeitung (leer = offen)
     if (!$alpha) json_out(['error' => 'Nicht erlaubt.'], 403);
-    $ph = (string) ($b['phase'] ?? ''); if ($ph !== '' && !in_array($ph, ['brainstorm', 'progress'], true)) json_out(['error' => 'Ungültig.'], 422);
+    $ph = (string) ($b['phase'] ?? ''); if ($ph !== '' && !in_array($ph, ['brainstorm', 'progress', 'postponed'], true)) json_out(['error' => 'Ungültig.'], 422);
     try {
         $q = $pdo->prepare('SELECT user_id,title,bug_no,phase FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET phase=? WHERE id=?')->execute([$ph === '' ? null : $ph, $id]);
@@ -197,9 +197,10 @@ if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbei
     if ($ph !== '' && $it && ($it['phase'] ?? '') !== $ph && $it['user_id'] && (int) $it['user_id'] !== (int) $u['id']) {
         $t = (string) $it['title']; $t = mb_strlen($t) > 70 ? mb_substr($t, 0, 69) . '…' : $t;
         $what = $kind === 'bug' ? 'Deine Bugmeldung' . ($it['bug_no'] ? ' #' . (int) $it['bug_no'] : '') . ' „' . $t . '“' : 'Deine Idee „' . $t . '“';
-        $txt = 'Systemnachricht: ' . $what . ($ph === 'brainstorm'
-            ? ' ist im Brainstorming. Es wird gerade überlegt, ' . ($kind === 'bug' ? 'woran es liegt und wie sich das lösen lässt.' : 'ob und wie sich das umsetzen lässt.') . ' Danke für ' . ($kind === 'bug' ? 'den Hinweis!' : 'deinen Vorschlag!')
-            : ' ist in Bearbeitung. Sobald sie fertig ist, bekommst du Bescheid. Danke für ' . ($kind === 'bug' ? 'den Hinweis!' : 'deinen Vorschlag!'));
+        $thanks = ' Danke für ' . ($kind === 'bug' ? 'den Hinweis!' : 'deinen Vorschlag!');
+        if ($ph === 'brainstorm') $txt = 'Systemnachricht: ' . $what . ' ist im Brainstorming. Es wird gerade überlegt, ' . ($kind === 'bug' ? 'woran es liegt und wie sich das lösen lässt.' : 'ob und wie sich das umsetzen lässt.') . $thanks;
+        elseif ($ph === 'postponed') $txt = 'Systemnachricht: ' . $what . ' ist zurückgestellt. Sie bleibt auf der Liste und wird später wieder aufgegriffen.' . $thanks;
+        else $txt = 'Systemnachricht: ' . $what . ' ist in Bearbeitung. Sobald sie fertig ist, bekommst du Bescheid.' . $thanks;
         try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([(int) $it['user_id'], $txt]); } catch (Throwable $e) {}
     }
     json_out(['ok' => true]);

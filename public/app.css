@@ -467,3 +467,6 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 @media (max-width:760px){.fbhead{flex-wrap:wrap}.fbhead .fbmeta{margin-left:0;flex-basis:100%;white-space:normal;text-align:left}}
 /* Neu zurückgezogen: 24 Stunden lang gelbe Marke statt der grauen (nur Admin und Alphatester) */
 .prio.newwd{background:#f5c400;color:#1a1400;border-color:#1a1400;font-weight:800}
+/* Status Zurückgestellt */
+.prio.ph-postponed{color:#5b4a8a;border-color:#5b4a8a;background:#efedff}
+.btn.ph-postponed[aria-pressed=true]{background:#efedff;border-color:#5b4a8a;color:#5b4a8a}

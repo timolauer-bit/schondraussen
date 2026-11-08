@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Ideen und Bugs: Neben „Im Brainstorming“ und „In Bearbeitung“ gibt es den Status „Zurückgestellt“ (gleiche Bedienung, Marke für alle sichtbar, Systemnachricht an die einreichende Person)',
     'U|Ideen und Bugs: „Neu zurückgezogen“ steht jetzt als gelbe Marke dort, wo später die graue Marke „zurückgezogen“ steht, und wird nach 24 Stunden von ihr abgelöst (statt einer eigenen Markierung über dem Beitrag)',
     'U|Ideen und Bugs: Datum und Absender stehen jetzt oben rechts in der Kopfzeile des Beitrags statt unter dem Text (auf schmalen Bildschirmen darunter)',
     'F|Ideen und Bugs: Die einreichende Person kann ihren Beitrag zurückziehen (Knopf „Zurückziehen“, danach „zurückgezogen“ und erledigt). Admin und Alphatester sehen 24 Stunden lang die Markierung „Neu zurückgezogen“ am Beitrag (Migration 047). Der Knopf „Bearbeiten“ steht jetzt rechts neben den anderen Knöpfen',
