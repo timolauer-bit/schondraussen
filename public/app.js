@@ -143,17 +143,19 @@
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series)$/.test(key) ? go('list', key) : go(key); } },
         key === 'cal' ? ico(ICONS.cal) : null, ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : text, count ? h('small', null, String(count)) : null);
     }
-    topbar.append(btn('cal', 'Kalender', S.rels.length));
-    ORDER.forEach(function (k) { topbar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
+    var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
+    navMain.append(btn('cal', 'Kalender', S.rels.length));
+    ORDER.forEach(function (k) { navMain.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
     var rg = ' rg';
-    if (commOn()) { topbar.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
-    if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
-    topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
+    if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
+    if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
+    navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
     function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' neu seit deinem letzten Besuch' }, n > 99 ? '99+' : String(n))); return b; }
-    if (feat('feat')) topbar.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
-    topbar.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
-    topbar.append(btn('info', 'Info', 0, ' info'));
-    var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); topbar.append(k);
+    if (feat('feat')) navRest.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
+    navRest.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
+    navRest.append(btn('info', 'Info', 0, ' info'));
+    var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); navRest.append(k);
+    topbar.append(navMain, navRest);
     renderVer();
   }
   function welcome() {

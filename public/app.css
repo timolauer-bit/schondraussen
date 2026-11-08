@@ -505,3 +505,18 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 @media(max-width:700px){.nerdtbl th{white-space:normal}.nerdtbl td.k{min-width:0}.nerdtbl table{min-width:480px}}
 /* Reiter auf schmalen Bildschirmen: alle in einer Zeile, lange Namen brechen innerhalb des Reiters um */
 @media(max-width:600px){.infotabs{flex-wrap:nowrap;gap:2px}.infotabs .admtab{flex:1 1 auto;padding:8px 6px;font-size:13px;line-height:1.25;text-align:center;overflow-wrap:anywhere}}
+
+/* Handy: Hauptpunkte in Zeile 1, übrige Punkte als Symbole in Zeile 2 */
+.navgrp{display:contents}
+@media(max-width:760px){
+  .navgrp{display:flex;flex:0 0 100%;align-items:flex-end}
+  .navmain{justify-content:space-between;gap:0 6px}
+  .navmain .nav{font-size:13px;gap:5px;padding-inline:2px}
+  .navmain .nav small{display:none}
+  .navmain .nav svg{width:15px;height:15px}
+  .navrest{justify-content:space-around;border-top:1px solid var(--line)}
+  .navrest .nav.ionly{padding-inline:10px}
+  .navrest .nav.ionly[aria-current=page] .lbl{display:none}
+  .navrest .nav.ionly[aria-current=page] .badge{position:absolute;margin:0}
+  .nav.rg::before{display:none}.nav.rg{margin-left:0}
+}
