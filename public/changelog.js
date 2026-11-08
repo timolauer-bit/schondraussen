@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'T|Community: Einwilligungen aller Nutzer außer dem Admin einmalig zurückgesetzt (Migration 049), alle werden beim nächsten Start neu gefragt',
     'B|Community: Die Seite meldete fälschlich „Datenbank nicht aktualisiert“ (falscher Spaltenname bei der Freischaltungsprüfung)',
     'F|Community (vorerst nur Admin und Alphatester): neue Seite mit dem Personen-Symbol neben dem Admin-Bereich. Je Kategorie die Top 15 (aufklappbar bis Top 50) und die Newcomer der letzten 14 Tage, dazu die aktivsten Nutzer (gesamt und 14 Tage, sortierbar nach Gesamt und Kategorie). Nutzer sind anklickbar (Listen, letzte 20 hinzugefügte Positionen), Einträge lassen sich mit „+“ in die eigene Liste übernehmen',
     'O|Einstellungen: „Meine Einträge für die Community nutzen“ (Standard aus; nur beim Admin anfangs an, Alphatester entscheiden selbst und werden beim Start gefragt). Nutzerbezogene Übersichten enthalten nur Nutzer mit Zustimmung; beim ersten Start fragt die Seite danach. Ohne Zustimmung erscheint auf der Community-Seite ein Hinweis',
