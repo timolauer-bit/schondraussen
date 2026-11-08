@@ -1,7 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
-    'F|Nerdinfos: Neuer Abschnitt „Entstehung und Aufwand“ am Ende (Umfang des Codes, grob geschätzte Zeit, Tokens, Kosten und Wasser sowie der Vergleich mit einem erfahrenen Entwickler und einem Laien, mit Hinweis auf die Ungenauigkeit)',
+    'F|Info: Neuer Abschnitt „Entstehung und Aufwand“ am Ende der Info-Seite, für alle sichtbar (Umfang des Codes, grob geschätzte Zeit, Tokens, Kosten und Wasser sowie der Vergleich mit einem erfahrenen Entwickler und einem Laien, mit Hinweis auf die Ungenauigkeit)',
     'A|Der Abschnitt „Aktualisierung der Einträge“ (Cron-Status, letzte Läufe, nicht aktuelle Einträge) ist von der Info-Seite in den Admin-Bereich verschoben, Reiter „Sicherheit“',
     'F|Bücher-Reihen: Die Bände kommen jetzt direkt aus der Katalogschnittstelle der Deutschen Nationalbibliothek (vollständiger als lobid.org, mit angekündigten Bänden). Als Band zählt, was eine Bandnummer trägt; Doppel aus Druck- und E-Book-Ausgabe oder Neuauflagen werden zusammengefasst (ältestes Jahr). lobid.org und Google Books bleiben als Ersatz',
     'B|Bücher-Reihen: Als Band zählt nur noch, was im Katalog der Reihe zugeordnet ist; Sach-, Rezept- und Fachbücher, deren Titel nur mit dem Reihennamen beginnt, werden nicht mehr aufgelistet',

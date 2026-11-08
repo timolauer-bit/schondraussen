@@ -782,6 +782,26 @@
     return [h('p', { class: 'hint' }, 'Der Cron-Job aktualisiert die ältesten Einträge zuerst und arbeitet reihum Serien, Musiker:innen und Autor:innen ab, solange sein Zeitbudget (80 Sekunden) reicht. Danach laufen die Mails. Die Werte werden beim Öffnen der Seite neu geladen.'), cronBox];
   }
 
+  /* ---------- Entstehung und Aufwand (Info-Seite, für alle) ---------- */
+  function effortSection() {
+    function tbl(head, rows) {
+      return h('div', { class: 'nerdtbl' }, h('table', null, h('thead', null, h('tr', null, head.map(function (x) { return h('th', null, x); }))),
+        h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, x); })); }))));
+    }
+    return h('section', { class: 'infosec' }, h('h3', null, 'Entstehung und Aufwand'),
+      h('p', { class: 'hint' }, 'Stand 08.11.2026. Alle Zahlen außer dem Umfang sind grobe Schätzungen und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
+      h('p', null, 'Umfang (gemessen): rund 7.300 Zeilen PHP, JavaScript und CSS, 12 API-Dateien, 197 Änderungen in der Versionsverwaltung seit dem 03.11.2026. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa dreieinhalb Wochen.'),
+      tbl(['Größe', 'Schätzung'], [
+        ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', 'etwa 30–50 Stunden'],
+        ['Ausgabe der KI (Code und Texte)', 'grob 2–4 Mio. Tokens'],
+        ['Eingabe der KI inklusive wiederholt gelesenem Kontext', 'einige hundert Mio. Tokens, überwiegend aus dem Zwischenspeicher'],
+        ['Rechnerischer Wert nach API-Listenpreisen', 'grob 200–600 €; im Abo pauschal enthalten, der genaue Preis des Modells ist nicht bekannt'],
+        ['Wasserverbrauch der Rechenzentren', 'sehr unsicher, etwa 2–100 Liter, realistisch einige bis niedrige zweistellige Liter; Anbieter veröffentlichen dazu keine belastbaren Werte'],
+        ['Erfahrener Entwickler allein', 'etwa 350–600 Stunden, also 9–15 Wochen in Vollzeit'],
+        ['Laie ohne Unterstützung', 'etwa 1.000–2.000 Stunden, viele würden vorher aufgeben']]),
+      h('p', { class: 'hint' }, 'Die Angaben zu Entwickler und Laie sind Erfahrungswerte für den gleichen Funktionsumfang (Mehrnutzerverwaltung, Anmeldung mit Zwei-Faktor-Schritt, Cronjobs, Mailversand mit SPF/DKIM, Benachrichtigungen, Admin-Bereich, Kalender-Abo, Web-App, Datenschutz und rund zehn Datenquellen). Aus Codezeilen lässt sich der Aufwand nur grob ableiten.'));
+  }
+
   /* ---------- Nerdinfos (Projektübersicht) ---------- */
   function nerdOn() { return !!D.nerd && !S.preview; }
   function nerdPage() {
@@ -847,18 +867,6 @@
       'Hochgeladene Bilder werden geprüft; Anhänge sind erst nach Freigabe für andere sichtbar',
       'Löschung: Konto sofort gesperrt, Daten nach 7 Tagen endgültig weg; Ideen und Bugmeldungen bleiben ohne E-Mail-Verknüpfung (Name durchgestrichen)',
       'Mails nur mit Einwilligung (Double-Opt-in), Widerruf per Abmeldelink in jeder Mail']));
-    sec('Entstehung und Aufwand',
-      h('p', { class: 'hint' }, 'Stand 08.11.2026. Alle Zahlen außer dem Umfang sind grobe Schätzungen und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
-      h('p', null, 'Umfang (gemessen): rund 7.300 Zeilen PHP, JavaScript und CSS, 12 API-Dateien, 197 Änderungen in der Versionsverwaltung seit dem 03.11.2026. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa dreieinhalb Wochen.'),
-      tbl(['Größe', 'Schätzung'], [
-        ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', 'etwa 30–50 Stunden'],
-        ['Ausgabe der KI (Code und Texte)', 'grob 2–4 Mio. Tokens'],
-        ['Eingabe der KI inklusive wiederholt gelesenem Kontext', 'einige hundert Mio. Tokens, überwiegend aus dem Zwischenspeicher'],
-        ['Rechnerischer Wert nach API-Listenpreisen', 'grob 200–600 €; im Abo pauschal enthalten, der genaue Preis des Modells ist nicht bekannt'],
-        ['Wasserverbrauch der Rechenzentren', 'sehr unsicher, etwa 2–100 Liter, realistisch einige bis niedrige zweistellige Liter; Anbieter veröffentlichen dazu keine belastbaren Werte'],
-        ['Erfahrener Entwickler allein', 'etwa 350–600 Stunden, also 9–15 Wochen in Vollzeit'],
-        ['Laie ohne Unterstützung', 'etwa 1.000–2.000 Stunden, viele würden vorher aufgeben']]),
-      h('p', { class: 'hint' }, 'Die Angaben zu Entwickler und Laie sind Erfahrungswerte für den gleichen Funktionsumfang (Mehrnutzerverwaltung, Anmeldung mit Zwei-Faktor-Schritt, Cronjobs, Mailversand mit SPF/DKIM, Benachrichtigungen, Admin-Bereich, Kalender-Abo, Web-App, Datenschutz und rund zehn Datenquellen). Aus Codezeilen lässt sich der Aufwand nur grob ableiten.'));
     return P;
   }
   function info() {
@@ -889,6 +897,7 @@
         ['Werke zu deinen Einträgen', n(r.works)], ['Eingereichte Ideen', n(r.ideas)], ['Eingereichte Bugs', n(r.bugs)], ['Gesendete Chatnachrichten', n(r.messages)]];
       if (r.top_percent) mine.append(h('p', { style: 'margin:6px 0 10px;font-weight:600' }, 'Du gehörst zu den ' + r.top_percent + ' % der aktivsten Nutzer.'), h('p', { class: 'hint', style: 'margin:-6px 0 10px' }, 'Gezählt werden Einträge, eingereichte Ideen und Bugs sowie gesendete Chatnachrichten, im Vergleich mit allen aktiven Nutzern.')); var dl = h('dl', { class: 'mystats' }); rows.forEach(function (x) { dl.append(h('dt', null, x[0]), h('dd', null, x[1])); }); mine.append(dl);
     });
+    d.append(effortSection());
     if (!nerdOn()) { mainEl.append(d); return; }
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
     function showTab(k) {
