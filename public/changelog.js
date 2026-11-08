@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'A|Einladen: Der Text der Einladungsmail lässt sich im Adminmenü bearbeiten (mit Standardtext zum Wiederherstellen). Unter dem Text hängt die Seite automatisch Einladungslink, Gültigkeit und Hinweise an (Migration 052)',
     'F|Benutzername: Nach der ersten Namenswahl kann man den Namen 60 Minuten lang einmal ohne die 30-Tage-Sperre ändern, falls man sich verschrieben hat',
     'F|Ideen und Bugs: Wer einen Beitrag eingereicht hat, bekommt bei der Freigabe jetzt eine Systemnachricht (nicht bei eigenen Beiträgen)',
     'U|Ideen und Bugs: Oben gibt es jetzt wie bei Info ein Menü mit den Reitern „Aktuell“, „Erledigt/Zurückgezogen“ und – nur für Admin und Alphatester – „Freischaltungen“ (noch nicht freigegebene Beiträge). Die Reiter zeigen die Anzahl der Beiträge',

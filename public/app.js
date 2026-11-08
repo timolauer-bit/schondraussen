@@ -1331,6 +1331,13 @@
         l.forEach(function (x) { invList.append(h('div', { class: 'arow' }, h('div', null, h('div', { class: 'nm2' }, x.email || 'Link ohne E-Mail-Adresse'), h('div', { class: 'hint', style: 'margin:0' }, 'Gültig bis ' + new Date(String(x.expires_at).replace(' ', 'T')).toLocaleDateString('de-DE'))), h('div', { class: 'acts' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=invite_revoke', { id: x.id }).then(invLoad); } }, 'Widerrufen')))); });
       });
     }
+    var itArea = h('textarea', { rows: '16', maxlength: '4000', 'aria-label': 'Text der Einladungsmail', spellcheck: 'true', style: 'width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:inherit;line-height:1.5' }), itMsg = h('span', { class: 'msg', style: 'margin:0' }), itFoot = h('pre', { class: 'hint', style: 'white-space:pre-wrap;margin:8px 0 0;font-family:inherit' }), itLoaded = false;
+    function itLoad() { api('/api/admin.php?a=invite_text_get').then(function (r) { itArea.value = r.text || ''; itFoot.textContent = r.footer || ''; itLoaded = true; }); }
+    function itSave(text) { api('/api/admin.php?a=invite_text_set', { text: text }).then(function (r) { itMsg.className = 'msg' + (r.ok ? '' : ' err'); itMsg.textContent = r.ok ? 'Gespeichert.' : (r.error || 'Speichern nicht möglich.'); if (r.ok) { itArea.value = r.text; } }); }
+    var itBox = h('details', { class: 'cronlist', style: 'margin:12px 0', ontoggle: function () { if (this.open && !itLoaded) itLoad(); } }, h('summary', null, 'Text der Einladungsmail bearbeiten'),
+      h('p', { class: 'hint', style: 'margin:8px 0' }, 'Dieser Text steht am Anfang jeder Einladungsmail (nur reiner Text, Leerzeilen werden übernommen). Darunter hängt die Seite automatisch an, was nötig ist:'), itFoot,
+      h('div', { style: 'margin-top:10px' }, itArea), h('p', { class: 'inline', style: 'margin:8px 0 0;gap:8px;align-items:center;flex-wrap:wrap' }, h('button', { class: 'btn small', type: 'button', onclick: function () { itSave(itArea.value); } }, 'Text speichern'),
+        h('button', { class: 'btn ghost small', type: 'button', onclick: function () { if (confirm('Standardtext wiederherstellen? Dein eigener Text geht dabei verloren.')) itSave(''); } }, 'Standardtext wiederherstellen'), itMsg));
     var invBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Erzeuge einen Einladungslink für eine Person. Er ist nur einmal verwendbar, 14 Tage gültig und schaltet das neue Konto sofort frei. Mit E-Mail-Adresse schickt die Seite die Einladung direkt per Mail (die Adresse wird nach der Registrierung oder dem Ablauf wieder gelöscht); ohne Adresse bekommst du nur den Link zum Weitergeben. Für die nächste Person erzeugst du einen neuen Link.'),
       h('form', { class: 'inline', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); invMsg.className = 'msg'; invMsg.textContent = '…'; invOut.textContent = '';
         api('/api/admin.php?a=invite_create', { email: invMail.value }).then(function (r) {
@@ -1340,7 +1347,7 @@
           invOut.append(h('div', { class: 'inline' }, f, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { f.select(); try { navigator.clipboard.writeText(r.link); } catch (_) { document.execCommand('copy'); } this.textContent = 'Kopiert'; } }, 'Kopieren')));
           invLoad();
         });
-      } }, invMail, h('button', { class: 'btn', type: 'submit' }, 'Einladung erstellen')), invMsg, invOut, invList);
+      } }, invMail, h('button', { class: 'btn', type: 'submit' }, 'Einladung erstellen')), invMsg, invOut, invList, itBox);
     invLoad();
     var tmMail = h('input', { type: 'email', maxlength: '120', placeholder: 'Adresse, z. B. von mail-tester.com', 'aria-label': 'Empfängeradresse der Testmail', autocomplete: 'off', style: 'flex:1;min-width:220px' }), tmMsg = h('p', { class: 'msg', role: 'status' });
     var apMsg = h('div', { class: 'msg', role: 'status' }), apCb = h('input', { type: 'checkbox', id: 'apReq' }), apInfo = h('p', { class: 'hint' });

@@ -2,6 +2,7 @@
 // Nutzerverwaltung (nur Admin)
 require __DIR__ . '/../lib/bootstrap.php';
 require_once __DIR__ . '/../lib/mail.php';
+require_once __DIR__ . '/../lib/invite.php';
 if (!function_exists('valid_email')) { function valid_email(string $e): bool { return strlen($e) <= 190 && filter_var($e, FILTER_VALIDATE_EMAIL); } }
 $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
@@ -73,6 +74,19 @@ if ($a === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('DELETE FROM announcements WHERE id=?')->execute([$i]); $pdo->prepare('DELETE FROM announcement_reads WHERE ann_id=?')->execute([$i]); } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }
+if ($a === 'invite_text_get') {
+    $d = invite_text_default(); $t = invite_text($pdo);
+    json_out(['text' => $t, 'is_default' => $t === $d, 'footer' => invite_text_footer('(dein Einladungslink)')]);
+}
+if ($a === 'invite_text_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $t = trim(str_replace(["\r\n", "\r"], "\n", (string) ($b['text'] ?? '')));
+    if (mb_strlen($t) > 4000) json_out(['ok' => false, 'error' => 'Der Text ist zu lang (höchstens 4000 Zeichen).']);
+    try {
+        if ($t === '' || $t === invite_text_default()) $pdo->prepare("DELETE FROM app_texts WHERE k='invite_text'")->execute();
+        else $pdo->prepare("INSERT INTO app_texts (k,v) VALUES ('invite_text',?) ON DUPLICATE KEY UPDATE v=VALUES(v)")->execute([$t]);
+    } catch (Throwable $e) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
+    json_out(['ok' => true, 'text' => invite_text($pdo)]);
+}
 if ($a === 'invite_list') {
     try { $r = $pdo->query("SELECT id,email,created_at,expires_at FROM invites WHERE used_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 50")->fetchAll(); }
     catch (Throwable $e) { json_out(['invites' => [], 'needs_migration' => true]); }
@@ -92,7 +106,7 @@ if ($a === 'invite_create' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Einlad
     } catch (Throwable $e) { json_out(['ok' => false, 'error' => 'Die Einladungen sind noch nicht eingerichtet (migrate.php ausführen).']); }
     $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/'); $link = $base . '/?invite=' . $tk; $sent = false;
     if ($email !== '') {
-        try { $sent = (bool) send_mail($email, 'Einladung zu Schondraussen.de', "Hallo,\n\ndu wurdest zu Schondraussen.de eingeladen, einer kostenlosen Seite, die dich an Neuerscheinungen von Büchern, Musik, Filmen und Serien erinnert.\n\nMit diesem Link legst du dein Konto an (einmal verwendbar, 14 Tage gültig, bitte mit dieser E-Mail-Adresse):\n$link\n\nDein Konto ist danach sofort freigeschaltet.\n\nWenn du die Einladung nicht erwartet hast, ignoriere diese Mail einfach."); } catch (Throwable $e) {}
+        try { $sent = (bool) send_mail($email, 'Einladung zu Schondraussen.de', str_replace(["\r\n", "\r"], "\n", trim(invite_text($pdo))) . invite_text_footer($link)); } catch (Throwable $e) {}
     }
     json_out(['ok' => true, 'link' => $link, 'sent' => $sent, 'email' => $email !== '']);
 }
