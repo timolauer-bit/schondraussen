@@ -294,11 +294,15 @@ function dnb_series(string $title): array {
             }
         }
         if ($num <= 0) { $nOther++; continue; }
+        $rest = $clean(preg_replace(['/[\s,;:.\-–]*\b' . $num . '\s*$/u', '/^' . $num . '\s*[:\-–.,]?\s*/u'], '', $rest)); // angehängte oder vorangestellte Bandnummer im Titelrest entfernen
+        if ($rest === (string) $num) $rest = '';
         if (!preg_match('/\d{4}/', $x['year'], $my)) { $nDate++; continue; }
         $yr = (int) $my[0];
         if (!isset($byNum[$num])) $byNum[$num] = ['y' => $yr, 'rest' => $rest];
         else { $byNum[$num]['y'] = min($byNum[$num]['y'], $yr); if ($byNum[$num]['rest'] === '') $byNum[$num]['rest'] = $rest; } // Druck- und E-Book-Ausgaben, Neuauflagen: ältestes Jahr zählt
     }
+    $cnt = []; foreach ($byNum as $v) if ($v['rest'] !== '') { $kk = mb_strtolower($v['rest']); $cnt[$kk] = ($cnt[$kk] ?? 0) + 1; }
+    foreach ($byNum as $num => $v) if ($v['rest'] !== '' && ($cnt[mb_strtolower($v['rest'])] ?? 0) >= 3) $byNum[$num]['rest'] = ''; // gleicher Untertitel bei vielen Bänden ist ein Werbespruch, kein Bandtitel
     $works = []; $rel = [];
     foreach ($byNum as $num => $v) {
         $name = mb_substr($title . ', Band ' . $num . ($v['rest'] !== '' ? ': ' . $v['rest'] : ''), 0, 255);

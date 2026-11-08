@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'B|Bücher-Reihen: Bandtitel werden bereinigt. Ein Untertitel, der bei vielen Bänden gleich lautet („Piraten, Abenteuer und der größte Schatz der Welt!“), wird weggelassen, ebenso eine angehängte oder allein stehende Bandnummer im Titel',
     'B|Bücher-Reihen: Es werden jetzt bis zu 1.000 Katalogtreffer der Nationalbibliothek gelesen statt 500, damit bei großen Reihen wie One Piece keine Bände am Ende der Trefferliste fehlen',
     'F|Info: Neuer Abschnitt „Entstehung und Aufwand“ am Ende der Info-Seite, für alle sichtbar (Umfang des Codes, grob geschätzte Zeit, Tokens, Kosten und Wasser sowie der Vergleich mit einem erfahrenen Entwickler und einem Laien, mit Hinweis auf die Ungenauigkeit)',
     'A|Der Abschnitt „Aktualisierung der Einträge“ (Cron-Status, letzte Läufe, nicht aktuelle Einträge) ist von der Info-Seite in den Admin-Bereich verschoben, Reiter „Sicherheit“',
