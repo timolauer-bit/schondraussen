@@ -453,3 +453,6 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .nerdtbl{overflow-x:auto;margin:8px 0 0}.nerdtbl table{border-collapse:collapse;width:100%;font-size:14px}
 .nerdtbl th,.nerdtbl td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
 .nerdtbl th{font-weight:700;white-space:nowrap}.nerdtbl td.k{font-weight:600;min-width:130px}
+/* Trefferliste beim Hinzufügen: Abstände zwischen den Kästen und zum Suchfeld */
+#sugg{margin-top:14px}#sugg>.hint{margin:0 0 12px}
+.suggest{gap:10px}.suggest .row-btn{margin-bottom:0;padding:12px 14px}
