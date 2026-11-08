@@ -235,43 +235,76 @@ function lobid_strings($v, array $skip, string $key = ''): array { // alle Textw
     $o = []; if (is_array($v)) foreach ($v as $k => $x) $o = array_merge($o, lobid_strings($x, $skip, is_string($k) ? $k : $key));
     return $o;
 }
+function lobid_fetch(string $q, int $from, string $sort = ''): ?array {
+    $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . ($sort !== '' ? '&sort=' . $sort : '') . '&q=' . rawurlencode($q);
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;
+    return is_array($j) ? $j : (['_err' => $code ?: 0]);
+}
+
 function lobid_series(string $title): array {
-    $works = []; $rel = []; $seen = []; $n = 0; $nLang = 0; $nTitle = 0; $nDate = 0; $nPart = 0; $total = 0; $y = (int) date('Y');
+    $works = []; $rel = []; $seen = []; $seenId = []; $n = 0; $nLang = 0; $nTitle = 0; $nDate = 0; $nPart = 0; $nType = 0; $total = 0; $y = (int) date('Y');
     $startRe = '/^\W*' . preg_quote($title, '/') . '(?![\p{L}\p{N}])/iu'; // Text muss mit dem Reihennamen beginnen (nicht „…Psychologie von One Piece…“)
     $skip = ['title', 'otherTitleInformation', 'subject', 'abstract', 'description', 'note', 'tableOfContents', 'hasItem', 'contribution', 'publication', 'language', 'medium', 'id', 'type', 'isbn', 'wikidataLink'];
+    $members = []; $parents = [];
+    $q0 = '"' . str_replace('"', '', $title) . '"';
     for ($from = 0; $from < 300; $from += 100) {
-        $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . '&sort=newest&q=' . rawurlencode('"' . str_replace('"', '', $title) . '"');
-        $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
-        $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-        $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;
-        if (!is_array($j)) { if ($from === 0) return [[], [], 'DNB/lobid nicht erreichbar' . ($code ? ' (Status ' . $code . ')' : '')]; break; }
+        $j = lobid_fetch($q0, $from, 'newest');
+        if (isset($j['_err'])) { if ($from === 0) return [[], [], 'DNB/lobid nicht erreichbar' . ($j['_err'] ? ' (Status ' . $j['_err'] . ')' : '')]; break; }
         $total = (int) ($j['totalItems'] ?? $total); $mem = (array) ($j['member'] ?? []); if (!$mem) break;
         foreach ($mem as $m) {
-            $n++;
-            $t = trim((string) ($m['title'] ?? '')); if ($t === '') continue;
-            $langs = array_map(fn($l) => substr((string) ($l['id'] ?? ''), -3), (array) ($m['language'] ?? []));
-            if ($langs && !array_intersect($langs, ['ger', 'jpn', 'mul', 'und', 'zxx'])) { $nLang++; continue; } // Übersetzungen führen als Sprache oft das Original (jpn)
-            $oti = (array) ($m['otherTitleInformation'] ?? []); $sub = trim((string) ($oti[0] ?? ''));
-            $full = $t . ($sub !== '' && mb_stripos($sub, $t) === false ? ': ' . $sub : '');
-            $num = '';
-            if (preg_match($startRe, $full)) {
-                if (preg_match('/(\d+)\s*$/', $full, $mm)) $num = '';
-            } else { // Band einer Reihe: Reihenname steht in einer Reihenangabe, der Band hat einen eigenen Titel
-                $hit = null;
-                foreach (lobid_strings($m, $skip) as $s) { if (preg_match($startRe, trim($s))) { $hit = $s; break; } }
-                if ($hit === null) { $nTitle++; continue; }
-                $nPart++;
-                if (preg_match('/[;,]\s*(?:Band\s*)?(\d{1,4})\s*$/iu', trim($hit), $mm)) $num = $mm[1];
-                $full = $title . ($num !== '' ? ', Band ' . $num : '') . ': ' . $full;
-            }
-            $yr = 0; foreach ((array) ($m['publication'] ?? []) as $pb) { if (preg_match('/\d{4}/', (string) ($pb['startDate'] ?? ''), $mm)) { $yr = (int) $mm[0]; break; } }
-            if (!$yr) { $nDate++; continue; }
-            $k = mb_strtolower($full); if (isset($seen[$k])) continue; $seen[$k] = 1;
-            if ($yr > $y) $rel[] = [mb_substr($full, 0, 255), (string) $yr, 'Buch']; else $works[] = [mb_substr($full, 0, 255), $yr, 'Band'];
+            $members[] = $m;
+            $tp = (array) ($m['type'] ?? []);
+            if (in_array('MultiVolumeBook', $tp, true) && preg_match($startRe, trim((string) ($m['title'] ?? ''))) && !empty($m['id'])) $parents[preg_replace('/#!$/', '', (string) $m['id'])] = 1; // Gesamtaufnahme der mehrbändigen Reihe
         }
         if (count($mem) < 100) break;
     }
-    return [$works, $rel, 'DNB: ' . $total . ' Treffer insgesamt, ' . $n . ' geprüft, ' . $nLang . ' andere Sprache, ' . $nTitle . ' ohne Reihenbezug, ' . $nDate . ' ohne Jahr, ' . $nPart . ' über Reihenangabe'];
+    $nParent = count($parents);
+    foreach (array_slice(array_keys($parents), 0, 3) as $pid) { // Bände über den Verweis auf die Gesamtaufnahme einsammeln
+        for ($from = 0; $from < 300; $from += 100) {
+            $j = lobid_fetch('isPartOf.hasSuperordinate.id:"' . $pid . '"', $from);
+            if (isset($j['_err'])) break; $mem = (array) ($j['member'] ?? []); if (!$mem) break;
+            foreach ($mem as $m) $members[] = $m;
+            if (count($mem) < 100) break;
+        }
+    }
+    foreach ($members as $m) {
+        $n++;
+        $mid = (string) ($m['id'] ?? ''); if ($mid !== '') { if (isset($seenId[$mid])) { $n--; continue; } $seenId[$mid] = 1; }
+        $t = trim((string) ($m['title'] ?? '')); if ($t === '') continue;
+        $tp = (array) ($m['type'] ?? []);
+        $med = array_map(fn($x) => (string) ($x['label'] ?? ''), (array) ($m['medium'] ?? []));
+        if (array_intersect($tp, ['Series', 'MultiVolumeBook', 'Periodical', 'Journal', 'Newspaper']) || array_intersect($med, ['Video', 'Audio-Visuell', 'Audio'])) { $nType++; continue; } // Gesamtaufnahmen, Zeitschriften, DVDs
+        $langs = array_map(fn($l) => substr((string) ($l['id'] ?? ''), -3), (array) ($m['language'] ?? []));
+        if ($langs && !array_intersect($langs, ['ger', 'jpn', 'mul', 'und', 'zxx'])) { $nLang++; continue; } // Übersetzungen führen als Sprache oft das Original (jpn)
+        $oti = (array) ($m['otherTitleInformation'] ?? []); $sub = trim((string) ($oti[0] ?? ''));
+        $full = $t . ($sub !== '' && mb_stripos($sub, $t) === false ? ': ' . $sub : '');
+        $num = '';
+        $hit = null; $pn = '';
+        foreach ((array) ($m['isPartOf'] ?? []) as $ip) { // Reihenzugehörigkeit mit Bandzählung
+            foreach ((array) ($ip['hasSuperordinate'] ?? []) as $hs) {
+                if (preg_match($startRe, trim((string) ($hs['label'] ?? '')))) { $hit = (string) $hs['label']; $pn = trim((string) ($ip['numbering'] ?? '')); break 2; }
+            }
+        }
+        if ($hit !== null) {
+            $nPart++;
+            if (preg_match('/(\d{1,4})/', $pn, $mm)) $num = $mm[1];
+            if (!preg_match($startRe, $full)) $full = $title . ($num !== '' ? ', Band ' . $num : '') . ': ' . $full;
+            elseif ($num !== '' && !preg_match('/\d\s*$/', $full)) $full .= ', Band ' . $num;
+        } elseif (!preg_match($startRe, $full)) { // Reihenname steht in irgendeiner anderen Angabe, der Band hat einen eigenen Titel
+            foreach (lobid_strings($m, $skip) as $s) { if (preg_match($startRe, trim($s))) { $hit = $s; break; } }
+            if ($hit === null) { $nTitle++; continue; }
+            $nPart++;
+            if (preg_match('/[;,]\s*(?:Band\s*)?(\d{1,4})\s*$/iu', trim($hit), $mm)) $num = $mm[1];
+            $full = $title . ($num !== '' ? ', Band ' . $num : '') . ': ' . $full;
+        }
+        $yr = 0; foreach ((array) ($m['publication'] ?? []) as $pb) { if (preg_match('/\d{4}/', (string) ($pb['startDate'] ?? ''), $mm)) { $yr = (int) $mm[0]; break; } }
+        if (!$yr) { $nDate++; continue; }
+        $k = mb_strtolower($full); if (isset($seen[$k])) continue; $seen[$k] = 1;
+        if ($yr > $y) $rel[] = [mb_substr($full, 0, 255), (string) $yr, 'Buch']; else $works[] = [mb_substr($full, 0, 255), $yr, 'Band'];
+    }
+    return [$works, $rel, 'DNB: ' . $total . ' Treffer, ' . $n . ' geprüft, ' . $nParent . ' Gesamtaufnahme(n), ' . $nType . ' Reihe/DVD/Zeitschrift, ' . $nLang . ' andere Sprache, ' . $nTitle . ' ohne Reihenbezug, ' . $nDate . ' ohne Jahr, ' . $nPart . ' über Reihenzugehörigkeit'];
 }
 
 // Buchreihe über den Titel (z. B. Manga): Google Books, nur deutsche Ausgaben, deren Titel den Reihennamen enthält.
