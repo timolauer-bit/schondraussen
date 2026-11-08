@@ -505,3 +505,5 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .infosec,.infosec p,.infosec li,.infosec td{overflow-wrap:anywhere}
 .nerdtbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
 @media(max-width:700px){.nerdtbl th{white-space:normal}.nerdtbl td.k{min-width:0}.nerdtbl table{min-width:480px}}
+/* Reiter auf schmalen Bildschirmen: alle in einer Zeile, lange Namen brechen innerhalb des Reiters um */
+@media(max-width:600px){.infotabs{flex-wrap:nowrap;gap:2px}.infotabs .admtab{flex:1 1 auto;padding:8px 6px;font-size:13px;line-height:1.25;text-align:center;overflow-wrap:anywhere}}
