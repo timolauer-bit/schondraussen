@@ -440,3 +440,6 @@ pre.codes{margin:8px 0;padding:10px 12px;background:var(--bg);border:1px solid v
 
 /* Hinweis mit Knopf: Knopf in eigener Zeile mit Abstand */
 p.warnbox>.btn{display:block;margin:10px 0 0 !important}
+
+/* Hinweiskästen in Einträgen: etwas mehr Luft zu Überschrift und Knopfzeile */
+.card .warnbox{margin:14px 0 !important}
