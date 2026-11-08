@@ -470,3 +470,23 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 /* Status Zurückgestellt */
 .prio.ph-postponed{color:#5b4a8a;border-color:#5b4a8a;background:#efedff}
 .btn.ph-postponed[aria-pressed=true]{background:#efedff;border-color:#5b4a8a;color:#5b4a8a}
+
+/* Community */
+.nav.commnav{font:600 14px var(--font-body)}
+.commpanel .commh{margin:22px 0 4px;font:650 17px var(--font-display)}
+.commnote{margin:0 0 12px;padding:10px 12px}
+.commgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:10px 0}
+.commbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.commbox h4{margin:0 0 6px;font:650 15px var(--font-display)}
+.commtbl td.rk{color:var(--muted);width:1%;padding-right:8px;font-family:var(--font-mono);font-size:12px}
+.commtbl td.nm{overflow-wrap:anywhere}
+.commtbl td.ct,.commtbl td.num,.commtbl th.num{text-align:right;white-space:nowrap}
+.commtbl td.ad{text-align:right;width:1%;white-space:nowrap}
+.commtbl td.dt,.commtbl td.ty{color:var(--muted);white-space:nowrap;font-size:13px}
+.commhave{color:var(--accent);font-weight:700;padding:0 8px}
+.commadd{min-width:32px;padding:3px 9px}
+.commusers{margin-top:30px;padding-top:18px;border-top:2px solid var(--line)}
+.commusers .seg{display:flex;gap:6px;margin:8px 0 10px;flex-wrap:wrap}
+.sortbtn{background:none;border:0;padding:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer}
+.sortbtn[aria-pressed=true]{color:var(--ink);font-weight:700}
+.commlast{margin-bottom:6px}

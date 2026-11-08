@@ -176,6 +176,12 @@ try {
         catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
         json_out(['ok' => true]);
     }
+    if ($a === 'community' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        try { $pdo->prepare('UPDATE users SET community=? WHERE id=?')->execute([!empty($b['on']) ? 1 : 0, $cu['id']]); }
+        catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+        json_out(['ok' => true]);
+    }
     if ($a === 'username') {
         $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
         $n = trim((string) ($b['username'] ?? '')); if ($err = username_error($n)) json_out(['error' => $err], 422);

@@ -26,6 +26,7 @@
     bell: '<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
     bellOff: '<svg viewBox="0 0 24 24"><path d="M13.7 21a1.94 1.94 0 0 1-3.4 0M17 17H3s3-2 3-9a6 6 0 0 1 .3-1.9M8.7 3.3A6 6 0 0 1 18 8c0 2.5.4 4.4.9 5.7M2 2l20 20"/></svg>',
     gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    people: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0 1 14 0"/><circle cx="17.5" cy="9" r="2.7"/><path d="M17 14.3A6 6 0 0 1 22 21"/></svg>',
     shield: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     bulb: '<svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.4 1 2.3h6c0-.9.3-1.7 1-2.3A7 7 0 0 0 12 2z"/></svg>',
     bug: '<svg viewBox="0 0 24 24"><rect x="8" y="6" width="8" height="14" rx="4"/><path d="M19 7l-3 2M5 7l3 2M19 19l-3-2M5 19l3-2M20 13h-4M4 13h4M10 2l1 2M14 2l-1 2"/></svg>',
@@ -134,7 +135,7 @@
   function nav() {
     topbar.textContent = '';
     // Rechte Gruppe: Symbole. Für alle nur Symbole (Name per Tooltip, bei der aktiven Seite sichtbar).
-    var RI = { adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
+    var RI = { comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series)$/.test(key) ? go('list', key) : go(key); } },
@@ -143,6 +144,7 @@
     topbar.append(btn('cal', 'Kalender', S.rels.length));
     ORDER.forEach(function (k) { topbar.append(btn(k, TYPES[k].plural, entriesOf(k).length)); });
     var rg = ' rg';
+    if (commOn()) { topbar.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); topbar.append(b); rg = ''; }
     topbar.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
     if (feat('feat')) topbar.append(btn('feat', 'Ideen', 0, ' feat'));
@@ -165,7 +167,7 @@
     saveView();
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug');
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug');
   }
 
   /* ---------- Kalender ---------- */
@@ -736,6 +738,8 @@
     box.append(h('div', { class: 'wide2 privbox' }, h('p', { class: 'label' }, 'Privatsphäre'),
       h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du entscheidest, wie genau der Administrator sieht, wann du zuletzt hier warst. Deine E-Mail-Adresse bekommt er in der Nutzerverwaltung grundsätzlich nicht angezeigt. Andere Nutzer sehen ohnehin nur deinen Benutzernamen.'),
       privChk('hide_activity', 'Letzte Anmeldung nur grob anzeigen', 'Statt Datum und Uhrzeit steht dort nur „in den letzten 7 Tagen“, „vor über einer Woche“, „vor über einem Monat“ oder „vor über 3 Monaten“.'), pm));
+    var cmMsg = h('span', { class: 'msg', style: 'margin:0' }), cmCk = h('input', { type: 'checkbox', onchange: function () { var on = this.checked; api('/api/auth.php?a=community', { on: on }).then(function (r) { if (r.ok) { D.community = on; D.community_asked = true; if (S.comm) S.comm.data = null; cmMsg.className = 'msg'; cmMsg.textContent = 'Gespeichert.'; } else { cmCk.checked = !on; cmMsg.className = 'msg err'; cmMsg.textContent = r.error || 'Speichern nicht möglich.'; } }); } }); cmCk.checked = !!D.community;
+    box.append(h('div', { class: 'wide2' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, cmCk, 'Meine Einträge für die Community nutzen'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Wenn du zustimmst, erscheinst du mit Benutzernamen bei den aktivsten Nutzern der Community-Seite, und andere Teilnehmende können deine Listen und deine zuletzt hinzugefügten Einträge sehen und Einträge daraus übernehmen. Ohne Zustimmung bleibt deine Liste für andere unsichtbar. Du kannst das jederzeit ändern.'), cmMsg));
     box.append(adminSees);
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Meine Daten'),
       h('p', { class: 'hint' }, 'Lade alles herunter, was zu dir gespeichert ist: Konto, Einstellungen, Liste, Nachrichten sowie deine Ideen und Bugs (hochgeladene Bilder sind nicht enthalten). Die Liste gibt es auch als CSV-Tabelle, die du zum Beispiel in einer Tabellenkalkulation oder später für einen Import nutzen kannst.'),
@@ -811,19 +815,141 @@
       return h('div', { class: 'nerdtbl' }, h('table', null, h('thead', null, h('tr', null, head.map(function (x) { return h('th', null, x); }))),
         h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, x); })); }))));
     }
-    return h('section', { class: 'infosec' }, h('h3', null, 'Entstehung und Aufwand'),
-      h('p', { class: 'hint' }, 'Stand 08.11.2026. Alle Zahlen außer dem Umfang sind grobe Schätzungen und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
-      h('p', null, 'Diese Seite ist mit Hilfe einer KI entstanden: Der Betreiber hat sie gemeinsam mit Claude (Anthropic) entwickelt. Die Idee, die Entscheidungen, das Testen und die Freigaben liegen beim Betreiber, den Code hat überwiegend die KI geschrieben.'),
-      h('p', null, 'Umfang (gemessen): rund 7.300 Zeilen PHP, JavaScript und CSS, 12 API-Dateien, 197 Änderungen in der Versionsverwaltung seit dem 03.11.2026. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa dreieinhalb Wochen.'),
-      tbl(['Größe', 'Schätzung'], [
-        ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', 'etwa 30–50 Stunden'],
-        ['Ausgabe der KI (Code und Texte)', 'grob 2–4 Mio. Tokens'],
-        ['Eingabe der KI inklusive wiederholt gelesenem Kontext', 'einige hundert Mio. Tokens, überwiegend aus dem Zwischenspeicher'],
-        ['Rechnerischer Wert nach API-Listenpreisen', 'grob 200–600 €; im Abo pauschal enthalten, der genaue Preis des Modells ist nicht bekannt'],
-        ['Wasserverbrauch der Rechenzentren', 'sehr unsicher, etwa 2–100 Liter, realistisch einige bis niedrige zweistellige Liter; Anbieter veröffentlichen dazu keine belastbaren Werte'],
-        ['Erfahrener Entwickler allein', 'etwa 350–600 Stunden, also 9–15 Wochen in Vollzeit'],
-        ['Laie ohne Unterstützung', 'etwa 1.000–2.000 Stunden, viele würden vorher aufgeben']]),
-      h('p', { class: 'hint' }, 'Die Angaben zu Entwickler und Laie sind Erfahrungswerte für den gleichen Funktionsumfang (Mehrnutzerverwaltung, Anmeldung mit Zwei-Faktor-Schritt, Cronjobs, Mailversand mit SPF/DKIM, Benachrichtigungen, Admin-Bereich, Kalender-Abo, Web-App, Datenschutz und rund zehn Datenquellen). Aus Codezeilen lässt sich der Aufwand nur grob ableiten.'));
+    var BASE = 5406, START = new Date(2026, 9, 14), nf = new Intl.NumberFormat('de-DE');
+    function rd(v, st) { return Math.round(v / st) * st; }
+    function rng(a, b, f, st, unit) { return 'etwa ' + nf.format(rd(a * f, st)) + '–' + nf.format(rd(b * f, st)) + (unit ? ' ' + unit : ''); }
+    var sec = h('section', { class: 'infosec' });
+    function draw(m) {
+      var L = m && +m.lines > 0 ? +m.lines : BASE, f = Math.max(1, L / BASE), dt = m && m.d ? m.d.split('-') : null;
+      var stand = dt ? dt[2] + '.' + dt[1] + '.' + dt[0] : '08.11.2026', ref = dt ? new Date(+dt[0], +dt[1] - 1, +dt[2]) : new Date(2026, 10, 8);
+      var wk = Math.max(1, Math.round((ref - START) / 604800000 * 2) / 2);
+      var devLo = rd(350 * f, 10), devHi = rd(600 * f, 10);
+      sec.textContent = '';
+      sec.append(h('h3', null, 'Entstehung und Aufwand'),
+        h('p', { class: 'hint' }, 'Stand ' + stand + (m ? ' (wird jeden Sonntagmorgen automatisch neu gemessen)' : '') + '. Gemessen werden nur Umfang und Laufzeit. Alle anderen Zahlen sind grobe Schätzungen, die mit dem Umfang hochgerechnet werden, und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
+        h('p', null, 'Diese Seite ist mit Hilfe einer KI entstanden: Der Betreiber hat sie gemeinsam mit Claude (Anthropic) entwickelt. Die Idee, die Entscheidungen, das Testen und die Freigaben liegen beim Betreiber, den Code hat überwiegend die KI geschrieben.'),
+        h('p', null, 'Umfang (gemessen): rund ' + nf.format(L) + ' Zeilen PHP, JavaScript und CSS in ' + (m && m.files ? m.files : 'über 50') + ' Dateien (davon ' + (m && m.api ? m.api : 13) + ' API-Dateien)' + (m && m.versions ? ', ' + m.versions + ' Versionen mit ' + m.items + ' Einträgen im Versionsverlauf' : '') + '. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa ' + String(wk).replace('.', ',') + ' Wochen.'),
+        tbl(['Größe', 'Schätzung'], [
+          ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', rng(30, 50, f, 5, 'Stunden')],
+          ['Ausgabe der KI (Code und Texte)', 'grob ' + String(rd(2 * f, .5)).replace('.', ',') + '–' + String(rd(4 * f, .5)).replace('.', ',') + ' Mio. Tokens'],
+          ['Eingabe der KI inklusive wiederholt gelesenem Kontext', 'einige hundert Mio. Tokens' + (f > 1.5 ? ' (mehr als ein Mrd. ist möglich)' : '') + ', überwiegend aus dem Zwischenspeicher'],
+          ['Rechnerischer Wert nach API-Listenpreisen', 'grob ' + nf.format(rd(200 * f, 50)) + '–' + nf.format(rd(600 * f, 50)) + ' €; im Abo pauschal enthalten, der genaue Preis des Modells ist nicht bekannt'],
+          ['Wasserverbrauch der Rechenzentren', 'sehr unsicher, etwa ' + Math.round(2 * f) + '–' + Math.round(100 * f) + ' Liter, realistisch einige bis niedrige zweistellige Liter (mal ' + String(Math.round(f * 10) / 10).replace('.', ',') + '); Anbieter veröffentlichen dazu keine belastbaren Werte'],
+          ['Erfahrener Entwickler allein', 'etwa ' + devLo + '–' + devHi + ' Stunden, also ' + Math.round(devLo / 40) + '–' + Math.round(devHi / 40) + ' Wochen in Vollzeit'],
+          ['Laie ohne Unterstützung', 'etwa ' + nf.format(rd(1000 * f, 100)) + '–' + nf.format(rd(2000 * f, 100)) + ' Stunden, viele würden vorher aufgeben']]),
+        h('p', { class: 'hint' }, 'Die Angaben zu Entwickler und Laie sind Erfahrungswerte für den gleichen Funktionsumfang (Mehrnutzerverwaltung, Anmeldung mit Zwei-Faktor-Schritt, Cronjobs, Mailversand mit SPF/DKIM, Benachrichtigungen, Admin-Bereich, Kalender-Abo, Web-App, Datenschutz und rund zehn Datenquellen). Aus Codezeilen lässt sich der Aufwand nur grob ableiten: Die Schätzungen wachsen hier einfach im gleichen Verhältnis wie der Umfang seit dem Stand vom 08.11.2026 (' + nf.format(BASE) + ' Zeilen).'));
+    }
+    draw(null);
+    api('/api/data.php?a=effort').then(function (r) { if (r && r.m) draw(r.m); });
+    return sec;
+  }
+
+  /* ---------- Community (vorerst Admin und Alphatester) ---------- */
+  function commOn() { return !S.preview && !!D.alpha; }
+  function commDate(s) { var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
+  function community() {
+    var C = S.comm = S.comm || { open: {}, sort: 'all', period: 'all', uid: null, data: null, ud: null };
+    var p = h('section', { class: 'panel commpanel' }, h('h2', { class: 'sec' }, 'Community ', alphaBadge()));
+    mainEl.append(p);
+    if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
+    var body = h('div'); p.append(body);
+    function adoptBtn(row) {
+      if (+row.mine) return h('span', { class: 'commhave', title: 'Schon in deiner Liste' }, '✓');
+      var b = h('button', { class: 'btn ghost small commadd', type: 'button', title: 'In meine Liste übernehmen', 'aria-label': row.name + ' in meine Liste übernehmen', onclick: function () {
+        b.disabled = true;
+        api('/api/community.php?a=adopt', { subject_id: row.id }).then(function (r) {
+          if (r && r.ok) { row.mine = 1; b.replaceWith(h('span', { class: 'commhave' }, '✓')); load(function () { nav(); }); toast('„' + row.name + '“ ist jetzt in deiner Liste.'); }
+          else { b.disabled = false; toast((r && r.error) || 'Das hat nicht geklappt.'); }
+        });
+      } }, '+');
+      return b;
+    }
+    function rankTable(key, title, rows, unit) {
+      var open = !!C.open[key], shown = rows.slice(0, open ? 50 : 15);
+      var box = h('div', { class: 'commbox' }, h('h4', null, title));
+      if (!rows.length) { box.append(h('p', { class: 'hint' }, 'Noch keine Daten.')); return box; }
+      box.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, shown.map(function (r, i) {
+        return h('tr', null, h('td', { class: 'rk' }, String(i + 1)), h('td', { class: 'nm' }, r.name), h('td', { class: 'ct', title: unit }, String(r.c)), h('td', { class: 'ad' }, adoptBtn(r)));
+      })))));
+      if (rows.length > 15) box.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open[key] = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(50, rows.length) + ' anzeigen'));
+      return box;
+    }
+    function drawOverview() {
+      var d = C.data; body.textContent = '';
+      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen.'));
+      var g = h('div', { class: 'commgrid' });
+      ORDER.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + TYPES[t].plural, d.top[t] || [], 'Nutzer')); });
+      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
+      var g2 = h('div', { class: 'commgrid' });
+      ORDER.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt')); });
+      body.append(g2);
+      // Aktivste User (nur mit Zustimmung)
+      var us = (d.users || []).map(function (u) {
+        var src = C.period === 'rec' ? u.rec : u.all, tot = 0; ORDER.forEach(function (t) { tot += +src[t] || 0; });
+        return { id: u.id, name: u.name, tot: tot, by: src };
+      }).filter(function (u) { return u.tot > 0; });
+      us.sort(function (a, b) { var x = C.sort === 'all' ? a.tot : a.by[C.sort], y = C.sort === 'all' ? b.tot : b.by[C.sort]; return (y - x) || (b.tot - a.tot) || a.name.localeCompare(b.name, 'de'); });
+      var open = !!C.open.users, shown = us.slice(0, open ? 50 : 15);
+      var per = h('div', { class: 'seg', role: 'group', 'aria-label': 'Zeitraum' }, [['all', 'Gesamt'], ['rec', 'Letzte 14 Tage']].map(function (x) {
+        return h('button', { class: 'btn small' + (C.period === x[0] ? '' : ' ghost'), type: 'button', 'aria-pressed': String(C.period === x[0]), onclick: function () { C.period = x[0]; drawOverview(); } }, x[1]);
+      }));
+      var head = h('tr', null, h('th', null, '#'), h('th', null, 'Nutzer'));
+      [['all', 'Gesamt']].concat(ORDER.map(function (t) { return [t, TYPES[t].plural]; })).forEach(function (x) {
+        head.append(h('th', { class: 'num' }, h('button', { class: 'sortbtn', type: 'button', 'aria-pressed': String(C.sort === x[0]), title: 'Nach ' + x[1] + ' sortieren', onclick: function () { C.sort = x[0]; drawOverview(); } }, x[1] + (C.sort === x[0] ? ' ↓' : ''))));
+      });
+      var tb = h('tbody');
+      shown.forEach(function (u, i) {
+        var tr = h('tr', null, h('td', { class: 'rk' }, String(i + 1)), h('td', { class: 'nm' }, h('button', { class: 'namelink', type: 'button', onclick: function () { C.uid = u.id; C.ud = null; drawUser(); } }, u.name)), h('td', { class: 'num' }, String(u.tot)));
+        ORDER.forEach(function (t) { tr.append(h('td', { class: 'num' }, String(u.by[t] || 0))); });
+        tb.append(tr);
+      });
+      var ub = h('section', { class: 'commusers' }, h('h3', { class: 'commh' }, 'Aktivste User'),
+        h('p', { class: 'hint' }, 'Nur Nutzer, die der Nutzung ihrer Einträge für die Community ausdrücklich zugestimmt haben (Beispieleinträge zählen nicht). Namen sind anklickbar.'), per);
+      if (!us.length) ub.append(h('p', { class: 'hint' }, 'Noch niemand in diesem Zeitraum.'));
+      else {
+        ub.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('thead', null, head), tb)));
+        if (us.length > 15) ub.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open.users = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(50, us.length) + ' anzeigen'));
+      }
+      body.append(ub);
+    }
+    function drawUser() {
+      body.textContent = '';
+      var back = h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.uid = null; C.ud = null; drawOverview(); window.scrollTo(0, 0); } }, '← Zurück zur Community');
+      body.append(back);
+      if (!C.ud) {
+        body.append(h('p', { class: 'state pulse' }, 'Lade …'));
+        var want = C.uid;
+        api('/api/community.php?a=user&id=' + want).then(function (r) {
+          if (C.uid !== want) return;
+          if (!r || r.error) { body.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+          C.ud = r; drawUser();
+        });
+        return;
+      }
+      var d = C.ud, tot = 0; ORDER.forEach(function (t) { tot += (d.lists[t] || []).length; });
+      body.append(h('h3', { class: 'commh' }, d.user.name), h('p', { class: 'hint' }, pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
+      var last = h('section', { class: 'commbox commlast' }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
+      if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));
+      else last.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, d.last.map(function (r) {
+        return h('tr', null, h('td', { class: 'dt' }, commDate(r.added_at)), h('td', { class: 'ty' }, TYPES[r.type] ? TYPES[r.type].label : ''), h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r)));
+      })))));
+      body.append(last);
+      var g = h('div', { class: 'commgrid' });
+      ORDER.forEach(function (t) {
+        var rows = d.lists[t] || [], bx = h('div', { class: 'commbox' }, h('h4', null, TYPES[t].plural + ' (' + rows.length + ')'));
+        if (!rows.length) bx.append(h('p', { class: 'hint' }, 'Leer.'));
+        else bx.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rows.map(function (r) { return h('tr', null, h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r))); })))));
+        g.append(bx);
+      });
+      body.append(g);
+    }
+    if (C.uid && C.data) { drawUser(); return; }
+    if (C.data) { drawOverview(); }
+    else body.append(h('p', { class: 'state pulse' }, 'Lade Community …'));
+    api('/api/community.php?a=overview').then(function (r) {
+      if (!r || r.error) { body.textContent = ''; body.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+      C.data = r; if (S.view === 'comm' && !C.uid) drawOverview();
+    });
   }
 
   /* ---------- Nerdinfos (Projektübersicht) ---------- */
@@ -1276,6 +1402,18 @@
         h('button', { class: 'btn ghost', type: 'button', onclick: function () { try { sessionStorage.setItem('unskip', '1'); } catch (_) {} box.remove(); } }, 'Später'))));
     document.body.append(box); inp.focus();
   }
+  function askCommunity() {
+    if (S.preview || D.community_asked) return;
+    var box = h('div', { class: 'unmodal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'cmh' }, h('div', { class: 'unbox' },
+      h('h2', { id: 'cmh', style: 'margin:0 0 6px;font-size:20px' }, 'Community: Deine Einträge teilen?'),
+      h('p', { class: 'hint' }, 'Wir bauen eine Community-Seite mit Ranglisten und den aktivsten Nutzern. Wenn du zustimmst, können andere Teilnehmende mit deinem Benutzernamen deine Listen und deine zuletzt hinzugefügten Einträge sehen und Einträge übernehmen. Ohne Zustimmung bleibst du dort unsichtbar.'),
+      h('p', { class: 'hint' }, 'Du kannst das jederzeit unter Einstellungen ändern („Meine Einträge für die Community nutzen“).'),
+      h('div', { class: 'inline', style: 'margin-top:10px' },
+        h('button', { class: 'btn', type: 'button', onclick: function () { choose(true); } }, 'Zustimmen'),
+        h('button', { class: 'btn ghost', type: 'button', onclick: function () { choose(false); } }, 'Erstmal ablehnen'))));
+    function choose(on) { api('/api/auth.php?a=community', { on: on }).then(function (r) { if (r.ok) { D.community = on; D.community_asked = true; box.remove(); } }); }
+    document.body.append(box);
+  }
   function showNews() {
     if (S.preview) return;
     api('/api/data.php?a=news').then(function (r) {
@@ -1293,9 +1431,9 @@
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
-      var okv = { cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true };
+      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true };
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); showNews(); askName(); unreadPoll(); setInterval(unreadPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); setInterval(unreadPoll, 60000); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();

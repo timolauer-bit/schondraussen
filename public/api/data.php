@@ -178,6 +178,11 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($u['bell_default']) && !(int) $u['bell_default']) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
     json_out(['ok' => true, 'id' => $sid, 'type' => $type]);
 }
+if ($a === 'effort') { // gemessene Umfangszahlen für „Entstehung und Aufwand“ (wöchentlich vom Cronjob)
+    require_once __DIR__ . '/../lib/watchdog.php';
+    $s = state_get($pdo, 'effort'); $d = $s ? json_decode($s['v'], true) : null;
+    json_out(['ok' => true, 'm' => is_array($d) ? $d : null]);
+}
 if ($a === 'mystats') { // persönliche Statistik für die Info-Seite (nur eigene Zahlen)
     $o = ['since' => null, 'entries' => ['author' => 0, 'artist' => 0, 'film' => 0, 'series' => 0], 'works' => 0, 'ideas' => 0, 'bugs' => 0, 'messages' => 0];
     try { $q = $pdo->prepare('SELECT created_at FROM users WHERE id=?'); $q->execute([$u['id']]); $o['since'] = $q->fetchColumn() ?: null; } catch (Throwable $e) {}
