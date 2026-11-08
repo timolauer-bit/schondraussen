@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Anime: Bei „Serien“ liefert die Suche jetzt auch Anime-Treffer aus AniList (mit Vermerk Anime-Serie, -Film, OVA …). Folgen mit Sendedatum erscheinen wie bei Serien in Liste und Kalender, die Beschreibung wird ins Deutsche übersetzt. Der Sendeplan umfasst bis zu 200 Folgen; Manga und Comics bleiben bei Bücher (Google Books, Open Library). Die Datenquelle AniList steht in Info und Datenschutz',
     'F|Offizieller Start: Die Hinweise „Testbetrieb“ auf der Anmelde- und Infoseite sind entfernt; neue Konten sind nach der Bestätigung der E-Mail-Adresse sofort freigeschaltet',
     'A|Admin: Neue Option „Neue Konten manuell freischalten“ (Reiter Nutzer, Bereich Registrierung, Standard aus). Eingeschaltet gilt wieder das bisherige Verfahren mit Hinweis auf der Anmeldeseite und Freischalt-Mail; zeigt, wie viele Konten warten',
     'U|Infoseite: Der Abschnitt „Zum Testen“ heißt jetzt „Feedback“ und passt zum offenen Betrieb',

@@ -25,6 +25,79 @@ function translate_de(string $text, string $from = 'EN'): ?string {
     return $t !== '' ? $t : null;
 }
 
+// AniList (Anime): GraphQL, Abfrage nur für Einträge, die Nutzer anlegen (Nutzungsbedingungen: kein Vorratsspeichern).
+function anilist_query(string $query, array $vars): ?array {
+    $ch = curl_init('https://graphql.anilist.co');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12, CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json', 'User-Agent: Schondraussen.de/1.0 (+https://schondraussen.de)'],
+        CURLOPT_POSTFIELDS => json_encode(['query' => $query, 'variables' => $vars], JSON_UNESCAPED_UNICODE)]);
+    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($r === false || $code >= 400) return null;
+    $j = json_decode($r, true);
+    return (is_array($j) && !empty($j['data'])) ? $j['data'] : null;
+}
+function anilist_title(array $m): string { return trim((string) (($m['title']['english'] ?? '') ?: ($m['title']['romaji'] ?? ''))); }
+
+function anilist_search(string $q): array {
+    $d = anilist_query('query($q:String){Page(perPage:6){media(search:$q,type:ANIME,sort:SEARCH_MATCH){id title{romaji english} format seasonYear episodes status genres}}}', ['q' => $q]);
+    $out = [];
+    foreach (($d['Page']['media'] ?? []) as $m) {
+        $nm = anilist_title($m); if ($nm === '') continue;
+        $fmt = ['TV' => 'Anime-Serie', 'TV_SHORT' => 'Anime-Kurzserie', 'MOVIE' => 'Anime-Film', 'OVA' => 'OVA', 'ONA' => 'ONA', 'SPECIAL' => 'Special'][$m['format'] ?? ''] ?? 'Anime';
+        $out[] = ['name' => $nm, 'hint' => implode(' · ', array_filter([$fmt, $m['seasonYear'] ?? '', !empty($m['episodes']) ? $m['episodes'] . ' Folgen' : ''])), 'ext' => ['anilist' => (int) $m['id']]];
+    }
+    return $out;
+}
+
+function anilist_refresh(PDO $pdo, array $sub, array $ext): array {
+    $sid = (int) $sub['id']; $id = (int) $ext['anilist'];
+    $d = anilist_query('query($id:Int){Media(id:$id,type:ANIME){id title{romaji english} description(asHtml:false) status episodes format startDate{year month day} genres}}', ['id' => $id]);
+    $m = $d['Media'] ?? null;
+    if (!$m) return ['ok' => false, 'msg' => 'Bei AniList nicht gefunden oder nicht erreichbar.'];
+    $nodes = [];
+    for ($p = 1; $p <= 4; $p++) { // Sendeplan (bis zu 200 Folgen)
+        $s = anilist_query('query($id:Int,$p:Int){Media(id:$id,type:ANIME){airingSchedule(perPage:50,page:$p){pageInfo{hasNextPage} nodes{episode airingAt}}}}', ['id' => $id, 'p' => $p]);
+        $as = $s['Media']['airingSchedule'] ?? null; if (!$as) break;
+        foreach ($as['nodes'] ?? [] as $n) $nodes[] = $n;
+        if (empty($as['pageInfo']['hasNextPage'])) break;
+    }
+    $today = date('Y-m-d'); $epRows = []; $rel = [];
+    foreach ($nodes as $n) {
+        $dt = date('Y-m-d', (int) $n['airingAt']); $no = (int) $n['episode'];
+        $epRows[] = [1, $no, '', $dt];
+        if ($dt >= $today) $rel[] = [sprintf('Folge %d', $no), $dt, 'Folge'];
+    }
+    $sd = $m['startDate'] ?? []; $startFut = '';
+    if (!empty($sd['year'])) { $sdt = $sd['year'] . (!empty($sd['month']) ? sprintf('-%02d', $sd['month']) . (!empty($sd['day']) ? sprintf('-%02d', $sd['day']) : '') : ''); if (date_is_future($sdt)) $startFut = $sdt; }
+    if (!$rel && $startFut !== '') $rel[] = ['Start', $startFut, 'Staffel'];
+    $stMap = ['FINISHED' => 'Ended', 'RELEASING' => 'Running', 'NOT_YET_RELEASED' => 'In Development', 'CANCELLED' => 'Ended', 'HIATUS' => 'On Hiatus'];
+    $ext['tv_status'] = $stMap[$m['status'] ?? ''] ?? '';
+    $sumTxt = clean_text(preg_replace('/\(Source:[^)]*\)|\[Written by[^\]]*\]/i', '', (string) ($m['description'] ?? '')), 600);
+    if ($sumTxt !== '') {
+        $hh = sha1($sumTxt);
+        if (($ext['sum_h'] ?? '') === $hh && !empty($ext['sum_de'])) $sumTxt = $ext['sum_de'];
+        elseif (($tr = translate_de($sumTxt, 'EN')) !== null) { $ext['sum_h'] = $hh; $ext['sum_de'] = $tr; $sumTxt = $tr; }
+    }
+    $genres = array_slice($m['genres'] ?? [], 0, 4);
+    $noEp = (int) ($m['episodes'] ?? 0) ?: count($epRows);
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')->execute([json_encode($ext), $sumTxt, json_encode($genres, JSON_UNESCAPED_UNICODE), 1, $sid]);
+        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
+        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)')->execute([$sid, 'Staffel 1', !empty($sd['year']) ? (int) $sd['year'] : null, 'Staffel', $noEp ? $noEp . ($noEp === 1 ? ' Folge' : ' Folgen') : null]);
+        $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
+        foreach (array_slice($rel, 0, 60) as $x) $r->execute([$sid, $x[0], $x[1], $x[2], null]);
+        $pdo->commit();
+    } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    try {
+        $pdo->prepare('DELETE FROM episodes WHERE subject_id=?')->execute([$sid]);
+        $q = $pdo->prepare('INSERT INTO episodes (subject_id,season,number,title,airdate) VALUES (?,?,?,?,?)');
+        foreach ($epRows as $x) $q->execute([$sid, $x[0], $x[1], null, $x[3]]);
+    } catch (Throwable $e) {}
+    return ['ok' => true, 'msg' => 'Anime: ' . count($epRows) . ' Folgen im Sendeplan, ' . count($rel) . ' kommende'];
+}
+
 function clean_text(?string $h, int $max = 380): string {
     $t = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $h), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
     return mb_strlen($t) > $max ? mb_substr($t, 0, $max - 1) . '…' : $t;
@@ -54,6 +127,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
         return ['ok' => false, 'msg' => 'Für diese Kategorie ist die Datenquelle noch nicht angebunden.'];
     }
     $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    if (!empty($ext['anilist']) && empty($ext['tvmaze'])) return anilist_refresh($pdo, $sub, $ext);
     $show = tvmaze_fetch($sub['name'], isset($ext['tvmaze']) ? (int) $ext['tvmaze'] : null);
     if (!$show || empty($show['id'])) return ['ok' => false, 'msg' => 'Bei TVmaze nicht gefunden oder nicht erreichbar.'];
     $eps = $show['_embedded']['episodes'] ?? [];
