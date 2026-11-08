@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'B|Bücher-Reihen: Google Books wird jetzt mit drei Suchvarianten abgefragt (Titelsuche, Volltextsuche, jeweils auf deutsch, zuletzt ohne Sprachfilter); findet sich nichts, nennt die Meldung die Sprachen und Beispieltitel der Treffer',
     'U|Aktualisieren: Nach dem Klick erscheint immer eine Kurzmeldung mit dem Ergebnis; ist der Eintrag gefüllt, steht dabei, dass eine weitere Aktualisierung erst nach 10 Minuten möglich ist',
     'B|Einträge ohne Daten: „Aktualisieren“ wartet nicht mehr 10 Minuten, wenn der Eintrag noch leer ist, und der Hinweis „keine Daten gefunden“ nennt jetzt die Rückmeldung der Datenquelle (z. B. warum eine Buchreihe nichts lieferte)',
     'U|Hinweiskästen in Einträgen haben jetzt mehr Abstand zu Überschrift und Knöpfen',

@@ -306,11 +306,11 @@ function googlebooks_upcoming(string $name, array $seen): array {
 function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     $sid = (int) $sub['id']; $title = trim((string) $ext['gbs']);
     $works = []; $rel = []; $seen = []; $got = false; $today = date('Y-m-d');
-    $key = trim((string) cfg('google_books_key', '')); $lastErr = ''; $nItems = 0; $nLang = 0; $nTitle = 0;
+    $key = trim((string) cfg('google_books_key', '')); $lastErr = ''; $nItems = 0; $nLang = 0; $nTitle = 0; $langs = []; $sample = [];
     for ($p = 0; $p < 2; $p++) {
         $items = null;
-        foreach (['&orderBy=newest&langRestrict=de', ''] as $extra) { // zweiter Versuch ohne Zusatzfilter (Filter erfolgt ohnehin im Code)
-            $url = 'https://www.googleapis.com/books/v1/volumes?maxResults=40&startIndex=' . ($p * 40) . '&printType=books' . $extra . ($key !== '' ? '&key=' . rawurlencode($key) : '') . '&q=' . rawurlencode('intitle:"' . str_replace('"', '', $title) . '"');
+        foreach ([['intitle:"' . str_replace('"', '', $title) . '"', '&orderBy=newest&langRestrict=de'], ['"' . str_replace('"', '', $title) . '"', '&langRestrict=de'], ['intitle:"' . str_replace('"', '', $title) . '"', '']] as [$qq, $extra]) { // mehrere Versuche, der erste mit Treffern zählt (Filter erfolgt ohnehin im Code)
+            $url = 'https://www.googleapis.com/books/v1/volumes?maxResults=40&startIndex=' . ($p * 40) . '&printType=books' . $extra . ($key !== '' ? '&key=' . rawurlencode($key) : '') . '&q=' . rawurlencode($qq);
             $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
             $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
             if ($raw !== false && $code < 400 && is_array($j = json_decode($raw, true))) { $got = true; $items = $j['items'] ?? []; if ($items) break; continue; }
@@ -322,7 +322,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
             $nItems++;
             $v = $it['volumeInfo'] ?? []; $t = trim((string) ($v['title'] ?? '')); $d = (string) ($v['publishedDate'] ?? '');
             if ($t === '') continue;
-            if (!in_array($v['language'] ?? 'de', ['de'], true)) { $nLang++; continue; }
+            if (!in_array($v['language'] ?? 'de', ['de'], true)) { $nLang++; $lg = (string) ($v['language'] ?? '?'); $langs[$lg] = ($langs[$lg] ?? 0) + 1; if (count($sample) < 3) $sample[] = '„' . mb_substr($t, 0, 40) . '“ (' . $lg . ')'; continue; }
             if (mb_stripos($t, $title) === false) { $nTitle++; continue; }
             $full = $t . (!empty($v['subtitle']) ? ': ' . $v['subtitle'] : '');
             $k = mb_strtolower($full); if (isset($seen[$k])) continue; $seen[$k] = 1;
@@ -331,7 +331,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
         }
         if (count($items) < 40) break;
     }
-    if (!$works && !$rel) return ['ok' => false, 'msg' => 'Keine deutschen Bände gefunden (Google Books lieferte ' . $nItems . ' Treffer, davon ' . $nLang . ' in anderer Sprache und ' . $nTitle . ' ohne den Reihentitel im Namen). Versuche einen anderen oder genaueren Titel.'];
+    if (!$works && !$rel) return ['ok' => false, 'msg' => 'Keine deutschen Bände gefunden (Google Books lieferte ' . $nItems . ' Treffer, davon ' . $nLang . ' in anderer Sprache und ' . $nTitle . ' ohne den Reihentitel im Namen; Sprachen: ' . ($langs ? implode(', ', array_map(fn($k, $n) => $k . ' ' . $n, array_keys($langs), $langs)) : 'keine') . '; Beispiele: ' . ($sample ? implode(', ', $sample) : 'keine') . '). Versuche einen anderen oder genaueren Titel.'];
     if (!$got) return ['ok' => false, 'msg' => 'Google Books nicht erreichbar (' . $lastErr . ').'];
     $num = function ($t) { return preg_match('/(\d+)\s*$/', $t, $m) ? (int) $m[1] : 0; };
     usort($works, fn($a, $b) => $num($b[0]) <=> $num($a[0]) ?: strcmp($a[0], $b[0]));
