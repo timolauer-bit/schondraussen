@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'U|Community: Die Überschriften der Top-Tabellen zeigen „Top 15“ und nach dem Aufklappen „Top 50“',
     'B|Community: Top- und Newcomer-Tabellen zählen nur noch Nutzer mit Zustimmung; wer die Einwilligung zurücknimmt, ist sofort überall herausgerechnet',
     'F|Community: Die Seite ist jetzt für alle Nutzer sichtbar (vorher nur Admin und Alphatester). Nutzerbezogene Übersichten zeigen weiter nur Nutzer, die zugestimmt haben',
     'T|Community: Einwilligungen aller Nutzer außer dem Admin einmalig zurückgesetzt (Migration 049), alle werden beim nächsten Start neu gefragt',
