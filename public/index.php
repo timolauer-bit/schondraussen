@@ -64,13 +64,12 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
   <div id="appview"></div>
   <footer>
-    <p>Testbetrieb: Die Seite ist noch nicht öffentlich.</p>
     <p>Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links mit Partner-ID sind Werbelinks; für dich ändert sich der Preis nicht.</p>
     <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Musik) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Bücher). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Termine bitte vor dem Kauf prüfen.</p>
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
-<script>window.SD = <?= json_encode(['alpha' => is_alpha($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'nerd' => !empty($u['nerd_changes']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
+<script>window.SD = <?= json_encode(['approval' => approval_required(), 'alpha' => is_alpha($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'nerd' => !empty($u['nerd_changes']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
 <script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
@@ -89,15 +88,14 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <form id="f-rename"><label for="rn">Neuer Benutzername (3 bis 20 Zeichen)</label><input id="rn" type="text" maxlength="20" minlength="3" required autocomplete="off">
     <button type="submit">Speichern</button> <button id="logout" type="button" class="ghost">Abmelden</button></form><div class="msg" id="msg" role="alert" aria-live="assertive"></div></div>
 <?php else: ?>
-  <p><b>Dein Konto wartet auf Freischaltung.</b> Die Seite ist noch im Testbetrieb. Sobald der Admin dich freigeschaltet hat, siehst du hier deine Listen. Schau später einfach noch einmal vorbei.</p>
+  <p><b>Dein Konto wartet auf Freischaltung.</b> Sobald der Admin dich freigeschaltet hat, siehst du hier deine Listen. Schau später einfach noch einmal vorbei.</p>
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php endif; ?>
 <?php else: ?>
   <div class="land-grid">
   <div class="card land-login">
-    <!-- HINWEIS-FREISCHALTUNG: Testbetrieb-Hinweis zum Start entfernen -->
-    <div class="note"><b>Testbetrieb:</b> Diese Seite ist noch nicht öffentlich. Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
-    <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
+<?php if (approval_required()): ?>    <div class="note"><b>Hinweis:</b> Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
+<?php endif; ?>    <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
       <label for="le">E-Mail-Adresse</label><input id="le" type="email" autocomplete="email" required>
       <label for="lp">Passwort</label><input id="lp" type="password" autocomplete="current-password" required>
       <button type="submit">Anmelden</button>

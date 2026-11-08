@@ -48,6 +48,12 @@ function current_user(): ?array {
     return $u;
 }
 
+/** Muss der Admin neue Konten freischalten? Einstellung im Adminmenü (Standard: nein). */
+function approval_required(): bool {
+    try { $q = db()->prepare("SELECT v FROM site_settings WHERE k='approval_required'"); $q->execute(); return $q->fetchColumn() === '1'; }
+    catch (Throwable $e) { return false; }
+}
+
 function client_ip(): string { return substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45); }
 function token_new(): array { $t = bin2hex(random_bytes(24)); return [$t, hash('sha256', $t)]; }
 

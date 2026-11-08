@@ -1,6 +1,9 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Offizieller Start: Die Hinweise „Testbetrieb“ auf der Anmelde- und Infoseite sind entfernt; neue Konten sind nach der Bestätigung der E-Mail-Adresse sofort freigeschaltet',
+    'A|Admin: Neue Option „Neue Konten manuell freischalten“ (Reiter Nutzer, Bereich Registrierung, Standard aus). Eingeschaltet gilt wieder das bisherige Verfahren mit Hinweis auf der Anmeldeseite und Freischalt-Mail; zeigt, wie viele Konten warten',
+    'U|Infoseite: Der Abschnitt „Zum Testen“ heißt jetzt „Feedback“ und passt zum offenen Betrieb',
     'B|Der alphabetisch letzte Eintrag einer Liste fehlte in der Übersicht (nur bei den Terminen war er noch sichtbar) und ließ sich nicht erneut hinzufügen. Ursache war ein Programmierfehler beim Laden der Liste in Verbindung mit den Amazon-Einstellungen, behoben',
     'A|Admin: Neue Prüffunktion „Eintrag prüfen“ im Reiter Sicherheit. Sie zeigt zu einem Namen, wie der Eintrag gespeichert ist (Typ, Stand, Termine, Werke) und auf welchen Nutzerlisten er steht (nur Nummern, keine Adressen)',
     'T|Absicherung: Enthält ein gespeicherter Text ein ungültiges Zeichen, bricht die Antwort der Seite nicht mehr ab, das Zeichen wird ersetzt',

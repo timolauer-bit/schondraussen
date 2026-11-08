@@ -78,6 +78,8 @@ try {
                 $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']); // Spalte fehlt noch (migrate.php)
             }
             $nid2 = (int) $pdo->lastInsertId();
+            $needApproval = approval_required();
+            if (!$needApproval) { try { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$nid2]); } catch (Throwable $e) {} }
             if ($inv && !$first) {
                 try {
                     $used = $pdo->prepare('UPDATE invites SET used_at=NOW(), email=NULL WHERE id=? AND used_at IS NULL'); $used->execute([$inv['id']]);
@@ -91,7 +93,7 @@ try {
             if (!$inv || $done === null || strpos((string) $done, 'Bestätigungslink') !== false) link_mail($pdo, $nid2, $email, 'verify');
             if (!$first) { try { $pdo->prepare('UPDATE users SET hide_email=1, hide_activity=1 WHERE email=?')->execute([$email]); } catch (Throwable $e) {} } // neue Konten: E-Mail und Aktivität standardmäßig ausgeblendet
             if ($first) { try { $pdo->exec("UPDATE users SET approved_at=NOW() WHERE role='admin'"); } catch (Throwable $e) {} }
-            elseif (!$inv) {
+            elseif (!$inv && $needApproval) {
                 try {
                     $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
                     $link = '';
@@ -107,7 +109,7 @@ try {
             }
         }
         if ($done) json_out(['ok' => true, 'message' => $done]);
-        json_out(['ok' => true, 'message' => 'Fast geschafft: Du bekommst gleich eine Mail mit einem Bestätigungslink. Nach der Bestätigung schaltet der Admin dein Konto frei (Testbetrieb).']);
+        json_out(['ok' => true, 'message' => 'Fast geschafft: Du bekommst gleich eine Mail mit einem Bestätigungslink.' . (approval_required() ? ' Nach der Bestätigung schaltet der Admin dein Konto frei.' : ' Danach kannst du direkt loslegen.')]);
     }
 
     if ($a === 'login') {

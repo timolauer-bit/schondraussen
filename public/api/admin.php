@@ -125,6 +125,14 @@ if ($a === 'site') {
     try { foreach ($pdo->query('SELECT k,v FROM site_settings')->fetchAll() as $r) $o[$r['k']] = $r['v']; } catch (Throwable $e) {}
     json_out($o);
 }
+if ($a === 'approval') {
+    $pend = 0; try { $pend = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role<>'admin' AND approved_at IS NULL AND delete_requested_at IS NULL AND email_verified_at IS NOT NULL")->fetchColumn(); } catch (Throwable $e) {}
+    json_out(['required' => approval_required(), 'pending' => $pend]);
+}
+if ($a === 'setapproval' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['approval_required', !empty($b['required']) ? '1' : '0']);
+    json_out(['ok' => true, 'required' => approval_required()]);
+}
 if ($a === 'savesite' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $tag = trim((string) ($b['tag'] ?? '')); $dom = (string) ($b['domain'] ?? 'amazon.de');
     if (!preg_match('/^[A-Za-z0-9._-]{0,64}$/', $tag)) json_out(['error' => 'Nur Buchstaben, Ziffern, Punkt, Bindestrich.'], 422);
