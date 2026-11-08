@@ -61,6 +61,15 @@ function token_new(): array { $t = bin2hex(random_bytes(24)); return [$t, hash('
 function is_alpha(?array $u): bool { return $u && ($u['role'] === 'admin' || !empty($u['alpha'])); }
 function require_alpha(?array $u): void { if (!is_alpha($u)) json_out(['error' => 'Diese Funktion ist noch nicht freigegeben.'], 403); }
 
+/** Minuten, in denen die erste Namenswahl einmal ohne 30-Tage-Sperre korrigiert werden darf (0 = nicht mehr möglich). */
+function username_free_minutes(PDO $pdo, int $uid): int {
+    try {
+        $s = $pdo->prepare('SELECT old_name, TIMESTAMPDIFF(MINUTE, changed_at, NOW()) AS age FROM username_log WHERE user_id=? ORDER BY id'); $s->execute([$uid]); $r = $s->fetchAll(PDO::FETCH_ASSOC);
+        if (count($r) === 1 && ($r[0]['old_name'] === null || $r[0]['old_name'] === '') && (int) $r[0]['age'] < 60) return 60 - (int) $r[0]['age'];
+    } catch (Throwable $e) {}
+    return 0;
+}
+
 /** Prüft einen Benutzernamen; gibt eine Fehlermeldung oder null zurück. */
 function username_error(string $n): ?string {
     if (mb_strlen($n) < 3 || mb_strlen($n) > 20) return 'Der Benutzername braucht 3 bis 20 Zeichen.';

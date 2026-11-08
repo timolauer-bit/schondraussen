@@ -1,5 +1,7 @@
 (function () {
   var D = window.SD || {}, root = document.getElementById('appview');
+  D.uname_free_until = (+D.uname_free || 0) > 0 ? Date.now() + D.uname_free * 60000 : 0;
+  function unFree() { return Math.max(0, Math.ceil(((D.uname_free_until || 0) - Date.now()) / 60000)); }
   if (!root) return;
   var CL = window.CHANGELOG || [], LATEST = CL.length ? CL[0].v : 1;
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
@@ -534,12 +536,13 @@
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Einstellungen'));
     var box = h('div', { class: 'cfgpanel' });
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Angemeldet als'), h('p', { style: 'margin:0' }, D.email + ' · Nr. ' + D.id + (isAdm() ? ' · Admin' : '') + (!D.admin && D.alpha ? ' · Alphatester' : ''))));
-    var un = h('input', { type: 'text', value: D.username || '', maxlength: '20', 'aria-label': 'Benutzername', autocomplete: 'off' }), unMsg = h('p', { class: 'msg', role: 'status' }), unLeft = +D.uname_left || 0;
+    var un = h('input', { type: 'text', value: D.username || '', maxlength: '20', 'aria-label': 'Benutzername', autocomplete: 'off' }), unMsg = h('p', { class: 'msg', role: 'status' }), unLeft = unFree() ? 0 : (+D.uname_left || 0);
     if (unLeft) un.disabled = true;
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benutzername'),
       h('p', { class: 'hint' }, D.username ? 'Diesen Namen sehen andere Nutzer. Zur Anmeldung brauchst du ihn nicht. Du kannst ihn alle 30 Tage ändern. Erlaubt sind 3 bis 20 Zeichen: Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich und Bindestrich, ohne Leerzeichen und nicht am Anfang oder Ende.' : 'Du hast noch keinen Benutzernamen. Wähle einen, den andere Nutzer sehen dürfen (nicht für die Anmeldung). Erlaubt sind 3 bis 20 Zeichen: Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich und Bindestrich, ohne Leerzeichen und nicht am Anfang oder Ende.'),
       unLeft ? h('p', { class: 'hint' }, 'Änderung wieder möglich in ' + pl(unLeft, 'Tag', 'Tagen') + '.') : null,
-      h('div', { class: 'inline', style: 'margin-top:12px' }, un, h('button', { class: 'btn', type: 'button', disabled: unLeft > 0, onclick: function () { api('/api/auth.php?a=username', { username: un.value }).then(function (r) { if (r.ok) { D.username = r.username; D.uname_left = 30; unMsg.className = 'msg'; unMsg.textContent = 'Gespeichert.'; var w = $('who'); if (w) { var t = w.lastChild; if (t && t.nodeType === 3) t.textContent = r.username + ' · ' + D.email; } render(); } else { unMsg.className = 'msg err'; unMsg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, 'Speichern')), unMsg));
+      unFree() ? h('p', { class: 'hint' }, 'Falls du dich verschrieben hast: Du kannst den Namen jetzt noch ' + pl(unFree(), 'Minute', 'Minuten') + ' lang einmal ohne die 30-Tage-Sperre ändern.') : null,
+      h('div', { class: 'inline', style: 'margin-top:12px' }, un, h('button', { class: 'btn', type: 'button', disabled: unLeft > 0, onclick: function () { api('/api/auth.php?a=username', { username: un.value }).then(function (r) { if (r.ok) { D.username = r.username; D.uname_left = 30; D.uname_free_until = 0; unMsg.className = 'msg'; unMsg.textContent = 'Gespeichert.'; var w = $('who'); if (w) { var t = w.lastChild; if (t && t.nodeType === 3) t.textContent = r.username + ' · ' + D.email; } render(); } else { unMsg.className = 'msg err'; unMsg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, 'Speichern')), unMsg));
     var skins = h('div', { class: 'skins', role: 'group', 'aria-label': 'Oberfläche wählen' });
     SKINS.forEach(function (k) { skins.append(h('button', { class: 'skin', type: 'button', 'aria-pressed': String((S.skin || '') === k[0]), onclick: function () { setSkin(k[0]); api('/api/data.php?a=skin', { skin: k[0] }); render(); } }, h('span', { class: 'dots' }, k[2].map(function (c) { var i = h('i'); i.style.background = c; return i; })), h('b', null, k[1]))); });
     var nerdMsg = h('span', { class: 'msg', style: 'margin:0' }), nerdCk = h('input', { type: 'checkbox', onchange: function () { var on = this.checked; api('/api/auth.php?a=nerd', { on: on }).then(function (r) { if (r.ok) { D.nerd = on; nerdMsg.className = 'msg'; nerdMsg.textContent = 'Gespeichert.'; renderVer(); } else { nerdCk.checked = !on; nerdMsg.className = 'msg err'; nerdMsg.textContent = r.error || 'Speichern nicht möglich.'; } }); } }); nerdCk.checked = !!D.nerd;
@@ -1428,7 +1431,7 @@
       h('p', { class: 'hint' }, 'Diesen Namen sehen andere Nutzer. Zur Anmeldung brauchst du ihn nicht. 3 bis 20 Zeichen: Buchstaben (auch Umlaute), Ziffern, Punkt, Unterstrich, Bindestrich, ohne Leerzeichen. Nicht möglich sind vergebene, anstößige oder mit dem Betreiber verwechselbare Namen; klappt es nicht, steht der Grund direkt unter dem Feld. Du kannst ihn danach alle 30 Tage ändern.'),
       inp, msg,
       h('div', { class: 'inline', style: 'margin-top:10px' },
-        h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/auth.php?a=username', { username: inp.value }).then(function (r) { if (r.ok) { D.username = r.username; D.uname_left = 30; var w = $('who'); if (w && w.lastChild && w.lastChild.nodeType === 3) w.lastChild.textContent = r.username + ' · ' + D.email; box.remove(); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, 'Speichern'),
+        h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/auth.php?a=username', { username: inp.value }).then(function (r) { if (r.ok) { D.username = r.username; D.uname_left = 30; D.uname_free_until = r.free_min > 0 ? Date.now() + r.free_min * 60000 : 0; var w = $('who'); if (w && w.lastChild && w.lastChild.nodeType === 3) w.lastChild.textContent = r.username + ' · ' + D.email; box.remove(); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, 'Speichern'),
         h('button', { class: 'btn ghost', type: 'button', onclick: function () { try { sessionStorage.setItem('unskip', '1'); } catch (_) {} box.remove(); } }, 'Später'))));
     document.body.append(box); inp.focus();
   }

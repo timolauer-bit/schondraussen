@@ -191,13 +191,14 @@ try {
             $t = $pdo->prepare('SELECT 1 FROM users WHERE username=? AND id<>?'); $t->execute([$n, $cu['id']]);
             if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
         }
-        if (!empty($cu['username']) && $cu['role'] !== 'admin' && !empty($cu['username_changed_at']) && empty($cu['name_change_required'])) {
+        $freeMin = username_free_minutes($pdo, (int) $cu['id']);
+        if (!$freeMin && !empty($cu['username']) && $cu['role'] !== 'admin' && !empty($cu['username_changed_at']) && empty($cu['name_change_required'])) {
             $left = 30 - (int) floor((time() - strtotime($cu['username_changed_at'])) / 86400);
             if ($left > 0) json_out(['error' => 'Den Benutzernamen kannst du erst in ' . $left . ($left === 1 ? ' Tag' : ' Tagen') . ' wieder ändern.'], 429);
         }
         try { $pdo->prepare('UPDATE users SET username=?, username_changed_at=NOW(), name_change_required=0 WHERE id=?')->execute([$n, $cu['id']]); try { $pdo->prepare('INSERT INTO username_log (user_id,old_name,new_name) VALUES (?,?,?)')->execute([$cu['id'], ($cu['username'] ?? '') !== '' ? $cu['username'] : null, $n]); } catch (Throwable $e) {} }
         catch (PDOException $e) { json_out(['error' => 'Das hat nicht geklappt. Ist die Datenbank aktualisiert (migrate.php)?'], 500); }
-        json_out(['ok' => true, 'username' => $n]);
+        json_out(['ok' => true, 'username' => $n, 'free_min' => empty($cu['username']) ? username_free_minutes($pdo, (int) $cu['id']) : 0]);
     }
     if ($a === 'logout') { $_SESSION = []; session_destroy(); json_out(['ok' => true]); }
 
