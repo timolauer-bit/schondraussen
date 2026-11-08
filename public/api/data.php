@@ -124,12 +124,19 @@ if ($a === 'search') {
             $out[] = ['name' => $x['name'], 'hint' => implode(' · ', $h), 'ext' => ['mbid' => $x['id']]]; }
     }
     elseif ($type === 'author' && ($_GET['mode'] ?? '') === 'title') { // Suche über den Buchtitel: Treffer sind die Autor:innen der gefundenen Bücher
-        $r = http_json('https://openlibrary.org/search.json?limit=30&fields=title,author_name,author_key,first_publish_year&title=' . rawurlencode($q)) ?? [];
+        $r = http_json('https://openlibrary.org/search.json?limit=60&sort=editions&fields=title,author_name,author_key,first_publish_year,edition_count&title=' . rawurlencode($q)) ?? [];
+        $nz = function (string $x): string { return trim(preg_replace('/[^\p{L}\p{N}]+/u', ' ', mb_strtolower($x))); };
+        $docs = [];
+        foreach (($r['docs'] ?? []) as $i => $x) {
+            if (empty($x['author_name']) || empty($x['author_key'])) continue;
+            $docs[] = ['x' => $x, 'exact' => $nz((string) ($x['title'] ?? '')) === $nz($q) ? 1 : 0, 'ed' => (int) ($x['edition_count'] ?? 0), 'i' => $i];
+        }
+        usort($docs, fn($a, $b) => $b['exact'] <=> $a['exact'] ?: $b['ed'] <=> $a['ed'] ?: $a['i'] <=> $b['i']); // Bücher mit genau diesem Titel und vielen Ausgaben zuerst, Sekundärliteratur danach
         $seenA = [];
-        foreach (($r['docs'] ?? []) as $x) {
-            $an = (array) ($x['author_name'] ?? []); $ak = (array) ($x['author_key'] ?? []); if (!$an || !$ak) continue;
+        foreach ($docs as $d) {
+            $x = $d['x']; $an = (array) $x['author_name']; $ak = (array) $x['author_key'];
             $k = (string) $ak[0]; if (isset($seenA[$k])) continue; $seenA[$k] = 1;
-            $out[] = ['name' => (string) $an[0], 'hint' => '„' . mb_substr((string) ($x['title'] ?? $q), 0, 80) . '“' . (!empty($x['first_publish_year']) ? ' · ' . $x['first_publish_year'] : ''), 'ext' => ['olid' => $k]];
+            $out[] = ['name' => (string) $an[0], 'hint' => '„' . mb_substr((string) ($x['title'] ?? $q), 0, 80) . '“' . (!empty($x['first_publish_year']) ? ' · ' . $x['first_publish_year'] : '') . ($d['ed'] > 1 ? ' · ' . $d['ed'] . ' Ausgaben' : ''), 'ext' => ['olid' => $k]];
             if (count($out) >= 8) break;
         }
     }
