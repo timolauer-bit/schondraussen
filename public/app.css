@@ -72,7 +72,7 @@ input[type=text],input[type=search],select,.field input{width:100%;border:1px so
 .arow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .arow .meta2{color:var(--muted);font:500 12px var(--font-mono)}.arow .acts{display:flex;gap:6px;flex-wrap:wrap}
 .tier{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px;margin-left:6px}
-footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px;display:grid;gap:6px;max-width:80ch}footer p{margin:0}footer a{color:var(--accent)}
+footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px;display:grid;gap:6px}footer p{margin:0}footer a{color:var(--accent)}
 
 /* Feinschliff nach der Claude-Version */
 .btn,.pill,.field input,.row-btn,input[type=search],input[type=text],select{border-radius:10px}
