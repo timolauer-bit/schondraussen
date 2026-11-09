@@ -59,7 +59,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 </head><body>
 <?php if ($app): ?>
 <div class="wrap">
-  <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Bücher, Musik, Filme und Serien an einem Ort. Mit Werkübersicht, Kalender und Amazon-Links.</p></div>
+  <header class="masthead"><div><h1>Schondraussen<span class="tld">.de</span></h1><p>Deine Bücher, Musik, Filme und Serien an einem Ort: Überblick über alles, was du kennst, plus Neuigkeiten und Serientermine.</p></div>
   <div class="whobox"><button class="who" id="who" type="button" title="Einstellungen"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><?= !empty($u['username']) ? htmlspecialchars($u['username']) : 'Mitglied Nr. ' . (int) $u['id'] ?> · <?= htmlspecialchars((string) ($u['email'] ?: 'ohne E-Mail')) ?></button><div class="whorow"><button class="ver" id="ver" type="button"></button><button class="ver" id="logoutTop" type="button" title="Von diesem Gerät abmelden">Abmelden</button></div></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
   <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
@@ -76,7 +76,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 <?php else: ?>
 <main<?= $u ? '' : ' class="land"' ?>>
 <h1>Schondraussen<span>.de</span></h1>
-<p>Deine Bücher, Musik, Filme und Serien an einem Ort.</p>
+<p>Deine Bücher, Musik, Filme und Serien an einem Ort: mit Überblick über alles, was du kennst, und Neuigkeiten zu dem, was du verfolgst.</p>
 <?php if ($u): ?>
   <div class="card"><p style="margin:0">Angemeldet als <b><?= htmlspecialchars((string) ($u['email'] ?: $u['username'])) ?></b> (Mitglied Nr. <?= (int) $u['id'] ?>).</p>
 <?php if (!empty($u['deleting'])): $until = date('d.m.Y', strtotime($u['delete_requested_at']) + 7 * 86400); ?>
@@ -139,11 +139,13 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     <div class="msg" id="msg" role="status"></div>
   </div>
   <section class="card pitch land-pitch" aria-labelledby="pitch-h">
-    <h2 id="pitch-h">Nie wieder eine Neuerscheinung verpassen</h2>
-    <p>Trag deine Lieblingsmusiker:innen, Autor:innen, Filme und Serien ein, kostenlos. Schondraussen.de zeigt dir, was sie schon veröffentlicht haben, und sagt dir Bescheid, sobald etwas Neues angekündigt wird.</p>
+    <h2 id="pitch-h">Behalte den Überblick und verpass nichts Neues</h2>
+    <p>Schondraussen.de ist deine persönliche Übersicht für Bücher, Musik, Filme und Serien, kostenlos. Du siehst auf einen Blick, was du schon gelesen, gehört oder gesehen hast, und erfährst automatisch, wenn es Neues gibt.</p>
     <ul>
-      <li><b>Alles an einem Ort:</b> Alben, Bücher, Filme und Serienstaffeln übersichtlich pro Eintrag.</li>
-      <li><b>Kalender:</b> Alle kommenden Veröffentlichungen auf einen Blick, bei Serien mit den einzelnen Folgen.</li>
+      <li><b>Deine Listen:</b> Alles, was du verfolgst, übersichtlich an einem Ort, mit dem Stand, was du schon kennst und was noch offen ist.</li>
+      <li><b>Werkübersicht:</b> Bei Autor:innen und Musiker:innen siehst du alle Bücher und Alben und sofort, welche du schon hast.</li>
+      <li><b>Neuigkeiten:</b> Neue Alben, Bücher und Staffeln tauchen automatisch bei deinen Einträgen auf, sobald sie angekündigt oder veröffentlicht werden.</li>
+      <li><b>Serientermine:</b> Der Kalender zeigt kommende Veröffentlichungen, bei Serien mit den einzelnen Folgen und Sendeterminen.</li>
       <li><b>Erinnerung per Mail:</b> Du wählst selbst, ob du bei der Ankündigung, am Erscheinungstag oder als Wochenübersicht informiert wirst.</li>
     </ul>
     <p>Registrieren, Einträge hinzufügen, fertig. Du wählst einen Benutzernamen, und dein Konto lässt sich jederzeit selbst löschen.</p>
