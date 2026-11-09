@@ -1073,14 +1073,15 @@
   function aboutPage() {
     var P = h('section', { class: 'panel infopanel aboutpanel' }, h('h2', { class: 'sec' }, 'Über mich'));
     P.append(h('section', { class: 'infosec' }, h('h3', null, 'Hallo und willkommen'),
-      h('p', null, 'Ich bin der Betreiber von Schondraussen.de. Die Seite ist entstanden, weil ich selbst den Überblick behalten wollte: was ich schon gelesen, gehört und gesehen habe, und was bei meinen Lieblingen als Nächstes erscheint.'),
-      h('p', null, 'Gebaut habe ich sie gemeinsam mit einer KI. Die Ideen, die Entscheidungen und das Ausprobieren kommen von mir, und ich betreibe die Seite als privates Projekt, ohne Firma dahinter.')));
+      h('p', null, 'Ich bin 49, wohne in Trier und arbeite im Bereich Medien. Schondraussen.de betreibe ich als privates Projekt, ohne Firma dahinter.'),
+      h('p', null, 'Die Idee dazu hatte ich schon vor über 25 Jahren: eine Übersicht, was ich schon gelesen, gehört und gesehen habe, und was bei meinen Lieblingen als Nächstes erscheint. Damals hatte ich weder eine Ahnung, wie man so etwas umsetzt, noch gab es die Möglichkeiten, die es heute gibt.'),
+      h('p', null, 'Gebaut habe ich die Seite jetzt gemeinsam mit einer KI. Die Ideen, die Entscheidungen und das Ausprobieren kommen von mir.')));
     function fig(src, alt, cap) { return h('figure', { class: 'aboutfig' }, h('img', { src: src, alt: alt, loading: 'lazy' }), h('figcaption', null, cap)); }
     P.append(h('section', { class: 'infosec' }, h('h3', null, 'Meine Assistenten'),
-      h('p', null, 'Bei der Arbeit an der Seite bekomme ich Unterstützung von zwei Kolleginnen, die streng auf Qualität achten, solange nichts Interessanteres im Karton ist.'),
+      h('p', null, 'Bei der Arbeit an der Seite bekomme ich Unterstützung von Matz und Lucy. Sie achten streng auf Qualität, solange nichts Interessanteres im Karton ist.'),
       h('div', { class: 'aboutfigs' },
-        fig('/about/katzen-karton.webp', 'Zwei Katzen schauen aus einem Pappkarton', 'Büroinspektion im Karton'),
-        fig('/about/katzen-monitor.webp', 'Zwei Katzen sitzen vor einem Monitor', 'Qualitätssicherung am Monitor'))));
+        fig('/about/katzen-karton.webp', 'Zwei Katzen schauen aus einem Pappkarton', 'Matz und Lucy bei der Büroinspektion im Karton'),
+        fig('/about/katzen-monitor.webp', 'Zwei Katzen sitzen vor einem Monitor', 'Matz und Lucy bei der Qualitätssicherung am Monitor'))));
     if (KOFI_URL) P.append(h('section', { class: 'infosec' }, h('h3', null, 'Die Seite unterstützen'),
       h('p', null, 'Schondraussen.de ist kostenlos und bleibt werbefrei. Die einzige geplante Einnahmequelle sind die Amazon-Partnerlinks. Wenn dir die Seite gefällt und du mir freiwillig etwas zukommen lassen möchtest, geht das hier:'),
       h('p', null, h('a', { class: 'btn small', href: KOFI_URL, target: '_blank', rel: 'noopener noreferrer' }, 'Auf Ko-fi unterstützen'))));
