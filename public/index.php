@@ -144,9 +144,8 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     <ul>
       <li><b>Deine Listen:</b> Alles, was du verfolgst, übersichtlich an einem Ort, mit dem Stand, was du schon kennst und was noch offen ist.</li>
       <li><b>Werkübersicht:</b> Bei Autor:innen und Musiker:innen siehst du alle Bücher und Alben und sofort, welche du schon hast.</li>
-      <li><b>Neuigkeiten:</b> Neue Alben, Bücher und Staffeln tauchen automatisch bei deinen Einträgen auf, sobald sie angekündigt oder veröffentlicht werden.</li>
+      <li><b>Neuigkeiten:</b> Neue Alben, Bücher und Staffeln tauchen automatisch bei deinen Einträgen auf, sobald sie angekündigt oder veröffentlicht werden. Auf Wunsch bekommst du eine Mail, bei der Ankündigung, am Erscheinungstag oder als Wochenübersicht.</li>
       <li><b>Serientermine:</b> Der Kalender zeigt kommende Veröffentlichungen, bei Serien mit den einzelnen Folgen und Sendeterminen.</li>
-      <li><b>Erinnerung per Mail:</b> Du wählst selbst, ob du bei der Ankündigung, am Erscheinungstag oder als Wochenübersicht informiert wirst.</li>
     </ul>
     <p>Registrieren, Einträge hinzufügen, fertig. Du wählst einen Benutzernamen, und dein Konto lässt sich jederzeit selbst löschen.</p>
   </section>
