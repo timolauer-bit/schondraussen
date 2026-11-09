@@ -1,7 +1,15 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
-  { v: 9, d: '08.11.2026', t: [
+  { v: 10, d: '09.11.2026', t: [
     'F|Info: neuer Reiter „Über mich“ mit ein paar Worten zur Seite und zu mir, den beiden Assistenten Matz und Lucy und dem Ko-fi-Link für freiwillige Unterstützung. „Nerdinfos“ sehen weiter nur Admin und Alphatester',
+    'U|Startseite: Der Text stellt jetzt Listen und Überblick in den Vordergrund und nennt Neuigkeiten (auf Wunsch per Mail) und Serientermine als eigene Punkte',
+    'U|Info: Die Einleitung nennt Neuigkeiten per Mail und im Kalender sowie die Community und die ähnlichen Vorschläge als Hilfe bei der Suche nach neuem Stoff',
+  ] },
+  { v: 9, d: '08.11.2026', t: [
+    'U|Menü auf dem Handy: Kalender und die vier Kategorien stehen in Zeile 1, die übrigen Punkte als Symbole in Zeile 2 (Zahlen hinter den Kategorien entfallen dort)',
+    'U|Einstellungen: Der Rahmen von „Konto löschen“ hat jetzt dieselbe Farbe wie die übrigen Karten',
+    'U|Community, Userdetails: Bei „Letzte 20 hinzugefügte Positionen“ steht kein Datum mehr',
+    'B|Info auf dem Handy: Die Seite war weiterhin zu breit, und die Tabelle bei „Entstehung und Aufwand“ ging über den Rand; beides passt jetzt',
     'U|Ideen und Bugs auf dem Handy: Die Reiter „Aktuell“, „Erledigt/Zurückgezogen“ und „Freischaltungen“ stehen jetzt in einer Zeile (etwas kleinere Schrift)',
     'B|Info-Seite auf dem Handy: Die Seite wurde durch die Tabellen breiter als der Bildschirm; Text bricht jetzt um, Tabellen scrollen in sich',
     'B|Admin-Listen (Nutzerverwaltung u. a.) auf dem Handy: Der Text wurde durch die breite Knopfreihe zerquetscht (ein Wort pro Zeile); die Knöpfe stehen jetzt unter dem Text',
