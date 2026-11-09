@@ -1068,7 +1068,7 @@
     mainEl.append(bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
   }
   /* ---------- Über mich (Info-Reiter, für alle) ---------- */
-  var ABOUT_PUBLIC = false; // auf true setzen, um „Über mich“ für alle freizugeben
+  var ABOUT_PUBLIC = true;
   var KOFI_URL = 'https://ko-fi.com/endymionmortis';
   function aboutPage() {
     var P = h('section', { class: 'panel infopanel aboutpanel' }, h('h2', { class: 'sec' }, 'Über mich'));
