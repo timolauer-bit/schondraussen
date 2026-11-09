@@ -1073,7 +1073,7 @@
   function aboutPage() {
     var P = h('section', { class: 'panel infopanel aboutpanel' }, h('h2', { class: 'sec' }, 'Über mich'));
     P.append(h('section', { class: 'infosec' }, h('h3', null, 'Hallo und willkommen'),
-      h('p', null, 'Ich bin 49, wohne in Trier und arbeite im Bereich Medien. Schondraussen.de betreibe ich als privates Projekt, ohne Firma dahinter.'),
+      h('p', null, 'Ich bin Timo, 49, wohne in Trier und arbeite im Bereich Medien. Schondraussen.de betreibe ich als privates Projekt, ohne Firma dahinter.'),
       h('p', null, 'Die Idee dazu hatte ich schon vor über 25 Jahren: eine Übersicht, was ich schon gelesen, gehört und gesehen habe, und was bei meinen Lieblingen als Nächstes erscheint. Damals hatte ich weder eine Ahnung, wie man so etwas umsetzt, noch gab es die Möglichkeiten, die es heute gibt.'),
       h('p', null, 'Gebaut habe ich die Seite jetzt gemeinsam mit einer KI. Die Ideen, die Entscheidungen und das Ausprobieren kommen von mir.')));
     function fig(src, alt, cap) { return h('figure', { class: 'aboutfig' }, h('img', { src: src, alt: alt, loading: 'lazy' }), h('figcaption', null, cap)); }
