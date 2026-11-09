@@ -530,7 +530,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     if (!$r) return ['ok' => false, 'msg' => 'Open Library nicht erreichbar.'];
     $seen = []; $works = []; $rel = []; $y = (int) date('Y');
     foreach (($r['docs'] ?? []) as $d) {
-        $t = trim((string) ($d['title'] ?? '')); if ($t === '') continue;
+        $t = trim((string) ($d['title'] ?? '')); if ($t === '' || preg_match('/^_*(none|null|n\/a|unknown|untitled)_*$/i', $t)) continue; // Platzhaltertitel der Quelle
         $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'mul'])) continue; // nur Werke mit deutscher Ausgabe (ohne Sprachangabe bleibt es drin)
         $k = mb_strtolower($t); if (isset($seen[$k])) continue; $seen[$k] = 1;
         $yr = (int) ($d['first_publish_year'] ?? 0);
@@ -544,10 +544,10 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $have = $pdo->prepare('SELECT k,first_seen FROM work_seen WHERE subject_id=?'); $have->execute([$sid]); $H = $have->fetchAll(PDO::FETCH_KEY_PAIR); $first = !$H;
         $insS = $pdo->prepare('INSERT IGNORE INTO work_seen (subject_id,k,first_seen) VALUES (?,?,?)');
         $today = date('Y-m-d'); $limit = date('Y-m-d', strtotime('-28 days')); $nNew = 0; $relT = []; foreach ($rel as $x) $relT[mb_strtolower($x[0])] = 1;
-        foreach ($works as $x) {
+        foreach ($works as $x) { // nur aktuelle Jahrgänge (ab Vorjahr) gelten als neu; alte Bücher, die die Quelle nachträgt, sind keine Neuerscheinung
             $k = sha1(mb_strtolower($x[0]));
             if (!isset($H[$k])) { $H[$k] = $first ? '2000-01-01' : $today; $insS->execute([$sid, $k, $H[$k]]); }
-            if ($H[$k] >= $limit && $nNew < 10 && !isset($relT[mb_strtolower($x[0])])) { $nNew++; $rel[] = [$x[0], (string) ($x[1] ?: $y), 'Buch', 'neu hinzugefügt']; }
+            if ($H[$k] >= $limit && $nNew < 10 && (int) $x[1] >= $y - 1 && !isset($relT[mb_strtolower($x[0])])) { $nNew++; $rel[] = [$x[0], (string) ($x[1] ?: $y), 'Buch', 'neu hinzugefügt']; }
         }
     } catch (Throwable $e) {}
     $pdo->beginTransaction();
