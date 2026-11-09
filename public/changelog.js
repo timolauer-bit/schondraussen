@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 9, d: '08.11.2026', t: [
+    'F|Info: neuer Reiter „Über mich“ mit ein paar Worten zur Seite, den beiden Assistenten und dem Ko-fi-Link für freiwillige Unterstützung. Die Reiter „Info“ und „Über mich“ sehen alle, „Nerdinfos“ nur Admin und Alphatester',
     'U|Ideen und Bugs auf dem Handy: Die Reiter „Aktuell“, „Erledigt/Zurückgezogen“ und „Freischaltungen“ stehen jetzt in einer Zeile (etwas kleinere Schrift)',
     'B|Info-Seite auf dem Handy: Die Seite wurde durch die Tabellen breiter als der Bildschirm; Text bricht jetzt um, Tabellen scrollen in sich',
     'B|Admin-Listen (Nutzerverwaltung u. a.) auf dem Handy: Der Text wurde durch die breite Knopfreihe zerquetscht (ein Wort pro Zeile); die Knöpfe stehen jetzt unter dem Text',

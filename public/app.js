@@ -1058,14 +1058,32 @@
       if (r.top_percent) mine.append(h('p', { style: 'margin:6px 0 10px;font-weight:600' }, 'Du gehörst zu den ' + r.top_percent + ' % der aktivsten Nutzer.'), h('p', { class: 'hint', style: 'margin:-6px 0 10px' }, 'Gezählt werden Einträge, eingereichte Ideen und Bugs sowie gesendete Chatnachrichten, im Vergleich mit allen aktiven Nutzern.')); var dl = h('dl', { class: 'mystats' }); rows.forEach(function (x) { dl.append(h('dt', null, x[0]), h('dd', null, x[1])); }); mine.append(dl);
     });
     d.append(effortSection());
-    if (!nerdOn()) { mainEl.append(d); return; }
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
+    var tabs = [['info', 'Info'], ['about', 'Über mich']]; if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
     function showTab(k) {
-      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : d);
+      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'about' ? aboutPage() : d);
       btns.forEach(function (b) { var on = b.k === k; b.el.className = 'admtab' + (on ? ' on' : ''); b.el.setAttribute('aria-selected', on ? 'true' : 'false'); });
     }
-    [['info', 'Info'], ['nerd', 'Nerdinfos']].forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); btns.push({ k: x[0], el: b }); bar.append(b); });
-    mainEl.append(bar, holder); showTab(S.infoTab === 'nerd' ? 'nerd' : 'info');
+    tabs.forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); btns.push({ k: x[0], el: b }); bar.append(b); });
+    mainEl.append(bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
+  }
+  /* ---------- Über mich (Info-Reiter, für alle) ---------- */
+  var KOFI_URL = 'https://ko-fi.com/endymionmortis';
+  function aboutPage() {
+    var P = h('section', { class: 'panel infopanel aboutpanel' }, h('h2', { class: 'sec' }, 'Über mich'));
+    P.append(h('section', { class: 'infosec' }, h('h3', null, 'Hallo und willkommen'),
+      h('p', null, 'Ich bin der Betreiber von Schondraussen.de. Die Seite ist entstanden, weil ich selbst den Überblick behalten wollte: was ich schon gelesen, gehört und gesehen habe, und was bei meinen Lieblingen als Nächstes erscheint.'),
+      h('p', null, 'Gebaut habe ich sie gemeinsam mit einer KI. Die Ideen, die Entscheidungen und das Ausprobieren kommen von mir, und ich betreibe die Seite als privates Projekt, ohne Firma dahinter.')));
+    function fig(src, alt, cap) { return h('figure', { class: 'aboutfig' }, h('img', { src: src, alt: alt, loading: 'lazy' }), h('figcaption', null, cap)); }
+    P.append(h('section', { class: 'infosec' }, h('h3', null, 'Meine Assistenten'),
+      h('p', null, 'Bei der Arbeit an der Seite bekomme ich Unterstützung von zwei Kolleginnen, die streng auf Qualität achten, solange nichts Interessanteres im Karton ist.'),
+      h('div', { class: 'aboutfigs' },
+        fig('/about/katzen-karton.webp', 'Zwei Katzen schauen aus einem Pappkarton', 'Büroinspektion im Karton'),
+        fig('/about/katzen-monitor.webp', 'Zwei Katzen sitzen vor einem Monitor', 'Qualitätssicherung am Monitor'))));
+    if (KOFI_URL) P.append(h('section', { class: 'infosec' }, h('h3', null, 'Die Seite unterstützen'),
+      h('p', null, 'Schondraussen.de ist kostenlos und bleibt werbefrei. Die einzige geplante Einnahmequelle sind die Amazon-Partnerlinks. Wenn dir die Seite gefällt und du mir freiwillig etwas zukommen lassen möchtest, geht das hier:'),
+      h('p', null, h('a', { class: 'btn small', href: KOFI_URL, target: '_blank', rel: 'noopener noreferrer' }, 'Auf Ko-fi unterstützen'))));
+    return P;
   }
   function logView() {
     var staffLog = !!D.nerd && !S.preview, nNew = staffLog ? logBadge() : 0;
