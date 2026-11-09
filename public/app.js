@@ -1059,7 +1059,7 @@
     });
     d.append(effortSection());
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
-    var tabs = [['info', 'Info'], ['about', 'Über mich']]; if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
+    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
     function showTab(k) {
       S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'about' ? aboutPage() : d);
       btns.forEach(function (b) { var on = b.k === k; b.el.className = 'admtab' + (on ? ' on' : ''); b.el.setAttribute('aria-selected', on ? 'true' : 'false'); });
@@ -1068,6 +1068,7 @@
     mainEl.append(bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
   }
   /* ---------- Über mich (Info-Reiter, für alle) ---------- */
+  var ABOUT_PUBLIC = false; // auf true setzen, um „Über mich“ für alle freizugeben
   var KOFI_URL = 'https://ko-fi.com/endymionmortis';
   function aboutPage() {
     var P = h('section', { class: 'panel infopanel aboutpanel' }, h('h2', { class: 'sec' }, 'Über mich'));
