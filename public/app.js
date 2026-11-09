@@ -763,10 +763,11 @@
       box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Konto löschen'), h('p', { class: 'hint' }, 'Du kannst dein Konto samt aller Einträge jederzeit löschen lassen.'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { dbox.hidden = !dbox.hidden; if (!dbox.hidden) pw.focus(); } }, 'Konto löschen …'), dbox));
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
-    st.append(setCard('Profil', [K[0], K[1]]), setCard('Darstellung', [K[2]], 'solo'), setCard('Benachrichtigungen', [K[3]], 'solo'), setCard('Import', [K[4]], 'solo'), setCard('Kalender-Abo', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[6]], 'solo'));
-    if (K[10]) K[10].classList.add('dangerzone');
-    st.append(setCard('Privatsphäre', [K[7], K[8]], 'solo'), setCard('Meine Daten', [K[9]], 'solo'));
-    if (K[10]) st.append(setCard('Konto löschen', [K[10]], 'danger solo'));
+    // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
+    st.append(setCard('Profil', [K[0], K[1], K[2]]), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    if (K[12]) K[12].classList.add('dangerzone');
+    st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'), setCard('Meine Daten', [K[9], K[11]], 'solo'));
+    if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     p.append(st); mainEl.append(p);
   }
 

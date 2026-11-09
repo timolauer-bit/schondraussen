@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 10, d: '09.11.2026', t: [
+    'B|Einstellungen: Die Überschriften der Karten waren durch den neuen Wiederherstellungscode verrutscht (Code stand unter „Darstellung“); jetzt steht er unter „Profil“, und alle Karten haben wieder die richtige Überschrift',
     'B|Bücher: Platzhaltertitel wie „None“ aus der Quelle werden ignoriert, und alte Bücher, die die Quelle nur nachträgt, erscheinen nicht mehr als „neu hinzugefügt“ bei den kommenden Veröffentlichungen',
     'A|Admin → Registrierung: Wartende Konten stehen jetzt direkt unter „Neue Konten manuell freischalten“ und lassen sich dort mit einem Klick freischalten',
     'U|Info, Amazon-Links: Ein kleines „?“ erklärt, wie lange ein Klick auf einen Amazon-Link gilt (24 Stunden, mit Warenkorb länger)',
