@@ -332,6 +332,34 @@
     return wrap;
   }
   function on_(b) { return b ? ICONS.bell : ICONS.bellOff; }
+  function nextBox(e, r, up, t) {
+    var now = today0(), nxt = null, node = h('aside', { class: 'nextbox' });
+    up.slice().sort(function (a, b) { return a.p.sort - b.p.sort; }).forEach(function (it) { if (!nxt && it.p.prec !== 'none' && it.p.end >= now) nxt = it; });
+    var cap = e.type === 'series' ? 'Nächste Folge' : e.type === 'podcast' ? 'Neueste Folge' : 'Nächster Termin';
+    if (e.type === 'podcast') nxt = up.length ? up.slice().sort(function (a, b) { return b.p.sort - a.p.sort; })[0] : null;
+    node.append(h('small', null, cap));
+    if (nxt) {
+      var p = nxt.p, big, diff = p.prec === 'day' ? Math.round((p.start - now) / 864e5) : null;
+      if (e.type === 'podcast') big = diff === null ? '' : diff === 0 ? 'heute' : diff === -1 ? 'gestern' : 'vor ' + (-diff) + ' Tagen';
+      else big = p.prec === 'day' ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : p.prec === 'month' ? MSHORT.format(p.start).replace('.', '') + ' ' + p.y : String(p.y);
+      var when = p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? 'Monat bekannt' : 'Jahr bekannt';
+      node.append(h('b', { class: 'nbig' }, big), h('div', { class: 'nline' }, nxt.u.title), h('div', { class: 'nsub' }, when));
+    } else node.append(h('b', { class: 'nbig none' }, e.type === 'podcast' ? 'nichts neu' : 'offen'), h('div', { class: 'nsub' }, e.type === 'podcast' ? 'Keine Folge in den letzten 14 Tagen.' : 'Noch nichts angekündigt.'));
+    var st = h('div', { class: 'nstats' }), prog = null, a1 = null, a2 = null;
+    if (e.type === 'series') {
+      var eps = r.episodes || [], seas = {}; eps.forEach(function (x) { seas[x.season] = 1; });
+      st.append(h('span', null, h('b', null, Object.keys(seas).length), ' ' + (Object.keys(seas).length === 1 ? 'Staffel' : 'Staffeln')), h('span', null, h('b', null, eps.length), ' ' + (eps.length === 1 ? 'Folge' : 'Folgen')));
+      var gs = h('span', null); node.append(st, h('div', { class: 'nstats' }, gs));
+      prog = function (n, tot) { gs.textContent = ''; gs.append(h('b', null, n), ' von ' + tot + ' gesehen'); };
+      var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
+    } else {
+      var tot = Math.max(+e.total_works || 0, r.works.length), dn2 = doneSetOf(r), c1 = 0; r.works.forEach(function (w) { if (dn2[w.k]) c1++; });
+      if (tot) st.append(h('span', null, h('b', null, tot), ' ' + (e.type === 'author' ? 'Bücher' : e.type === 'artist' ? 'Alben' : e.type === 'podcast' ? 'Folgen' : 'Werke')));
+      if (r.works.length && e.type !== 'podcast') { var dv0 = (DONEV[e.type] || DONEV.artist)[0]; st.append(h('span', null, h('b', null, c1), ' ' + dv0)); }
+      if (st.childNodes.length) node.append(st);
+    }
+    return { node: node, prog: prog };
+  }
   function entryCard(cur, r) {
     var e = r.entry, card = h('article', { class: 'card cat-' + e.type, style: '--cc:' + CATCOL[e.type] }), t = TYPES[e.type];
     var stamp = e.fetched_at ? 'Stand ' + LONG.format(new Date(e.fetched_at.replace(' ', 'T'))) : '';
@@ -368,21 +396,25 @@
     else if (e.fetched_at && e.type !== 'film' && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
     if (!e.fetched_at && e.type !== 'film') { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
     if (e.type === 'film') card.append(h('p', { class: 'state' }, 'Für Filme wird die Datenquelle noch angebunden. Der Eintrag steht schon auf deiner Liste.'));
+    var sumNode = null;
     if (e.summary) {
       var sp = h('p', { class: 'sum' }, e.summary);
       if (e.summary.length > 320) {
         sp.classList.add('clamp');
         var mb = h('button', { class: 'sumtoggle', type: 'button', 'aria-expanded': 'false' }, 'Mehr anzeigen');
         mb.addEventListener('click', function () { var open = sp.classList.toggle('clamp') === false; mb.textContent = open ? 'Weniger anzeigen' : 'Mehr anzeigen'; mb.setAttribute('aria-expanded', open ? 'true' : 'false'); });
-        card.append(h('div', { class: 'sumbox' }, sp, mb));
-      } else card.append(h('div', { class: 'sumbox' }, sp));
+        sumNode = h('div', { class: 'sumbox' }, sp, mb);
+      } else sumNode = h('div', { class: 'sumbox' }, sp);
     }
     var up = r.releases.map(function (x) { return { e: e, p: parseDate(x.release_date), u: { title: x.title, date: x.release_date, kind: x.kind || '', note: x.note || '' } }; });
+    var nb = nextBox(e, r, up, t);
+    card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
+    var progCb = nb.prog;
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     card.append(h('h3', { class: 'sec' }, e.type === 'podcast' ? 'Neue Folgen (letzte 14 Tage)' : 'Kommende Veröffentlichungen'));
     if (e.type === 'author') card.append(h('p', { class: 'warnbox' }, h('b', null, 'Hinweis: '), (up.length ? 'Die frei verfügbaren Buch-Schnittstellen liefern nur wenige zukünftige Bücher. Meist kommen Bücher erst nach dem Erscheinen dazu. Darum stehen hier auch Bücher, die in den letzten 4 Wochen neu bei der Quelle hinzugekommen sind („neu hinzugefügt“).' : 'Die frei verfügbaren Buch-Schnittstellen liefern nur wenige zukünftige Bücher. Zurzeit ist hier nichts angekündigt, und in den letzten 4 Wochen ist bei der Quelle auch nichts Neues dazugekommen. Sobald sich das ändert, erscheint es hier und du bekommst eine Mail, wenn du sie eingeschaltet hast.')));
     if (up.length) up.forEach(function (it) { card.append(relRow(it)); }); else card.append(h('p', { class: 'state' }, e.type === 'podcast' ? 'Keine neuen Folgen in den letzten 14 Tagen.' : 'Keine angekündigten Termine bekannt.'));
-    if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes, doneSetOf(r))); card.append(renderSimilar(e)); return card; }
+    if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes, doneSetOf(r), progCb)); card.append(renderSimilar(e)); return card; }
     if (e.type === 'series' && e.fetched_at && !S.epTried[e.id]) { S.epTried[e.id] = 1; refresh(cur, true); }
     card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : 'Bekannte Werke'));
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
@@ -476,20 +508,29 @@
   var DONEV = { podcast: ['gehört', 'Noch nicht gehört', 'headphones'], series: ['gesehen', 'Noch nicht gesehen', 'eye'], film: ['gesehen', 'Noch nicht gesehen', 'eye'], artist: ['gehört', 'Noch nicht gehört', 'headphones'], author: ['gelesen', 'Noch nicht gelesen', 'book'] };
   function setDone(e, keys, on, cb) { api('/api/data.php?a=done', { id: e.id, keys: keys, on: on ? 1 : 0 }).then(function (x) { if (x && x.ok) cb(); else if (x && x.error) window.alert(x.error); }); }
   function doneSetOf(r) { var o = {}; (r.done || []).forEach(function (k) { o[k] = 1; }); return o; }
-  function renderEpisodes(e, eps, done) {
+  function renderEpisodes(e, eps, done, progCb) {
     done = done || {};
-    var now = today0(), box = h('div', null), by = {};
+    var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null;
     box.append(h('h3', { class: 'sec' }, 'Staffeln und Folgen'));
     box.append(h('p', { class: 'note' }, 'Folgen und Sendetermine von ', h('a', { href: e.tvmaze ? 'https://www.tvmaze.com/shows/' + e.tvmaze : 'https://www.tvmaze.com', target: '_blank', rel: 'noopener noreferrer' }, 'TVmaze'),
       e.fetched_at ? ', Stand ' + LONG.format(new Date(e.fetched_at.replace(' ', 'T'))) : '', e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
     eps.forEach(function (x) { (by[x.season] = by[x.season] || []).push(x); });
-    Object.keys(by).map(Number).sort(function (a, b) { return a - b; }).forEach(function (sn) {
+    var nums = Object.keys(by).map(Number).sort(function (a, b) { return a - b; }), liveSeason = null;
+    function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); }
+    function pick(sn) { sel = sn; nums.forEach(function (n) { var on = n === sn; tiles[n].classList.toggle('on', on); tiles[n].setAttribute('aria-selected', on ? 'true' : 'false'); panels[n].hidden = !on; }); }
+    nums.forEach(function (sn) {
       var l = by[sn], fut = 0; l.forEach(function (x) { var p = x.airdate ? parseDate(x.airdate) : null; if (p && p.prec !== 'none' && p.end >= now) fut++; });
       var past = l.length - fut, live = fut > 0, state = !live ? 'abgeschlossen' : past === 0 ? 'startet bald' : 'läuft gerade';
-      var prog = h('span', { class: 'pill', title: 'So viele Folgen dieser Staffel hast du als gesehen markiert. Nur für dich sichtbar.' }), cks = [], allBtn = h('button', { class: 'btn ghost small', type: 'button' });
-      function upd() { var n = cks.filter(function (c) { return done[c.k]; }).length; prog.textContent = n + ' von ' + l.length + ' gesehen'; prog.className = 'pill' + (n === l.length ? ' on' : ''); allBtn.textContent = n === l.length ? 'Staffel zurücksetzen' : 'Staffel als gesehen markieren';
-        cks.forEach(function (c) { c.b.className = 'ck' + (done[c.k] ? ' on' : ''); c.b.setAttribute('aria-pressed', done[c.k] ? 'true' : 'false'); c.b.textContent = done[c.k] ? '✓' : ''; }); }
-      var det = h('details', { class: 'season', open: live ? true : null }, h('summary', null, 'Staffel ' + sn, h('span', { class: 'sub' }, ' · ' + pl(l.length, 'Folge', 'Folgen') + ' · '), h('span', { class: live ? 'soon' : 'sub' }, state), ' ', prog));
+      if (live && liveSeason === null) liveSeason = sn;
+      var cks = [], allBtn = h('button', { class: 'btn ghost small', type: 'button' }), fill = h('i'), prog = h('span', { class: 'sprog' });
+      var tile = h('button', { class: 's', type: 'button', role: 'tab', title: 'So viele Folgen dieser Staffel hast du als gesehen markiert. Nur für dich sichtbar.' }, h('b', null, 'Staffel ' + sn), h('span', null, pl(l.length, 'Folge', 'Folgen') + ' · ' + state), h('span', { class: 'bar' }, fill), prog);
+      tile.addEventListener('click', function () { pick(sn); });
+      tiles[sn] = tile; strip.append(tile);
+      function upd() { var n = cks.filter(function (c) { return done[c.k]; }).length; prog.textContent = n + ' von ' + l.length + ' gesehen'; fill.style.width = (l.length ? Math.round(100 * n / l.length) : 0) + '%'; tile.classList.toggle('full', n === l.length);
+        allBtn.textContent = n === l.length ? 'Staffel zurücksetzen' : 'Staffel als gesehen markieren';
+        cks.forEach(function (c) { c.b.className = 'ck' + (done[c.k] ? ' on' : ''); c.b.setAttribute('aria-pressed', done[c.k] ? 'true' : 'false'); c.b.textContent = done[c.k] ? '✓' : ''; }); total(); }
+      var det = h('div', { class: 'season', role: 'tabpanel', hidden: true });
+      panels[sn] = det;
       l.forEach(function (x) {
         var p = x.airdate ? parseDate(x.airdate) : null, ok = p && p.prec === 'day', isFut = ok && p.end >= now, diff = ok ? Math.round((p.start - now) / 864e5) : 0;
         var when = ok ? WDAY.format(p.start).replace('.', '') + ', ' + LONG.format(p.start) : 'Datum offen', stat = isFut ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : (ok ? 'gezeigt' : '');
@@ -499,10 +540,10 @@
         if (+x.has_sum) {
           var ib = h('button', { class: 'epinfo', type: 'button', 'aria-label': 'Kurzfassung der Folge ' + x.number + ' anzeigen' }, 'i'), loaded = false, shown = false;
           sbox = h('div', { class: 'epsum', role: 'tooltip', hidden: true });
-          function show(on) {
+          var show = function (on) {
             shown = on; sbox.hidden = !on; ib.setAttribute('aria-expanded', on ? 'true' : 'false');
             if (on && !loaded) { loaded = true; sbox.textContent = 'Lade …'; api('/api/data.php?a=episum&id=' + e.id + '&s=' + x.season + '&n=' + x.number).then(function (r) { sbox.textContent = r && r.text ? r.text : 'Keine Zusammenfassung vorhanden.'; if (r && r.text) sbox.append(h('div', { class: 'sub' }, 'Achtung: kann Spoiler enthalten.')); }); }
-          }
+          };
           ib.addEventListener('click', function () { show(!shown); });
           if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
           ttl.append(' ', ib);
@@ -514,6 +555,8 @@
       det.append(h('div', { class: 'season-foot' }, allBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)));
       box.append(det);
     });
+    box.insertBefore(strip, panels[nums[0]]);
+    pick(liveSeason !== null ? liveSeason : nums[nums.length - 1]);
     return box;
   }
   function toast(msg) {

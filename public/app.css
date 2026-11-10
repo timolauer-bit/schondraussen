@@ -594,3 +594,25 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .epcell{position:relative;min-width:0}
 .epsum{position:absolute;z-index:25;left:0;top:calc(100% + 2px);width:min(420px,calc(100vw - 48px));margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:14px;line-height:1.55;font-weight:400;white-space:normal}
 .epsum[hidden]{display:none}.epsum .sub{margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+
+/* Eintragsseite: Beschreibung und Kasten „Nächster Termin“ nebeneinander */
+.card .hero{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:22px;align-items:start;margin:16px 0 8px}
+.card .hero.solo{grid-template-columns:minmax(0,320px)}
+.card .hero .sumbox{margin:0}
+.nextbox{border:1px solid var(--accent);border-radius:12px;padding:14px 16px;background:var(--accent-soft);color:var(--ink)}
+.nextbox small{display:block;color:var(--muted);font-size:12.5px}
+.nextbox .nbig{display:block;font:700 30px/1.15 var(--font-display);color:var(--accent);margin:2px 0 4px;overflow-wrap:anywhere}.nextbox .nbig.none{font-size:22px;color:var(--muted)}
+.nextbox .nline{font-size:14px;line-height:1.35;font-weight:600;overflow-wrap:anywhere}.nextbox .nsub{font-size:13px;color:var(--muted)}
+.nextbox .nstats{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}.nextbox .nstats b{color:var(--ink);font:700 15px var(--font-display)}
+@media(max-width:760px){.card .hero,.card .hero.solo{grid-template-columns:minmax(0,1fr)}}
+/* Staffeln als Filmstreifen-Reiter */
+.strip{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
+.strip .s{position:relative;text-align:left;border:1px solid var(--line);border-radius:10px;padding:20px 14px 16px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:150px;font:inherit}
+.strip .s:before,.strip .s:after{content:"";position:absolute;left:8px;right:8px;height:5px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--line) 0 7px,transparent 7px 14px)}
+.strip .s:before{top:6px}.strip .s:after{bottom:6px}
+.strip .s b{display:block;font:700 17px var(--font-display)}.strip .s>span{display:block;font-size:12.5px;color:var(--muted)}
+.strip .s .bar{display:block;height:5px;border-radius:5px;background:var(--line);margin-top:8px;overflow:hidden}.strip .s .bar i{display:block;height:100%;width:0;background:#3b7d3f}
+.strip .s .sprog{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.strip .s:hover{border-color:var(--accent)}.strip .s.on{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.strip .s.on b{color:var(--accent)}
+.strip .s:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.season[hidden]{display:none}.season{margin-top:6px}
