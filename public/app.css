@@ -572,3 +572,11 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .epinfo{font:italic 700 .72rem/1 Georgia,serif;width:1.25rem;height:1.25rem;border-radius:50%;border:1px solid currentColor;background:none;color:inherit;opacity:.6;cursor:pointer;vertical-align:middle;padding:0}.epinfo:hover,.epinfo:focus-visible,.epinfo[aria-expanded=true]{opacity:1}
 .epsum{margin:0 0 .5rem 70px;padding:.5rem .7rem;border-left:3px solid currentColor;font-size:.9rem;line-height:1.45;background:rgba(0,0,0,.04);border-radius:0 4px 4px 0}.epsum[hidden]{display:none}.epsum .sub{margin-top:.3rem;font-size:.8rem}
 .season-foot .btn,.season-foot .go,.sim .btn.small,p>.btn.ghost.small{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:32px;padding:0 12px;font-size:13px;font-weight:600;line-height:1;border-radius:8px}
+/* Obere Leiste: Abstände und Schrift passen sich der Breite an, damit sie einzeilig bleibt */
+@media(min-width:761px){
+  .topbar{gap:0 clamp(6px,1.2vw,22px);padding-inline:clamp(8px,1.1vw,16px)}
+  .navmain .nav{font-size:clamp(14px,1.3vw,17px);gap:clamp(4px,.45vw,7px)}
+  .nav.ionly{padding-inline:clamp(3px,.4vw,6px)}
+  .nav.rg::before{left:calc(clamp(6px,1.2vw,22px) / -2 - 1px)}
+}
+@media(min-width:761px) and (max-width:1250px){.navmain .nav small{display:none}}
