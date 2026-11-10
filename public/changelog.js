@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'F|Serien: Bei vielen Folgen gibt es jetzt ein kleines ⓘ mit einer Kurzfassung der Folge (Mauszeiger darüber oder antippen). Englische Texte werden ins Deutsche übersetzt. Achtung, kann Spoiler enthalten.',
     'U|Genres: Bei Büchern und Musik werden viele Einzelbezeichnungen zu wenigen Hauptgenres zusammengefasst (z. B. Science-Fiction, Fantasy, Krimi & Thriller; bei Musik Rock, Metal, Elektronik, Pop), in Filter und Genre-Schildern',
     'U|Kalender: Podcast-Folgen erscheinen nur noch für den laufenden Monat (auch bereits erschienene), nicht mehr aus dem Vormonat; gilt auch für das Kalender-Abo',
     'U|Obere Leiste: Mit der Kategorie Podcasts wurde sie zu breit und brach in eine zweite Zeile um; Abstände und Symbole sind jetzt enger, auf dem Handy passen auch acht Symbole in die zweite Zeile',

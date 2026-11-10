@@ -94,7 +94,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     $seasons = []; $today = date('Y-m-d'); $rel = []; $epRows = [];
     foreach ($eps as $e) {
         $n = (int) ($e['season'] ?? 0); if ($n < 1) continue;
-        $epRows[] = [$n, (int) ($e['number'] ?? 0), mb_substr((string) ($e['name'] ?? ''), 0, 255), (string) ($e['airdate'] ?? '')];
+        $epRows[] = [$n, (int) ($e['number'] ?? 0), mb_substr((string) ($e['name'] ?? ''), 0, 255), (string) ($e['airdate'] ?? ''), clean_text((string) ($e['summary'] ?? ''), 700)];
         $seasons[$n] = $seasons[$n] ?? ['n' => 0, 'first' => null];
         $seasons[$n]['n']++;
         $d = $e['airdate'] ?? '';
@@ -103,7 +103,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     }
     $pdo->beginTransaction();
     try {
-        $ext['tvmaze'] = (int) $show['id']; $ext['tv_status'] = (string) ($show['status'] ?? '');
+        $ext['tvmaze'] = (int) $show['id']; $ext['tv_status'] = (string) ($show['status'] ?? ''); $ext['lang'] = (string) ($show['language'] ?? '');
         $genres = $show['genres'] ?? [];
         $sumTxt = clean_text($show['summary'] ?? '', 600);
         if ($sumTxt !== '' && !in_array((string) ($show['language'] ?? ''), ['German', ''], true)) { // englische Beschreibung einmal übersetzen und merken
@@ -123,9 +123,20 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     try { // Folgenliste (Tabelle kann in älteren Ständen fehlen)
+        $old = [];
+        try { $oq = $pdo->prepare('SELECT season,number,summary,summary_de FROM episodes WHERE subject_id=?'); $oq->execute([$sid]); foreach ($oq->fetchAll() as $o) $old[$o['season'] . '-' . $o['number']] = $o; } catch (Throwable $t) { $old = null; }
         $pdo->prepare('DELETE FROM episodes WHERE subject_id=?')->execute([$sid]);
-        $q = $pdo->prepare('INSERT INTO episodes (subject_id,season,number,title,airdate) VALUES (?,?,?,?,?)');
-        foreach (array_slice($epRows, 0, 1500) as $x) $q->execute([$sid, $x[0], $x[1], $x[2] ?: null, $x[3] ?: null]);
+        if ($old !== null) {
+            $q = $pdo->prepare('INSERT INTO episodes (subject_id,season,number,title,airdate,summary,summary_de) VALUES (?,?,?,?,?,?,?)');
+            foreach (array_slice($epRows, 0, 1500) as $x) {
+                $o = $old[$x[0] . '-' . $x[1]] ?? null;
+                $de = ($o && $x[4] !== '' && (string) $o['summary'] === $x[4]) ? $o['summary_de'] : null; // Übersetzung behalten, wenn Text gleich
+                $q->execute([$sid, $x[0], $x[1], $x[2] ?: null, $x[3] ?: null, $x[4] ?: null, $de]);
+            }
+        } else {
+            $q = $pdo->prepare('INSERT INTO episodes (subject_id,season,number,title,airdate) VALUES (?,?,?,?,?)');
+            foreach (array_slice($epRows, 0, 1500) as $x) $q->execute([$sid, $x[0], $x[1], $x[2] ?: null, $x[3] ?: null]);
+        }
     } catch (Throwable $e) {}
     return ['ok' => true, 'msg' => count($seasons) . ' Staffeln, ' . count($rel) . ' kommende Folgen'];
 }

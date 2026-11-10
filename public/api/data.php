@@ -331,13 +331,33 @@ if ($a === 'done' && $_SERVER['REQUEST_METHOD'] === 'POST') { // gesehen / geles
     } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
+if ($a === 'episum') { // Kurzfassung einer Serienfolge (bei Bedarf übersetzt und gemerkt)
+    $sid = (int) ($_GET['id'] ?? 0); $se = (int) ($_GET['s'] ?? 0); $nu = (int) ($_GET['n'] ?? 0);
+    try {
+        $c = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $c->execute([$u['id'], $sid]);
+        if (!$c->fetchColumn()) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
+        $q = $pdo->prepare('SELECT e.summary,e.summary_de,s.external_ids FROM episodes e JOIN subjects s ON s.id=e.subject_id WHERE e.subject_id=? AND e.season=? AND e.number=?'); $q->execute([$sid, $se, $nu]);
+        $r = $q->fetch();
+        if (!$r || (string) $r['summary'] === '') json_out(['text' => '']);
+        $txt = (string) $r['summary_de'];
+        if ($txt === '') {
+            $lang = (string) ((json_decode($r['external_ids'] ?: '{}', true) ?: [])['lang'] ?? '');
+            $txt = (string) $r['summary'];
+            if (!in_array($lang, ['German', ''], true) && ($tr = translate_de($txt, 'EN')) !== null) {
+                $txt = $tr;
+                $pdo->prepare('UPDATE episodes SET summary_de=? WHERE subject_id=? AND season=? AND number=?')->execute([mb_substr($tr, 0, 900), $sid, $se, $nu]);
+            }
+        }
+        json_out(['text' => $txt]);
+    } catch (Throwable $t) { json_out(['text' => '']); }
+}
 if ($a === 'entry') {
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
     $e = $s->fetch(); if ($e && $e['type'] === 'podcast' && !podcast_ok($u)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
     $eps = [];
-    if ($e['type'] === 'series') { try { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); $eps = $q->fetchAll(); } catch (Throwable $t) {} }
+    if ($e['type'] === 'series') { try { try { $q = $pdo->prepare("SELECT season,number,title,airdate,(summary IS NOT NULL AND summary<>'') AS has_sum FROM episodes WHERE subject_id=? ORDER BY season, number"); $q->execute([$id]); } catch (Throwable $t2) { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); } $eps = $q->fetchAll(); } catch (Throwable $t) {} }
     $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);
     $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
     $works = $w->fetchAll(); foreach ($works as &$x) $x['k'] = done_key_work($x['title'], $x['year']); unset($x);

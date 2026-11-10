@@ -7,6 +7,9 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+ '057_episode_summary' => [
+  "ALTER TABLE episodes ADD COLUMN summary VARCHAR(700) NULL, ADD COLUMN summary_de VARCHAR(900) NULL",
+ ],
  '056_hide_cats' => [
   "ALTER TABLE users ADD COLUMN hide_cats VARCHAR(60) NULL",
  ],
