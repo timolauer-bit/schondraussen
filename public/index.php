@@ -5,6 +5,8 @@ require_once __DIR__ . '/lib/anon.php';
 header('Content-Type: text/html; charset=utf-8');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
+$nonce = base64_encode(random_bytes(16));
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-$nonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 $u = null; try { $u = current_user(); } catch (Throwable $e) {}
 $app = $u && !empty($u['approved']);
 $shots = [];
@@ -70,7 +72,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
-<script>window.SD = <?= json_encode(['approval' => approval_required(), 'alpha' => is_alpha($u), 'podcast' => podcast_ok($u), 'hidecats' => hidecats_ok($u), 'hide' => hidden_cats($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'community' => (isset($u['community']) && $u['community'] !== null) ? (int) $u['community'] === 1 : $u['role'] === 'admin', 'community_asked' => (isset($u['community']) && $u['community'] !== null) || $u['role'] === 'admin', 'nerd' => (isset($u['nerd_changes']) && $u['nerd_changes'] !== null) ? (int) $u['nerd_changes'] === 1 : is_alpha($u), 'uname_free' => username_free_minutes(db(), (int) $u['id']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
+<script nonce="<?= $nonce ?>">window.SD = <?= json_encode(['approval' => approval_required(), 'alpha' => is_alpha($u), 'podcast' => podcast_ok($u), 'hidecats' => hidecats_ok($u), 'hide' => hidden_cats($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'community' => (isset($u['community']) && $u['community'] !== null) ? (int) $u['community'] === 1 : $u['role'] === 'admin', 'community_asked' => (isset($u['community']) && $u['community'] !== null) || $u['role'] === 'admin', 'nerd' => (isset($u['nerd_changes']) && $u['nerd_changes'] !== null) ? (int) $u['nerd_changes'] === 1 : is_alpha($u), 'uname_free' => username_free_minutes(db(), (int) $u['id']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
 <script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
 <script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
 <?php else: ?>
@@ -166,7 +168,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 <?php endif; ?>
 </main>
 <footer><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></footer>
-<script>
+<script nonce="<?= $nonce ?>">
 (function () {
   var lb = document.getElementById('lb');
   if (lb) {
@@ -234,5 +236,5 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 })();
 </script>
 <?php endif; ?>
-<script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){})});</script>
+<script nonce="<?= $nonce ?>">if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){})});</script>
 </body></html>

@@ -12,6 +12,24 @@ function db(): PDO {
     return $pdo;
 }
 
+// Härtung: allgemeine Sicherheits-Kopfzeilen (für Seiten und API) und Herkunftsprüfung bei Schreibzugriffen.
+function security_headers(): void {
+    if (headers_sent()) return;
+    header('X-Content-Type-Options: nosniff');
+    header('Strict-Transport-Security: max-age=31536000');
+}
+function origin_guard(): void {
+    $m = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if (in_array($m, ['GET', 'HEAD', 'OPTIONS'], true)) return;
+    if (basename($_SERVER['SCRIPT_NAME'] ?? '') === 'unsubscribe.php') return; // Ein-Klick-Abmeldung kommt aus Mailprogrammen ohne Herkunft
+    $o = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($o === '') return; // ältere Clients ohne Herkunftsangabe; SameSite=Lax der Sitzung gilt weiterhin
+    $oh = strtolower((string) parse_url($o, PHP_URL_HOST)); $hh = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+    if ($oh === '' || $oh !== $hh) { http_response_code(403); header('Content-Type: application/json; charset=utf-8'); echo json_encode(['error' => 'Anfrage von fremder Herkunft abgelehnt.']); exit; }
+}
+security_headers();
+origin_guard();
+
 function start_session(): void {
     if (session_status() === PHP_SESSION_ACTIVE) return;
     session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);

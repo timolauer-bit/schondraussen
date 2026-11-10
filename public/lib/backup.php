@@ -1,11 +1,13 @@
 <?php
-// Tägliche Sicherung der Datenbank als gzip-SQL in /_backup (per .htaccess gesperrt), die letzten 7 bleiben.
+// Tägliche Sicherung der Datenbank als gzip-SQL in einem Ordner oberhalb des Webverzeichnisses (Ausweichordner /_backup, per .htaccess gesperrt), die letzten 7 bleiben.
 require_once __DIR__ . '/watchdog.php';
 function run_backup(PDO $pdo, bool $force = false): string {
     $l = state_get($pdo, 'backup_ok'); if (!$force && $l && $l['age'] < 1200) return 'übersprungen (heute schon gesichert)';
     try {
-        $dir = __DIR__ . '/../_backup';
-        if (!is_dir($dir) && !@mkdir($dir, 0750)) throw new RuntimeException('Ordner _backup nicht anlegbar');
+        $dir = __DIR__ . '/../_backup'; // Ausweichordner im Webverzeichnis (durch .htaccess gesperrt)
+        $dr = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/'); // bevorzugt: Ordner oberhalb des Webverzeichnisses, damit er nie ausgeliefert werden kann
+        if ($dr !== '' && is_dir(dirname($dr))) { $out = dirname($dr) . '/schondraussen_backup'; if (is_dir($out) || @mkdir($out, 0750)) { if (is_writable($out)) $dir = $out; } }
+        if (!is_dir($dir) && !@mkdir($dir, 0750)) throw new RuntimeException('Sicherungsordner nicht anlegbar');
         if (!is_file("$dir/.htaccess")) @file_put_contents("$dir/.htaccess", "Require all denied\n");
         if (!is_file("$dir/index.html")) @file_put_contents("$dir/index.html", '');
         $salt = state_get($pdo, 'backup_salt')['v'] ?? null; if (!$salt) { $salt = bin2hex(random_bytes(8)); state_set($pdo, 'backup_salt', $salt); }
