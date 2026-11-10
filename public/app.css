@@ -618,8 +618,8 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .season[hidden]{display:none}.season{margin-top:6px}
 
 /* Umschalter Live/Entwicklungsversion (nur Admin) */
-.nav.devsw{font:600 12px var(--font-mono);padding:3px 8px;margin:0 2px;align-self:center;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:transparent;cursor:pointer;border-bottom-width:1px}
-.nav.devsw.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.devsw{font:600 12px var(--font-mono);padding:3px 8px;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:transparent;cursor:pointer;border-bottom-width:1px}
+.devsw.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}
 
 /* Werke als Karten (Bücher, Musik, Filme) mit Fortschrittsbalken */
