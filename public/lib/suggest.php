@@ -14,21 +14,45 @@ function sg_cache_put(PDO $pdo, string $k, array $data): void {
 /** Pool bekannter Serien (TVmaze): beliebte ältere und aktuell laufende, mit Genres und Gewicht. */
 function sg_series_pool(PDO $pdo): array {
     $c = sg_cache_get($pdo, 'pool:series', 72); if ($c !== null && $c) return $c;
-    @set_time_limit(90); $pool = [];
+    @set_time_limit(60); $pool = [];
     $add = function ($s) use (&$pool) {
         if (!is_array($s) || empty($s['id']) || empty($s['name'])) return;
         $id = (int) $s['id'];
         $pool[$id] = ['id' => $id, 'name' => (string) $s['name'], 'genres' => array_values($s['genres'] ?? []), 'weight' => (int) ($s['weight'] ?? 0),
             'year' => substr((string) ($s['premiered'] ?? ''), 0, 4), 'lang' => (string) ($s['language'] ?? '')];
     };
-    for ($p = 0; $p < 4; $p++) foreach (http_json("https://api.tvmaze.com/shows?page=$p", 20) ?? [] as $s) $add($s);
-    foreach (['US', 'GB', 'DE'] as $cc) for ($d = 0; $d < 3; $d++) {
-        foreach (http_json("https://api.tvmaze.com/schedule?country=$cc&date=" . date('Y-m-d', time() + $d * 86400), 20) ?? [] as $ep) $add($ep['show'] ?? ($ep['_embedded']['show'] ?? null));
+    $urls = [];
+    for ($p = 0; $p < 4; $p++) $urls[] = "https://api.tvmaze.com/shows?page=$p";
+    foreach (['US', 'GB', 'DE'] as $cc) $urls[] = "https://api.tvmaze.com/schedule?country=$cc&date=" . date('Y-m-d');
+    foreach (sg_fetch_multi($urls, 12) as $u => $j) {
+        if (strpos($u, '/schedule') !== false) { foreach ($j as $ep) $add($ep['show'] ?? ($ep['_embedded']['show'] ?? null)); }
+        else foreach ($j as $s) $add($s);
     }
     uasort($pool, fn($a, $b) => $b['weight'] <=> $a['weight']);
     $pool = array_slice(array_values($pool), 0, 900);
-    if ($pool) sg_cache_put($pdo, 'pool:series', $pool);
-    return $pool;
+    if ($pool) { sg_cache_put($pdo, 'pool:series', $pool); return $pool; }
+    $old = sg_cache_get($pdo, 'pool:series', 24 * 365); // Quelle gerade nicht erreichbar: alten Bestand weiterverwenden
+    return $old ?: [];
+}
+
+/** Mehrere JSON-Adressen gleichzeitig laden (schneller als nacheinander). Gibt [url => Liste] für erfolgreiche Antworten zurück. */
+function sg_fetch_multi(array $urls, int $timeout = 12): array {
+    $mh = curl_multi_init(); $hs = [];
+    foreach ($urls as $u) {
+        $ch = curl_init($u);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+        curl_multi_add_handle($mh, $ch); $hs[$u] = $ch;
+    }
+    do { $st = curl_multi_exec($mh, $act); if ($act) curl_multi_select($mh, 1.0); } while ($act && $st === CURLM_OK);
+    $out = [];
+    foreach ($hs as $u => $ch) {
+        $r = curl_multi_getcontent($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($r !== false && $r !== '' && $code < 400) { $j = json_decode($r, true); if (is_array($j)) $out[$u] = $j; }
+        curl_multi_remove_handle($mh, $ch); curl_close($ch);
+    }
+    curl_multi_close($mh);
+    return $out;
 }
 
 /** Autor:innen eines Open-Library-Themas, gewichtet nach Ausgaben. */

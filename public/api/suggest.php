@@ -5,6 +5,13 @@ require __DIR__ . '/../lib/suggest.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? '';
+register_shutdown_function(function () { // Fataler Fehler oder Zeitüberschreitung: trotzdem eine lesbare Antwort liefern
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true) && !headers_sent()) {
+        http_response_code(200); header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['items' => [], 'msg' => 'Die Vorschläge konnten gerade nicht geladen werden. Versuche es in ein paar Minuten noch einmal.']);
+    }
+});
 try { $pdo->query('SELECT 1 FROM suggest_cache LIMIT 1'); } // Tabelle vorhanden?
  catch (Throwable $e) { json_out(['items' => [], 'msg' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }
 
