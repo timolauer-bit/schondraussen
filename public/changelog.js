@@ -1,6 +1,9 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'F|Wunschbild: Wer keines der 50 Profilbilder mag, kann in den Einstellungen ein eigenes Bild beschreiben. Der Administrator stellt 2 bis 3 Vorschläge bereit, und du wählst eines aus.',
+    'F|Profil: Bis zu zwei eigene Genres mit Kategorie, sie erscheinen nur auf deiner Profilkarte. Geburtsdatum optional (das Alter wechselt dann am Geburtstag).',
+    'U|Genres: Bücher und Musik haben jetzt je 30 Genres in Filtern und Profilauswahl, Filme und Serien 28; die Filter zeigen bis zu 30 Genres.',
     'F|Profilkarte: In den Einstellungen (neuer Reiter „Profil“) kannst du ein Bild aus 50 Vorlagen, Name, Geburtsdatum oder -jahr und bis zu 5 Lieblingsgenres je Kategorie angeben. In der Community erscheint beim Anklicken eines Nutzers eine Ausweiskarte mit diesen Angaben. Alles ist freiwillig.',
     'U|Einstellungen sind jetzt in Reiter aufgeteilt (Profil, Darstellung, Daten, Datenschutz).',
     'F|Community: Neue Reihe „Meistgesehen, gelesen, gehört“ für alle Kategorien (Serien ab einer halben Staffel, Bücher je gelesenem Buch ein Punkt, Musik ab 5 Alben, Filme einzeln, Podcasts ab 5 Folgen oder 20 %). Auf Filmseiten gibt es dafür den Schalter „Gesehen“.',

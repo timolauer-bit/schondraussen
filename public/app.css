@@ -686,3 +686,7 @@ html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}
 
 .profbox .gcols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:6px}.profbox .gcol .plab{margin:0 0 4px}.profbox .gcol .gchips.pick{margin:6px 0 0}@media(max-width:900px){.profbox .gcols{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.profbox .gcols{grid-template-columns:1fr}}
 .profbox input[type=date]{max-width:260px}
+.profbox .custg input{max-width:240px}
+.profbox .wishbox{margin-top:6px}.profbox textarea{width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}.avopt.wish{outline:2px dotted var(--accent);outline-offset:1px}
+.wishrow{padding:12px 0;border-top:1px dashed var(--line)}.wishrow:first-child{border-top:0}.wishpv{display:flex;gap:8px;margin:8px 0}.wishpv img{border-radius:50%;border:1px solid var(--line);background:var(--surface)}.wishrow .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.wishrow .acts input[type=text]{flex:1;min-width:160px}
+.profbox .custg{display:grid;gap:8px;margin-top:6px}.profbox .custg .inline{display:flex;gap:8px;flex-wrap:wrap}.profbox .custg select{max-width:150px}.gchip.own{background:transparent;border:1px dashed var(--muted)}

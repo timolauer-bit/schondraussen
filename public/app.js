@@ -258,12 +258,12 @@
   }
   // Genres zusammenfassen: Die Quellen liefern sehr viele Einzelbezeichnungen (z. B. „Science-Fiction-Literatur“, „Dystopie“); die Anzeige fasst sie zu wenigen Hauptgenres zusammen. Unbekanntes bleibt unverändert.
   var GRULES = {
-    author: [['Science-Fiction', /science.?fiction|sci.?fi|\bsf\b|utopi|dystopi|cyberpunk|steampunk|space.?opera/i], ['Fantasy', /fantas|märchen|\bsagen?\b|mythol|heldenepos/i], ['Krimi & Thriller', /krimi|thriller|detektiv|mystery|crime|noir|spionage|agenten|kriminal|suspense|spannung/i], ['Horror & Grusel', /horror|grusel|schauer|gothic|gespenster/i], ['Liebesroman', /liebes|romanz|romance|erotik|frauenroman/i], ['Historischer Roman', /histor/i], ['Kinder & Jugend', /jugend|kinder|young adult|children|bilderbuch|\bya\b/i], ['Comic & Manga', /comic|manga|graphic|anime/i], ['Biografie & Memoiren', /biogra|autobiogr|memoir|erinnerungen|lebensbericht/i], ['Sachbuch', /sachbuch|ratgeber|wissenschaft|non.?fiction|essay|popul|reisebericht|kochbuch|philosoph|politik|sachliteratur/i], ['Humor & Satire', /humor|satir|komödie|comedy|witz/i], ['Lyrik & Drama', /lyrik|poesie|gedicht|drama|theater|schauspiel|dichtung/i], ['Belletristik', /roman|erzähl|novelle|belletristik|literatur|fiction|prosa|kurzgeschichte|abenteuer|klassik/i]],
-    artist: [['Metal', /metal|hardcore|grind|doom/i], ['Rock', /rock|grunge|punk|britpop|new wave|indie|alternative/i], ['Elektronik', /electro|elektro|techno|house|trance|ambient|drum|dubstep|\bedm\b|\bidm\b|downtempo|synth|electronica/i], ['Pop', /\bpop\b|pop$|^pop|dance|boy ?band/i], ['Hip-Hop', /hip.?hop|\brap\b|trap/i], ['R&B & Soul', /r&b|\brnb\b|soul|funk|gospel|motown|disco/i], ['Jazz & Blues', /jazz|blues|swing|bebop/i], ['Soundtrack', /soundtrack|film score|filmmusik|\bost\b/i], ['Klassik', /klassi|classical|orchest|opern|oper$|barock|symphon|kammer/i], ['Folk & Country', /folk|country|singer|bluegrass|americana|songwriter|liedermacher/i], ['Reggae & Ska', /reggae|\bska\b|dancehall|\bdub\b/i], ['Schlager & Volksmusik', /schlager|volksmusik|volkstüm/i], ['Weltmusik', /latin|salsa|world|afro|flamenco|samba|bossa|weltmusik/i]]
+    author: [['Dystopie & Utopie', /utopi|dystopi/i], ['Science-Fiction', /science.?fiction|sci.?fi|\bsf\b|cyberpunk|steampunk|space.?opera/i], ['Märchen & Sagen', /märchen|\bsagen?\b|mythol|heldenepos/i], ['Fantasy', /fantas/i], ['Spionage & Agenten', /spionage|agenten|espionage/i], ['Krimi & Thriller', /krimi|thriller|detektiv|mystery|crime|noir|kriminal|suspense|spannung/i], ['Horror & Grusel', /horror|grusel|schauer|gothic|gespenster/i], ['Liebesroman', /liebes|romanz|romance|erotik|frauenroman/i], ['Western', /western/i], ['Abenteuer', /abenteuer|adventure/i], ['Historischer Roman', /histor/i], ['Kurzgeschichten', /kurzgeschicht|short stories|erzählungen/i], ['Geschichte', /geschichte|weltkrieg|\bkrieg/i], ['Kinder & Jugend', /jugend|kinder|young adult|children|bilderbuch|\bya\b/i], ['Comic & Manga', /comic|manga|graphic|anime/i], ['Biografie & Memoiren', /biogra|autobiogr|memoir|erinnerungen|lebensbericht/i], ['Philosophie', /philosoph/i], ['Politik & Gesellschaft', /politik|gesellschaft|soziolog|journalis/i], ['Wirtschaft', /wirtschaft|business|finanz|management|ökonom|economics/i], ['Psychologie & Ratgeber', /psycholog|ratgeber|selbsthilfe|self.?help|lebenshilfe|gesundheit/i], ['Religion & Spiritualität', /religio|spiritual|theolog|esoter|christen|buddh|islam/i], ['Natur & Reisen', /natur|reise|travel|outdoor|garten/i], ['Kochen & Genuss', /koch|kulinar|cook|backen|rezept|genuss/i], ['Kunst & Kultur', /kunst|fotograf|architektur|design|kultur/i], ['Wissenschaft & Technik', /wissenschaft|technik|technolog|informatik|mathemat|physik|biolog|medizin|popul/i], ['Essay', /essay/i], ['Sachbuch', /sachbuch|non.?fiction|sachliteratur/i], ['Humor & Satire', /humor|satir|komödie|comedy|witz/i], ['Lyrik & Drama', /lyrik|poesie|gedicht|drama|theater|schauspiel|dichtung/i], ['Belletristik', /roman|erzähl|novelle|belletristik|literatur|fiction|prosa|klassik/i]],
+    artist: [['Thrash Metal', /thrash/i], ['Death Metal', /death metal|deathcore|grind/i], ['Black Metal', /black metal/i], ['Power Metal', /power metal|speed metal|symphonic metal|melodic metal/i], ['Doom Metal', /doom|sludge|stoner/i], ['Metal', /metal|hardcore/i], ['Gothic & Dark Wave', /goth|dark ?wave|industrial/i], ['Progressive', /prog/i], ['Hard Rock', /hard rock|glam|heavy/i], ['Punk', /punk/i], ['Indie & Alternative', /indie|alternative|britpop|grunge|new wave/i], ['Rock', /rock/i], ['House & Techno', /house|techno|trance|\bedm\b|dubstep|drum/i], ['Ambient & Downtempo', /ambient|downtempo|chill|\bidm\b/i], ['Elektronik', /electro|elektro|synth/i], ['Hip-Hop', /hip.?hop|\brap\b|trap/i], ['Funk & Disco', /funk|disco/i], ['R&B & Soul', /r&b|\brnb\b|soul|motown|gospel/i], ['Jazz', /jazz|swing|bebop/i], ['Blues', /blues/i], ['Soundtrack', /soundtrack|film score|filmmusik|\bost\b/i], ['Oper & Musical', /opern|\boper\b|oper$|musical|operette/i], ['Klassik', /klassi|classical|orchest|barock|symphon|kammer/i], ['Country', /country|bluegrass|americana/i], ['Folk & Singer-Songwriter', /folk|singer|songwriter|liedermacher/i], ['Reggae & Ska', /reggae|\bska\b|dancehall|\bdub\b/i], ['Latin', /latin|salsa|samba|bossa|flamenco/i], ['Schlager & Volksmusik', /schlager|volksmusik|volkstüm/i], ['Weltmusik', /world|afro|weltmusik/i], ['Pop', /\bpop\b|pop$|^pop|dance|boy ?band/i]]
   };
   function canonG(type, g) { var rs = GRULES[type]; if (rs) for (var i = 0; i < rs.length; i++) if (rs[i][1].test(g)) return rs[i][0]; return g; }
   function gensOf(e) { var o = [], seen = {}; (e.genres || []).forEach(function (g) { var c = canonG(e.type, g); if (!seen[c]) { seen[c] = 1; o.push(c); } }); return o; }
-  function genresOf(cat) { var c = {}; entriesOf(cat).forEach(function (e) { gensOf(e).forEach(function (g) { c[g] = (c[g] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b, 'de'); }).slice(0, 25).map(function (g) { return [g, c[g]]; }); }
+  function genresOf(cat) { var c = {}; entriesOf(cat).forEach(function (e) { gensOf(e).forEach(function (g) { c[g] = (c[g] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b, 'de'); }).slice(0, 30).map(function (g) { return [g, c[g]]; }); }
   function filt() {
     var cur = S.sort[S.cat] || 'alpha', g = S.genre[S.cat] || '', kd = S.cat === 'author' ? (S.kind.author || '') : '', n = (cur !== 'alpha' ? 1 : 0) + (g ? 1 : 0) + (kd ? 1 : 0), pop = $('filtPop'); pop.textContent = '';
     pop.append(h('p', { class: 'label' }, 'Sortieren nach'));
@@ -622,28 +622,44 @@
   }
 
   var AVN = 50;
-  function avUrl(a) { return /^s\d{2}$/.test(a || '') ? '/avatars/avatar' + a.slice(1) + '.svg' : ''; }
-  function genOpts(t) { return t === 'author' || t === 'artist' ? GRULES[t].map(function (r) { return r[0]; }) : POP.series.map(function (x) { return x[1]; }); }
+  function avUrl(a) { a = a || ''; return /^s\d{2}$/.test(a) ? '/avatars/avatar' + a.slice(1) + '.svg' : /^c\d{1,9}$/.test(a) ? '/api/data.php?a=avatar&id=' + a.slice(1) : ''; }
+  var SERGEN = ['Drama', 'Comedy', 'Crime', 'Thriller', 'Mystery', 'Action', 'Adventure', 'Science-Fiction', 'Fantasy', 'Horror', 'Supernatural', 'Romance', 'Family', 'Children', 'Anime', 'History', 'War', 'Western', 'Espionage', 'Legal', 'Medical', 'Sports', 'Music', 'Food', 'Travel', 'Nature', 'DIY', 'Adult'];
+  function genOpts(t) { return t === 'author' || t === 'artist' ? GRULES[t].map(function (r) { return r[0]; }) : SERGEN; }
   function profileBox() {
     var wrap = h('div', { class: 'wide2 profbox' }), msg = h('p', { class: 'msg', role: 'status' });
     wrap.append(h('p', { class: 'hint' }, 'Alle Angaben sind freiwillig. Andere sehen sie nur in der Community, und nur wenn du der Nutzung deiner Einträge für die Community zugestimmt hast.'), h('p', { class: 'state pulse' }, 'Lade …'));
-    api('/api/data.php?a=profile').then(function (r) {
+    Promise.all([api('/api/data.php?a=profile'), api('/api/data.php?a=wish').catch(function () { return {}; })]).then(function (rr) {
+      var r = rr[0], wd = rr[1] || {};
       wrap.lastChild.remove();
       if (!r || r.error) { wrap.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
       var v = { name: r.name || '', year: r.year || '', date: r.date || '', age_show: r.age_show || 'none', avatar: r.avatar || '', favs: r.favs || {} };
       var prev = h('img', { class: 'profprev', alt: 'Dein Bild', width: '96', height: '96' }), grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Bild wählen' });
       function paintPrev() { var u = avUrl(v.avatar); prev.hidden = !u; if (u) prev.src = u; [].forEach.call(grid.children, function (b) { var on = b.dataset.a === v.avatar; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.className = 'avopt' + (on ? ' on' : ''); }); }
+      (wd.options || []).forEach(function (n) { var id = 'c' + n; var b = h('button', { class: 'avopt wish', type: 'button', role: 'radio', 'aria-label': 'Wunschbild ' + n, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44' })); b.dataset.a = id; grid.append(b); });
       for (var i = 1; i <= AVN; i++) (function (id) {
         var b = h('button', { class: 'avopt', type: 'button', role: 'radio', 'aria-label': 'Bild ' + id, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44', loading: 'lazy' }));
         b.dataset.a = id; grid.append(b);
       })('s' + String(i).padStart(2, '0'));
       paintPrev();
+      var wishBox = h('div', { class: 'wishbox' });
+      function drawWish(d) {
+        wishBox.textContent = ''; var ws = d.wishes || [], last = ws[0], open = ws.some(function (x) { return x.status === 'open'; });
+        wishBox.append(h('p', { class: 'plab' }, 'Wunschbild'));
+        if (open) { wishBox.append(h('p', { class: 'hint' }, 'Dein Wunsch ist eingegangen: „' + (ws.filter(function (x) { return x.status === 'open'; })[0].wish) + '“. Sobald Bilder bereit sind, bekommst du eine Nachricht und findest sie ganz vorn bei den Bildern.')); return; }
+        if (last && last.status === 'declined') wishBox.append(h('p', { class: 'hint' }, 'Dein letzter Wunsch konnte nicht umgesetzt werden' + (last.note ? ': ' + last.note : '.')));
+        if (ws.length >= 5) { wishBox.append(h('p', { class: 'hint' }, 'Du hast die möglichen Wünsche schon genutzt.')); return; }
+        var ta = h('textarea', { rows: '3', maxlength: '400', 'aria-label': 'Beschreibung deines Wunschbilds', placeholder: 'z. B. Frau mit kurzen roten Haaren, Brille, grüner Pullover' }), wm = h('p', { class: 'msg', role: 'status' });
+        wishBox.append(h('p', { class: 'hint' }, 'Du magst keines der Bilder? Beschreibe, wie dein Bild aussehen soll. Du bekommst 2 bis 3 Vorschläge im gleichen Stil und suchst dir eines aus.'), ta,
+          h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { wm.className = 'msg'; wm.textContent = '';
+            api('/api/data.php?a=wish_set', { wish: ta.value }).then(function (x) { if (x && x.ok) { api('/api/data.php?a=wish').then(drawWish); } else { wm.className = 'msg err'; wm.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } }); } }, 'Wunsch senden')), wm);
+      }
+      drawWish(wd);
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
       var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
       var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
-      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid),
+      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid), wishBox,
         h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
         h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
         h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
@@ -657,9 +673,17 @@
         draw(); gcols.append(h('div', { class: 'gcol' }, h('p', { class: 'plab' }, TYPES[t].plural, cap), box));
       });
       wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres (bis zu 5 je Kategorie)'), gcols);
+      var cu = (v.favs.custom = (v.favs.custom || []).filter(function (x) { return x && typeof x === 'object'; }).slice(0, 2)), crow = h('div', { class: 'custg' });
+      [0, 1].forEach(function (i) {
+        var cur = cu[i] || { t: 'artist', g: '' }; cu[i] = cur;
+        var sl = h('select', { 'aria-label': 'Kategorie von Genre ' + (i + 1), onchange: function () { cur.t = sl.value; } }, ['author', 'artist', 'film', 'series'].map(function (t) { return h('option', { value: t, selected: cur.t === t ? true : null }, TYPES[t].plural); }));
+        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i ? 'z. B. Neoklassik' : 'z. B. Cozy Crime', oninput: function () { cur.g = ti.value; } });
+        crow.append(h('div', { class: 'inline' }, sl, ti));
+      });
+      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
       var save = h('button', { class: 'btn', type: 'button', onclick: function () {
         msg.className = 'msg'; msg.textContent = '';
-        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: v.favs }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
+        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
       } }, 'Profilkarte speichern');
       wrap.append(h('p', { style: 'margin:14px 0 0' }, save), msg);
     });
@@ -672,7 +696,9 @@
     if (c.name) info.append(h('div', { class: 'idrow' }, h('span', null, 'Name'), h('b', null, c.name)));
     if (c.age) info.append(h('div', { class: 'idrow' }, h('span', null, 'Alter'), h('b', null, c.age)));
     var gl = h('div', { class: 'idgen' }), any = false, favs = c.favs || {};
-    ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || []; if (!l.length) return; any = true; gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); })))); });
+    var cust = (favs.custom || []).filter(function (x) { return x && x.t && x.g; });
+    ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || [], own = cust.filter(function (x) { return x.t === t; }); if (!l.length && !own.length) return; any = true;
+      gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); }).concat(own.map(function (x) { return h('span', { class: 'gchip own' }, x.g); }))))); });
     if (!c.name && !c.age && !any) info.append(h('p', { class: 'hint', style: 'margin:6px 0 0' }, 'Noch keine Angaben.'));
     return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (c.no || d.user.id))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
   }
@@ -1654,9 +1680,31 @@
       });
     }
     p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Statistik'), stBox); statLoad();
+    var wsBox = h('div', { class: 'adm' });
+    p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Wunschbilder'), h('p', { class: 'hint' }, 'Nutzer können ein eigenes Profilbild wünschen. Lade 1 bis 3 passende SVG-Dateien hoch, dann wählt der Nutzer eines aus.'), wsBox);
+    function wishes() {
+      api('/api/admin.php?a=wishes').then(function (r) {
+        wsBox.textContent = ''; var l = r.wishes || [];
+        if (!l.length) wsBox.append(h('p', { class: 'hint' }, r.error || 'Keine Wünsche offen.'));
+        l.forEach(function (x) {
+          var row = h('div', { class: 'wishrow' }, h('div', { class: 'nm2' }, (x.username || 'Nutzer ' + x.uid) + ' · ' + String(x.created_at || '').slice(0, 10)), h('div', null, x.wish));
+          if (x.status !== 'open') { row.append(h('div', { class: 'meta2' }, x.status === 'ready' ? 'Bilder bereitgestellt (' + x.n + ')' : 'Abgelehnt')); wsBox.append(row); return; }
+          var fi = h('input', { type: 'file', accept: '.svg,image/svg+xml', multiple: true, 'aria-label': 'SVG-Dateien' }), pv = h('div', { class: 'wishpv' }), wm = h('p', { class: 'msg', role: 'status' }), nt = h('input', { type: 'text', maxlength: '300', placeholder: 'Anmerkung bei Ablehnung (optional)', 'aria-label': 'Anmerkung' });
+          fi.onchange = function () { pv.textContent = ''; [].slice.call(fi.files, 0, 3).forEach(function (f) { pv.append(h('img', { src: URL.createObjectURL(f), alt: '', width: '64', height: '64' })); }); };
+          row.append(fi, pv, h('div', { class: 'acts' },
+            h('button', { class: 'btn small', type: 'button', onclick: function () {
+              var fs = [].slice.call(fi.files); if (!fs.length || fs.length > 3) { wm.className = 'msg err'; wm.textContent = 'Bitte 1 bis 3 SVG-Dateien wählen.'; return; }
+              Promise.all(fs.map(function (f) { return f.text(); })).then(function (t) { return api('/api/admin.php?a=wish_upload', { id: x.id, svgs: t }); }).then(function (z) { if (z && z.ok) wishes(); else { wm.className = 'msg err'; wm.textContent = (z && z.error) || 'Das hat nicht geklappt.'; } });
+            } }, 'Bilder bereitstellen'),
+            nt, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=wish_decline', { id: x.id, note: nt.value }).then(function (z) { if (z && z.ok) wishes(); else { wm.className = 'msg err'; wm.textContent = (z && z.error) || 'Das hat nicht geklappt.'; } }); } }, 'Ablehnen')), wm);
+          wsBox.append(row);
+        });
+      });
+    }
+    wishes();
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });
