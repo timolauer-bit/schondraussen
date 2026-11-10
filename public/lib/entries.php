@@ -1,7 +1,7 @@
 <?php
 // Liste der Einträge eines Nutzers (wird von der Seite und von der Admin-Prüfung genutzt, damit beide dasselbe sehen).
 function list_entries(PDO $pdo, int $uid): array {
-    $ur = $pdo->prepare('SELECT role FROM users WHERE id=?'); $ur->execute([$uid]); $pod = podcast_ok(['role' => (string) $ur->fetchColumn()]);
+    $ur = $pdo->prepare('SELECT role,alpha FROM users WHERE id=?'); $ur->execute([$uid]); $pod = podcast_ok($ur->fetch() ?: null);
     $bellSql = 'e.bell';
     try { $pdo->query('SELECT bell FROM user_entries LIMIT 1'); } catch (Throwable $e) { $bellSql = '1'; }
     $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,$bellSql AS bell,

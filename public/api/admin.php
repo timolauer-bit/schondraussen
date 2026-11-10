@@ -101,9 +101,19 @@ if ($a === 'stats') { // Überblick ohne einzelne Konten: nur Zahlen
     } catch (Throwable $e) { $o['missing'] = true; }
     json_out($o);
 }
-if ($a === 'podcast_get') json_out(['level' => podcast_level()]);
-if ($a === 'podcast_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['podcast_level', (($b['level'] ?? '') === 'all') ? 'all' : 'admin']);
+if ($a === 'perms_get') {
+    $v = perm_values(); $o = [];
+    foreach (perm_defs() as $k => $d) $o[] = ['key' => $k, 'label' => $d[0], 'hint' => $d[1], 'state' => $d[3], 'user' => $v[$k]['user'], 'alpha' => $v[$k]['alpha']];
+    json_out(['rows' => $o]);
+}
+if ($a === 'perms_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $k = (string) ($b['key'] ?? ''); $g = (string) ($b['group'] ?? '');
+    if (!isset(perm_defs()[$k]) || !in_array($g, ['user', 'alpha'], true)) json_out(['error' => 'Unbekanntes Recht.'], 422);
+    $st = perm_stored(); $cur = perm_values()[$k];
+    $row = ['user' => $cur['user'] ? 1 : 0, 'alpha' => $cur['alpha'] ? 1 : 0]; $row[$g] = !empty($b['on']) ? 1 : 0;
+    if ($row['user']) $row['alpha'] = 1; // Alphatester haben mindestens die Rechte der Nutzer
+    $st[$k] = $row;
+    $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['perms', json_encode($st)]);
     json_out(['ok' => true]);
 }
 if ($a === 'anon_get') { require_once __DIR__ . '/../lib/anon.php'; json_out(['enabled' => anon_enabled($pdo)]); }

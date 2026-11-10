@@ -77,7 +77,7 @@ function client_ip(): string { return substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 4
 function token_new(): array { $t = bin2hex(random_bytes(24)); return [$t, hash('sha256', $t)]; }
 
 // Alphafunktionen: sichtbar für Admins und als Alphatester markierte Nutzer.
-function is_alpha(?array $u): bool { return $u && ($u['role'] === 'admin' || !empty($u['alpha'])); }
+function is_alpha(?array $u): bool { return perm($u, 'fb_staff'); } // „Ideen und Bugs: alle sehen und verwalten“ (Rechtetabelle im Admin)
 function require_alpha(?array $u): void { if (!is_alpha($u)) json_out(['error' => 'Diese Funktion ist noch nicht freigegeben.'], 403); }
 
 /** Minuten, in denen die erste Namenswahl einmal ohne 30-Tage-Sperre korrigiert werden darf (0 = nicht mehr möglich). */
@@ -106,10 +106,42 @@ function podcast_level(): string {
     if ($l === null) { try { $q = db()->prepare("SELECT v FROM site_settings WHERE k='podcast_level'"); $q->execute(); $v = $q->fetchColumn(); $l = $v === 'all' ? 'all' : 'admin'; } catch (Throwable $e) { $l = 'admin'; } }
     return $l;
 }
-function podcast_ok(?array $u): bool { return $u && (podcast_level() === 'all' || ($u['role'] ?? '') === 'admin'); }
+function podcast_ok(?array $u): bool { return perm($u, 'podcast'); }
 // Kategorien ausblenden: vorerst nur für Admins (Test). Gespeichert in users.hide_cats als kommagetrennte Liste.
-function hidecats_ok(?array $u): bool { return $u && ($u['role'] ?? '') === 'admin'; }
+function hidecats_ok(?array $u): bool { return perm($u, 'hidecats'); }
 function hidden_cats(?array $u): array {
     if (!hidecats_ok($u)) return [];
     return array_values(array_intersect(explode(',', (string) ($u['hide_cats'] ?? '')), ['author', 'artist', 'film', 'series', 'podcast']));
+}
+
+// ---------- Rechte der Nutzergruppen (Admin → Sicherheit): Gruppen user, alpha (Alphatester), admin (immer alles) ----------
+function perm_defs(): array {
+    $pl = podcast_level() === 'all' ? 1 : 0; // bisherige Einstellung bleibt als Ausgangswert
+    return [
+        'fb_staff' => ['Ideen und Bugs: alle Beiträge sehen und verwalten', 'Auch noch nicht freigegebene Beiträge mit Absender sehen, freigeben, Status setzen, bearbeiten, Bilder prüfen', [0, 1], 'live'],
+        'fb_comment_view' => ['Kommentare zu Ideen und Bugs lesen', 'Gilt, sobald es Kommentare gibt', [1, 1], 'soon'],
+        'fb_comment_write' => ['Kommentare zu Ideen und Bugs schreiben', 'Gilt, sobald es Kommentare gibt', [0, 1], 'soon'],
+        'podcast' => ['Kategorie Podcasts nutzen', 'Suchen, hinzufügen, in Menü und Kalender sehen', [$pl, $pl], 'live'],
+        'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen (Test)', [0, 0], 'live'],
+    ];
+}
+function perm_stored(): array {
+    static $st = null;
+    if ($st === null) { $st = []; try { $q = db()->prepare("SELECT v FROM site_settings WHERE k='perms'"); $q->execute(); $j = json_decode((string) $q->fetchColumn(), true); if (is_array($j)) $st = $j; } catch (Throwable $e) {} }
+    return $st;
+}
+/** Wirksame Werte je Recht: ['user' => bool, 'alpha' => bool]. Alphatester haben mindestens die Rechte der Nutzer. */
+function perm_values(): array {
+    $st = perm_stored(); $o = [];
+    foreach (perm_defs() as $k => $d) {
+        $u = isset($st[$k]['user']) ? (bool) $st[$k]['user'] : (bool) $d[2][0];
+        $a = isset($st[$k]['alpha']) ? (bool) $st[$k]['alpha'] : (bool) $d[2][1];
+        $o[$k] = ['user' => $u, 'alpha' => $a || $u];
+    }
+    return $o;
+}
+function perm(?array $u, string $k): bool {
+    if (!$u) return false;
+    if (($u['role'] ?? '') === 'admin') return true;
+    $v = perm_values(); return !empty($v[$k][!empty($u['alpha']) ? 'alpha' : 'user']);
 }
