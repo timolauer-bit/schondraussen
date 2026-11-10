@@ -254,7 +254,14 @@
     var fi = $('filtBtn').querySelector('.fico'); if (fi) fi.remove();
     filt(); rows(); content(); drawSugg();
   }
-  function genresOf(cat) { var c = {}; entriesOf(cat).forEach(function (e) { (e.genres || []).forEach(function (g) { c[g] = (c[g] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b, 'de'); }).slice(0, 25).map(function (g) { return [g, c[g]]; }); }
+  // Genres zusammenfassen: Die Quellen liefern sehr viele Einzelbezeichnungen (z. B. „Science-Fiction-Literatur“, „Dystopie“); die Anzeige fasst sie zu wenigen Hauptgenres zusammen. Unbekanntes bleibt unverändert.
+  var GRULES = {
+    author: [['Science-Fiction', /science.?fiction|sci.?fi|\bsf\b|utopi|dystopi|cyberpunk|steampunk|space.?opera/i], ['Fantasy', /fantas|märchen|\bsagen?\b|mythol|heldenepos/i], ['Krimi & Thriller', /krimi|thriller|detektiv|mystery|crime|noir|spionage|agenten|kriminal|suspense|spannung/i], ['Horror & Grusel', /horror|grusel|schauer|gothic|gespenster/i], ['Liebesroman', /liebes|romanz|romance|erotik|frauenroman/i], ['Historischer Roman', /histor/i], ['Kinder & Jugend', /jugend|kinder|young adult|children|bilderbuch|\bya\b/i], ['Comic & Manga', /comic|manga|graphic|anime/i], ['Biografie & Memoiren', /biogra|autobiogr|memoir|erinnerungen|lebensbericht/i], ['Sachbuch', /sachbuch|ratgeber|wissenschaft|non.?fiction|essay|popul|reisebericht|kochbuch|philosoph|politik|sachliteratur/i], ['Humor & Satire', /humor|satir|komödie|comedy|witz/i], ['Lyrik & Drama', /lyrik|poesie|gedicht|drama|theater|schauspiel|dichtung/i], ['Belletristik', /roman|erzähl|novelle|belletristik|literatur|fiction|prosa|kurzgeschichte|abenteuer|klassik/i]],
+    artist: [['Metal', /metal|hardcore|grind|doom/i], ['Rock', /rock|grunge|punk|britpop|new wave|indie|alternative/i], ['Elektronik', /electro|elektro|techno|house|trance|ambient|drum|dubstep|\bedm\b|\bidm\b|downtempo|synth|electronica/i], ['Pop', /\bpop\b|pop$|^pop|dance|boy ?band/i], ['Hip-Hop', /hip.?hop|\brap\b|trap/i], ['R&B & Soul', /r&b|\brnb\b|soul|funk|gospel|motown|disco/i], ['Jazz & Blues', /jazz|blues|swing|bebop/i], ['Soundtrack', /soundtrack|film score|filmmusik|\bost\b/i], ['Klassik', /klassi|classical|orchest|opern|oper$|barock|symphon|kammer/i], ['Folk & Country', /folk|country|singer|bluegrass|americana|songwriter|liedermacher/i], ['Reggae & Ska', /reggae|\bska\b|dancehall|\bdub\b/i], ['Schlager & Volksmusik', /schlager|volksmusik|volkstüm/i], ['Weltmusik', /latin|salsa|world|afro|flamenco|samba|bossa|weltmusik/i]]
+  };
+  function canonG(type, g) { var rs = GRULES[type]; if (rs) for (var i = 0; i < rs.length; i++) if (rs[i][1].test(g)) return rs[i][0]; return g; }
+  function gensOf(e) { var o = [], seen = {}; (e.genres || []).forEach(function (g) { var c = canonG(e.type, g); if (!seen[c]) { seen[c] = 1; o.push(c); } }); return o; }
+  function genresOf(cat) { var c = {}; entriesOf(cat).forEach(function (e) { gensOf(e).forEach(function (g) { c[g] = (c[g] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b, 'de'); }).slice(0, 25).map(function (g) { return [g, c[g]]; }); }
   function filt() {
     var cur = S.sort[S.cat] || 'alpha', g = S.genre[S.cat] || '', kd = S.cat === 'author' ? (S.kind.author || '') : '', n = (cur !== 'alpha' ? 1 : 0) + (g ? 1 : 0) + (kd ? 1 : 0), pop = $('filtPop'); pop.textContent = '';
     pop.append(h('p', { class: 'label' }, 'Sortieren nach'));
@@ -280,7 +287,7 @@
     if (!es.length) { box.append(h('p', { class: 'hint' }, 'Noch keine ' + t.plural + ' auf der Liste.')); return; }
     var kq = S.cat === 'author' ? (S.kind.author || '') : '';
     if (kq) es = es.filter(function (e) { return kq === 'series' ? +e.is_series === 1 : +e.is_series !== 1; });
-    if (gq) es = es.filter(function (e) { return (e.genres || []).indexOf(gq) >= 0; });
+    if (gq) es = es.filter(function (e) { return gensOf(e).indexOf(gq) >= 0; });
     if (fq) es = es.filter(function (e) { return e.name.toLowerCase().indexOf(fq) >= 0; });
     if (!es.length) { box.append(h('p', { class: 'hint' }, fq ? 'Keine Treffer für „' + S.filter.trim() + '“.' : (kq && !gq ? 'Keine Einträge in dieser Auswahl.' : 'Keine Einträge im Genre „' + gq + '“.'))); return; }
     es.forEach(function (e) {
@@ -355,7 +362,7 @@
     wrap = h('div', { class: 'menuwrap' }, moreBtn, menu);
     var actions = h('div', { class: 'actions' }, bellBtn, wrap);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp tipd', title: 'Zeitpunkt der letzten Aktualisierung aus der Datenquelle. Die Angaben werden automatisch alle 12 Stunden erneuert; „Aktualisieren“ lädt sie sofort neu.' }, stamp) : null);
-    var gch = (e.genres || []).length ? h('div', { class: 'gchips' }, e.genres.map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
+    var gch = gensOf(e).length ? h('div', { class: 'gchips' }, gensOf(e).map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));
     if (S.relink === e.id) card.append(relinkBox(cur, e));
     else if (e.fetched_at && e.type !== 'film' && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
