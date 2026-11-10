@@ -547,3 +547,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
 .stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:2px;align-content:start;background:var(--surface)}
 .stat b{font:700 26px/1.1 var(--font-display)}.stat span{font-size:14px}.stat small{color:var(--muted);font-size:12.5px;line-height:1.35}
+/* Hauptmenü: Punkt und Zahl an der Schrift ausrichten (Grundlinie), Symbole mittig */
+.navmain .nav{align-items:baseline}
+.navmain .nav svg{align-self:center}
+.navmain .nav .cdot{vertical-align:baseline}
