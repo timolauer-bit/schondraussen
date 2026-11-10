@@ -88,3 +88,9 @@ function podcast_level(): string {
     return $l;
 }
 function podcast_ok(?array $u): bool { return $u && (podcast_level() === 'all' || ($u['role'] ?? '') === 'admin'); }
+// Kategorien ausblenden: vorerst nur für Admins (Test). Gespeichert in users.hide_cats als kommagetrennte Liste.
+function hidecats_ok(?array $u): bool { return $u && ($u['role'] ?? '') === 'admin'; }
+function hidden_cats(?array $u): array {
+    if (!hidecats_ok($u)) return [];
+    return array_values(array_intersect(explode(',', (string) ($u['hide_cats'] ?? '')), ['author', 'artist', 'film', 'series', 'podcast']));
+}

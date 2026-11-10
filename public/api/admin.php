@@ -101,6 +101,11 @@ if ($a === 'stats') { // Überblick ohne einzelne Konten: nur Zahlen
     } catch (Throwable $e) { $o['missing'] = true; }
     json_out($o);
 }
+if ($a === 'podcast_get') json_out(['level' => podcast_level()]);
+if ($a === 'podcast_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['podcast_level', (($b['level'] ?? '') === 'all') ? 'all' : 'admin']);
+    json_out(['ok' => true]);
+}
 if ($a === 'anon_get') { require_once __DIR__ . '/../lib/anon.php'; json_out(['enabled' => anon_enabled($pdo)]); }
 if ($a === 'anon_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['anon_signup', !empty($b['on']) ? '1' : '0']);

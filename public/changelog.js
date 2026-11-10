@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'A|Admin: Schalter „Podcasts für alle Nutzer freigeben“ (Reiter Registrierung, Abschnitt Kategorien). Test: In den Einstellungen lassen sich Kategorien ausblenden (vorerst nur für Admins, Migration 056)',
     'A|Podcasts: neue Kategorie (Suche über Apple Podcasts, Folgen aus dem öffentlichen Feed). Bisher nur für Admins sichtbar; bei „Hinzufügen“ gelten die vorhandenen Folgen als gehört, neue Folgen kommen in der Morgenmail unter „Neue Podcast-Folgen“. Migration 055 nötig',
     'B|Ideen und Bugs: Die rote Zahl wurde nicht angezeigt, wenn die Liste im Hintergrund geöffnet blieb, weil jede Abfrage alles als gesehen markiert hat; jetzt zählt nur noch das tatsächliche Öffnen der Liste',
     'A|Admin: Neuer Reiter „Statistik“ mit Nutzerzahl, Anmeldungen (7 Tage und 4 Wochen), gelöschten Konten insgesamt und Löschungen innerhalb von 7 Tagen nach der Anmeldung, nur als Zahlen ohne einzelne Konten',
