@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'U|Obere Leiste: Mit der Kategorie Podcasts wurde sie zu breit und brach in eine zweite Zeile um; Abstände und Symbole sind jetzt enger, auf dem Handy passen auch acht Symbole in die zweite Zeile',
     'A|Admin → Sicherheit: Neue Tabelle „Rechte der Nutzergruppen“ (Nutzer, Alphatester, Admin). Einstellbar sind: Ideen und Bugs alle sehen und verwalten, Kommentare lesen und schreiben (greift, sobald es Kommentare gibt), Kategorie Podcasts und Kategorien ausblenden. Die Voreinstellung entspricht den bisherigen Rechten; der Schalter „Podcasts für alle“ ist darin aufgegangen',
     'U|Menü: Farbpunkte und Zahlen hinter den Kategorien sitzen jetzt mittig zur Schrift, und die gesamte Leiste ist optisch mittig (vorher saß der Inhalt etwas zu tief)',
     'D|Sicherheit: Neue Schutz-Kopfzeilen (Content-Security-Policy, HSTS), Schreibzugriffe von fremden Webseiten werden abgelehnt, und die Datenbank-Sicherungen liegen nach Möglichkeit außerhalb des Webverzeichnisses. Grundlage ist eine Code-Prüfung vom 10.11.',

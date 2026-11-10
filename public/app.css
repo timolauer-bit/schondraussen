@@ -558,3 +558,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .permwrap{overflow-x:auto;margin-top:8px}.permtbl{border-collapse:collapse;width:100%;min-width:520px}.permtbl th{font:500 12px var(--font-mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:center;padding:6px 8px;border-bottom:1px solid var(--line)}.permtbl th:first-child{text-align:left}
 .permtbl td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:center}.permtbl td:first-child{text-align:left}.permtbl input[type=checkbox]{width:18px;height:18px}
 .permsoon{color:var(--muted);font-size:13px}.permfix{font-weight:700}.permfix.off{color:var(--muted)}.permfix.on{color:var(--accent)}.permfixrow td{color:var(--muted)}
+/* Obere Leiste (Desktop): etwas enger, damit sie mit Podcasts in einer Zeile bleibt */
+@media(min-width:761px){.topbar{gap:0 16px}.nav.ionly{padding-inline:5px}}
+/* Handy: zweite Zeile mit bis zu 8 Symbolen, auf schmalen Geräten (360 px) enger setzen */
+@media(max-width:760px){.navrest .nav.ionly{padding-inline:clamp(4px,1.9vw,10px)}.navrest .podnav small{display:none}}
