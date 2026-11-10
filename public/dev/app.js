@@ -1010,7 +1010,7 @@
       body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
       var g = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer', t)); });
-      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
+      body.append(g, h('h3', { class: 'commh' }, 'Meistgesehen'), h('p', { class: 'hint' }, 'Serien, bei denen Nutzer mindestens eine halbe Staffel gesehen haben. Jeder Nutzer zählt pro Serie nur einmal, damit lange Serien nicht zu stark wirken.'), h('div', { class: 'commgrid' }, rankTable('watched', 'Meistgesehen Serien', d.watched || [], 'Nutzer mit mindestens einer halben Staffel', 'series')), h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
       var g2 = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t)); });
       body.append(g2);
