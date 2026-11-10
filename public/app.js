@@ -758,8 +758,15 @@
         h('a', { class: 'btn ghost small', href: '/api/data.php?a=export&fmt=csv', download: '' }, 'Liste (CSV)'))));
     if (!isAdm()) {
       var dm = h('span', { class: 'msg', style: 'margin:0' }), pw = h('input', { type: 'password', autocomplete: 'current-password', placeholder: 'Passwort zur Bestätigung', style: 'max-width:260px' }), dbox = h('div', { hidden: true, style: 'margin-top:10px' });
-      dbox.append(h('p', { class: 'hint' }, 'Dein Konto wird zur Löschung vorgemerkt und du wirst abgemeldet. Deine Daten (Konto, Listen, Einstellungen, Nachrichten) bleiben noch eine Woche gespeichert, falls du es dir anders überlegst: Melde dich einfach wieder an und brich die Löschung ab. Danach werden sie endgültig gelöscht.'), h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, pw,
-        h('button', { class: 'btn warn small', type: 'button', onclick: function () { dm.className = 'msg'; dm.textContent = ''; api('/api/auth.php?a=delete_account', { password: pw.value }).then(function (r) { if (r && r.ok) location.reload(); else { dm.className = 'msg err'; dm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, 'Konto jetzt löschen'), dm));
+      var EXIT_R = [['no_need', 'Ich brauche die Seite nicht mehr'], ['test_only', 'Ich wollte nur mal reinschauen'], ['missing_feature', 'Mir fehlen Funktionen'], ['missing_content', 'Ich finde nicht, was ich suche (Titel, Künstler, Autoren)'], ['bugs', 'Fehler oder unzuverlässige Daten'], ['complicated', 'Zu kompliziert oder unübersichtlich'], ['other_tool', 'Ich nutze ein anderes Angebot'], ['mails', 'Zu viele oder unpassende Mails'], ['privacy', 'Bedenken beim Datenschutz'], ['other', 'Etwas anderes']], exitReason = '';
+      var exitTxt = h('textarea', { maxlength: '2000', rows: '4', 'aria-label': 'Was können wir besser machen? (freiwillig)', placeholder: 'Was hätte ich besser machen können? (freiwillig)', style: 'width:100%;max-width:560px;box-sizing:border-box' }), exitCnt = h('span', { class: 'hint', style: 'margin-left:8px' }, '0 / 2000');
+      exitTxt.addEventListener('input', function () { exitCnt.textContent = exitTxt.value.length + ' / 2000'; });
+      var exitBox = h('fieldset', { style: 'border:0;padding:0;margin:12px 0 0;min-width:0' }, h('legend', { class: 'label', style: 'padding:0' }, 'Darf ich fragen, warum du gehst? (freiwillig)'),
+        h('p', { class: 'hint', style: 'margin:2px 0 6px' }, 'Du kannst das Konto auch ohne Angabe löschen. Deine Antwort wird anonym gespeichert und ohne deinen Namen an mich weitergegeben.'),
+        h('div', { style: 'display:grid;gap:4px' }, EXIT_R.map(function (x) { return h('label', { style: 'display:flex;gap:8px;align-items:flex-start' }, h('input', { type: 'radio', name: 'exitwhy', value: x[0], onchange: function () { exitReason = x[0]; } }), x[1]); })),
+        h('p', { style: 'margin:8px 0 0' }, exitTxt, exitCnt));
+      dbox.append(h('p', { class: 'hint' }, 'Dein Konto wird zur Löschung vorgemerkt und du wirst abgemeldet. Deine Daten (Konto, Listen, Einstellungen, Nachrichten) bleiben noch eine Woche gespeichert, falls du es dir anders überlegst: Melde dich einfach wieder an und brich die Löschung ab. Danach werden sie endgültig gelöscht.'), exitBox, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 0' }, pw,
+        h('button', { class: 'btn warn small', type: 'button', onclick: function () { dm.className = 'msg'; dm.textContent = ''; api('/api/auth.php?a=delete_account', { password: pw.value, reason: exitReason, text: exitTxt.value }).then(function (r) { if (r && r.ok) location.reload(); else { dm.className = 'msg err'; dm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, 'Konto jetzt löschen'), dm));
       box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Konto löschen'), h('p', { class: 'hint' }, 'Du kannst dein Konto samt aller Einträge jederzeit löschen lassen.'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { dbox.hidden = !dbox.hidden; if (!dbox.hidden) pw.focus(); } }, 'Konto löschen …'), dbox));
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
@@ -1438,9 +1445,36 @@
       });
     }
     logLoad();
+    var stBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Nur Zahlen, keine einzelnen Konten. Gelöschte Konten werden erst seit Einführung der Zählung erfasst.'));
+    var stOut = h('div', null); stBox.append(stOut);
+    function statLoad() {
+      api('/api/admin.php?a=stats').then(function (r) {
+        stOut.textContent = '';
+        if (!r || !r.ok) { stOut.append(h('p', { class: 'hint' }, (r && r.error) || 'Statistik nicht verfügbar.')); return; }
+        if (r.missing) { stOut.append(h('p', { class: 'hint' }, 'Die Datenbank ist noch nicht aktualisiert (migrate.php, 054).')); return; }
+        function tile(n, l, sub) { return h('div', { class: 'stat' }, h('b', null, String(n)), h('span', null, l), sub ? h('small', null, sub) : null); }
+        var pct = function (a, b) { return b ? ' (' + Math.round(a * 100 / b) + ' %)' : ''; };
+        stOut.append(h('div', { class: 'statgrid' },
+          tile(r.users_total, 'Nutzer', r.users_approved + ' freigeschaltet, ' + (r.users_total - r.users_approved) + ' wartend'),
+          tile(r.reg7, 'Anmeldungen, letzte 7 Tage'),
+          tile(r.reg28, 'Anmeldungen, letzte 4 Wochen'),
+          tile(r.exits_total, 'Gelöschte Konten insgesamt', (r.exits_pending ? r.exits_pending + ' in der 7-Tage-Frist, ' : '') + (r.exits_admin ? r.exits_admin + ' zusätzlich vom Admin entfernt' : 'vom Admin entfernte nicht mitgezählt')),
+          tile(r.exits28, 'Gelöscht, letzte 4 Wochen'),
+          tile(r.early28, 'Innerhalb von 7 Tagen wieder gelöscht', 'von ' + r.reg28 + ' Anmeldungen der letzten 4 Wochen' + pct(r.early28, r.reg28))));
+        stOut.append(h('h4', { style: 'margin:16px 0 6px' }, 'Gründe beim Löschen (alle bisher)'));
+        if (!r.reasons.length && !r.no_reason) stOut.append(h('p', { class: 'hint' }, 'Noch keine Löschung erfasst.'));
+        else {
+          var ul = h('ul', { style: 'margin:0;padding-left:18px' });
+          r.reasons.forEach(function (x) { ul.append(h('li', null, x.n + ' × ' + x.label)); });
+          if (r.no_reason) ul.append(h('li', null, r.no_reason + ' × ohne Angabe'));
+          stOut.append(ul, h('p', { class: 'hint' }, r.texts + (r.texts === 1 ? ' Freitext' : ' Freitexte') + ' gespeichert; sie kommen anonym in „Kontakt“ unter „System“.'));
+        }
+      });
+    }
+    p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Statistik'), stBox); statLoad();
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Gesperrte E-Mail-Adressen']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });

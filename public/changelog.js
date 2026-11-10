@@ -1,5 +1,9 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 11, d: '10.11.2026', t: [
+    'A|Admin: Neuer Reiter „Statistik“ mit Nutzerzahl, Anmeldungen (7 Tage und 4 Wochen), gelöschten Konten insgesamt und Löschungen innerhalb von 7 Tagen nach der Anmeldung, nur als Zahlen ohne einzelne Konten',
+    'U|Konto löschen: Du kannst freiwillig einen Grund auswählen und einen Text (bis 2.000 Zeichen) schreiben. Das Löschen geht weiter auch ohne Angabe. Die Rückmeldung wird anonym gespeichert und mir anonym als Nachricht angezeigt',
+  ] },
   { v: 10, d: '09.11.2026', t: [
     'U|Menü auf dem Handy: Die erste Zeile (Kalender bis Serien) passt ihre Schriftgröße jetzt der Bildschirmbreite an und wird auf schmalen Geräten wie dem iPhone nicht mehr abgeschnitten',
     'B|Einstellungen: Die Überschriften der Karten waren durch den neuen Wiederherstellungscode verrutscht (Code stand unter „Darstellung“); jetzt steht er unter „Profil“, und alle Karten haben wieder die richtige Überschrift',

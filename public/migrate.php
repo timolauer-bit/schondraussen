@@ -7,6 +7,11 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+ '054_account_exits' => [
+  "CREATE TABLE IF NOT EXISTS account_exits (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NULL, registered_on DATE NOT NULL, exited_on DATE NOT NULL, days_active INT UNSIGNED NOT NULL, by_admin TINYINT(1) NOT NULL DEFAULT 0, reason VARCHAR(20) NULL, reason_text TEXT NULL, KEY idx_exit_user (user_id), KEY idx_exit_on (exited_on)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "ALTER TABLE admin_notices MODIFY body TEXT NOT NULL",
+  "INSERT INTO account_exits (user_id,registered_on,exited_on,days_active,by_admin) SELECT id, DATE(created_at), DATE(delete_requested_at), GREATEST(0, DATEDIFF(DATE(delete_requested_at), DATE(created_at))), admin_deleted FROM users WHERE delete_requested_at IS NOT NULL AND role<>'admin'",
+ ],
  '001_auth' => [
   "CREATE TABLE IF NOT EXISTS email_tokens (
      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

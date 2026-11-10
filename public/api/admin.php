@@ -75,6 +75,32 @@ if ($a === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('DELETE FROM announcements WHERE id=?')->execute([$i]); $pdo->prepare('DELETE FROM announcement_reads WHERE ann_id=?')->execute([$i]); } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }
+if ($a === 'stats') { // Überblick ohne einzelne Konten: nur Zahlen
+    $one = fn(string $sql) => (int) $pdo->query($sql)->fetchColumn();
+    $o = ['ok' => true];
+    $live = "role<>'admin' AND admin_deleted=0 AND delete_requested_at IS NULL";
+    $o['users_total'] = $one("SELECT COUNT(*) FROM users WHERE $live");
+    $o['users_approved'] = $one("SELECT COUNT(*) FROM users WHERE $live AND approved_at IS NOT NULL");
+    try {
+        // Anmeldungen = noch vorhandene Konten + bereits endgültig gelöschte (deren Eintrag ist anonym)
+        foreach ([7 => 'reg7', 28 => 'reg28'] as $d => $k) {
+            $o[$k] = $one("SELECT COUNT(*) FROM users WHERE role<>'admin' AND created_at >= NOW() - INTERVAL $d DAY") + $one("SELECT COUNT(*) FROM account_exits WHERE user_id IS NULL AND registered_on >= CURDATE() - INTERVAL $d DAY");
+        }
+        $o['exits_total'] = $one('SELECT COUNT(*) FROM account_exits WHERE by_admin=0');
+        $o['exits_pending'] = $one('SELECT COUNT(*) FROM account_exits WHERE by_admin=0 AND user_id IS NOT NULL');
+        $o['exits_admin'] = $one('SELECT COUNT(*) FROM account_exits WHERE by_admin=1');
+        $o['exits28'] = $one('SELECT COUNT(*) FROM account_exits WHERE by_admin=0 AND exited_on >= CURDATE() - INTERVAL 28 DAY');
+        $o['early28'] = $one('SELECT COUNT(*) FROM account_exits WHERE by_admin=0 AND days_active<=7 AND registered_on >= CURDATE() - INTERVAL 28 DAY');
+        $o['since'] = (string) $pdo->query('SELECT MIN(exited_on) FROM account_exits')->fetchColumn();
+        $rs = exit_reasons(); $cnt = [];
+        foreach ($pdo->query('SELECT reason, COUNT(*) c FROM account_exits WHERE by_admin=0 GROUP BY reason')->fetchAll() as $r) $cnt[(string) $r['reason']] = (int) $r['c'];
+        $o['reasons'] = []; foreach ($rs as $k => $lbl) if (!empty($cnt[$k])) $o['reasons'][] = ['label' => $lbl, 'n' => $cnt[$k]];
+        usort($o['reasons'], fn($x, $y) => $y['n'] <=> $x['n']);
+        $o['no_reason'] = $cnt[''] ?? 0;
+        $o['texts'] = $one("SELECT COUNT(*) FROM account_exits WHERE by_admin=0 AND reason_text IS NOT NULL AND reason_text<>''");
+    } catch (Throwable $e) { $o['missing'] = true; }
+    json_out($o);
+}
 if ($a === 'anon_get') { require_once __DIR__ . '/../lib/anon.php'; json_out(['enabled' => anon_enabled($pdo)]); }
 if ($a === 'anon_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['anon_signup', !empty($b['on']) ? '1' : '0']);

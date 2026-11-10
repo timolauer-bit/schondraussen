@@ -12,10 +12,10 @@ function recovery_code_new(): string {
 }
 function recovery_norm(string $c): string { return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c)); }
 /** Meldung an den Admin (erscheint im Kontakt-Bereich unter „System“); gleiche Art höchstens einmal je $throttleMin Minuten. */
-function admin_notice(PDO $pdo, string $kind, string $body, int $throttleMin = 0): void {
+function admin_notice(PDO $pdo, string $kind, string $body, int $throttleMin = 0, int $max = 500): void {
     try {
         if ($throttleMin > 0) { $q = $pdo->prepare('SELECT 1 FROM admin_notices WHERE kind=? AND created_at > NOW() - INTERVAL ? MINUTE LIMIT 1'); $q->execute([$kind, $throttleMin]); if ($q->fetchColumn()) return; }
-        $pdo->prepare('INSERT INTO admin_notices (kind,body) VALUES (?,?)')->execute([$kind, mb_substr($body, 0, 500)]);
+        $pdo->prepare('INSERT INTO admin_notices (kind,body) VALUES (?,?)')->execute([$kind, mb_substr($body, 0, $max)]);
         $pdo->exec('DELETE FROM admin_notices WHERE created_at < NOW() - INTERVAL 90 DAY');
     } catch (Throwable $e) {}
 }

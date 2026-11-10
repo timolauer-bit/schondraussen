@@ -263,6 +263,7 @@ try {
         $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte zuerst anmelden.'], 401);
         if ($a === 'cancel_delete') {
             $pdo->prepare('UPDATE users SET delete_requested_at=NULL WHERE id=?')->execute([$cu['id']]);
+            exit_cancel($pdo, (int) $cu['id']);
             json_out(['ok' => true]);
         }
         if ($cu['role'] === 'admin') json_out(['error' => 'Das Admin-Konto kann hier nicht gelöscht werden.'], 403);
@@ -270,6 +271,14 @@ try {
         $s = $pdo->prepare('SELECT pass_hash FROM users WHERE id=?'); $s->execute([$cu['id']]); $row = $s->fetch();
         if (!$row || !password_verify((string) ($b['password'] ?? ''), $row['pass_hash'])) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
         $pdo->prepare('UPDATE users SET delete_requested_at=NOW() WHERE id=? AND delete_requested_at IS NULL')->execute([$cu['id']]);
+        // Freiwillige Rückmeldung: Grund und Text werden anonym gespeichert und als anonyme Nachricht an den Admin gegeben
+        $why = (string) ($b['reason'] ?? ''); $rs = exit_reasons(); if (!isset($rs[$why])) $why = '';
+        $wt = trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) ($b['text'] ?? ''))); $wt = mb_substr($wt, 0, 2000);
+        $days = exit_log($pdo, (int) $cu['id'], false, $why !== '' ? $why : null, $wt !== '' ? $wt : null);
+        if ($days !== null && ($why !== '' || $wt !== '')) {
+            require_once __DIR__ . '/../lib/anon.php';
+            admin_notice($pdo, 'exit', "Rückmeldung zur Kontolöschung (anonym)\nKonto bestand " . $days . ($days === 1 ? ' Tag' : ' Tage') . "\nGrund: " . ($why !== '' ? $rs[$why] : 'nicht angegeben') . ($wt !== '' ? "\n\n" . $wt : ''), 0, 2600);
+        }
         $until = date('d.m.Y', time() + 7 * 86400);
         try { if (!empty($cu['email'])) send_mail($cu['email'], 'Dein Konto wird gelöscht', farewell_line($pdo, (int) $cu['id']) . "\n\nDu hast die Löschung deines Kontos bei Schondraussen.de beantragt.\n\nDeine Daten bleiben noch eine Woche gespeichert und werden nach dem $until endgültig gelöscht. Wenn du dich bis dahin wieder anmeldest, kannst du die Löschung mit einem Klick abbrechen.\n\nWenn du das nicht warst, melde dich an und brich die Löschung ab, und ändere dann dein Passwort.\n"); } catch (Throwable $e) {}
         json_out(['ok' => true]);
