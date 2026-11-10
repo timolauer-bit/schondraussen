@@ -3,6 +3,7 @@
   D.uname_free_until = (+D.uname_free || 0) > 0 ? Date.now() + D.uname_free * 60000 : 0;
   function unFree() { return Math.max(0, Math.ceil(((D.uname_free_until || 0) - Date.now()) / 60000)); }
   if (!root) return;
+  if (D.dev) document.documentElement.classList.add('devmode');
   var CL = window.CHANGELOG || [], LATEST = CL.length ? CL[0].v : 1;
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
   var TYPES = {
@@ -153,6 +154,7 @@
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navRest.append(btn('podcast', 'Podcasts', entriesOf('podcast').length, ' podnav'));
     if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
+    if (D.admin && !S.preview) { navRest.append(h('button', { class: 'nav devsw' + (D.dev ? ' on' : ''), type: 'button', title: D.dev ? 'Du siehst die Entwicklungsversion. Klicken für die Live-Version.' : 'Du siehst die Live-Version. Klicken für die Entwicklungsversion.', onclick: function () { api('/api/data.php?a=devmode', { on: !D.dev }).then(function () { location.reload(); }); } }, D.dev ? 'Dev' : 'Live')); }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
     navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
     function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' neu seit deinem letzten Besuch' }, n > 99 ? '99+' : String(n))); return b; }

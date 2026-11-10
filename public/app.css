@@ -616,3 +616,8 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .strip .s:hover{border-color:var(--accent)}.strip .s.on{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.strip .s.on b{color:var(--accent)}
 .strip .s:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .season[hidden]{display:none}.season{margin-top:6px}
+
+/* Umschalter Live/Entwicklungsversion (nur Admin) */
+.nav.devsw{font:600 12px var(--font-mono);padding:3px 8px;margin:0 2px;align-self:center;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:transparent;cursor:pointer;border-bottom-width:1px}
+.nav.devsw.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}

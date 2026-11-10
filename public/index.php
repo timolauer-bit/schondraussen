@@ -9,6 +9,8 @@ $nonce = base64_encode(random_bytes(16));
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-$nonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 $u = null; try { $u = current_user(); } catch (Throwable $e) {}
 $app = $u && !empty($u['approved']);
+$dev = $app && ($u['role'] ?? '') === 'admin' && ($_COOKIE['sd_dev'] ?? '') === '1' && is_file(__DIR__ . '/dev/app.js') && is_file(__DIR__ . '/dev/app.css'); // Entwicklungsversion nur für Admin per Schalter
+$ap = $dev ? '/dev' : '';
 $shots = [];
 if (!$u) { try { foreach (db()->query('SELECT id,title,UNIX_TIMESTAMP(updated_at) v FROM site_images ORDER BY position,id')->fetchAll() as $r) $shots[] = ['src' => '/api/shot.php?id=' . (int) $r['id'] . '&v=' . (int) $r['v'], 'title' => $r['title']]; } catch (Throwable $e) {}
   if (!$shots) $shots = [['src' => '/shots/shot1.webp', 'title' => 'Kalender mit allen angekündigten Veröffentlichungen'], ['src' => '/shots/shot2.webp', 'title' => 'Serienübersicht mit Liste und kommenden Veröffentlichungen']]; }
@@ -21,7 +23,7 @@ $seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u); // sendet ggf. X-Robots-Tag, dah
 <?= $seo ?>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f3ead6"><link rel="apple-touch-icon" href="/appicons/apple-touch-icon.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" type="image/png" sizes="32x32" href="/appicons/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="/appicons/icon-192.png"><link rel="shortcut icon" href="/favicon.ico">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Schondraussen">
-<?php if ($app): ?><link rel="stylesheet" href="/app.css?v=<?= filemtime(__DIR__ . '/app.css') ?>"><?php else: ?>
+<?php if ($app): ?><link rel="stylesheet" href="<?= $ap ?>/app.css?v=<?= filemtime(__DIR__ . $ap . '/app.css') ?>"><?php else: ?>
 <style>
 :root{--bg:#f2f2f0;--surface:#fff;--ink:#11171d;--muted:#58616a;--line:#d6d6d1;--accent:#db4d1a}
 @media(prefers-color-scheme:dark){:root{--bg:#101419;--surface:#171d23;--ink:#e8ecee;--muted:#9aa3ac;--line:#2e353e;--accent:#ff7842}}
@@ -72,9 +74,9 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
-<script nonce="<?= $nonce ?>">window.SD = <?= json_encode(['approval' => approval_required(), 'alpha' => is_alpha($u), 'podcast' => podcast_ok($u), 'hidecats' => hidecats_ok($u), 'hide' => hidden_cats($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'community' => (isset($u['community']) && $u['community'] !== null) ? (int) $u['community'] === 1 : $u['role'] === 'admin', 'community_asked' => (isset($u['community']) && $u['community'] !== null) || $u['role'] === 'admin', 'nerd' => (isset($u['nerd_changes']) && $u['nerd_changes'] !== null) ? (int) $u['nerd_changes'] === 1 : is_alpha($u), 'uname_free' => username_free_minutes(db(), (int) $u['id']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
+<script nonce="<?= $nonce ?>">window.SD = <?= json_encode(['dev' => $dev, 'approval' => approval_required(), 'alpha' => is_alpha($u), 'podcast' => podcast_ok($u), 'hidecats' => hidecats_ok($u), 'hide' => hidden_cats($u), 'admin' => $u['role'] === 'admin', 'id' => (int) $u['id'], 'email' => $u['email'], 'username' => (string) ($u['username'] ?? ''), 'totp' => !empty($u['totp_on']), 'hide_email' => !empty($u['hide_email']), 'hide_activity' => !empty($u['hide_activity']), 'community' => (isset($u['community']) && $u['community'] !== null) ? (int) $u['community'] === 1 : $u['role'] === 'admin', 'community_asked' => (isset($u['community']) && $u['community'] !== null) || $u['role'] === 'admin', 'nerd' => (isset($u['nerd_changes']) && $u['nerd_changes'] !== null) ? (int) $u['nerd_changes'] === 1 : is_alpha($u), 'uname_free' => username_free_minutes(db(), (int) $u['id']), 'uname_left' => (!empty($u['username']) && $u['role'] !== 'admin' && !empty($u['username_changed_at'])) ? max(0, 30 - (int) floor((time() - strtotime($u['username_changed_at'])) / 86400)) : 0, 'skin' => $skin ?: 'auto', 'notify' => !isset($u['notify']) || (int) $u['notify'] === 1, 'sample_asked' => (int) ($u['sample_asked'] ?? 1), 'n' => ['new' => (int) ($u['n_new'] ?? 1), 'day' => (int) ($u['n_day'] ?? 1), 'week' => (int) ($u['n_week'] ?? 0), 'mode' => ($u['n_mode'] ?? 'digest') === 'instant' ? 'instant' : 'digest', 'weekday' => (int) ($u['n_weekday'] ?? 1), 'bell_default' => (int) ($u['bell_default'] ?? 1)]]) ?>;</script>
 <script src="/changelog.js?v=<?= filemtime(__DIR__ . '/changelog.js') ?>"></script>
-<script src="/app.js?v=<?= filemtime(__DIR__ . '/app.js') ?>"></script>
+<script src="<?= $ap ?>/app.js?v=<?= filemtime(__DIR__ . $ap . '/app.js') ?>"></script>
 <?php else: ?>
 <main<?= $u ? '' : ' class="land"' ?>>
 <h1>Schondraussen<span>.de</span></h1>

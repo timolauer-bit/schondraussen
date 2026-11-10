@@ -74,6 +74,12 @@ if ($a === 'calendar') {
     $s->execute([$u['id']]);
     json_out(['releases' => $s->fetchAll()]);
 }
+if ($a === 'devmode' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Admin: zwischen Live- und Entwicklungsversion wechseln (nur Cookie, keine Daten)
+    if (($u['role'] ?? '') !== 'admin') json_out(['error' => 'Nur für Admins.'], 403);
+    $on = !empty(body()['on']);
+    setcookie('sd_dev', $on ? '1' : '', ['expires' => $on ? time() + 30 * 86400 : time() - 3600, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+    json_out(['ok' => true]);
+}
 if ($a === 'hidecats' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hidecats_ok($u)) json_out(['error' => 'Diese Funktion ist noch nicht freigegeben.'], 403);
     $c = array_values(array_intersect(array_unique(array_map('strval', (array) (body()['cats'] ?? []))), ['author', 'artist', 'film', 'series', 'podcast']));
