@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'A|Rechte der Nutzergruppen: Neues Recht „Entwicklerversion nutzen“. Wer es hat, sieht neben dem Benutzernamen den Schalter Live/Dev. Alphatester haben es standardmäßig, Nutzer nicht.',
     'F|Wunschbild: Wer keines der 50 Profilbilder mag, kann in den Einstellungen ein eigenes Bild beschreiben. Der Administrator stellt 2 bis 3 Vorschläge bereit, und du wählst eines aus.',
     'F|Profil: Bis zu zwei eigene Genres mit Kategorie, sie erscheinen nur auf deiner Profilkarte. Geburtsdatum optional (das Alter wechselt dann am Geburtstag).',
     'U|Genres: Bücher und Musik haben jetzt je 30 Genres in Filtern und Profilauswahl, Filme und Serien 28; die Filter zeigen bis zu 30 Genres.',

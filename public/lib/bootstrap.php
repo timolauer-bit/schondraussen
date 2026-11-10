@@ -123,6 +123,7 @@ function perm_defs(): array {
         'fb_comment_write' => ['Kommentare zu Ideen und Bugs schreiben', 'Gilt, sobald es Kommentare gibt', [0, 1], 'soon'],
         'podcast' => ['Kategorie Podcasts nutzen', 'Suchen, hinzufügen, in Menü und Kalender sehen', [$pl, $pl], 'live'],
         'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen (Test)', [0, 0], 'live'],
+        'devmode' => ['Entwicklerversion nutzen', 'Schalter „Live/Dev“ neben dem Benutzernamen: neue Funktionen testen, bevor sie für alle freigegeben werden', [0, 1], 'live'],
     ];
 }
 function perm_stored(): array {

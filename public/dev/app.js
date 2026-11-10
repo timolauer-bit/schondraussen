@@ -154,7 +154,7 @@
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navRest.append(btn('podcast', 'Podcasts', entriesOf('podcast').length, ' podnav'));
     if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
-    if (D.admin && !S.preview) { var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', title: D.dev ? 'Du siehst die Entwicklungsversion. Klicken für die Live-Version.' : 'Du siehst die Live-Version. Klicken für die Entwicklungsversion.', onclick: function () { api('/api/data.php?a=devmode', { on: !D.dev }).then(function () { location.reload(); }); } }, D.dev ? 'Dev' : 'Live'); var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
+    if ((D.admin || D.devsw) && !S.preview) { var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', title: D.dev ? 'Du siehst die Entwicklungsversion. Klicken für die Live-Version.' : 'Du siehst die Live-Version. Klicken für die Entwicklungsversion.', onclick: function () { api('/api/data.php?a=devmode', { on: !D.dev }).then(function () { location.reload(); }); } }, D.dev ? 'Dev' : 'Live'); var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
     navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
     function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' neu seit deinem letzten Besuch' }, n > 99 ? '99+' : String(n))); return b; }
@@ -1597,7 +1597,7 @@
       var lastG = '';
       function grp(t) { body.append(h('tr', { class: 'permgrp' }, h('td', { colspan: '4' }, t))); }
       rows.forEach(function (r) {
-        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : 'Kategorien'; if (G !== lastG) { grp(G); lastG = G; }
+        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : r.key === 'devmode' ? 'Entwicklung' : 'Kategorien'; if (G !== lastG) { grp(G); lastG = G; }
         function cb(g) { var ck = h('input', { type: 'checkbox', checked: !!r[g], disabled: g === 'alpha' && !!r.user, 'aria-label': r.label + ' – ' + (g === 'user' ? 'Nutzer' : 'Alphatester') });
           ck.addEventListener('change', function () { permMsg.className = 'msg'; permMsg.textContent = '…'; api('/api/admin.php?a=perms_set', { key: r.key, group: g, on: ck.checked }).then(function (x) { if (!x.ok) { permMsg.className = 'msg err'; permMsg.textContent = x.error || 'Das hat nicht geklappt.'; } else { permMsg.textContent = 'Gespeichert.'; } permLoad(); }); }); return ck; }
         body.append(h('tr', null, h('td', null, h('div', null, r.label, r.state === 'soon' ? h('span', { class: 'permsoon' }, ' (noch ohne Funktion)') : null), h('div', { class: 'permhint' }, r.hint)), h('td', null, cb('user')), h('td', null, cb('alpha')), h('td', null, mark(true))));

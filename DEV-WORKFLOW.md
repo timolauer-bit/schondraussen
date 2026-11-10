@@ -1,6 +1,6 @@
 # Live- und Entwicklungsversion
 
-Admins sehen oben in der Leiste einen Schalter „Live" / „Dev". Er setzt nur das Cookie `sd_dev` (nur für Admins wirksam).
+Admins sehen oben in der Leiste einen Schalter „Live" / „Dev". Er setzt nur das Cookie `sd_dev` (wirksam für Admins und für Gruppen mit dem Recht „Entwicklerversion nutzen“; Alphatester haben es standardmäßig).
 
 - Live: `public/app.js`, `public/app.css`
 - Entwicklung: `public/dev/app.js`, `public/dev/app.css` (gleiche Datenbank, gleiche API)

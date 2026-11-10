@@ -75,7 +75,7 @@ if ($a === 'calendar') {
     json_out(['releases' => $s->fetchAll()]);
 }
 if ($a === 'devmode' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Admin: zwischen Live- und Entwicklungsversion wechseln (nur Cookie, keine Daten)
-    if (($u['role'] ?? '') !== 'admin') json_out(['error' => 'Nur für Admins.'], 403);
+    if (!perm($u, 'devmode')) json_out(['error' => 'Nicht erlaubt.'], 403);
     $on = !empty(body()['on']);
     setcookie('sd_dev', $on ? '1' : '', ['expires' => $on ? time() + 30 * 86400 : time() - 3600, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
     json_out(['ok' => true]);
