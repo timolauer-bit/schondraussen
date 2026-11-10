@@ -98,12 +98,7 @@ if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $bdv = $bd; $yr = (int) $dt->format('Y');
     } else { $yr = $b['year'] ?? null; $yr = ($yr === null || $yr === '') ? null : (int) $yr; }
     if ($yr !== null && ($yr < 1900 || $yr > (int) date('Y') - 10)) json_out(['error' => 'Bitte gib ein gültiges Geburtsjahr an.'], 422);
-    $fixed = null; // nur Jahr: Alter bleibt auf dem Stand der Eingabe
-    if ($yr !== null && $bdv === null) {
-        $fixed = (int) date('Y') - $yr;
-        try { $o = $pdo->prepare('SELECT birth_year,birth_date,age_fixed FROM users WHERE id=?'); $o->execute([$u['id']]); $o = $o->fetch() ?: [];
-            if ($o && !$o['birth_date'] && (int) $o['birth_year'] === $yr && $o['age_fixed'] !== null) $fixed = (int) $o['age_fixed']; } catch (Throwable $t) {}
-    }
+    $fixed = null; // nur Jahr: Alter wechselt zum Jahreswechsel, mit Datum am Geburtstag (wird beim Anzeigen berechnet)
     $show = in_array($b['age_show'] ?? 'none', ['none', 'age', 'year'], true) ? $b['age_show'] : 'none';
     if ($yr === null) $show = 'none';
     $av = (string) ($b['avatar'] ?? '');

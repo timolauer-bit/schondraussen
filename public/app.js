@@ -647,7 +647,7 @@
         h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
         h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
         h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
-        h('p', { class: 'hint' }, 'Nur mit Jahr bleibt das Alter auf dem Stand der Eingabe.'), h('p', { class: 'plab' }, 'Anzeige in der Community'), sel);
+        h('p', { class: 'hint' }, 'Nur mit Jahr springt das Alter zum Jahreswechsel, mit Datum am echten Geburtstag.'), h('p', { class: 'plab' }, 'Anzeige in der Community'), sel);
       var gcols = h('div', { class: 'gcols' });
       ['author', 'artist', 'film', 'series'].forEach(function (t) {
         var chosen = (v.favs[t] = (v.favs[t] || []).slice(0, 5)), box = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Lieblingsgenres ' + TYPES[t].plural }), cap = h('span', { class: 'hint', style: 'margin-left:6px' });
