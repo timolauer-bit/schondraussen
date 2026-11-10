@@ -581,12 +581,13 @@ function podcast_search(string $q): array {
 // Lädt einen RSS-Feed (nur http/https, höchstens 4 MB) und gibt das XML zurück oder null.
 function podcast_feed_fetch(string $url): ?SimpleXMLElement {
     if (!preg_match('~^https?://~i', $url)) return null;
-    $buf = ''; $ch = curl_init($url);
+    $buf = ''; $cut = false; $ch = curl_init($url);
     curl_setopt_array($ch, [CURLOPT_TIMEOUT => 15, CURLOPT_CONNECTTIMEOUT => 6, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 4,
         CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
         CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/rss+xml, application/xml, text/xml'],
-        CURLOPT_WRITEFUNCTION => function ($c, $d) use (&$buf) { $buf .= $d; return strlen($buf) > 4000000 ? 0 : strlen($d); }]);
+        CURLOPT_WRITEFUNCTION => function ($c, $d) use (&$buf, &$cut) { $buf .= $d; if (strlen($buf) > 6000000) { $cut = true; return 0; } return strlen($d); }]);
     $ok = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($cut && $buf !== '' && ($p = strrpos($buf, '</item>')) !== false) { $buf = substr($buf, 0, $p + 7) . '</channel></rss>'; $code = 200; } // sehr großer Feed: bis zur letzten vollständigen Folge verwenden (neueste stehen vorn)
     if ($code >= 400 || $code === 0 || $buf === '') { api_note($url, $code, $ok === false && $buf === '' ? false : $buf, $cerr); return null; }
     $prev = libxml_use_internal_errors(true);
     $x = @simplexml_load_string($buf, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
