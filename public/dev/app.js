@@ -626,7 +626,7 @@
   function genOpts(t) { return t === 'author' || t === 'artist' ? GRULES[t].map(function (r) { return r[0]; }) : POP.series.map(function (x) { return x[1]; }); }
   function profileBox() {
     var wrap = h('div', { class: 'wide2 profbox' }), msg = h('p', { class: 'msg', role: 'status' });
-    wrap.append(h('p', { class: 'label' }, 'Profilkarte'), h('p', { class: 'hint' }, 'Alle Angaben sind freiwillig. Andere sehen sie nur in der Community, und nur wenn du der Nutzung deiner Einträge für die Community zugestimmt hast.'), h('p', { class: 'state pulse' }, 'Lade …'));
+    wrap.append(h('p', { class: 'hint' }, 'Alle Angaben sind freiwillig. Andere sehen sie nur in der Community, und nur wenn du der Nutzung deiner Einträge für die Community zugestimmt hast.'), h('p', { class: 'state pulse' }, 'Lade …'));
     api('/api/data.php?a=profile').then(function (r) {
       wrap.lastChild.remove();
       if (!r || r.error) { wrap.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
@@ -641,15 +641,15 @@
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
       var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
-      wrap.append(h('p', { class: 'label plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid),
-        h('p', { class: 'label plab' }, 'Name'), nm, h('p', { class: 'label plab' }, 'Geburtsjahr'), yr,
-        h('p', { class: 'hint' }, 'Gespeichert wird nur das Jahr, kein Datum.'), h('p', { class: 'label plab' }, 'Anzeige in der Community'), sel);
+      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid),
+        h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsjahr'), yr,
+        h('p', { class: 'hint' }, 'Gespeichert wird nur das Jahr, kein Datum.'), h('p', { class: 'plab' }, 'Anzeige in der Community'), sel);
       ['author', 'artist', 'film', 'series'].forEach(function (t) {
         var chosen = (v.favs[t] = (v.favs[t] || []).slice(0, 5)), box = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Lieblingsgenres ' + TYPES[t].plural }), cap = h('span', { class: 'hint', style: 'margin-left:6px' });
         function draw() { box.textContent = ''; cap.textContent = chosen.length + ' von 5';
           genOpts(t).concat(chosen.filter(function (g) { return genOpts(t).indexOf(g) < 0; })).forEach(function (g) { var on = chosen.indexOf(g) > -1;
             box.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(on), disabled: !on && chosen.length >= 5 ? true : null, onclick: function () { if (on) chosen.splice(chosen.indexOf(g), 1); else if (chosen.length < 5) chosen.push(g); draw(); } }, g)); }); }
-        draw(); wrap.append(h('p', { class: 'label plab' }, 'Lieblingsgenres ' + TYPES[t].plural, cap), box);
+        draw(); wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres ' + TYPES[t].plural, cap), box);
       });
       var save = h('button', { class: 'btn', type: 'button', onclick: function () {
         msg.className = 'msg'; msg.textContent = '';
