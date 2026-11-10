@@ -1014,9 +1014,9 @@
       var g2 = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t)); });
       body.append(g2);
-      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'mindestens 5 Bücher oder Bände'], artist: ['Meistgehört Musik', 'mindestens 5 Alben'], film: ['Meistgesehen Filme', 'mindestens 1 Film'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
-      var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], 'Nutzer mit ' + SEENT[t][1], t)); });
-      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Jeder Nutzer zählt pro Titel nur einmal, sobald er genug gesehen, gelesen oder gehört hat: Serien eine halbe Staffel, Bücher und Musik mindestens 5, Filme mindestens 1, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
+      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'gelesenen Büchern (jedes Buch ein Punkt)'], artist: ['Meistgehört Musik', 'mindestens 5 Alben'], film: ['Meistgesehen Filme', 'mindestens 1 Film'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
+      var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], (t === 'author' ? 'Punkte: ' : 'Nutzer mit ') + SEENT[t][1], t)); });
+      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Bei Büchern zählt jedes gelesene Buch einen Punkt für die Autor:in oder Reihe. Sonst zählt jeder Nutzer pro Titel nur einmal, sobald er genug gesehen oder gehört hat: Serien eine halbe Staffel, Musik mindestens 5 Alben, Filme mindestens 1, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
     }
     function drawUser() {
       body.textContent = '';
