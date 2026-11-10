@@ -1010,10 +1010,13 @@
       body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
       var g = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer', t)); });
-      body.append(g, h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Jeder Nutzer zählt pro Titel nur einmal. Serien: mindestens eine halbe Staffel gesehen. Bücher-Reihen: mindestens 5 Bände gelesen. Podcasts: mindestens 5 Folgen oder 20 % gehört (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), h('div', { class: 'commgrid' }, rankTable('watched', 'Meistgesehen Serien', d.watched || [], 'Nutzer mit mindestens einer halben Staffel', 'series'), rankTable('read', 'Meistgelesen Reihen', d.read || [], 'Nutzer mit mindestens 5 Bänden', 'author'), D.podcast ? rankTable('heard', 'Meistgehört Podcasts', d.heard || [], 'Nutzer mit mindestens 5 Folgen oder 20 %', 'podcast') : null), h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
+      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
       var g2 = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t)); });
       body.append(g2);
+      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'mindestens 5 Bücher oder Bände'], artist: ['Meistgehört Musik', 'mindestens 5 Alben'], film: ['Meistgesehen Filme', 'mindestens 1 Film'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
+      var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], 'Nutzer mit ' + SEENT[t][1], t)); });
+      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Jeder Nutzer zählt pro Titel nur einmal, sobald er genug gesehen, gelesen oder gehört hat: Serien eine halbe Staffel, Bücher und Musik mindestens 5, Filme mindestens 1, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
     }
     function drawUser() {
       body.textContent = '';
