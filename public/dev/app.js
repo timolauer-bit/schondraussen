@@ -337,7 +337,7 @@
   function nextBox(e, r, up, t) {
     var now = today0(), nxt = null, node = h('aside', { class: 'nextbox' });
     up.slice().sort(function (a, b) { return a.p.sort - b.p.sort; }).forEach(function (it) { if (!nxt && it.p.prec !== 'none' && it.p.end >= now) nxt = it; });
-    var cap = e.type === 'series' ? 'Nächste Folge' : e.type === 'podcast' ? 'Neueste Folge' : 'Nächster Termin';
+    var cap = { series: 'Nächste Folge', podcast: 'Aktuelle Folge', author: 'Nächste Veröffentlichung', artist: 'Neues Album', film: 'Im Kino' }[e.type] || 'Nächster Termin';
     if (e.type === 'podcast') nxt = up.length ? up.slice().sort(function (a, b) { return b.p.sort - a.p.sort; })[0] : null;
     node.append(h('small', null, cap));
     if (nxt) {
