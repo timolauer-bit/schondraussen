@@ -597,14 +597,14 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 
 /* Eintragsseite: Beschreibung und Kasten „Nächster Termin“ nebeneinander */
 .card .hero{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:22px;align-items:start;margin:16px 0 8px}
-.card .hero.solo{grid-template-columns:minmax(0,320px)}
+.card .hero.solo .nextbox{grid-column:2}
 .card .hero .sumbox{margin:0}
 .nextbox{border:1px solid var(--accent);border-radius:12px;padding:14px 16px;background:var(--accent-soft);color:var(--ink)}
 .nextbox small{display:block;color:var(--muted);font-size:12.5px}
 .nextbox .nbig{display:block;font:700 30px/1.15 var(--font-display);color:var(--accent);margin:2px 0 4px;overflow-wrap:anywhere}.nextbox .nbig.none{font-size:22px;color:var(--muted)}
 .nextbox .nline{font-size:14px;line-height:1.35;font-weight:600;overflow-wrap:anywhere}.nextbox .nsub{font-size:13px;color:var(--muted)}
 .nextbox .nstats{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}.nextbox .nstats b{color:var(--ink);font:700 15px var(--font-display)}
-@media(max-width:760px){.card .hero,.card .hero.solo{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){.card .hero,.card .hero.solo{grid-template-columns:minmax(0,1fr)}.card .hero.solo .nextbox{grid-column:1}}
 /* Staffeln als Filmstreifen-Reiter */
 .strip{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
 .strip .s{position:relative;text-align:left;border:1px solid var(--line);border-radius:10px;padding:20px 14px 16px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:150px;font:inherit}
