@@ -49,8 +49,9 @@ if ($a === 'user') {
     $cu = consenting_user($pdo, $id, $CONSENT, $UOK);
     if (!$cu) json_out(['error' => 'Diese Person teilt ihre Liste nicht.'], 404);
     $lists = array_fill_keys($TYPES, []);
-    foreach (q_all($pdo, "SELECT s.id, s.name, s.type, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.user_id=? AND e.is_sample=0 GROUP BY s.id, s.name, s.type ORDER BY s.name", [$u['id'], $id]) as $r) $lists[$r['type']][] = ['id' => (int) $r['id'], 'name' => $r['name'], 'mine' => (int) $r['mine']];
+    foreach (q_all($pdo, "SELECT s.id, s.name, s.type, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.user_id=? AND e.is_sample=0 GROUP BY s.id, s.name, s.type ORDER BY s.name", [$u['id'], $id]) as $r) if (isset($lists[$r['type']])) $lists[$r['type']][] = ['id' => (int) $r['id'], 'name' => $r['name'], 'mine' => (int) $r['mine']];
     $last = q_all($pdo, "SELECT s.id, s.name, s.type, e.added_at, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.user_id=? AND e.is_sample=0 GROUP BY e.id, s.id, s.name, s.type, e.added_at ORDER BY e.added_at DESC, e.id DESC LIMIT 20", [$u['id'], $id]);
+    $last = array_values(array_filter($last, fn($l) => in_array($l['type'], $TYPES, true))); // Podcasts nur mit Podcast-Recht
     foreach ($last as &$l) { $l['id'] = (int) $l['id']; $l['mine'] = (int) $l['mine']; } unset($l);
     json_out(['user' => ['id' => (int) $cu['id'], 'name' => $cu['username']], 'lists' => $lists, 'last' => $last]);
 }
