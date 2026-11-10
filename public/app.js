@@ -398,6 +398,12 @@
     else if (e.fetched_at && e.type !== 'film' && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
     if (!e.fetched_at && e.type !== 'film') { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
     if (e.type === 'film') card.append(h('p', { class: 'state' }, 'Für Filme wird die Datenquelle noch angebunden. Der Eintrag steht schon auf deiner Liste.'));
+    if (e.type === 'film' && e.selfkey) {
+      var fdone = doneSetOf(r), fb = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false', title: 'Nur für dich: Markiere, ob du den Film schon gesehen hast. Andere sehen das nicht.' });
+      var fupd = function () { var on = !!fdone[e.selfkey]; fb.className = 'pill' + (on ? ' on' : ''); fb.setAttribute('aria-pressed', on ? 'true' : 'false'); fb.textContent = on ? 'Gesehen' : 'Noch nicht gesehen'; };
+      fb.addEventListener('click', function () { var on = !fdone[e.selfkey]; setDone(e, [e.selfkey], on, function () { if (on) fdone[e.selfkey] = 1; else delete fdone[e.selfkey]; fupd(); }); });
+      fupd(); card.append(h('p', null, fb));
+    }
     var sumNode = null;
     if (e.summary) {
       var sp = h('p', { class: 'sum' }, e.summary);
@@ -1014,6 +1020,9 @@
       var g2 = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t)); });
       body.append(g2);
+      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'gelesenen Büchern (jedes Buch ein Punkt)'], artist: ['Meistgehört Musik', 'mindestens 5 Alben'], film: ['Meistgesehen Filme', 'gesehen (jeder Film einzeln)'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
+      var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], (t === 'author' ? 'Punkte: ' : 'Nutzer mit ') + SEENT[t][1], t)); });
+      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Bei Büchern zählt jedes gelesene Buch einen Punkt für die Autor:in oder Reihe. Sonst zählt jeder Nutzer pro Titel nur einmal, sobald er genug gesehen oder gehört hat: Serien eine halbe Staffel, Musik mindestens 5 Alben, Filme einzeln, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
     }
     function drawUser() {
       body.textContent = '';
