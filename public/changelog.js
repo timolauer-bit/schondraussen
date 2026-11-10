@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'U|Community: „Aktivste User“ steht jetzt oben (Top 5, aufklappbar bis Top 20), die Tabellen haben Kategoriefarben und Balken, und es gibt Top- und Newcomer-Tabellen für Podcasts (nur sichtbar mit Podcast-Recht).',
     'U|Bücher, Musik und Filme: Die Werke stehen als Karten mit Jahr, Schalter „gelesen/gehört/gesehen“ und Amazon-Link, darüber zeigt ein Balken den Fortschritt.',
     'U|Eintragsseiten neu gestaltet: Beschreibung als Textblock mit Kasten „Nächste Folge“ bzw. „Nächster Termin“ (mit Anzahl der Werke und gesehenen Folgen) daneben. Bei Serien sind die Staffeln jetzt Reiter im Filmstreifen-Look mit Fortschrittsbalken, darunter steht nur die gewählte Staffel.',
     'F|Serien: Bei vielen Folgen gibt es ein kleines ⓘ mit einer Kurzfassung der Folge (Mauszeiger darüber oder antippen). Englische Texte werden ins Deutsche übersetzt. Achtung, kann Spoiler enthalten.',
