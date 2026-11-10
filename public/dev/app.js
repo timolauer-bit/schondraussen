@@ -620,6 +620,56 @@
     });
     var st = h('div', { class: 'setstack' }); groups.forEach(function (g) { st.append(setCard(g.t, g.items)); }); p.append(st);
   }
+
+  var AVN = 50;
+  function avUrl(a) { return /^s\d{2}$/.test(a || '') ? '/avatars/avatar' + a.slice(1) + '.svg' : ''; }
+  function genOpts(t) { return t === 'author' || t === 'artist' ? GRULES[t].map(function (r) { return r[0]; }) : POP.series.map(function (x) { return x[1]; }); }
+  function profileBox() {
+    var wrap = h('div', { class: 'wide2 profbox' }), msg = h('p', { class: 'msg', role: 'status' });
+    wrap.append(h('p', { class: 'label' }, 'Profilkarte'), h('p', { class: 'hint' }, 'Alle Angaben sind freiwillig. Andere sehen sie nur in der Community, und nur wenn du der Nutzung deiner Einträge für die Community zugestimmt hast.'), h('p', { class: 'state pulse' }, 'Lade …'));
+    api('/api/data.php?a=profile').then(function (r) {
+      wrap.lastChild.remove();
+      if (!r || r.error) { wrap.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+      var v = { name: r.name || '', year: r.year || '', age_show: r.age_show || 'none', avatar: r.avatar || '', favs: r.favs || {} };
+      var prev = h('img', { class: 'profprev', alt: 'Dein Bild', width: '96', height: '96' }), grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Bild wählen' });
+      function paintPrev() { var u = avUrl(v.avatar); prev.hidden = !u; if (u) prev.src = u; [].forEach.call(grid.children, function (b) { var on = b.dataset.a === v.avatar; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.className = 'avopt' + (on ? ' on' : ''); }); }
+      for (var i = 1; i <= AVN; i++) (function (id) {
+        var b = h('button', { class: 'avopt', type: 'button', role: 'radio', 'aria-label': 'Bild ' + id, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44', loading: 'lazy' }));
+        b.dataset.a = id; grid.append(b);
+      })('s' + String(i).padStart(2, '0'));
+      paintPrev();
+      var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
+      var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
+      var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
+      wrap.append(h('p', { class: 'label plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid),
+        h('p', { class: 'label plab' }, 'Name'), nm, h('p', { class: 'label plab' }, 'Geburtsjahr'), yr,
+        h('p', { class: 'hint' }, 'Gespeichert wird nur das Jahr, kein Datum.'), h('p', { class: 'label plab' }, 'Anzeige in der Community'), sel);
+      ['author', 'artist', 'film', 'series'].forEach(function (t) {
+        var chosen = (v.favs[t] = (v.favs[t] || []).slice(0, 5)), box = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Lieblingsgenres ' + TYPES[t].plural }), cap = h('span', { class: 'hint', style: 'margin-left:6px' });
+        function draw() { box.textContent = ''; cap.textContent = chosen.length + ' von 5';
+          genOpts(t).concat(chosen.filter(function (g) { return genOpts(t).indexOf(g) < 0; })).forEach(function (g) { var on = chosen.indexOf(g) > -1;
+            box.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(on), disabled: !on && chosen.length >= 5 ? true : null, onclick: function () { if (on) chosen.splice(chosen.indexOf(g), 1); else if (chosen.length < 5) chosen.push(g); draw(); } }, g)); }); }
+        draw(); wrap.append(h('p', { class: 'label plab' }, 'Lieblingsgenres ' + TYPES[t].plural, cap), box);
+      });
+      var save = h('button', { class: 'btn', type: 'button', onclick: function () {
+        msg.className = 'msg'; msg.textContent = '';
+        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, age_show: v.age_show, avatar: v.avatar, favs: v.favs }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
+      } }, 'Profilkarte speichern');
+      wrap.append(h('p', { style: 'margin:14px 0 0' }, save), msg);
+    });
+    return wrap;
+  }
+  function idCard(d) {
+    var c = d.card || {}, name = d.user.name, ini = (name || '?').charAt(0).toUpperCase(), u = avUrl(c.avatar);
+    var pic = h('div', { class: 'idpic' }, u ? h('img', { src: u, alt: 'Bild von ' + name, width: '120', height: '120' }) : h('span', { class: 'idini', 'aria-hidden': 'true' }, ini));
+    var info = h('div', { class: 'idinfo' }, h('div', { class: 'idname' }, name));
+    if (c.name) info.append(h('div', { class: 'idrow' }, h('span', null, 'Name'), h('b', null, c.name)));
+    if (c.age) info.append(h('div', { class: 'idrow' }, h('span', null, 'Alter'), h('b', null, c.age)));
+    var gl = h('div', { class: 'idgen' }), any = false, favs = c.favs || {};
+    ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || []; if (!l.length) return; any = true; gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); })))); });
+    if (!c.name && !c.age && !any) info.append(h('p', { class: 'hint', style: 'margin:6px 0 0' }, 'Noch keine Angaben.'));
+    return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (c.no || d.user.id))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
+  }
   function settings() {
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Einstellungen'));
     var box = h('div', { class: 'cfgpanel' });
@@ -861,10 +911,21 @@
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
     // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
-    st.append(setCard('Profil', [K[0], K[1], K[2]]), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    st.append(setCard('Profil', [K[0], K[1], K[2]]), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'), setCard('Meine Daten', [K[9], K[11]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
+    (function () { // Reiter wie im Admin-Bereich
+      var T = [['Profil', ['Profil', 'Profilkarte']], ['Darstellung', ['Darstellung', 'Benachrichtigungen', 'Kalender-Abo']], ['Daten', ['Import', 'Meine Daten']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
+      try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
+      var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });
+      function show() {
+        T.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
+        cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = T.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Profil'; });
+      }
+      p.querySelector('h2.sec').after(bar); show();
+    })();
     p.append(st); mainEl.append(p);
   }
 
@@ -1039,7 +1100,7 @@
         return;
       }
       var d = C.ud, tot = 0; CT.forEach(function (t) { tot += (d.lists[t] || []).length; });
-      body.append(h('h3', { class: 'commh' }, d.user.name), h('p', { class: 'hint' }, pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
+      body.append(h('h3', { class: 'commh' }, d.user.name), idCard(d), h('p', { class: 'hint' }, pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
       var last = h('section', { class: 'commbox commlast' }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
       if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));
       else last.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, d.last.map(function (r) {

@@ -92,7 +92,15 @@ if ($a === 'user') {
     $last = q_all($pdo, "SELECT s.id, s.name, s.type, e.added_at, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.user_id=? AND e.is_sample=0 GROUP BY e.id, s.id, s.name, s.type, e.added_at ORDER BY e.added_at DESC, e.id DESC LIMIT 20", [$u['id'], $id]);
     $last = array_values(array_filter($last, fn($l) => in_array($l['type'], $TYPES, true))); // Podcasts nur mit Podcast-Recht
     foreach ($last as &$l) { $l['id'] = (int) $l['id']; $l['mine'] = (int) $l['mine']; } unset($l);
-    json_out(['user' => ['id' => (int) $cu['id'], 'name' => $cu['username']], 'lists' => $lists, 'last' => $last]);
+    $card = null;
+    try { // freiwillige Profilkarte (nur Nutzer mit Community-Zustimmung kommen hier an)
+        $cq = $pdo->prepare('SELECT display_name,birth_year,age_show,avatar,fav_genres,id FROM users WHERE id=?'); $cq->execute([$id]); $c = $cq->fetch(PDO::FETCH_ASSOC) ?: null;
+        if ($c) {
+            $age = null; if ($c['birth_year']) { if ($c['age_show'] === 'age') $age = (int) date('Y') - (int) $c['birth_year'] . ' Jahre'; elseif ($c['age_show'] === 'year') $age = 'Jahrgang ' . (int) $c['birth_year']; }
+            $card = ['name' => (string) ($c['display_name'] ?? ''), 'age' => $age, 'avatar' => (string) ($c['avatar'] ?? ''), 'favs' => json_decode((string) ($c['fav_genres'] ?? ''), true) ?: new stdClass(), 'no' => (int) $c['id']];
+        }
+    } catch (Throwable $t) {}
+    json_out(['user' => ['id' => (int) $cu['id'], 'name' => $cu['username']], 'card' => $card, 'lists' => $lists, 'last' => $last]);
 }
 
 if ($a === 'adopt' && $_SERVER['REQUEST_METHOD'] === 'POST') {
