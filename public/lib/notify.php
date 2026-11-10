@@ -76,7 +76,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     $hour = (int) date('G'); $today = date('Y-m-d'); $dow = (int) date('N'); $weekTo = date('Y-m-d', strtotime('+14 days'));
     $users = $pdo->query("SELECT id,email,unsub_token,n_new,n_day,n_week,n_mode,n_weekday,last_morning,last_weekly FROM users
         WHERE notify=1 AND email IS NOT NULL AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL) AND delete_requested_at IS NULL")->fetchAll();
-    $subs = $pdo->prepare('SELECT s.id,s.name,s.summary FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.bell=1 AND s.fetched_at IS NOT NULL');
+    $subs = $pdo->prepare('SELECT s.id,s.name,s.summary,s.type FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.bell=1 AND s.fetched_at IS NOT NULL');
     $rels = $pdo->prepare("SELECT title,release_date FROM releases WHERE subject_id=? AND release_date<>'' AND release_date IS NOT NULL");
     $known = $pdo->prepare('SELECT key_hash FROM notified WHERE user_id=?');
     $seenSub = $pdo->prepare('SELECT DISTINCT subject_id FROM notified WHERE user_id=?');
@@ -102,26 +102,29 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
                 $d = $r['release_date']; $line = $s['name'] . ' – ' . $r['title'] . ' (' . fmt_date($d) . ')';
                 $kn = $h($uid, $sid, $r['title'], $d, 'new'); $kd = $h($uid, $sid, $r['title'], $d, 'day');
                 if (!isset($K[$kn])) {
-                    if ($u['n_new']) { $new[] = [$d, $line, $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kn, 'new']; }
+                    if ($u['n_new']) { $new[] = [$d, $line, $sid, $s['name'], $r['title'], $s['summary'], $s['type']]; $mark[] = [$sid, $kn, 'new']; }
                     else $ins->execute([$uid, $sid, $kn, 'new']); // still merken, damit später nichts auf einmal kommt
                 }
                 if (strlen($d) === 10) {
-                    if ($d === $today && $u['n_day'] && !isset($K[$kd])) { $day[] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kd, 'day']; }
+                    if ($d === $today && $u['n_day'] && !isset($K[$kd]) && $s['type'] !== 'podcast') { $day[] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kd, 'day']; }
                     if ($d >= $today && $d <= $weekTo) $week[] = [$d, $line];
                 }
             }
         }
+        $pod = array_values(array_filter($new, fn($x) => ($x[6] ?? '') === 'podcast')); // Podcast-Folgen stehen unter eigener Überschrift
+        $new = array_values(array_filter($new, fn($x) => ($x[6] ?? '') !== 'podcast'));
         $canMorning = $hour >= 7;
         $window = $digest ? ($canMorning && $u['last_morning'] !== $today) : ($hour >= 7 && $hour < 22);
         if (!$canMorning) $day = []; // Erscheinungstag-Mails erst ab 7 Uhr
-        if ($window && ($new || $day)) {
+        if ($window && ($new || $day || $pod)) {
             if ($sent >= $maxMails) break;
             $bud = 8;
             $text = "Hallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
             if ($day) $text .= "\nHEUTE ERSCHEINT\n" . $fmt($day) . "\n";
             if ($new) $text .= "\nNEU ANGEKÜNDIGT\n" . $fmt($new) . "\n";
+            if ($pod) $text .= "\nNEUE PODCAST-FOLGEN\n" . $fmt($pod) . "\n";
             $text .= "\nAlles im Überblick: " . base_url() . "/\n" . ($new || $day ? "\nDie Schlagzeilen stammen aus der Google-News-Suche, die Kurzinfos aus den Datenquellen der Seite.\n" : '');
-            $subj = (count($day) && !count($new)) ? (count($day) === 1 ? 'Heute erscheint 1 Titel' : 'Heute erscheinen ' . count($day) . ' Titel') : ((count($new) + count($day)) === 1 ? '1 Neuigkeit' : (count($new) + count($day)) . ' Neuigkeiten');
+            $subj = (count($day) && !count($new) && !count($pod)) ? (count($day) === 1 ? 'Heute erscheint 1 Titel' : 'Heute erscheinen ' . count($day) . ' Titel') : ((count($new) + count($day) + count($pod)) === 1 ? '1 Neuigkeit' : (count($new) + count($day) + count($pod)) . ' Neuigkeiten');
             if (send_user_mail($pdo, $u, 'Schondraussen.de: ' . $subj, $text)) {
                 foreach ($mark as $m) $ins->execute([$uid, $m[0], $m[1], $m[2]]);
                 if ($digest) $pdo->prepare('UPDATE users SET last_morning=? WHERE id=?')->execute([$today, $uid]);

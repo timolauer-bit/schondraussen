@@ -14,7 +14,7 @@ CREATE TABLE users (
 -- Gemeinsamer Zwischenspeicher je Titel, damit Quellen nur einmal abgefragt werden
 CREATE TABLE subjects (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  type ENUM('author','artist','film','series') NOT NULL,
+  type ENUM('author','artist','film','series','podcast') NOT NULL,
   name VARCHAR(190) NOT NULL,
   external_ids JSON NULL,
   summary VARCHAR(400) NULL,

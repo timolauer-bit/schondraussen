@@ -7,6 +7,9 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+ '055_podcast' => [
+  "ALTER TABLE subjects MODIFY type ENUM('author','artist','film','series','podcast') NOT NULL",
+ ],
  '054_account_exits' => [
   "CREATE TABLE IF NOT EXISTS account_exits (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NULL, registered_on DATE NOT NULL, exited_on DATE NOT NULL, days_active INT UNSIGNED NOT NULL, by_admin TINYINT(1) NOT NULL DEFAULT 0, reason VARCHAR(20) NULL, reason_text TEXT NULL, KEY idx_exit_user (user_id), KEY idx_exit_on (exited_on)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "ALTER TABLE admin_notices MODIFY body TEXT NOT NULL",

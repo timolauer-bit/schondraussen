@@ -12,9 +12,9 @@ $t0 = microtime(true); $started = date('Y-m-d H:i:s'); $BUDGET = 80; // Sekunden
 $pdo = db();
 // Warteschlange je Kategorie (älteste zuerst, nie geladene vorn), reihum abgearbeitet, damit keine Kategorie verhungert
 $queues = [];
-foreach (['series', 'artist', 'author'] as $t)
+foreach (['series', 'artist', 'author', 'podcast'] as $t)
     $queues[$t] = $pdo->query("SELECT id,name FROM subjects WHERE type='$t' AND (fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 11 HOUR) ORDER BY fetched_at IS NOT NULL, fetched_at LIMIT 150")->fetchAll();
-$ok = 0; $fail = 0; $failed = []; $byType = ['series' => 0, 'artist' => 0, 'author' => 0]; $stopped = false;
+$ok = 0; $fail = 0; $failed = []; $byType = ['series' => 0, 'artist' => 0, 'author' => 0, 'podcast' => 0]; $stopped = false;
 while (array_filter($queues)) {
     foreach ($queues as $t => &$q) {
         if (!$q) continue;

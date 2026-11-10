@@ -1,6 +1,6 @@
 /* Design aus der Claude-Version von Schondraussen.de */
 :root{--bg:#f2f2f0;--surface:#fff;--ink:#11171d;--muted:#58616a;--line:#d6d6d1;--accent:#db4d1a;--accent-ink:#fff;--accent-soft:#fce7de;--danger:#b62520;--frame:#000;
---c-author:#c77523;--c-artist:#179788;--c-film:#7a5de5;--c-series:#d53f6c;
+--c-author:#c77523;--c-artist:#179788;--c-film:#7a5de5;--c-series:#d53f6c;--c-podcast:#2f7fd1;
 --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;--font-body:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;--font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace}
 @media(prefers-color-scheme:dark){:root:not([data-skin]){--bg:#101419;--surface:#171d23;--ink:#e8ecee;--muted:#9aa3ac;--line:#2e353e;--accent:#ff7842;--accent-ink:#101419;--accent-soft:#3f2218;--danger:#f6655a;--frame:#e8ecee;--c-author:#f09f42;--c-artist:#31c4b0;--c-film:#9b81f8;--c-series:#f36892;color-scheme:dark}}
 :root[data-skin=light]{color-scheme:light}
@@ -25,7 +25,7 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}:focus-visi
 .nav:hover{color:var(--ink)}.nav[aria-current=page]{color:var(--ink);border-bottom-color:var(--accent)}.nav.rg{margin-left:auto}
 .nav small{font:500 11px var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .nav svg{width:16px;height:16px;flex:none}
-.nav[data-c=author] svg{color:var(--c-author)}.nav[data-c=artist] svg{color:var(--c-artist)}.nav[data-c=film] svg{color:var(--c-film)}.nav[data-c=series] svg{color:var(--c-series)}
+.nav[data-c=author] svg{color:var(--c-author)}.nav[data-c=artist] svg{color:var(--c-artist)}.nav[data-c=film] svg{color:var(--c-film)}.nav[data-c=series] svg{color:var(--c-series)}.nav.podnav svg{color:var(--c-podcast)}
 @media(max-width:760px){.topbar{gap:0 14px}.nav{font-size:15px}}
 .badge{display:inline-block;min-width:18px;height:18px;line-height:18px;padding:0 5px;border-radius:9px;background:var(--danger);color:#fff;font:700 11px/18px var(--font-body);text-align:center;font-variant-numeric:tabular-nums}
 .layout{display:grid;gap:32px 48px;grid-template-columns:minmax(0,1fr);align-items:start}
@@ -53,7 +53,7 @@ input[type=text],input[type=search],select,.field input{width:100%;border:1px so
 .card .meta{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .card .meta svg{width:14px;height:14px}.card .sum{margin:12px 0 18px;max-width:70ch}
 .card h3.sec{font:700 18px var(--font-display);margin:22px 0 2px}
-.cat-author{--cc:var(--c-author)}.cat-artist{--cc:var(--c-artist)}.cat-film{--cc:var(--c-film)}.cat-series{--cc:var(--c-series)}
+.cat-author{--cc:var(--c-author)}.cat-artist{--cc:var(--c-artist)}.cat-film{--cc:var(--c-film)}.cat-series{--cc:var(--c-series)}.cat-podcast{--cc:var(--c-podcast)}
 .meta svg{color:var(--cc)}
 .gchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.gchip{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:13px;color:var(--muted)}
 .work{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:4px 14px;padding:10px 0;border-top:1px solid var(--line);align-items:baseline}
@@ -123,7 +123,7 @@ footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font
 .ico{display:inline-flex;margin-right:8px}.ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .who .ico{margin:0}
 .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:2px}
-.cdot.c-author{background:var(--c-author)}.cdot.c-artist{background:var(--c-artist)}.cdot.c-film{background:var(--c-film)}.cdot.c-series{background:var(--c-series)}
+.cdot.c-podcast{background:var(--c-podcast)}.rel.calrow.c-podcast .cbar{background:var(--c-podcast)}.cdot.c-author{background:var(--c-author)}.cdot.c-artist{background:var(--c-artist)}.cdot.c-film{background:var(--c-film)}.cdot.c-series{background:var(--c-series)}
 .nav{display:inline-flex;align-items:center}.nav .badge{margin-left:6px}
 .nav.info,.nav.support,.nav.settings,.nav.adminnav,.nav.feat,.nav.bugs{font:600 14px var(--font-body)}
 .note{font-size:13px;color:var(--muted);margin:0 0 18px;max-width:70ch}

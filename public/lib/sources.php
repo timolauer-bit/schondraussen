@@ -9,7 +9,7 @@ function api_note(string $url, $code, $raw, string $cerr = ''): void {
     elseif ($code >= 500) $kind = 'Fehler beim Dienst';
     if ($kind === null || !function_exists('db')) return;
     $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-    $map = ['musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
+    $map = ['itunes.apple.com' => 'Apple Podcasts', 'musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
     $src = $host; foreach ($map as $d => $n) if ($host === $d || substr($host, -strlen($d) - 1) === '.' . $d) { $src = $n; break; }
     $msg = $raw === false ? mb_substr($cerr, 0, 160) : '';
     if ($raw !== false && $raw !== '') {
@@ -82,6 +82,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     if (!$sub) return ['ok' => false, 'msg' => 'Titel nicht gefunden'];
     if ($sub['type'] === 'artist') return musicbrainz_refresh($pdo, $sub);
     if ($sub['type'] === 'author') return openlibrary_refresh($pdo, $sub);
+    if ($sub['type'] === 'podcast') return podcast_refresh($pdo, $sub);
     if ($sub['type'] !== 'series') {
         $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]);
         return ['ok' => false, 'msg' => 'Für diese Kategorie ist die Datenquelle noch nicht angebunden.'];
@@ -563,4 +564,75 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt'];
+}
+
+
+// ---------- Podcasts: Suche und Kennung über die Apple-Podcasts-Suche (iTunes Search API, ohne Schlüssel), Folgen aus dem öffentlichen RSS-Feed des Podcasts ----------
+function podcast_search(string $q): array {
+    $r = http_json('https://itunes.apple.com/search?media=podcast&entity=podcast&country=DE&limit=8&term=' . rawurlencode($q)) ?? [];
+    $out = [];
+    foreach (($r['results'] ?? []) as $x) {
+        if (empty($x['collectionId']) || empty($x['collectionName'])) continue;
+        $h = array_filter([(string) ($x['artistName'] ?? ''), (string) ($x['primaryGenreName'] ?? ''), !empty($x['trackCount']) ? $x['trackCount'] . ' Folgen' : '']);
+        $out[] = ['name' => mb_substr((string) $x['collectionName'], 0, 190), 'hint' => implode(' · ', $h), 'ext' => ['itunes' => (int) $x['collectionId']]];
+    }
+    return $out;
+}
+// Lädt einen RSS-Feed (nur http/https, höchstens 4 MB) und gibt das XML zurück oder null.
+function podcast_feed_fetch(string $url): ?SimpleXMLElement {
+    if (!preg_match('~^https?://~i', $url)) return null;
+    $buf = ''; $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_TIMEOUT => 15, CURLOPT_CONNECTTIMEOUT => 6, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 4,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+        CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/rss+xml, application/xml, text/xml'],
+        CURLOPT_WRITEFUNCTION => function ($c, $d) use (&$buf) { $buf .= $d; return strlen($buf) > 4000000 ? 0 : strlen($d); }]);
+    $ok = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($code >= 400 || $code === 0 || $buf === '') { api_note($url, $code, $ok === false && $buf === '' ? false : $buf, $cerr); return null; }
+    $prev = libxml_use_internal_errors(true);
+    $x = @simplexml_load_string($buf, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
+    libxml_clear_errors(); libxml_use_internal_errors($prev);
+    return $x ?: null;
+}
+function podcast_refresh(PDO $pdo, array $sub): array {
+    $sid = (int) $sub['id']; $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    if (empty($ext['itunes'])) { // ohne Kennung zuerst über den Namen suchen
+        $f = podcast_search((string) $sub['name']); if ($f) $ext['itunes'] = (int) $f[0]['ext']['itunes'];
+    }
+    if (empty($ext['itunes'])) return ['ok' => false, 'msg' => 'Bei Apple Podcasts nicht gefunden oder nicht erreichbar.'];
+    $lk = http_json('https://itunes.apple.com/lookup?entity=podcast&country=DE&id=' . (int) $ext['itunes']);
+    $info = $lk['results'][0] ?? null;
+    $feed = is_array($info) && !empty($info['feedUrl']) ? (string) $info['feedUrl'] : (string) ($ext['feed'] ?? '');
+    if ($feed === '') return ['ok' => false, 'msg' => 'Für diesen Podcast ist keine Feed-Adresse bekannt.'];
+    $x = podcast_feed_fetch($feed);
+    if (!$x || !isset($x->channel)) return ['ok' => false, 'msg' => 'Der Feed des Podcasts ist nicht erreichbar oder nicht lesbar.'];
+    $ch = $x->channel; $eps = [];
+    foreach ($ch->item as $it) {
+        $title = trim(preg_replace('/\s+/u', ' ', (string) $it->title)); if ($title === '') continue;
+        $ts = strtotime((string) $it->pubDate); if (!$ts) continue;
+        $eps[] = [$ts, mb_substr($title, 0, 255)];
+    }
+    usort($eps, fn($a, $b) => $b[0] <=> $a[0]);
+    $eps = array_slice($eps, 0, 30);
+    if (!$eps) return ['ok' => false, 'msg' => 'Im Feed wurden keine Folgen gefunden.'];
+    $sum = clean_text((string) $ch->description, 400);
+    $genres = []; if (is_array($info) && !empty($info['genres'])) foreach ((array) $info['genres'] as $g) if (is_string($g) && $g !== 'Podcasts' && count($genres) < 4) $genres[] = $g;
+    $ext['feed'] = $feed; if (is_array($info) && !empty($info['collectionViewUrl'])) $ext['page'] = (string) $info['collectionViewUrl'];
+    if (is_array($info) && !empty($info['artistName'])) $ext['by'] = mb_substr((string) $info['artistName'], 0, 120);
+    $recent = time() - 14 * 86400; $tz = new DateTimeZone('Europe/Berlin');
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
+            ->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), $sum !== '' ? $sum : null, json_encode($genres, JSON_UNESCAPED_UNICODE), count($eps), $sid]);
+        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
+        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
+        $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
+        foreach (array_reverse($eps) as $e) { // älteste zuerst, damit die neueste Folge die höchste Kennung hat
+            $d = (new DateTime('@' . $e[0]))->setTimezone($tz);
+            $w->execute([$sid, $e[1], (int) $d->format('Y'), 'Folge', $d->format('d.m.Y')]);
+            if ($e[0] >= $recent && $e[0] <= time() + 86400) $r->execute([$sid, $e[1], $d->format('Y-m-d'), 'Folge', null]);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    return ['ok' => true, 'msg' => count($eps) . ' Folgen'];
 }

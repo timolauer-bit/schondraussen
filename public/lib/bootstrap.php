@@ -80,3 +80,11 @@ function username_error(string $n): ?string {
 }
 require_once __DIR__ . '/privacy.php';
 require_once __DIR__ . '/totp.php';
+
+// Podcasts: Sichtbarkeit stufenweise. 'admin' (Standard) = nur Administratoren, 'all' = alle Nutzer. Einstellung site_settings.podcast_level.
+function podcast_level(): string {
+    static $l = null;
+    if ($l === null) { try { $q = db()->prepare("SELECT v FROM site_settings WHERE k='podcast_level'"); $q->execute(); $v = $q->fetchColumn(); $l = $v === 'all' ? 'all' : 'admin'; } catch (Throwable $e) { $l = 'admin'; } }
+    return $l;
+}
+function podcast_ok(?array $u): bool { return $u && (podcast_level() === 'all' || ($u['role'] ?? '') === 'admin'); }
