@@ -497,8 +497,8 @@
         ckb.addEventListener('click', function () { var on = !done[x.k]; setDone(e, [x.k], on, function () { if (on) done[x.k] = 1; else delete done[x.k]; upd(); }); });
         var ttl = h('div', { class: 'ttl' }, x.title || 'Titel noch offen'), sbox = null;
         if (+x.has_sum) {
-          var ib = h('button', { class: 'epinfo', type: 'button', 'aria-label': 'Kurzfassung der Folge ' + x.number + ' anzeigen', title: 'Zusammenfassung (Vorsicht, Spoiler möglich)' }, 'i'), loaded = false, shown = false;
-          sbox = h('div', { class: 'epsum', hidden: true });
+          var ib = h('button', { class: 'epinfo', type: 'button', 'aria-label': 'Kurzfassung der Folge ' + x.number + ' anzeigen' }, 'i'), loaded = false, shown = false;
+          sbox = h('div', { class: 'epsum', role: 'tooltip', hidden: true });
           function show(on) {
             shown = on; sbox.hidden = !on; ib.setAttribute('aria-expanded', on ? 'true' : 'false');
             if (on && !loaded) { loaded = true; sbox.textContent = 'Lade …'; api('/api/data.php?a=episum&id=' + e.id + '&s=' + x.season + '&n=' + x.number).then(function (r) { sbox.textContent = r && r.text ? r.text : 'Keine Zusammenfassung vorhanden.'; if (r && r.text) sbox.append(h('div', { class: 'sub' }, 'Achtung: kann Spoiler enthalten.')); }); }
@@ -507,8 +507,7 @@
           if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
           ttl.append(' ', ib);
         }
-        det.append(h('div', { class: 'work ep' }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', null, ttl, h('div', { class: 'sub' }, when)), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
-        if (sbox) det.append(sbox);
+        det.append(h('div', { class: 'work ep' }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', { class: 'epcell' }, ttl, h('div', { class: 'sub' }, when), sbox), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
       });
       allBtn.addEventListener('click', function () { var keys = cks.map(function (c) { return c.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); upd(); }); });
       upd();
