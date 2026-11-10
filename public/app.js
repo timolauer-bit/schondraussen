@@ -368,7 +368,15 @@
     else if (e.fetched_at && e.type !== 'film' && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
     if (!e.fetched_at && e.type !== 'film') { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
     if (e.type === 'film') card.append(h('p', { class: 'state' }, 'Für Filme wird die Datenquelle noch angebunden. Der Eintrag steht schon auf deiner Liste.'));
-    if (e.summary) card.append(h('p', { class: 'sum' }, e.summary));
+    if (e.summary) {
+      var sp = h('p', { class: 'sum' }, e.summary);
+      if (e.summary.length > 320) {
+        sp.classList.add('clamp');
+        var mb = h('button', { class: 'sumtoggle', type: 'button', 'aria-expanded': 'false' }, 'Mehr anzeigen');
+        mb.addEventListener('click', function () { var open = sp.classList.toggle('clamp') === false; mb.textContent = open ? 'Weniger anzeigen' : 'Mehr anzeigen'; mb.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+        card.append(h('div', { class: 'sumbox' }, sp, mb));
+      } else card.append(h('div', { class: 'sumbox' }, sp));
+    }
     var up = r.releases.map(function (x) { return { e: e, p: parseDate(x.release_date), u: { title: x.title, date: x.release_date, kind: x.kind || '', note: x.note || '' } }; });
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     card.append(h('h3', { class: 'sec' }, e.type === 'podcast' ? 'Neue Folgen (letzte 14 Tage)' : 'Kommende Veröffentlichungen'));
