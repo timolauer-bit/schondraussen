@@ -1417,12 +1417,16 @@
       var tb = h('table', { class: 'permtbl' }), hd = h('tr', null, h('th', null, 'Recht'), h('th', null, 'Nutzer'), h('th', null, 'Alphatester'), h('th', null, 'Admin'));
       tb.append(h('thead', null, hd)); var body = h('tbody');
       function mark(on) { return h('span', { class: 'permfix ' + (on ? 'on' : 'off'), 'aria-label': on ? 'Ja' : 'Nein' }, on ? '✓' : '–'); }
+      var lastG = '';
+      function grp(t) { body.append(h('tr', { class: 'permgrp' }, h('td', { colspan: '4' }, t))); }
       rows.forEach(function (r) {
+        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : 'Kategorien'; if (G !== lastG) { grp(G); lastG = G; }
         function cb(g) { var ck = h('input', { type: 'checkbox', checked: !!r[g], disabled: g === 'alpha' && !!r.user, 'aria-label': r.label + ' – ' + (g === 'user' ? 'Nutzer' : 'Alphatester') });
           ck.addEventListener('change', function () { permMsg.className = 'msg'; permMsg.textContent = '…'; api('/api/admin.php?a=perms_set', { key: r.key, group: g, on: ck.checked }).then(function (x) { if (!x.ok) { permMsg.className = 'msg err'; permMsg.textContent = x.error || 'Das hat nicht geklappt.'; } else { permMsg.textContent = 'Gespeichert.'; } permLoad(); }); }); return ck; }
-        body.append(h('tr', null, h('td', null, h('div', null, r.label, r.state === 'soon' ? h('span', { class: 'permsoon' }, ' (noch ohne Funktion)') : null), h('div', { class: 'hint', style: 'margin:2px 0 0' }, r.hint)), h('td', null, cb('user')), h('td', null, cb('alpha')), h('td', null, mark(true))));
+        body.append(h('tr', null, h('td', null, h('div', null, r.label, r.state === 'soon' ? h('span', { class: 'permsoon' }, ' (noch ohne Funktion)') : null), h('div', { class: 'permhint' }, r.hint)), h('td', null, cb('user')), h('td', null, cb('alpha')), h('td', null, mark(true))));
       });
-      FIX.forEach(function (f) { body.append(h('tr', { class: 'permfixrow' }, h('td', null, f[0], h('div', { class: 'hint', style: 'margin:2px 0 0' }, 'Fest, nicht änderbar')), h('td', null, mark(f[1])), h('td', null, mark(f[2])), h('td', null, mark(f[3])))); });
+      grp('Für alle bzw. nur Admin (fest)');
+      FIX.forEach(function (f) { body.append(h('tr', { class: 'permfixrow' }, h('td', null, f[0]), h('td', null, mark(f[1])), h('td', null, mark(f[2])), h('td', null, mark(f[3])))); });
       tb.append(body); permBox.querySelectorAll('.permwrap').forEach(function (n) { n.remove(); }); permBox.append(h('div', { class: 'permwrap' }, tb));
     }
     function permLoad() { api('/api/admin.php?a=perms_get').then(function (r) { if (r.rows) permPaint(r.rows); }); }
