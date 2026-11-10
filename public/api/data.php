@@ -362,6 +362,7 @@ if ($a === 'entry') {
     $e = $s->fetch(); if ($e && $e['type'] === 'podcast' && !podcast_ok($u)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
+    if ($e['type'] === 'film') $e['selfkey'] = done_key_work($e['name'], 0); // Film selbst als gesehen markieren
     $eps = [];
     if ($e['type'] === 'series') { try { try { $q = $pdo->prepare("SELECT season,number,title,airdate,(summary IS NOT NULL AND summary<>'') AS has_sum FROM episodes WHERE subject_id=? ORDER BY season, number"); $q->execute([$id]); } catch (Throwable $t2) { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); } $eps = $q->fetchAll(); } catch (Throwable $t) {} }
     $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);

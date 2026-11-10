@@ -45,14 +45,19 @@ if ($a === 'overview') {
             WHERE $cons GROUP BY d.user_id, d.subject_id, ep.season
             HAVING COUNT(*) * 2 >= (SELECT COUNT(*) FROM episodes e2 WHERE e2.subject_id=d.subject_id AND e2.season=ep.season)
         ) $outer", [$u['id']]);
-    // Musik: mindestens 5 Alben; Filme: mindestens 1
+    // Musik: mindestens 5 Alben
     // Bücher: jedes gelesene Buch (oder Band) zählt einen Punkt für die Autor:in bzw. Reihe
     $out['seen']['author'] = q_all($pdo, "$sel SELECT DISTINCT d.user_id, d.subject_id, d.item_key FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='author'
             JOIN works w ON w.subject_id=d.subject_id AND $wk $join
             WHERE $cons
         ) $outer", [$u['id']]);
-    foreach (['artist' => 5, 'film' => 1] as $t => $min) {
+    // Filme: jeder Film steht einzeln, ein Punkt je Nutzer, der ihn als gesehen markiert hat
+    $out['seen']['film'] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
+            JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film' AND d.item_key = CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(sb.name)), '|', 0)), 1, 16)) $join
+            WHERE $cons
+        ) $outer", [$u['id']]);
+    foreach (['artist' => 5] as $t => $min) {
         $out['seen'][$t] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type=?
             JOIN works w ON w.subject_id=d.subject_id AND $wk $join
