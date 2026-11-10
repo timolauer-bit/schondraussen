@@ -622,29 +622,44 @@
   }
 
   var AVN = 50;
-  function avUrl(a) { return /^s\d{2}$/.test(a || '') ? '/avatars/avatar' + a.slice(1) + '.svg' : ''; }
+  function avUrl(a) { a = a || ''; return /^s\d{2}$/.test(a) ? '/avatars/avatar' + a.slice(1) + '.svg' : /^c\d{1,9}$/.test(a) ? '/api/data.php?a=avatar&id=' + a.slice(1) : ''; }
   var SERGEN = ['Drama', 'Comedy', 'Crime', 'Thriller', 'Mystery', 'Action', 'Adventure', 'Science-Fiction', 'Fantasy', 'Horror', 'Supernatural', 'Romance', 'Family', 'Children', 'Anime', 'History', 'War', 'Western', 'Espionage', 'Legal', 'Medical', 'Sports', 'Music', 'Food', 'Travel', 'Nature', 'DIY', 'Adult'];
   function genOpts(t) { return t === 'author' || t === 'artist' ? GRULES[t].map(function (r) { return r[0]; }) : SERGEN; }
   function profileBox() {
     var wrap = h('div', { class: 'wide2 profbox' }), msg = h('p', { class: 'msg', role: 'status' });
     wrap.append(h('p', { class: 'hint' }, 'Alle Angaben sind freiwillig. Andere sehen sie nur in der Community, und nur wenn du der Nutzung deiner Einträge für die Community zugestimmt hast.'), h('p', { class: 'state pulse' }, 'Lade …'));
-    api('/api/data.php?a=profile').then(function (r) {
+    Promise.all([api('/api/data.php?a=profile'), api('/api/data.php?a=wish').catch(function () { return {}; })]).then(function (rr) {
+      var r = rr[0], wd = rr[1] || {};
       wrap.lastChild.remove();
       if (!r || r.error) { wrap.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
       var v = { name: r.name || '', year: r.year || '', date: r.date || '', age_show: r.age_show || 'none', avatar: r.avatar || '', favs: r.favs || {} };
       var prev = h('img', { class: 'profprev', alt: 'Dein Bild', width: '96', height: '96' }), grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Bild wählen' });
       function paintPrev() { var u = avUrl(v.avatar); prev.hidden = !u; if (u) prev.src = u; [].forEach.call(grid.children, function (b) { var on = b.dataset.a === v.avatar; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.className = 'avopt' + (on ? ' on' : ''); }); }
+      (wd.options || []).forEach(function (n) { var id = 'c' + n; var b = h('button', { class: 'avopt wish', type: 'button', role: 'radio', 'aria-label': 'Wunschbild ' + n, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44' })); b.dataset.a = id; grid.append(b); });
       for (var i = 1; i <= AVN; i++) (function (id) {
         var b = h('button', { class: 'avopt', type: 'button', role: 'radio', 'aria-label': 'Bild ' + id, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44', loading: 'lazy' }));
         b.dataset.a = id; grid.append(b);
       })('s' + String(i).padStart(2, '0'));
       paintPrev();
+      var wishBox = h('div', { class: 'wishbox' });
+      function drawWish(d) {
+        wishBox.textContent = ''; var ws = d.wishes || [], last = ws[0], open = ws.some(function (x) { return x.status === 'open'; });
+        wishBox.append(h('p', { class: 'plab' }, 'Wunschbild'));
+        if (open) { wishBox.append(h('p', { class: 'hint' }, 'Dein Wunsch ist eingegangen: „' + (ws.filter(function (x) { return x.status === 'open'; })[0].wish) + '“. Sobald Bilder bereit sind, bekommst du eine Nachricht und findest sie ganz vorn bei den Bildern.')); return; }
+        if (last && last.status === 'declined') wishBox.append(h('p', { class: 'hint' }, 'Dein letzter Wunsch konnte nicht umgesetzt werden' + (last.note ? ': ' + last.note : '.')));
+        if (ws.length >= 5) { wishBox.append(h('p', { class: 'hint' }, 'Du hast die möglichen Wünsche schon genutzt.')); return; }
+        var ta = h('textarea', { rows: '3', maxlength: '400', 'aria-label': 'Beschreibung deines Wunschbilds', placeholder: 'z. B. Frau mit kurzen roten Haaren, Brille, grüner Pullover' }), wm = h('p', { class: 'msg', role: 'status' });
+        wishBox.append(h('p', { class: 'hint' }, 'Du magst keines der Bilder? Beschreibe, wie dein Bild aussehen soll. Du bekommst 2 bis 3 Vorschläge im gleichen Stil und suchst dir eines aus.'), ta,
+          h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { wm.className = 'msg'; wm.textContent = '';
+            api('/api/data.php?a=wish_set', { wish: ta.value }).then(function (x) { if (x && x.ok) { api('/api/data.php?a=wish').then(drawWish); } else { wm.className = 'msg err'; wm.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } }); } }, 'Wunsch senden')), wm);
+      }
+      drawWish(wd);
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
       var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
       var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
-      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid),
+      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid), wishBox,
         h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
         h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
         h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
@@ -1658,9 +1673,31 @@
       });
     }
     p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Statistik'), stBox); statLoad();
+    var wsBox = h('div', { class: 'adm' });
+    p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Wunschbilder'), h('p', { class: 'hint' }, 'Nutzer können ein eigenes Profilbild wünschen. Lade 1 bis 3 passende SVG-Dateien hoch, dann wählt der Nutzer eines aus.'), wsBox);
+    function wishes() {
+      api('/api/admin.php?a=wishes').then(function (r) {
+        wsBox.textContent = ''; var l = r.wishes || [];
+        if (!l.length) wsBox.append(h('p', { class: 'hint' }, r.error || 'Keine Wünsche offen.'));
+        l.forEach(function (x) {
+          var row = h('div', { class: 'wishrow' }, h('div', { class: 'nm2' }, (x.username || 'Nutzer ' + x.uid) + ' · ' + String(x.created_at || '').slice(0, 10)), h('div', null, x.wish));
+          if (x.status !== 'open') { row.append(h('div', { class: 'meta2' }, x.status === 'ready' ? 'Bilder bereitgestellt (' + x.n + ')' : 'Abgelehnt')); wsBox.append(row); return; }
+          var fi = h('input', { type: 'file', accept: '.svg,image/svg+xml', multiple: true, 'aria-label': 'SVG-Dateien' }), pv = h('div', { class: 'wishpv' }), wm = h('p', { class: 'msg', role: 'status' }), nt = h('input', { type: 'text', maxlength: '300', placeholder: 'Anmerkung bei Ablehnung (optional)', 'aria-label': 'Anmerkung' });
+          fi.onchange = function () { pv.textContent = ''; [].slice.call(fi.files, 0, 3).forEach(function (f) { pv.append(h('img', { src: URL.createObjectURL(f), alt: '', width: '64', height: '64' })); }); };
+          row.append(fi, pv, h('div', { class: 'acts' },
+            h('button', { class: 'btn small', type: 'button', onclick: function () {
+              var fs = [].slice.call(fi.files); if (!fs.length || fs.length > 3) { wm.className = 'msg err'; wm.textContent = 'Bitte 1 bis 3 SVG-Dateien wählen.'; return; }
+              Promise.all(fs.map(function (f) { return f.text(); })).then(function (t) { return api('/api/admin.php?a=wish_upload', { id: x.id, svgs: t }); }).then(function (z) { if (z && z.ok) wishes(); else { wm.className = 'msg err'; wm.textContent = (z && z.error) || 'Das hat nicht geklappt.'; } });
+            } }, 'Bilder bereitstellen'),
+            nt, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=wish_decline', { id: x.id, note: nt.value }).then(function (z) { if (z && z.ok) wishes(); else { wm.className = 'msg err'; wm.textContent = (z && z.error) || 'Das hat nicht geklappt.'; } }); } }, 'Ablehnen')), wm);
+          wsBox.append(row);
+        });
+      });
+    }
+    wishes();
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });

@@ -102,7 +102,10 @@ if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $show = in_array($b['age_show'] ?? 'none', ['none', 'age', 'year'], true) ? $b['age_show'] : 'none';
     if ($yr === null) $show = 'none';
     $av = (string) ($b['avatar'] ?? '');
-    if ($av !== '' && !(preg_match('/^s(\d{2})$/', $av, $m) && (int) $m[1] >= 1 && (int) $m[1] <= 50)) json_out(['error' => 'Ungültiges Bild.'], 422);
+    if ($av !== '' && preg_match('/^c(\d{1,9})$/', $av, $m)) { // eigenes Wunschbild: muss dem Nutzer gehören
+        try { $oq = $pdo->prepare('SELECT id FROM avatar_options WHERE id=? AND user_id=?'); $oq->execute([(int) $m[1], $u['id']]); if (!$oq->fetch()) json_out(['error' => 'Ungültiges Bild.'], 422); }
+        catch (Throwable $t) { json_out(['error' => 'Ungültiges Bild.'], 422); }
+    } elseif ($av !== '' && !(preg_match('/^s(\d{2})$/', $av, $m) && (int) $m[1] >= 1 && (int) $m[1] <= 50)) json_out(['error' => 'Ungültiges Bild.'], 422);
     $favs = [];
     foreach (['author', 'artist', 'film', 'series', 'custom'] as $t) {
         $l = []; foreach ((array) (($b['favs'] ?? [])[$t] ?? []) as $g) { $g = trim((string) $g); if ($g !== '' && mb_strlen($g) <= ($t === 'custom' ? 24 : 40) && preg_match('/^[\p{L}\p{N} &\-\/.,\x27]+$/u', $g) && !in_array($g, $l, true)) $l[] = $g; }
@@ -111,6 +114,40 @@ if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('UPDATE users SET display_name=?, birth_year=?, birth_date=?, age_fixed=?, age_show=?, avatar=?, fav_genres=? WHERE id=?')->execute([$name !== '' ? $name : null, $yr, $bdv, $fixed, $show, $av !== '' ? $av : null, $favs ? json_encode($favs, JSON_UNESCAPED_UNICODE) : null, $u['id']]); }
     catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
+}
+if ($a === 'wish') { // eigene Bildwünsche und fertige Wunschbilder
+    $o = ['wishes' => [], 'options' => []];
+    try {
+        $q = $pdo->prepare('SELECT id,wish,status,note,created_at FROM avatar_wishes WHERE user_id=? ORDER BY id DESC LIMIT 10'); $q->execute([$u['id']]); $o['wishes'] = $q->fetchAll();
+        $q = $pdo->prepare('SELECT id FROM avatar_options WHERE user_id=? ORDER BY id'); $q->execute([$u['id']]); $o['options'] = array_map('intval', array_column($q->fetchAll(), 'id'));
+    } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out($o);
+}
+if ($a === 'wish_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $b = body(); $w = trim(preg_replace('/\s+/u', ' ', (string) ($b['wish'] ?? '')));
+    if (mb_strlen($w) < 10 || mb_strlen($w) > 400) json_out(['error' => 'Beschreibe dein Wunschbild in 10 bis 400 Zeichen.'], 422);
+    try {
+        $q = $pdo->prepare("SELECT SUM(status='open'), COUNT(*) FROM avatar_wishes WHERE user_id=?"); $q->execute([$u['id']]); [$open, $all] = array_map('intval', $q->fetch(PDO::FETCH_NUM));
+        if ($open) json_out(['error' => 'Dein letzter Wunsch ist noch in Arbeit.'], 409);
+        if ($all >= 5) json_out(['error' => 'Du hast die möglichen Wünsche schon genutzt.'], 409);
+        $pdo->prepare('INSERT INTO avatar_wishes (user_id,wish) VALUES (?,?)')->execute([$u['id'], $w]);
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,0,?)')->execute([$u['id'], mb_substr('Systemnachricht: Neuer Bildwunsch: ' . $w, 0, 1000)]); } catch (Throwable $t) {}
+    } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
+if ($a === 'avatar') { // Wunschbild ausliefern (nur als Bild, ohne Skripte)
+    $id = (int) ($_GET['id'] ?? 0); $svg = null;
+    try {
+        $q = $pdo->prepare('SELECT svg,user_id FROM avatar_options WHERE id=?'); $q->execute([$id]); $r = $q->fetch();
+        if ($r) {
+            $ok = (int) $r['user_id'] === (int) $u['id'] || $u['role'] === 'admin';
+            if (!$ok) { $c = $pdo->prepare('SELECT 1 FROM users WHERE avatar=? LIMIT 1'); $c->execute(['c' . $id]); $ok = (bool) $c->fetchColumn(); }
+            if ($ok) $svg = $r['svg'];
+        }
+    } catch (Throwable $t) {}
+    if ($svg === null) { http_response_code(404); exit; }
+    header('Content-Type: image/svg+xml; charset=utf-8'); header('Cache-Control: private, max-age=86400'); header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    echo $svg; exit;
 }
 if ($a === 'hidecats' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hidecats_ok($u)) json_out(['error' => 'Diese Funktion ist noch nicht freigegeben.'], 403);

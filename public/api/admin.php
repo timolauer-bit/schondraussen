@@ -7,6 +7,45 @@ if (!function_exists('valid_email')) { function valid_email(string $e): bool { r
 $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
+if ($a === 'wishes') { // Bildwünsche der Nutzer
+    try {
+        $r = $pdo->query("SELECT w.id,w.wish,w.status,w.created_at,u.username,u.id AS uid,(SELECT COUNT(*) FROM avatar_options o WHERE o.wish_id=w.id) AS n FROM avatar_wishes w JOIN users u ON u.id=w.user_id WHERE w.status='open' OR w.created_at > NOW() - INTERVAL 30 DAY ORDER BY (w.status='open') DESC, w.id DESC LIMIT 40")->fetchAll();
+    } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php, 060).'], 500); }
+    json_out(['wishes' => $r]);
+}
+if ($a === 'wish_upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = (int) ($b['id'] ?? 0); $list = array_values(array_filter((array) ($b['svgs'] ?? []), 'is_string'));
+    if (!$list || count($list) > 3) json_out(['error' => 'Bitte 1 bis 3 SVG-Dateien auswählen.'], 422);
+    $clean = [];
+    foreach ($list as $svg) {
+        $svg = trim($svg); $svg = preg_replace('/^\xEF\xBB\xBF/', '', $svg); $svg = preg_replace('/^<\?xml[^>]*\?>\s*/i', '', $svg);
+        if (strlen($svg) > 80000 || stripos($svg, '<svg') !== 0) json_out(['error' => 'Eine Datei ist keine gültige SVG-Datei (oder größer als 80 KB).'], 422);
+        if (preg_match('/<script|<foreignObject|<iframe|<object|<embed|<audio|<video|<image|<a[\s>]|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:|@import|(?:xlink:)?href\s*=\s*["\']?(?!#)|url\(\s*["\']?(?!#)/i', $svg)) json_out(['error' => 'Eine Datei enthält nicht erlaubte Inhalte (Skripte, Links oder eingebettete Bilder).'], 422);
+        libxml_use_internal_errors(true); $x = simplexml_load_string($svg, 'SimpleXMLElement', LIBXML_NONET);
+        if (!$x || strtolower($x->getName()) !== 'svg') json_out(['error' => 'Eine Datei ist keine gültige SVG-Datei.'], 422);
+        $clean[] = $svg;
+    }
+    try {
+        $q = $pdo->prepare("SELECT user_id FROM avatar_wishes WHERE id=? AND status='open'"); $q->execute([$id]); $uid = (int) $q->fetchColumn();
+        if (!$uid) json_out(['error' => 'Dieser Wunsch ist nicht mehr offen.'], 404);
+        $pdo->beginTransaction();
+        foreach ($clean as $svg) $pdo->prepare('INSERT INTO avatar_options (wish_id,user_id,svg) VALUES (?,?,?)')->execute([$id, $uid, $svg]);
+        $pdo->prepare("UPDATE avatar_wishes SET status='ready' WHERE id=?")->execute([$id]);
+        $pdo->commit();
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([$uid, 'Systemnachricht: Deine Wunschbilder sind fertig. Du findest sie in den Einstellungen unter „Profil“ ganz vorn bei den Bildern.']); } catch (Throwable $e) {}
+    } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); json_out(['error' => 'Das hat nicht geklappt.'], 500); }
+    json_out(['ok' => true]);
+}
+if ($a === 'wish_decline' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = (int) ($b['id'] ?? 0); $note = mb_substr(trim((string) ($b['note'] ?? '')), 0, 300);
+    try {
+        $q = $pdo->prepare("SELECT user_id FROM avatar_wishes WHERE id=? AND status='open'"); $q->execute([$id]); $uid = (int) $q->fetchColumn();
+        if (!$uid) json_out(['error' => 'Dieser Wunsch ist nicht mehr offen.'], 404);
+        $pdo->prepare("UPDATE avatar_wishes SET status='declined', note=? WHERE id=?")->execute([$note !== '' ? $note : null, $id]);
+        try { $pdo->prepare('INSERT INTO messages (user_id,from_admin,body) VALUES (?,1,?)')->execute([$uid, 'Systemnachricht: Dein Bildwunsch konnte leider nicht umgesetzt werden.' . ($note !== '' ? ' Anmerkung: ' . $note : '')]); } catch (Throwable $e) {}
+    } catch (Throwable $e) { json_out(['error' => 'Das hat nicht geklappt.'], 500); }
+    json_out(['ok' => true]);
+}
 if ($a === 'users') {
     $cols = 'u.id,u.email,u.username,u.name_change_required,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at,u.delete_requested_at';
     $sql = " FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC";
