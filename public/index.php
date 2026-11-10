@@ -17,7 +17,7 @@ $seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u); // sendet ggf. X-Robots-Tag, dah
 <html lang="de"<?= $skin ? ' data-skin="' . $skin . '"' : '' ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title><?= (!$u && seo_public()) ? SEO_TITLE : 'Schondraussen.de' ?></title>
 <?= $seo ?>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#db4d1a"><link rel="apple-touch-icon" href="/appicons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/appicons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f3ead6"><link rel="apple-touch-icon" href="/appicons/apple-touch-icon.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" type="image/png" sizes="32x32" href="/appicons/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="/appicons/icon-192.png"><link rel="shortcut icon" href="/favicon.ico">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Schondraussen">
 <?php if ($app): ?><link rel="stylesheet" href="/app.css?v=<?= filemtime(__DIR__ . '/app.css') ?>"><?php else: ?>
 <style>
