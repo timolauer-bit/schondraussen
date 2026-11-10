@@ -70,7 +70,7 @@ if ($a === 'list') {
 if ($a === 'calendar') {
     $s = $pdo->prepare("SELECT r.id,r.title,r.release_date,r.kind,s.id AS subject_id,s.name,s.type
         FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
-        WHERE e.user_id=? ORDER BY (r.release_date IS NULL OR r.release_date=''), r.release_date, s.name LIMIT 500");
+        WHERE e.user_id=? AND (s.type<>'podcast' OR r.release_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) ORDER BY (r.release_date IS NULL OR r.release_date=''), r.release_date, s.name LIMIT 500");
     $s->execute([$u['id']]);
     json_out(['releases' => $s->fetchAll()]);
 }
