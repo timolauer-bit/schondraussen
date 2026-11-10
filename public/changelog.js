@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'U|Bücher, Musik und Filme: Die Werke stehen als Karten mit Jahr, Schalter „gelesen/gehört/gesehen“ und Amazon-Link, darüber zeigt ein Balken den Fortschritt.',
     'U|Eintragsseiten neu gestaltet: Beschreibung als Textblock mit Kasten „Nächste Folge“ bzw. „Nächster Termin“ (mit Anzahl der Werke und gesehenen Folgen) daneben. Bei Serien sind die Staffeln jetzt Reiter im Filmstreifen-Look mit Fortschrittsbalken, darunter steht nur die gewählte Staffel.',
     'F|Serien: Bei vielen Folgen gibt es ein kleines ⓘ mit einer Kurzfassung der Folge (Mauszeiger darüber oder antippen). Englische Texte werden ins Deutsche übersetzt. Achtung, kann Spoiler enthalten.',
     'F|Podcasts: neue Kategorie (Suche über Apple Podcasts, Folgen aus dem öffentlichen Feed). Neue Folgen kommen in die Morgenmail und in den Kalender (dort nur der laufende Monat). Beim Hinzufügen gelten vorhandene Folgen als gehört.',
