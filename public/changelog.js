@@ -1,7 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
-    'U|Menü: Farbpunkte und Zahlen hinter den Kategorien sitzen jetzt mittig zur Schrift',
+    'U|Menü: Farbpunkte und Zahlen hinter den Kategorien sitzen jetzt mittig zur Schrift, und die gesamte Leiste ist optisch mittig (vorher saß der Inhalt etwas zu tief)',
     'D|Sicherheit: Neue Schutz-Kopfzeilen (Content-Security-Policy, HSTS), Schreibzugriffe von fremden Webseiten werden abgelehnt, und die Datenbank-Sicherungen liegen nach Möglichkeit außerhalb des Webverzeichnisses. Grundlage ist eine Code-Prüfung vom 10.11.',
     'U|Neues Logo im Papier-Design (Personen-Silhouette, Klappe und Buch) als Symbol im Browser-Tab und als App-Icon der installierbaren Web-App; Farbe der Browserleiste an das Papier-Design angepasst',
     'A|Admin: Schalter „Podcasts für alle Nutzer freigeben“ (Reiter Registrierung, Abschnitt Kategorien). Test: In den Einstellungen lassen sich Kategorien ausblenden (vorerst nur für Admins, Migration 056)',

@@ -551,3 +551,5 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .navmain .nav{align-items:baseline}
 .navmain .nav svg{align-self:center}
 .navmain .nav .cdot{vertical-align:baseline}
+/* Obere Leiste: Inhalt optisch mittig (unten liegen Innenabstand und Unterstrich der Menüpunkte) */
+.topbar{padding-top:5px}
