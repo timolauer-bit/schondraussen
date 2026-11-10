@@ -120,7 +120,7 @@
   function say(t, err) { S.msg = t || ''; S.msgErr = !!err; var m = $('msg'); if (m) { m.textContent = S.msg; m.className = 'msg' + (err ? ' err' : ''); } }
 
   /* ---------- Kopf und Leiste ---------- */
-  function logBadge() { var s; try { s = parseInt(localStorage.getItem('sd-seen'), 10); } catch (_) {} if (isNaN(s)) return 0; return Math.max(0, LOGTOTAL - s); }
+  function logBadge() { var s; try { s = parseInt(localStorage.getItem('sd-seen'), 10); } catch (_) {} if (isNaN(s)) return 0; if (s > LOGTOTAL) { markSeen(); return 0; } return LOGTOTAL - s; }
   function markSeen() { try { localStorage.setItem('sd-seen', String(LOGTOTAL)); } catch (_) {} }
   function renderVer() {
     var v = $('ver'); if (!v) return; var n = logBadge();
