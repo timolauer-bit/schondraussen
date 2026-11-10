@@ -104,9 +104,9 @@ if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $av = (string) ($b['avatar'] ?? '');
     if ($av !== '' && !(preg_match('/^s(\d{2})$/', $av, $m) && (int) $m[1] >= 1 && (int) $m[1] <= 50)) json_out(['error' => 'Ungültiges Bild.'], 422);
     $favs = [];
-    foreach (['author', 'artist', 'film', 'series'] as $t) {
-        $l = []; foreach ((array) (($b['favs'] ?? [])[$t] ?? []) as $g) { $g = trim((string) $g); if ($g !== '' && mb_strlen($g) <= 40 && preg_match('/^[\p{L}\p{N} &\-\/.,\x27]+$/u', $g) && !in_array($g, $l, true)) $l[] = $g; }
-        if ($l) $favs[$t] = array_slice($l, 0, 5);
+    foreach (['author', 'artist', 'film', 'series', 'custom'] as $t) {
+        $l = []; foreach ((array) (($b['favs'] ?? [])[$t] ?? []) as $g) { $g = trim((string) $g); if ($g !== '' && mb_strlen($g) <= ($t === 'custom' ? 24 : 40) && preg_match('/^[\p{L}\p{N} &\-\/.,\x27]+$/u', $g) && !in_array($g, $l, true)) $l[] = $g; }
+        if ($l) $favs[$t] = array_slice($l, 0, $t === 'custom' ? 2 : 5);
     }
     try { $pdo->prepare('UPDATE users SET display_name=?, birth_year=?, birth_date=?, age_fixed=?, age_show=?, avatar=?, fav_genres=? WHERE id=?')->execute([$name !== '' ? $name : null, $yr, $bdv, $fixed, $show, $av !== '' ? $av : null, $favs ? json_encode($favs, JSON_UNESCAPED_UNICODE) : null, $u['id']]); }
     catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
