@@ -673,11 +673,17 @@
         draw(); gcols.append(h('div', { class: 'gcol' }, h('p', { class: 'plab' }, TYPES[t].plural, cap), box));
       });
       wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres (bis zu 5 je Kategorie)'), gcols);
-      var cu = (v.favs.custom = (v.favs.custom || []).slice(0, 2)), c1 = h('input', { type: 'text', maxlength: '24', value: cu[0] || '', 'aria-label': 'Eigenes Genre 1', placeholder: 'z. B. Cozy Crime', oninput: function () { cu[0] = c1.value; } }), c2 = h('input', { type: 'text', maxlength: '24', value: cu[1] || '', 'aria-label': 'Eigenes Genre 2', placeholder: 'z. B. Neoklassik', oninput: function () { cu[1] = c2.value; } });
-      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Erscheinen nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), h('div', { class: 'inline custg' }, c1, c2));
+      var cu = (v.favs.custom = (v.favs.custom || []).filter(function (x) { return x && typeof x === 'object'; }).slice(0, 2)), crow = h('div', { class: 'custg' });
+      [0, 1].forEach(function (i) {
+        var cur = cu[i] || { t: 'artist', g: '' }; cu[i] = cur;
+        var sl = h('select', { 'aria-label': 'Kategorie von Genre ' + (i + 1), onchange: function () { cur.t = sl.value; } }, ['author', 'artist', 'film', 'series'].map(function (t) { return h('option', { value: t, selected: cur.t === t ? true : null }, TYPES[t].plural); }));
+        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i ? 'z. B. Neoklassik' : 'z. B. Cozy Crime', oninput: function () { cur.g = ti.value; } });
+        crow.append(h('div', { class: 'inline' }, sl, ti));
+      });
+      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
       var save = h('button', { class: 'btn', type: 'button', onclick: function () {
         msg.className = 'msg'; msg.textContent = '';
-        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: v.favs }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
+        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
       } }, 'Profilkarte speichern');
       wrap.append(h('p', { style: 'margin:14px 0 0' }, save), msg);
     });
@@ -690,8 +696,9 @@
     if (c.name) info.append(h('div', { class: 'idrow' }, h('span', null, 'Name'), h('b', null, c.name)));
     if (c.age) info.append(h('div', { class: 'idrow' }, h('span', null, 'Alter'), h('b', null, c.age)));
     var gl = h('div', { class: 'idgen' }), any = false, favs = c.favs || {};
-    ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || []; if (!l.length) return; any = true; gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); })))); });
-    var cg = (favs.custom || []).filter(Boolean); if (cg.length) { any = true; gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:var(--muted)' }, 'Eigene'), h('span', { class: 'gchips' }, cg.map(function (g) { return h('span', { class: 'gchip' }, g); })))); }
+    var cust = (favs.custom || []).filter(function (x) { return x && x.t && x.g; });
+    ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || [], own = cust.filter(function (x) { return x.t === t; }); if (!l.length && !own.length) return; any = true;
+      gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); }).concat(own.map(function (x) { return h('span', { class: 'gchip own' }, x.g); }))))); });
     if (!c.name && !c.age && !any) info.append(h('p', { class: 'hint', style: 'margin:6px 0 0' }, 'Noch keine Angaben.'));
     return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (c.no || d.user.id))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
   }
