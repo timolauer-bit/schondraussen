@@ -43,6 +43,30 @@ if ($a === 'overview') {
             HAVING COUNT(*) * 2 >= (SELECT COUNT(*) FROM episodes e2 WHERE e2.subject_id=d.subject_id AND e2.season=ep.season)
         ) w JOIN subjects s ON s.id=w.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=?
         GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id']]);
+    // Meistgelesen (Bücher-Reihen): Nutzer zählt einmal je Reihe, sobald er mindestens 5 Bände als gelesen markiert hat
+    $wk = "d.item_key = CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(w.title)), '|', IFNULL(w.year, 0))), 1, 16))";
+    $out['read'] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM (
+            SELECT d.user_id, d.subject_id FROM user_done d
+            JOIN subjects sb ON sb.id=d.subject_id AND sb.type='author' AND sb.external_ids LIKE ?
+            JOIN works w ON w.subject_id=d.subject_id AND $wk
+            JOIN users u ON u.id=d.user_id
+            JOIN user_entries ue ON ue.user_id=d.user_id AND ue.subject_id=d.subject_id AND ue.is_sample=0
+            WHERE (u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT
+            GROUP BY d.user_id, d.subject_id HAVING COUNT(DISTINCT d.item_key) >= 5
+        ) r JOIN subjects s ON s.id=r.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=?
+        GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", ['%"gbs"%', $u['id']]);
+    // Meistgehört (Podcasts): mindestens 5 Folgen oder 20 % der Folgen bewusst als gehört markiert (das automatische Abhaken beim Hinzufügen zählt nicht)
+    if (in_array('podcast', $TYPES, true)) $out['heard'] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM (
+            SELECT d.user_id, d.subject_id FROM user_done d
+            JOIN subjects sb ON sb.id=d.subject_id AND sb.type='podcast'
+            JOIN works w ON w.subject_id=d.subject_id AND $wk
+            JOIN users u ON u.id=d.user_id
+            JOIN user_entries ue ON ue.user_id=d.user_id AND ue.subject_id=d.subject_id AND ue.is_sample=0
+            WHERE (u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT AND d.created_at > ue.added_at + INTERVAL 10 MINUTE
+            GROUP BY d.user_id, d.subject_id
+            HAVING COUNT(DISTINCT d.item_key) >= LEAST(5, CEIL(0.2 * (SELECT COUNT(*) FROM works w2 WHERE w2.subject_id=d.subject_id)))
+        ) r JOIN subjects s ON s.id=r.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=?
+        GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id']]);
     // Aktivste Nutzer: nur mit Zustimmung
     $rows = q_all($pdo, "SELECT u.id, u.username, s.type, COUNT(*) AS c, SUM(e.added_at >= (NOW() - INTERVAL 14 DAY)) AS r FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id WHERE e.is_sample=0 AND $UOK AND $CONSENT GROUP BY u.id, u.username, s.type");
     $by = [];
