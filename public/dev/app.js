@@ -515,7 +515,7 @@
   }
   var TVS = { 'Running': 'läuft', 'Ended': 'beendet', 'In Development': 'in Planung', 'To Be Determined': 'offen' };
   var DONEV = { podcast: ['gehört', 'Noch nicht gehört', 'headphones'], series: ['gesehen', 'Noch nicht gesehen', 'eye'], film: ['gesehen', 'Noch nicht gesehen', 'eye'], artist: ['gehört', 'Noch nicht gehört', 'headphones'], author: ['gelesen', 'Noch nicht gelesen', 'book'] };
-  function setDone(e, keys, on, cb) { api('/api/data.php?a=done', { id: e.id, keys: keys, on: on ? 1 : 0 }).then(function (x) { if (x && x.ok) cb(); else if (x && x.error) window.alert(x.error); }); }
+  function setDone(e, keys, on, cb) { api('/api/data.php?a=done', { id: e.id, keys: keys, on: on ? 1 : 0 }).then(function (x) { if (x && x.ok) cb(); else toast(x && x.error && x.error !== 'Unerwartete Antwort' ? x.error : 'Das hat gerade nicht geklappt. Bitte versuche es gleich noch einmal.'); }); }
   function doneSetOf(r) { var o = {}; (r.done || []).forEach(function (k) { o[k] = 1; }); return o; }
   function renderEpisodes(e, eps, done, progCb) {
     done = done || {};
