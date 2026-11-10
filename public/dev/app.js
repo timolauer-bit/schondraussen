@@ -978,20 +978,13 @@
     }
     function drawOverview() {
       var d = C.data; body.textContent = '';
-      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
-      var g = h('div', { class: 'commgrid' });
-      ORDER0.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer')); });
-      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
-      var g2 = h('div', { class: 'commgrid' });
-      ORDER0.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt')); });
-      body.append(g2);
       // Aktivste User (nur mit Zustimmung)
       var us = (d.users || []).map(function (u) {
         var src = C.period === 'rec' ? u.rec : u.all, tot = 0; ORDER0.forEach(function (t) { tot += +src[t] || 0; });
         return { id: u.id, name: u.name, tot: tot, by: src };
       }).filter(function (u) { return u.tot > 0; });
       us.sort(function (a, b) { var x = C.sort === 'all' ? a.tot : a.by[C.sort], y = C.sort === 'all' ? b.tot : b.by[C.sort]; return (y - x) || (b.tot - a.tot) || a.name.localeCompare(b.name, 'de'); });
-      var open = !!C.open.users, shown = us.slice(0, open ? 50 : 15);
+      var open = !!C.open.users, shown = us.slice(0, open ? 20 : 5);
       var per = h('div', { class: 'seg', role: 'group', 'aria-label': 'Zeitraum' }, [['all', 'Gesamt'], ['rec', 'Letzte 14 Tage']].map(function (x) {
         return h('button', { class: 'btn small' + (C.period === x[0] ? '' : ' ghost'), type: 'button', 'aria-pressed': String(C.period === x[0]), onclick: function () { C.period = x[0]; drawOverview(); } }, x[1]);
       }));
@@ -1010,9 +1003,16 @@
       if (!us.length) ub.append(h('p', { class: 'hint' }, 'Noch niemand in diesem Zeitraum.'));
       else {
         ub.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('thead', null, head), tb)));
-        if (us.length > 15) ub.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open.users = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(50, us.length) + ' anzeigen'));
+        if (us.length > 5) ub.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open.users = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(20, us.length) + ' anzeigen'));
       }
       body.append(ub);
+      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
+      var g = h('div', { class: 'commgrid' });
+      ORDER0.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer')); });
+      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
+      var g2 = h('div', { class: 'commgrid' });
+      ORDER0.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt')); });
+      body.append(g2);
     }
     function drawUser() {
       body.textContent = '';
