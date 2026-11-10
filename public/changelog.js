@@ -1,6 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'F|Profilkarte: In den Einstellungen (neuer Reiter „Profil“) kannst du ein Bild aus 50 Vorlagen, Name, Geburtsdatum oder -jahr und bis zu 5 Lieblingsgenres je Kategorie angeben. In der Community erscheint beim Anklicken eines Nutzers eine Ausweiskarte mit diesen Angaben. Alles ist freiwillig.',
+    'U|Einstellungen sind jetzt in Reiter aufgeteilt (Profil, Darstellung, Daten, Datenschutz).',
     'F|Community: Neue Reihe „Meistgesehen, gelesen, gehört“ für alle Kategorien (Serien ab einer halben Staffel, Bücher je gelesenem Buch ein Punkt, Musik ab 5 Alben, Filme einzeln, Podcasts ab 5 Folgen oder 20 %). Auf Filmseiten gibt es dafür den Schalter „Gesehen“.',
     'U|Community: „Aktivste User“ steht jetzt oben (Top 5, aufklappbar bis Top 20), die Tabellen haben Kategoriefarben und Balken, und es gibt Top- und Newcomer-Tabellen für Podcasts (nur sichtbar mit Podcast-Recht).',
     'U|Bücher, Musik und Filme: Die Werke stehen als Karten mit Jahr, Schalter „gelesen/gehört/gesehen“ und Amazon-Link, darüber zeigt ein Balken den Fortschritt.',

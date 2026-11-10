@@ -659,3 +659,30 @@ html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}
 .commtbl .commadd::before{width:10px;height:2px}.commtbl .commadd::after{width:2px;height:10px}
 .commtbl .commhave{width:22px;height:22px;font-size:14px;line-height:1}
 .commtbl td.ad{text-align:center;padding-left:4px;padding-right:2px}
+
+/* Profilkarte: Einstellungen */
+.profbox .plab{margin:16px 0 6px;font:600 14px var(--font-body);color:var(--ink)}
+.profpic{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.profprev{width:96px;height:96px;border-radius:50%;border:2px solid var(--line);flex:none}.profprev[hidden]{display:none}
+.avgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px;flex:1 1 280px;max-height:230px;overflow:auto;padding:4px}
+.avopt{border:2px solid transparent;border-radius:50%;padding:1px;background:none;cursor:pointer;line-height:0}
+.avopt img{width:44px;height:44px;display:block}
+.avopt:hover{border-color:var(--line)}.avopt.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.avopt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.profbox select,.profbox input[type=number]{max-width:260px}
+/* Profilkarte: Community, Ausweis-Stil */
+.idcard{margin:12px 0 18px;border:2px solid var(--ink);border-radius:14px;background:var(--surface);overflow:hidden;max-width:640px;box-shadow:3px 3px 0 var(--line)}
+.idstripe{display:flex;justify-content:space-between;gap:10px;padding:6px 14px;background:repeating-linear-gradient(135deg,var(--accent) 0 8px,color-mix(in srgb,var(--accent) 80%,#000) 8px 16px);color:var(--accent-ink);font:600 12px var(--font-mono)}
+.idbody{display:grid;grid-template-columns:120px minmax(0,1fr);gap:18px;padding:16px 16px 12px;align-items:start}
+.idpic{width:120px;height:120px;border-radius:12px;border:2px solid var(--ink);background:var(--bg);display:grid;place-items:center;overflow:hidden}
+.idpic img{width:100%;height:100%;display:block}.idini{font:700 52px var(--font-display);color:var(--accent)}
+.idname{font:700 24px/1.2 var(--font-display);margin:0 0 8px;overflow-wrap:anywhere}
+.idrow{display:flex;gap:10px;align-items:baseline;border-top:1px dashed var(--line);padding:5px 0;font-size:14px}.idrow span{color:var(--muted);width:48px;flex:none}
+.idgen{border-top:1px solid var(--line);margin:0 16px;padding:10px 0 14px;display:grid;gap:6px}
+.idgrow{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;align-items:center}
+.idcat{font-size:13px;font-weight:600;border-left:4px solid var(--cc);padding-left:8px}
+.idgen .gchips{margin:0}
+@media(max-width:520px){.idbody{grid-template-columns:90px minmax(0,1fr)}.idpic{width:90px;height:90px}.idgrow{grid-template-columns:minmax(0,1fr)}}
+
+.profbox .gcols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:6px}.profbox .gcol .plab{margin:0 0 4px}.profbox .gcol .gchips.pick{margin:6px 0 0}@media(max-width:900px){.profbox .gcols{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.profbox .gcols{grid-template-columns:1fr}}
+.profbox input[type=date]{max-width:260px}
