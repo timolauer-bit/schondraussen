@@ -630,7 +630,7 @@
     api('/api/data.php?a=profile').then(function (r) {
       wrap.lastChild.remove();
       if (!r || r.error) { wrap.append(h('p', { class: 'msg err' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
-      var v = { name: r.name || '', year: r.year || '', age_show: r.age_show || 'none', avatar: r.avatar || '', favs: r.favs || {} };
+      var v = { name: r.name || '', year: r.year || '', date: r.date || '', age_show: r.age_show || 'none', avatar: r.avatar || '', favs: r.favs || {} };
       var prev = h('img', { class: 'profprev', alt: 'Dein Bild', width: '96', height: '96' }), grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Bild wählen' });
       function paintPrev() { var u = avUrl(v.avatar); prev.hidden = !u; if (u) prev.src = u; [].forEach.call(grid.children, function (b) { var on = b.dataset.a === v.avatar; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.className = 'avopt' + (on ? ' on' : ''); }); }
       for (var i = 1; i <= AVN; i++) (function (id) {
@@ -640,20 +640,26 @@
       paintPrev();
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
       var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
+      var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
+      yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
       wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid),
-        h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsjahr'), yr,
-        h('p', { class: 'hint' }, 'Gespeichert wird nur das Jahr, kein Datum.'), h('p', { class: 'plab' }, 'Anzeige in der Community'), sel);
+        h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
+        h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
+        h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
+        h('p', { class: 'hint' }, 'Nur mit Jahr bleibt das Alter auf dem Stand der Eingabe.'), h('p', { class: 'plab' }, 'Anzeige in der Community'), sel);
+      var gcols = h('div', { class: 'gcols' });
       ['author', 'artist', 'film', 'series'].forEach(function (t) {
         var chosen = (v.favs[t] = (v.favs[t] || []).slice(0, 5)), box = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Lieblingsgenres ' + TYPES[t].plural }), cap = h('span', { class: 'hint', style: 'margin-left:6px' });
         function draw() { box.textContent = ''; cap.textContent = chosen.length + ' von 5';
           genOpts(t).concat(chosen.filter(function (g) { return genOpts(t).indexOf(g) < 0; })).forEach(function (g) { var on = chosen.indexOf(g) > -1;
             box.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(on), disabled: !on && chosen.length >= 5 ? true : null, onclick: function () { if (on) chosen.splice(chosen.indexOf(g), 1); else if (chosen.length < 5) chosen.push(g); draw(); } }, g)); }); }
-        draw(); wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres ' + TYPES[t].plural, cap), box);
+        draw(); gcols.append(h('div', { class: 'gcol' }, h('p', { class: 'plab' }, TYPES[t].plural, cap), box));
       });
+      wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres (bis zu 5 je Kategorie)'), gcols);
       var save = h('button', { class: 'btn', type: 'button', onclick: function () {
         msg.className = 'msg'; msg.textContent = '';
-        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, age_show: v.age_show, avatar: v.avatar, favs: v.favs }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
+        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: v.favs }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
       } }, 'Profilkarte speichern');
       wrap.append(h('p', { style: 'margin:14px 0 0' }, save), msg);
     });

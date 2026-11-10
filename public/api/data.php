@@ -82,17 +82,28 @@ if ($a === 'devmode' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Admin: zwisc
 }
 if ($a === 'profile') { // eigene Profilkarte (freiwillige Angaben)
     try {
-        $q = $pdo->prepare('SELECT display_name,birth_year,age_show,avatar,fav_genres FROM users WHERE id=?'); $q->execute([$u['id']]); $r = $q->fetch() ?: [];
+        $q = $pdo->prepare('SELECT display_name,birth_year,birth_date,age_show,avatar,fav_genres FROM users WHERE id=?'); $q->execute([$u['id']]); $r = $q->fetch() ?: [];
     } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
-    json_out(['name' => (string) ($r['display_name'] ?? ''), 'year' => $r['birth_year'] ? (int) $r['birth_year'] : null, 'age_show' => (string) ($r['age_show'] ?? 'none'),
+    json_out(['name' => (string) ($r['display_name'] ?? ''), 'year' => $r['birth_year'] ? (int) $r['birth_year'] : null, 'date' => (string) ($r['birth_date'] ?? ''), 'age_show' => (string) ($r['age_show'] ?? 'none'),
         'avatar' => (string) ($r['avatar'] ?? ''), 'favs' => json_decode((string) ($r['fav_genres'] ?? ''), true) ?: new stdClass()]);
 }
 if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body();
     $name = trim(preg_replace('/\s+/u', ' ', (string) ($b['name'] ?? '')));
     if (mb_strlen($name) > 40 || !preg_match('/^[\p{L}\p{N} .\'’\-]*$/u', $name)) json_out(['error' => 'Der Name darf höchstens 40 Zeichen haben: Buchstaben, Ziffern, Leerzeichen, Punkt, Apostroph und Bindestrich.'], 422);
-    $yr = $b['year'] ?? null; $yr = ($yr === null || $yr === '') ? null : (int) $yr;
+    $bd = trim((string) ($b['date'] ?? '')); $bdv = null;
+    if ($bd !== '') {
+        $dt = DateTime::createFromFormat('!Y-m-d', $bd);
+        if (!$dt || $dt->format('Y-m-d') !== $bd || (int) $dt->format('Y') < 1900 || (int) $dt->format('Y') > (int) date('Y') - 10 || $dt > new DateTime('today')) json_out(['error' => 'Bitte gib ein gültiges Geburtsdatum an.'], 422);
+        $bdv = $bd; $yr = (int) $dt->format('Y');
+    } else { $yr = $b['year'] ?? null; $yr = ($yr === null || $yr === '') ? null : (int) $yr; }
     if ($yr !== null && ($yr < 1900 || $yr > (int) date('Y') - 10)) json_out(['error' => 'Bitte gib ein gültiges Geburtsjahr an.'], 422);
+    $fixed = null; // nur Jahr: Alter bleibt auf dem Stand der Eingabe
+    if ($yr !== null && $bdv === null) {
+        $fixed = (int) date('Y') - $yr;
+        try { $o = $pdo->prepare('SELECT birth_year,birth_date,age_fixed FROM users WHERE id=?'); $o->execute([$u['id']]); $o = $o->fetch() ?: [];
+            if ($o && !$o['birth_date'] && (int) $o['birth_year'] === $yr && $o['age_fixed'] !== null) $fixed = (int) $o['age_fixed']; } catch (Throwable $t) {}
+    }
     $show = in_array($b['age_show'] ?? 'none', ['none', 'age', 'year'], true) ? $b['age_show'] : 'none';
     if ($yr === null) $show = 'none';
     $av = (string) ($b['avatar'] ?? '');
@@ -102,7 +113,7 @@ if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $l = []; foreach ((array) (($b['favs'] ?? [])[$t] ?? []) as $g) { $g = trim((string) $g); if ($g !== '' && mb_strlen($g) <= 40 && preg_match('/^[\p{L}\p{N} &\-\/.,\x27]+$/u', $g) && !in_array($g, $l, true)) $l[] = $g; }
         if ($l) $favs[$t] = array_slice($l, 0, 5);
     }
-    try { $pdo->prepare('UPDATE users SET display_name=?, birth_year=?, age_show=?, avatar=?, fav_genres=? WHERE id=?')->execute([$name !== '' ? $name : null, $yr, $show, $av !== '' ? $av : null, $favs ? json_encode($favs, JSON_UNESCAPED_UNICODE) : null, $u['id']]); }
+    try { $pdo->prepare('UPDATE users SET display_name=?, birth_year=?, birth_date=?, age_fixed=?, age_show=?, avatar=?, fav_genres=? WHERE id=?')->execute([$name !== '' ? $name : null, $yr, $bdv, $fixed, $show, $av !== '' ? $av : null, $favs ? json_encode($favs, JSON_UNESCAPED_UNICODE) : null, $u['id']]); }
     catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }

@@ -94,9 +94,9 @@ if ($a === 'user') {
     foreach ($last as &$l) { $l['id'] = (int) $l['id']; $l['mine'] = (int) $l['mine']; } unset($l);
     $card = null;
     try { // freiwillige Profilkarte (nur Nutzer mit Community-Zustimmung kommen hier an)
-        $cq = $pdo->prepare('SELECT display_name,birth_year,age_show,avatar,fav_genres,id FROM users WHERE id=?'); $cq->execute([$id]); $c = $cq->fetch(PDO::FETCH_ASSOC) ?: null;
+        $cq = $pdo->prepare('SELECT display_name,birth_year,birth_date,age_fixed,age_show,avatar,fav_genres,id FROM users WHERE id=?'); $cq->execute([$id]); $c = $cq->fetch(PDO::FETCH_ASSOC) ?: null;
         if ($c) {
-            $age = null; if ($c['birth_year']) { if ($c['age_show'] === 'age') $age = (int) date('Y') - (int) $c['birth_year'] . ' Jahre'; elseif ($c['age_show'] === 'year') $age = 'Jahrgang ' . (int) $c['birth_year']; }
+            $age = null; if ($c['birth_year']) { if ($c['age_show'] === 'age') { $n = $c['birth_date'] ? (int) (new DateTime($c['birth_date']))->diff(new DateTime('today'))->y : ($c['age_fixed'] !== null ? (int) $c['age_fixed'] : (int) date('Y') - (int) $c['birth_year']); $age = $n . ' Jahre'; } elseif ($c['age_show'] === 'year') $age = 'Jahrgang ' . (int) $c['birth_year']; }
             $card = ['name' => (string) ($c['display_name'] ?? ''), 'age' => $age, 'avatar' => (string) ($c['avatar'] ?? ''), 'favs' => json_decode((string) ($c['fav_genres'] ?? ''), true) ?: new stdClass(), 'no' => (int) $c['id']];
         }
     } catch (Throwable $t) {}
