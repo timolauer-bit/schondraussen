@@ -143,6 +143,24 @@ if ($a === 'wish_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
+if ($a === 'dicebear_add' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Bild von DiceBear: Server holt, prüft und speichert das SVG
+    require_once __DIR__ . '/../lib/avatar.php';
+    try {
+        $c = $pdo->prepare("SELECT COUNT(*) FROM avatar_options WHERE user_id=? AND src IS NOT NULL AND created_at > (NOW() - INTERVAL 1 HOUR)"); $c->execute([$u['id']]);
+        if ((int) $c->fetchColumn() >= 10) json_out(['error' => 'Das waren viele Versuche. Bitte probiere es in einer Stunde wieder.'], 429);
+        [$svg, $err, $url] = dicebear_fetch((string) (body()['url'] ?? ''));
+        if ($svg === null) json_out(['error' => $err], 422);
+        $cur = (string) ($u['avatar'] ?? '');
+        $q = $pdo->prepare("SELECT id FROM avatar_options WHERE user_id=? AND src IS NOT NULL ORDER BY id"); $q->execute([$u['id']]); $ids = array_map('intval', array_column($q->fetchAll(), 'id'));
+        while (count($ids) >= 5) { // höchstens 5 DiceBear-Bilder je Nutzer: das älteste, nicht benutzte wird ersetzt
+            $del = null; foreach ($ids as $k => $i) if ('c' . $i !== $cur) { $del = $k; break; }
+            if ($del === null) json_out(['error' => 'Du hast schon 5 DiceBear-Bilder.'], 409);
+            $pdo->prepare('DELETE FROM avatar_options WHERE id=? AND user_id=?')->execute([$ids[$del], $u['id']]); array_splice($ids, $del, 1);
+        }
+        $pdo->prepare('INSERT INTO avatar_options (wish_id,user_id,svg,src) VALUES (NULL,?,?,?)')->execute([$u['id'], $svg, $url]);
+        json_out(['ok' => true, 'id' => (int) $pdo->lastInsertId(), 'options' => array_merge($ids, [(int) $pdo->lastInsertId()])]);
+    } catch (Throwable $t) { json_out(['error' => 'Das hat nicht geklappt. Wurde die Datenbank aktualisiert (migrate.php)?'], 500); }
+}
 if ($a === 'avatar') { // Wunschbild ausliefern (nur als Bild, ohne Skripte)
     $id = (int) ($_GET['id'] ?? 0); $svg = null;
     try {
