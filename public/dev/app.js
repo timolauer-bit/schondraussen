@@ -655,6 +655,7 @@
         b.dataset.a = id; grid.append(b);
       })('s' + String(i).padStart(2, '0'));
       paintPrev();
+      var picRow = h('div', null, h('div', { class: 'profpic' }, prev, grid));
       var wishBox = h('div', { class: 'wishbox' });
       function drawWish(d) {
         wishBox.textContent = ''; var ws = d.wishes || [], last = ws[0], open = ws.some(function (x) { return x.status === 'open'; });
@@ -688,7 +689,7 @@
       var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
-      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid), dbBox, wishBox,
+      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), picRow, dbBox, wishBox,
         h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
         h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
         h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
@@ -710,10 +711,13 @@
         crow.append(h('div', { class: 'inline' }, sl, ti));
       });
       wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
-      var save = h('button', { class: 'btn', type: 'button', onclick: function () {
-        msg.className = 'msg'; msg.textContent = '';
-        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
-      } }, 'Profilkarte speichern');
+      function doSave(m) {
+        m.className = 'msg'; m.textContent = '';
+        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { m.className = 'msg ok'; m.textContent = 'Gespeichert.'; } else { m.className = 'msg err'; m.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
+      }
+      var save = h('button', { class: 'btn', type: 'button', onclick: function () { doSave(msg); } }, 'Profilkarte speichern');
+      var msgTop = h('p', { class: 'msg', role: 'status' }), saveTop = h('button', { class: 'btn', type: 'button', onclick: function () { doSave(msgTop); } }, 'Profilkarte speichern');
+      picRow.append(h('p', { style: 'margin:10px 0 0' }, saveTop), msgTop);
       wrap.append(h('p', { style: 'margin:14px 0 0' }, save), msg);
     });
     return wrap;
