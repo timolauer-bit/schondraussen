@@ -544,7 +544,8 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     $seen = []; $works = []; $rel = []; $y = (int) date('Y');
     foreach (($r['docs'] ?? []) as $d) {
         $t = trim((string) ($d['title'] ?? '')); if ($t === '' || preg_match('/^_*(none|null|n\/a|unknown|untitled)_*$/i', $t)) continue; // Platzhaltertitel der Quelle
-        $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'mul'])) continue; // nur Werke mit deutscher Ausgabe (ohne Sprachangabe bleibt es drin)
+        $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'mul'])) continue; // nur Werke mit deutscher Ausgabe
+        if (looks_english_title($t)) continue; // Original-Titel in Englisch (auch ohne Sprachangabe oder mit nur einer Übersetzung): nicht anzeigen
         $k = mb_strtolower($t); if (isset($seen[$k])) continue; $seen[$k] = 1;
         $yr = (int) ($d['first_publish_year'] ?? 0);
         if ($yr > $y) $rel[] = [$t, (string) $yr, 'Buch'];
@@ -648,4 +649,13 @@ function podcast_refresh(PDO $pdo, array $sub): array {
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     return ['ok' => true, 'msg' => count($eps) . ' Folgen'];
+}
+
+/** Grobe Erkennung englischer Titel (Open Library führt oft Originaltitel statt der deutschen Ausgabe). Lieber einen Titel zu viel zeigen als einen deutschen zu verlieren: nur bei eindeutigen Mustern. */
+function looks_english_title(string $t): bool {
+    $l = ' ' . mb_strtolower(preg_replace('/[^\p{L}\' ]+/u', ' ', $t)) . ' ';
+    $en = preg_match_all('/ (?=(the|of|and|with|for|from|into|your|his|her|their|my|our|is|are|was|were|to|in|on|at|by|a|an) )/', $l);
+    $de = preg_match_all('/ (?=(der|die|das|den|dem|des|und|mit|für|von|ein|eine|einer|eines|ist|sind|im|zum|zur|nicht|ich|wir|sie|er|es|auf|aus|nach|über|unter|ohne|wie) )/u', $l);
+    if ($de > 0 || preg_match('/[äöüß]/u', $l)) return false;
+    return $en >= 2 || preg_match('/^ (the|a|an) /', $l) === 1 || preg_match("/[a-z]'(s|t|re|ve|ll) /", $l) === 1;
 }
