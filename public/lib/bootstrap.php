@@ -107,6 +107,9 @@ function podcast_level(): string {
     return $l;
 }
 function podcast_ok(?array $u): bool { return perm($u, 'podcast'); }
+/** Darf der Nutzer diese Kategorie sehen und nutzen? (Rechte der Nutzergruppen, Admin immer) */
+function cat_ok(?array $u, string $t): bool { return $t === 'podcast' ? podcast_ok($u) : perm($u, 'cat_' . $t); }
+function allowed_cats(?array $u): array { return array_values(array_filter(['author', 'artist', 'film', 'series', 'podcast'], fn($t) => cat_ok($u, $t))); }
 // Kategorien ausblenden: vorerst nur für Admins (Test). Gespeichert in users.hide_cats als kommagetrennte Liste.
 function hidecats_ok(?array $u): bool { return perm($u, 'hidecats'); }
 function hidden_cats(?array $u): array {
@@ -121,7 +124,11 @@ function perm_defs(): array {
         'fb_staff' => ['Ideen und Bugs: alle Beiträge sehen und verwalten', 'Auch noch nicht freigegebene Beiträge mit Absender sehen, freigeben, Status setzen, bearbeiten, Bilder prüfen', [0, 1], 'live'],
         'fb_comment_view' => ['Kommentare zu Ideen und Bugs lesen', 'Gilt, sobald es Kommentare gibt', [1, 1], 'soon'],
         'fb_comment_write' => ['Kommentare zu Ideen und Bugs schreiben', 'Gilt, sobald es Kommentare gibt', [0, 1], 'soon'],
-        'podcast' => ['Kategorie Podcasts nutzen', 'Suchen, hinzufügen, in Menü und Kalender sehen', [$pl, $pl], 'live'],
+        'cat_author' => ['Kategorie Bücher / Autor:innen', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
+        'cat_artist' => ['Kategorie Musik', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
+        'cat_film' => ['Kategorie Filme', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
+        'cat_series' => ['Kategorie Serien', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
+        'podcast' => ['Kategorie Podcasts', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [$pl, $pl], 'live'],
         'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen (Test)', [0, 0], 'live'],
         'devmode' => ['Entwicklerversion nutzen', 'Schalter „Live/Dev“ neben dem Benutzernamen: neue Funktionen testen, bevor sie für alle freigegeben werden', [0, 1], 'live'],
     ];

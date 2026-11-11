@@ -70,7 +70,7 @@ if ($a === 'list') {
 if ($a === 'calendar') {
     $s = $pdo->prepare("SELECT r.id,r.title,r.release_date,r.kind,s.id AS subject_id,s.name,s.type
         FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
-        WHERE e.user_id=? AND (s.type<>'podcast' OR r.release_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) ORDER BY (r.release_date IS NULL OR r.release_date=''), r.release_date, s.name LIMIT 500");
+        WHERE e.user_id=? AND s.type IN ('" . implode("','", allowed_cats($u)) . "') AND (s.type<>'podcast' OR r.release_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) ORDER BY (r.release_date IS NULL OR r.release_date=''), r.release_date, s.name LIMIT 500");
     $s->execute([$u['id']]);
     json_out(['releases' => $s->fetchAll()]);
 }
@@ -197,8 +197,7 @@ if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $ok = send_user_mail($pdo, $u, $subj, $txt);
     json_out(['ok' => $ok, 'msg' => $ok ? 'Vorschau ist unterwegs. Schau auch im Spam-Ordner nach.' : 'Der Mailversand ist fehlgeschlagen.']);
 }
-$TYPES = ['author', 'artist', 'film', 'series'];
-if (podcast_ok($u)) $TYPES[] = 'podcast';
+$TYPES = allowed_cats($u);
 if ($a === 'search') {
     $type = $_GET['type'] ?? ''; $q = trim((string) ($_GET['q'] ?? ''));
     if (!in_array($type, $TYPES, true) || mb_strlen($q) < 2) json_out(['results' => []]);
@@ -297,7 +296,11 @@ if ($a === 'sitestats') { // Zahlen zur Seite für die Info-Seite: nur Summen, k
             elseif ($r['type'] === 'series') $c['tv'] += (int) $r['n'];
             elseif ($r['type'] === 'podcast') $c['podcast'] += (int) $r['n'];
         }
-        if (!(function_exists('podcast_ok') && podcast_ok($u))) unset($c['podcast']);
+        if (!cat_ok($u, 'podcast')) unset($c['podcast']);
+        if (!cat_ok($u, 'author')) { unset($c['author']); unset($c['series']); }
+        if (!cat_ok($u, 'artist')) unset($c['artist']);
+        if (!cat_ok($u, 'film')) unset($c['film']);
+        if (!cat_ok($u, 'series')) unset($c['tv']);
         $o['subjects'] = $c;
     } catch (Throwable $e) {}
     try {
@@ -464,7 +467,7 @@ if ($a === 'episum') { // Kurzfassung einer Serienfolge (bei Bedarf übersetzt u
 }
 if ($a === 'entry') {
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
-    $e = $s->fetch(); if ($e && $e['type'] === 'podcast' && !podcast_ok($u)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
+    $e = $s->fetch(); if ($e && !in_array($e['type'], $TYPES, true)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
     if ($e['type'] === 'film') $e['selfkey'] = done_key_work($e['name'], 0); // Film selbst als gesehen markieren

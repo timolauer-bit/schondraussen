@@ -4,8 +4,7 @@ require __DIR__ . '/../lib/bootstrap.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? '';
-$TYPES = ['author', 'artist', 'film', 'series'];
-if (podcast_ok($u)) $TYPES[] = 'podcast'; // Podcast-Ranglisten nur für Nutzer mit Podcast-Recht
+$TYPES = allowed_cats($u); // nur Kategorien, die für die Gruppe des Nutzers freigeschaltet sind
 // Zustimmung: ausdrücklich 1, oder noch nicht entschieden und Admin (Startmodus)
 $CONSENT = "(u.community=1 OR (u.community IS NULL AND u.role='admin'))";
 $UOK = "(u.role='admin' OR u.approved_at IS NOT NULL) AND u.username IS NOT NULL AND u.username<>''";
@@ -106,7 +105,7 @@ if ($a === 'user') {
 if ($a === 'adopt' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $sid = (int) (body()['subject_id'] ?? 0);
     $s = $pdo->prepare('SELECT id,type FROM subjects WHERE id=?'); $s->execute([$sid]); $sub = $s->fetch(PDO::FETCH_ASSOC);
-    if (!$sub || ($sub['type'] === 'podcast' && !podcast_ok($u))) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
+    if (!$sub || !cat_ok($u, $sub['type'])) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $sub['type']]);
     $h = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $h->execute([$u['id'], $sid]);
     if ($h->fetchColumn()) json_out(['ok' => true, 'had' => true]);
