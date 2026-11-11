@@ -648,12 +648,14 @@
       var v = { name: r.name || '', year: r.year || '', date: r.date || '', age_show: r.age_show || 'none', avatar: r.avatar || '', favs: r.favs || {} };
       var prev = h('img', { class: 'profprev', alt: 'Dein Bild', width: '96', height: '96' }), grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Bild wählen' });
       function paintPrev() { var u = avUrl(v.avatar); prev.hidden = !u; if (u) prev.src = u; [].forEach.call(grid.children, function (b) { var on = b.dataset.a === v.avatar; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.className = 'avopt' + (on ? ' on' : ''); }); }
-      (wd.options || []).forEach(function (n) { var id = 'c' + n; var b = h('button', { class: 'avopt wish', type: 'button', role: 'radio', 'aria-label': 'Wunschbild ' + n, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44' })); b.dataset.a = id; grid.append(b); });
+      function addOpt(n, front) { var id = 'c' + n; if (grid.querySelector('[data-a="' + id + '"]')) return; var b = h('button', { class: 'avopt wish', type: 'button', role: 'radio', 'aria-label': 'Wunschbild ' + n, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44' })); b.dataset.a = id; if (front) grid.prepend(b); else grid.append(b); }
+      (wd.options || []).forEach(function (n) { addOpt(n); });
       for (var i = 1; i <= AVN; i++) (function (id) {
         var b = h('button', { class: 'avopt', type: 'button', role: 'radio', 'aria-label': 'Bild ' + id, onclick: function () { v.avatar = v.avatar === id ? '' : id; paintPrev(); } }, h('img', { src: avUrl(id), alt: '', width: '44', height: '44', loading: 'lazy' }));
         b.dataset.a = id; grid.append(b);
       })('s' + String(i).padStart(2, '0'));
       paintPrev();
+      var picRow = h('div', null, h('div', { class: 'profpic' }, prev, grid));
       var wishBox = h('div', { class: 'wishbox' });
       function drawWish(d) {
         wishBox.textContent = ''; var ws = d.wishes || [], last = ws[0], open = ws.some(function (x) { return x.status === 'open'; });
@@ -667,12 +669,27 @@
             api('/api/data.php?a=wish_set', { wish: ta.value }).then(function (x) { if (x && x.ok) { api('/api/data.php?a=wish').then(drawWish); } else { wm.className = 'msg err'; wm.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } }); } }, 'Wunsch senden')), wm);
       }
       drawWish(wd);
+      var dbIn = h('input', { type: 'text', maxlength: '900', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'DiceBear-Link', placeholder: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix' }), dbMsg = h('p', { class: 'msg', role: 'status' });
+      var dbBox = h('div', { class: 'wishbox' }, h('p', { class: 'plab' }, 'Bild mit DiceBear selbst gestalten'),
+        h('p', { class: 'hint' }, 'DiceBear ist ein kostenloser Dienst, der Figuren und Muster als Bild erzeugt. So kommst du an deinen Link:'),
+        h('ol', { class: 'hint', style: 'margin:4px 0 8px 18px;padding:0' },
+          h('li', null, 'Öffne ', h('a', { href: 'https://www.dicebear.com/playground/', target: '_blank', rel: 'noopener noreferrer' }, 'dicebear.com/playground'), ' (neuer Tab).'),
+          h('li', null, 'Wähle einen Stil und stelle dein Bild zusammen.'),
+          h('li', null, 'Kopiere die Adresse der HTTP-API. Sie beginnt mit https://api.dicebear.com/ und endet auf /svg oder /svg? und weiteren Angaben. Links für PNG oder andere Formate gehen nicht.'),
+          h('li', null, 'Füge sie hier ein und klicke auf „Bild übernehmen“.')),
+        h('p', { class: 'hint' }, 'Wir laden das Bild einmal selbst von DiceBear, prüfen es und speichern es bei uns. Dein Profil verweist also nie auf eine fremde Seite. Du kannst bis zu 5 Bilder ausprobieren, das älteste ungenutzte wird ersetzt. Die Stile haben eigene Lizenzen, mehr auf ', h('a', { href: 'https://www.dicebear.com/licenses/', target: '_blank', rel: 'noopener noreferrer' }, 'dicebear.com/licenses'), '.'),
+        dbIn, h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () {
+          dbMsg.className = 'msg'; dbMsg.textContent = 'Lade …';
+          api('/api/data.php?a=dicebear_add', { url: dbIn.value }).then(function (x) {
+            if (x && x.ok) { addOpt(x.id, true); v.avatar = 'c' + x.id; paintPrev(); dbIn.value = ''; dbMsg.className = 'msg ok'; dbMsg.textContent = 'Bild übernommen. Es ist jetzt ausgewählt, vergiss nicht zu speichern.'; }
+            else { dbMsg.className = 'msg err'; dbMsg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; }
+          }); } }, 'Bild übernehmen')), dbMsg);
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
       var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
       var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
-      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), h('div', { class: 'profpic' }, prev, grid), wishBox,
+      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), picRow, dbBox, wishBox,
         h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
         h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
         h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
@@ -694,10 +711,13 @@
         crow.append(h('div', { class: 'inline' }, sl, ti));
       });
       wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
-      var save = h('button', { class: 'btn', type: 'button', onclick: function () {
-        msg.className = 'msg'; msg.textContent = '';
-        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { msg.className = 'msg ok'; msg.textContent = 'Gespeichert.'; } else { msg.className = 'msg err'; msg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
-      } }, 'Profilkarte speichern');
+      function doSave(m) {
+        m.className = 'msg'; m.textContent = '';
+        api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { m.className = 'msg ok'; m.textContent = 'Gespeichert.'; } else { m.className = 'msg err'; m.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
+      }
+      var save = h('button', { class: 'btn', type: 'button', onclick: function () { doSave(msg); } }, 'Profilkarte speichern');
+      var msgTop = h('p', { class: 'msg', role: 'status' }), saveTop = h('button', { class: 'btn', type: 'button', onclick: function () { doSave(msgTop); } }, 'Profilkarte speichern');
+      picRow.append(h('p', { style: 'margin:10px 0 0' }, saveTop), msgTop);
       wrap.append(h('p', { style: 'margin:14px 0 0' }, save), msg);
     });
     return wrap;
@@ -1242,6 +1262,7 @@
         [{ t: 'Open Library', href: 'https://openlibrary.org' }, 'Bücher: Autor:innen und Werke, Wikidata-Verweis', 'keiner', 'liefert kaum angekündigte Bücher; Werke ohne deutsche Ausgabe werden ausgeblendet'],
         ['Google Books', 'Bücher: angekündigte Titel (deutsche Ausgaben)', 'API-Schlüssel', 'Eigener Schlüssel, begrenzte Abfragemenge pro Tag; für deutsche Manga kaum Treffer'],
         ['Deutsche Nationalbibliothek (SRU, ersatzweise lobid.org)', 'Bücher-Reihen über den Titel: nummerierte Bände mit Jahr, auch angekündigte', 'keiner', 'freie Schnittstelle; Antwortstruktur noch in Erprobung'],
+        [{ t: 'DiceBear', href: 'https://www.dicebear.com' }, 'Profilbilder: Nutzer gestalten ein Bild und fügen den Link ein; der Server holt das SVG einmal, prüft es und speichert es', 'keiner', 'nur api.dicebear.com und nur SVG; die Stile haben eigene Lizenzen (dicebear.com/licenses)'],
         ['Wikipedia und Wikidata', 'Kurzvorstellung von Bands und Autor:innen', 'keiner', 'deutsch bevorzugt, sonst englisch und übersetzt'],
         [{ t: 'DeepL', href: 'https://www.deepl.com' }, 'Übersetzung englischer Beschreibungen ins Deutsche', 'API-Schlüssel (Free-Tarif)', 'nur öffentliche Texte, Ergebnis wird gespeichert (je Text eine Übersetzung)'],
         ['Google News (RSS-Suche)', 'aktuelle Schlagzeilen in den Benachrichtigungsmails (höchstens 7 Tage alt)', 'keiner', 'nur Name des Eintrags und Titel des Werks gehen an Google'],
