@@ -419,9 +419,11 @@
     card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
     var progCb = nb.prog;
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
+    if (e.type !== 'series') { // bei Serien steht das schon in der Staffelübersicht und im Kasten rechts oben
     card.append(h('h3', { class: 'sec' }, e.type === 'podcast' ? 'Neue Folgen (letzte 14 Tage)' : 'Kommende Veröffentlichungen'));
     if (e.type === 'author') card.append(h('p', { class: 'warnbox' }, h('b', null, 'Hinweis: '), (up.length ? 'Die frei verfügbaren Buch-Schnittstellen liefern nur wenige zukünftige Bücher. Meist kommen Bücher erst nach dem Erscheinen dazu. Darum stehen hier auch Bücher, die in den letzten 4 Wochen neu bei der Quelle hinzugekommen sind („neu hinzugefügt“).' : 'Die frei verfügbaren Buch-Schnittstellen liefern nur wenige zukünftige Bücher. Zurzeit ist hier nichts angekündigt, und in den letzten 4 Wochen ist bei der Quelle auch nichts Neues dazugekommen. Sobald sich das ändert, erscheint es hier und du bekommst eine Mail, wenn du sie eingeschaltet hast.')));
     if (up.length) up.forEach(function (it) { card.append(relRow(it)); }); else card.append(h('p', { class: 'state' }, e.type === 'podcast' ? 'Keine neuen Folgen in den letzten 14 Tagen.' : 'Keine angekündigten Termine bekannt.'));
+    }
     if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes, doneSetOf(r), progCb)); card.append(renderSimilar(e)); return card; }
     if (e.type === 'series' && e.fetched_at && !S.epTried[e.id]) { S.epTried[e.id] = 1; refresh(cur, true); }
     card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : 'Bekannte Werke'));
