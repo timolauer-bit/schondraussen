@@ -217,6 +217,8 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   var inviteTok = q.get('invite') || '';
   if (inviteTok && !tok) { show('f-register'); say('Du wurdest eingeladen. Lege hier dein Konto an, es wird sofort freigeschaltet.'); }
   if (q.get('verified') === '1') say('Deine Adresse ist bestätigt. Du kannst dich jetzt anmelden.');
+  if (q.get('mailok') === '1') say('Deine neue E-Mail-Adresse ist bestätigt. Du kannst dich jetzt damit anmelden.');
+  if (q.get('mailok') === '0') say('Der Bestätigungslink ist abgelaufen, ungültig oder die Adresse schon vergeben.', true);
   if (q.get('verified') === '0') say('Der Bestätigungslink ist abgelaufen oder ungültig.', true);
 
   var lo = document.getElementById('logout');

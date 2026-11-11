@@ -7,6 +7,9 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+ '061_email_change' => [
+  "ALTER TABLE email_tokens MODIFY kind ENUM('verify','reset','newmail') NOT NULL, ADD COLUMN payload VARCHAR(190) NULL",
+ ],
  '060_avatar_wishes' => [
   "CREATE TABLE IF NOT EXISTS avatar_wishes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, wish VARCHAR(500) NOT NULL, status ENUM('open','ready','declined') NOT NULL DEFAULT 'open', note VARCHAR(300) NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "CREATE TABLE IF NOT EXISTS avatar_options (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, wish_id INT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL, svg MEDIUMTEXT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), KEY idx_wish (wish_id), FOREIGN KEY (wish_id) REFERENCES avatar_wishes(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",

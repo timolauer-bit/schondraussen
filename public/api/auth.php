@@ -42,6 +42,25 @@ try {
         exit;
     }
 
+    // Bestätigungslink für eine neue E-Mail-Adresse (GET)
+    if ($a === 'emailconfirm') {
+        $h = hash('sha256', (string) ($_GET['t'] ?? ''));
+        $s = $pdo->prepare("SELECT id,user_id,payload FROM email_tokens WHERE token_hash=? AND kind='newmail' AND used_at IS NULL AND expires_at > NOW()");
+        $s->execute([$h]); $r = $s->fetch(); $ok = false;
+        if ($r && valid_email((string) $r['payload'])) {
+            $q = $pdo->prepare('SELECT id FROM users WHERE email=? AND id<>?'); $q->execute([$r['payload'], $r['user_id']]);
+            if (!$q->fetch() && !email_blocked($pdo, (string) $r['payload'])) {
+                $o = $pdo->prepare('SELECT email FROM users WHERE id=?'); $o->execute([$r['user_id']]); $old = (string) $o->fetchColumn();
+                $pdo->prepare('UPDATE users SET email=?, email_verified_at=COALESCE(email_verified_at,NOW()) WHERE id=?')->execute([$r['payload'], $r['user_id']]);
+                $pdo->prepare('UPDATE email_tokens SET used_at=NOW() WHERE id=?')->execute([$r['id']]);
+                $pdo->prepare("UPDATE email_tokens SET used_at=NOW() WHERE user_id=? AND kind IN ('newmail','reset') AND used_at IS NULL")->execute([$r['user_id']]);
+                if ($old !== '' && strtolower($old) !== strtolower((string) $r['payload'])) { try { send_mail($old, 'Deine E-Mail-Adresse wurde geändert', "Die E-Mail-Adresse deines Kontos bei Schondraussen.de wurde auf eine neue Adresse geändert.\n\nWar das nicht deine Absicht, melde dich bitte beim Admin über das Impressum der Seite.\n"); } catch (Throwable $e) {} }
+                $ok = true;
+            }
+        }
+        header('Location: /?mailok=' . ($ok ? '1' : '0')); exit;
+    }
+
     if ($a === 'me') { $u = current_user(); json_out(['user' => $u]); }
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST erforderlich'], 405);
@@ -91,6 +110,45 @@ try {
         $code = recovery_code_new();
         $pdo->prepare('UPDATE users SET pass_hash=?, recovery_hash=? WHERE id=?')->execute([password_hash($pw, PASSWORD_DEFAULT), password_hash(recovery_norm($code), PASSWORD_DEFAULT), $row['id']]);
         json_out(['ok' => true, 'recovery_code' => $code, 'message' => 'Dein Passwort wurde geändert. Der alte Code ist verbraucht, bitte notiere den neuen.']);
+    }
+    if ($a === 'email_change') { // neue E-Mail-Adresse beantragen (angemeldet, mit Passwort), gilt erst nach Klick auf den Link in der neuen Mail
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
+        $s = $pdo->prepare('SELECT pass_hash,email FROM users WHERE id=?'); $s->execute([$cu['id']]); $row = $s->fetch();
+        if (!$row || !password_verify((string) ($b['password'] ?? ''), $row['pass_hash'])) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
+        $new = strtolower(trim((string) ($b['email'] ?? '')));
+        if (!valid_email($new)) json_out(['error' => 'Bitte eine gültige E-Mail-Adresse eingeben.'], 422);
+        if (strtolower((string) $row['email']) === $new) json_out(['error' => 'Das ist schon deine aktuelle Adresse.'], 422);
+        if (limited($pdo, 'mailchange', 3, 60)) json_out(['error' => 'Zu viele Anfragen, bitte in einer Stunde erneut.'], 429);
+        note($pdo, 'mailchange');
+        $q = $pdo->prepare('SELECT 1 FROM users WHERE email=? AND id<>?'); $q->execute([$new, $cu['id']]);
+        if (!$q->fetch() && !email_blocked($pdo, $new)) { // sonst keine Mail, die Antwort bleibt gleich (kein Hinweis, ob die Adresse schon vergeben ist)
+            try {
+                $pdo->prepare("UPDATE email_tokens SET used_at=NOW() WHERE user_id=? AND kind='newmail' AND used_at IS NULL")->execute([$cu['id']]);
+                [$t, $h] = token_new();
+                $pdo->prepare("INSERT INTO email_tokens (user_id,kind,token_hash,payload,expires_at) VALUES (?,'newmail',?,?,NOW() + INTERVAL 24 HOUR)")->execute([$cu['id'], $h, $new]);
+            } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+            $base = rtrim(cfg('base_url', 'https://schondraussen.de'), '/');
+            send_mail($new, 'Bitte bestätige deine neue E-Mail-Adresse', "Du möchtest bei Schondraussen.de diese Adresse für dein Konto verwenden. Bestätige sie mit diesem Link (24 Stunden gültig):\n$base/api/auth.php?a=emailconfirm&t=$t\n\nWenn du das nicht warst, kannst du diese Mail ignorieren, dann ändert sich nichts.\n");
+            if (!empty($row['email'])) { try { send_mail($row['email'], 'Änderung deiner E-Mail-Adresse beantragt', "Für dein Konto bei Schondraussen.de wurde eine neue E-Mail-Adresse beantragt. Solange sie nicht bestätigt ist, bleibt diese Adresse aktiv.\n\nWar das nicht deine Absicht, ändere bitte dein Passwort.\n"); } catch (Throwable $e) {} }
+        }
+        json_out(['ok' => true, 'message' => 'Wir haben einen Bestätigungslink an die neue Adresse geschickt, sofern sie nutzbar ist. Bis du ihn anklickst, bleibt die bisherige Adresse aktiv.']);
+    }
+    if ($a === 'email_remove') { // E-Mail-Adresse entfernen: danach nur Benutzername, Passwort und Wiederherstellungscode
+        $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);
+        if (limited($pdo, 'login', 8, 15)) json_out(['error' => 'Zu viele Versuche, bitte in einigen Minuten erneut.'], 429);
+        $s = $pdo->prepare('SELECT pass_hash,email,username FROM users WHERE id=?'); $s->execute([$cu['id']]); $row = $s->fetch();
+        if (!$row || !password_verify((string) ($b['password'] ?? ''), $row['pass_hash'])) { note($pdo, 'login'); json_out(['error' => 'Das Passwort stimmt nicht.'], 403); }
+        if (empty($row['email'])) json_out(['error' => 'Dein Konto hat schon keine E-Mail-Adresse.'], 422);
+        if (empty($row['username'])) json_out(['error' => 'Lege zuerst einen Benutzernamen fest. Ohne E-Mail-Adresse meldest du dich damit an.'], 422);
+        if (empty($b['understood'])) json_out(['error' => 'Bitte bestätige den Hinweis.'], 422);
+        $code = recovery_code_new();
+        try {
+            $pdo->prepare('UPDATE users SET email=NULL, notify=0, recovery_hash=? WHERE id=?')->execute([password_hash(recovery_norm($code), PASSWORD_DEFAULT), $cu['id']]);
+            $pdo->prepare("UPDATE email_tokens SET used_at=NOW() WHERE user_id=? AND used_at IS NULL")->execute([$cu['id']]);
+        } catch (Throwable $e) { json_out(['error' => 'Das hat nicht geklappt.'], 500); }
+        try { send_mail($row['email'], 'Deine E-Mail-Adresse wurde entfernt', "Von deinem Konto bei Schondraussen.de wurde die E-Mail-Adresse entfernt. Du bekommst keine Mails mehr.\n\nAnmelden kannst du dich mit deinem Benutzernamen und Passwort. Falls du das Passwort vergisst, hilft dir nur noch dein Wiederherstellungscode, der gerade neu erzeugt wurde.\n\nWar das nicht deine Absicht, melde dich bitte beim Admin über das Impressum der Seite.\n"); } catch (Throwable $e) {}
+        json_out(['ok' => true, 'recovery_code' => $code]);
     }
     if ($a === 'recovery_new') { // neuen Code erzeugen (angemeldet, mit Passwort)
         $cu = current_user(); if (!$cu) json_out(['error' => 'Bitte melde dich an.'], 401);

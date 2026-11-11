@@ -702,6 +702,34 @@
     if (!c.name && !c.age && !any) info.append(h('p', { class: 'hint', style: 'margin:6px 0 0' }, 'Noch keine Angaben.'));
     return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (c.no || d.user.id))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
   }
+  function emailBox() {
+    var wrap = h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'E-Mail-Adresse'));
+    function draw() {
+      wrap.textContent = ''; wrap.append(h('p', { class: 'label' }, 'E-Mail-Adresse'));
+      var ne = h('input', { type: 'email', maxlength: '190', placeholder: 'Neue E-Mail-Adresse', 'aria-label': 'Neue E-Mail-Adresse', autocomplete: 'off', style: 'flex:1;min-width:200px' }), npw = h('input', { type: 'password', maxlength: '72', placeholder: 'Dein Passwort', 'aria-label': 'Passwort zur Bestätigung', autocomplete: 'current-password', style: 'flex:1;min-width:160px' }), m1 = h('p', { class: 'msg', role: 'status' });
+      wrap.append(h('p', { class: 'hint' }, D.email ? 'Deine Adresse: ' + D.email + '. Eine neue Adresse gilt erst, wenn du den Link in der Bestätigungsmail anklickst. Bis dahin bleibt die alte aktiv.' : 'Dein Konto hat keine E-Mail-Adresse. Du kannst eine hinzufügen, zum Beispiel für Benachrichtigungen und zum Zurücksetzen des Passworts per Mail.'),
+        h('form', { class: 'inline', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); m1.className = 'msg'; m1.textContent = '…';
+          api('/api/auth.php?a=email_change', { email: ne.value, password: npw.value }).then(function (r) { if (r.ok) { npw.value = ''; ne.value = ''; m1.textContent = r.message; } else { m1.className = 'msg err'; m1.textContent = r.error || 'Das hat nicht geklappt.'; } }); } },
+          ne, npw, h('button', { class: 'btn', type: 'submit' }, D.email ? 'Adresse ändern' : 'Adresse hinzufügen')), m1);
+      if (!D.email) return;
+      var rp = h('input', { type: 'password', maxlength: '72', placeholder: 'Dein Passwort', 'aria-label': 'Passwort zum Entfernen', autocomplete: 'current-password', style: 'flex:1;min-width:160px' }), ck = h('input', { type: 'checkbox', id: 'rmck' }), m2 = h('p', { class: 'msg', role: 'status' }), out = h('div');
+      var danger = h('div', { class: 'dangerbox', style: 'margin-top:18px;padding:14px;border:1px solid var(--err,#a23f1c);border-radius:12px' },
+        h('p', { class: 'label', style: 'margin:0 0 4px;color:var(--err,#a23f1c)' }, 'E-Mail-Adresse entfernen'),
+        h('p', { class: 'hint' }, 'Achtung: Ohne Adresse bekommst du keine Mails mehr und kannst dein Passwort nicht mehr per E-Mail zurücksetzen. Du meldest dich dann nur noch mit Benutzername und Passwort an. Vergisst du das Passwort, hilft dir ausschließlich dein Wiederherstellungscode. Beim Entfernen erzeugen wir einen neuen Code, der alte wird ungültig. Er wird nur einmal angezeigt, notiere ihn dir an einem sicheren Ort. Ohne Code und ohne Passwort kommt niemand mehr an dein Konto, auch der Admin nicht.'),
+        h('p', { style: 'margin:8px 0' }, h('label', { for: 'rmck', style: 'display:flex;gap:8px;align-items:flex-start' }, ck, h('span', null, 'Ich habe verstanden, dass mein Konto ohne E-Mail-Adresse nur mit dem neuen Code wiederherstellbar ist.'))),
+        h('form', { class: 'inline', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); m2.className = 'msg'; m2.textContent = '…';
+          if (!ck.checked) { m2.className = 'msg err'; m2.textContent = 'Bitte bestätige den Hinweis.'; return; }
+          if (!confirm('Die E-Mail-Adresse wirklich entfernen? Das lässt sich nur rückgängig machen, indem du eine neue Adresse hinzufügst.')) { m2.textContent = ''; return; }
+          api('/api/auth.php?a=email_remove', { password: rp.value, understood: true }).then(function (r) {
+            if (!r.ok) { m2.className = 'msg err'; m2.textContent = r.error || 'Das hat nicht geklappt.'; return; }
+            D.email = null; wrap.textContent = ''; wrap.append(h('p', { class: 'label' }, 'E-Mail-Adresse'), h('p', null, 'Deine E-Mail-Adresse wurde entfernt. Dein neuer Wiederherstellungscode (nur jetzt sichtbar, bitte notieren):'), h('p', { class: 'codebox', style: 'font:700 22px/1.4 monospace;letter-spacing:.08em;margin:8px 0' }, r.recovery_code),
+              h('button', { class: 'btn', type: 'button', onclick: function () { render(); } }, 'Ich habe den Code notiert')); }); } },
+          rp, h('button', { class: 'btn danger', type: 'submit' }, 'Adresse entfernen')), m2);
+      wrap.append(danger);
+    }
+    draw(); return wrap;
+  }
+  (function () { try { var qq = new URLSearchParams(location.search), mo = qq.get('mailok'); if (mo === '1' || mo === '0') { history.replaceState(null, '', location.pathname); setTimeout(function () { toast(mo === '1' ? 'Deine neue E-Mail-Adresse ist bestätigt.' : 'Der Bestätigungslink ist abgelaufen oder ungültig.'); }, 600); } } catch (_) {} })();
   function settings() {
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Einstellungen'));
     var box = h('div', { class: 'cfgpanel' });
@@ -943,7 +971,7 @@
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
     // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
-    st.append(setCard('Profil', [K[0], K[1], K[2]]), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    st.append(setCard('Profil', [K[0], K[1], emailBox(), K[2]]), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'), setCard('Meine Daten', [K[9], K[11]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
