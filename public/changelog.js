@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'A|Rechte der Nutzergruppen: Jede der fünf Kategorien (Bücher, Musik, Filme, Serien, Podcasts) lässt sich je Nutzergruppe einzeln ein- oder ausschalten. Abgeschaltete Kategorien verschwinden für die Gruppe, Einträge bleiben gespeichert.',
     'F|Info: Neue Karte „Zahlen zur Seite“ mit Online-Datum, Nutzerzahlen, Community-Mitgliedern, bisher verfolgten Einträgen und verschickten Mails.',
     'F|Einstellungen: E-Mail-Adresse ändern (mit Bestätigungslink an die neue Adresse) oder ganz entfernen, mit deutlicher Warnung und neuem Wiederherstellungscode.',
     'F|Benachrichtigungsmails: Titel, die heute erscheinen, stehen jetzt unter „Heutige Veröffentlichungen“ statt unter „Neu angekündigt“. Schon erschienene Titel, die neu in deiner Liste auftauchen, stehen unter „Neu erschienen“.',

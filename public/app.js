@@ -13,7 +13,8 @@
     series: { label: 'Serie', plural: 'Serien', who: 'Serien', ph: 'z. B. Severance', idx: 'video', work: 'Staffeln' },
     podcast: { label: 'Podcast', plural: 'Podcasts', who: 'Podcasts', ph: 'z. B. Lage der Nation', idx: '', work: 'Folgen' }
   };
-  var ORDER0 = ['author', 'artist', 'film', 'series'], ORDER = ORDER0.slice(), MAXN = 100;
+  var ALLC = ['author', 'artist', 'film', 'series', 'podcast'];
+  var ORDER0 = ALLC.filter(function (t) { return t !== 'podcast' && (!D.cats || D.cats.indexOf(t) >= 0); }), ORDER = ORDER0.slice(), MAXN = 100;
   if (D.podcast) ORDER.push('podcast');
   function isHid(t) { return (D.hide || []).indexOf(t) >= 0; }
   var CATCOL = { author: 'var(--c-author)', artist: 'var(--c-artist)', film: 'var(--c-film)', series: 'var(--c-series)', podcast: 'var(--c-podcast)' };
@@ -1095,7 +1096,7 @@
       } }, '+');
       return b;
     }
-    var CT = ORDER0.concat(D.podcast ? ['podcast'] : []);
+    var CT = ORDER.slice();
     function rankTable(key, title, rows, unit, cat) {
       var open = !!C.open[key], shown = rows.slice(0, open ? 50 : 15);
       var box = h('div', { class: 'commbox', style: '--cc:' + (CATCOL[cat] || 'var(--accent)') }, h('h4', null, title)), mx = rows.length ? Math.max.apply(null, rows.map(function (x) { return +x.c || 0; })) : 1;
@@ -1640,7 +1641,7 @@
       var lastG = '';
       function grp(t) { body.append(h('tr', { class: 'permgrp' }, h('td', { colspan: '4' }, t))); }
       rows.forEach(function (r) {
-        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : r.key === 'devmode' ? 'Entwicklung' : 'Kategorien'; if (G !== lastG) { grp(G); lastG = G; }
+        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : r.key === 'devmode' ? 'Entwicklung' : (/^cat_/.test(r.key) || r.key === 'podcast') ? 'Kategorien: wer sieht sie?' : 'Einstellungen'; if (G !== lastG) { grp(G); lastG = G; }
         function cb(g) { var ck = h('input', { type: 'checkbox', checked: !!r[g], disabled: g === 'alpha' && !!r.user, 'aria-label': r.label + ' – ' + (g === 'user' ? 'Nutzer' : 'Alphatester') });
           ck.addEventListener('change', function () { permMsg.className = 'msg'; permMsg.textContent = '…'; api('/api/admin.php?a=perms_set', { key: r.key, group: g, on: ck.checked }).then(function (x) { if (!x.ok) { permMsg.className = 'msg err'; permMsg.textContent = x.error || 'Das hat nicht geklappt.'; } else { permMsg.textContent = 'Gespeichert.'; } permLoad(); }); }); return ck; }
         body.append(h('tr', null, h('td', null, h('div', null, r.label, r.state === 'soon' ? h('span', { class: 'permsoon' }, ' (noch ohne Funktion)') : null), h('div', { class: 'permhint' }, r.hint)), h('td', null, cb('user')), h('td', null, cb('alpha')), h('td', null, mark(true))));
