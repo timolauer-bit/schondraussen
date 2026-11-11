@@ -142,17 +142,17 @@
   function nav() {
     topbar.textContent = '';
     // Rechte Gruppe: Symbole. Für alle nur Symbole (Name per Tooltip, bei der aktiven Seite sichtbar).
-    var RI = { podcast: 'podcast', comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
+    var RI = { comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
-        key === 'cal' ? ico(ICONS.cal) : null, ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : text, count ? h('small', null, String(count)) : null);
+        key === 'cal' ? ico(ICONS.cal) : null, ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : text, count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     navMain.append(btn('cal', 'Kalender', 0));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
-    if (D.podcast && !isHid('podcast')) navRest.append(btn('podcast', 'Podcasts', 0, ' podnav'));
+    if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
     if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
     if ((D.admin || D.devsw) && !S.preview) { var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', title: D.dev ? 'Du siehst die Entwicklungsversion. Klicken für die Live-Version.' : 'Du siehst die Live-Version. Klicken für die Entwicklungsversion.', onclick: function () { api('/api/data.php?a=devmode', { on: !D.dev }).then(function () { location.reload(); }); } }, D.dev ? 'Dev' : 'Live'); var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
