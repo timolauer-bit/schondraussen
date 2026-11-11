@@ -623,7 +623,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
-        foreach (array_slice($works, 0, 200) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        foreach (array_slice($works, 0, 300) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
         $q = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_slice($rel, 0, 30) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3] ?? null]);
         $pdo->commit();
