@@ -305,7 +305,7 @@ function dnb_name_key(string $s): string {
     $t = preg_split('/[^a-z]+/', $s, -1, PREG_SPLIT_NO_EMPTY); sort($t); return implode(' ', $t);
 }
 function dnb_author_works(string $name): array {
-    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim($s, " \t\n\r\0\x0B/:;,=-–")));
+    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim(preg_replace('/[\x{0080}-\x{009F}\x{200B}-\x{200F}]/u', '', $s), " \t\n\r\0\x0B/:;,=-–")));
     $parts = preg_split('/\s+/u', trim(str_replace('"', '', $name))); if (count($parts) < 2) return [[], [], 'Name besteht nur aus einem Wort'];
     $last = array_pop($parts); $first = implode(' ', $parts); $want = dnb_name_key($name);
     $recs = []; $total = 0; $info = ''; $t0 = time();
@@ -345,7 +345,7 @@ function dnb_author_works(string $name): array {
 }
 
 function dnb_series(string $title): array {
-    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim($s, " \t\n\r\0\x0B/:;,=-–")));
+    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim(preg_replace('/[\x{0080}-\x{009F}\x{200B}-\x{200F}]/u', '', $s), " \t\n\r\0\x0B/:;,=-–")));
     $q = str_replace('"', '', $title); $ser = preg_quote($title, '/');
     $startRe = '/^\W*' . $ser . '(?![\p{L}\p{N}])/iu';
     $volRe = '/^\W*' . $ser . '\s*,?\s*(?:Band|Bd\.?|Vol\.?|Nr\.?)?\s*(\d{1,4})(?!\d)\s*[:\-–.]?\s*(.*)$/isu';
@@ -603,6 +603,9 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
     // Neu bei der Quelle aufgetauchte Bücher (letzte 4 Wochen) wie Ankündigungen behandeln; beim ersten Abruf wird nur der Bestand gemerkt.
+    if ($ext['works_src'] === 'DNB' && empty($ext['dnb_seeded'])) { // Quellenwechsel: Bestand neu merken, damit nichts davon als „neu hinzugefügt“ erscheint
+        $ext['dnb_seeded'] = 1; try { $pdo->prepare('DELETE FROM work_seen WHERE subject_id=?')->execute([$sid]); } catch (Throwable $e) {}
+    }
     try {
         $have = $pdo->prepare('SELECT k,first_seen FROM work_seen WHERE subject_id=?'); $have->execute([$sid]); $H = $have->fetchAll(PDO::FETCH_KEY_PAIR); $first = !$H;
         $insS = $pdo->prepare('INSERT IGNORE INTO work_seen (subject_id,k,first_seen) VALUES (?,?,?)');
