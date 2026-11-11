@@ -564,7 +564,7 @@
       });
       allBtn.addEventListener('click', function () { var keys = cks.map(function (c) { return c.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); upd(); }); });
       upd();
-      det.append(h('div', { class: 'season-foot' }, allBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)));
+      det.insertBefore(h('div', { class: 'season-foot' }, allBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)), det.firstChild);
       box.append(det);
     });
     box.insertBefore(strip, panels[nums[0]]);
