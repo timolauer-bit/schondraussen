@@ -329,8 +329,14 @@ function dnb_author_works(string $name): array {
         if ($x['lang'] && !array_intersect(array_map('strtolower', $x['lang']), ['ger', 'mul', 'und'])) continue;
         $t = $clean($x['a']); if ($t === '' || mb_strlen($t) > 200 || preg_match('/^(hörbuch|kalender)/iu', $t)) continue;
         if (!preg_match('/\d{4}/', $x['year'], $m)) { $nNoYear++; continue; }
+        if (mb_strlen($t) > 3 && $t === mb_strtoupper($t) && preg_match('/\p{L}{3}/u', $t)) $t = mb_convert_case(mb_strtolower($t), MB_CASE_TITLE); // „DARKNET“ → „Darknet“
         $yr = (int) $m[0]; $k = preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($t));
         if (!isset($by[$k]) || $yr < $by[$k][1]) $by[$k] = [$t, $yr];
+    }
+    // Ausgabe mit Untertitel („Daemon - die Welt ist nur ein Spiel“) zusammenführen, wenn der Kurztitel („Daemon“) ebenfalls vorkommt; ältestes Jahr zählt
+    foreach ($by as $k1 => $v1) foreach ($by as $k2 => $v2) {
+        if ($k1 === $k2 || !isset($by[$k1]) || !isset($by[$k2])) continue;
+        if (mb_strlen($k2) > mb_strlen($k1) && str_starts_with($k2, $k1) && preg_match('/^' . preg_quote($v1[0], '/') . '\s*[-–:.,]\s+\S/iu', $v2[0])) { $by[$k1][1] = min($by[$k1][1], $v2[1]); unset($by[$k2]); }
     }
     $works = []; $rel = [];
     foreach ($by as $v) { if ($v[1] > $y) $rel[] = [$v[0], (string) $v[1], 'Buch']; else $works[] = [$v[0], $v[1], 'Buch']; }
