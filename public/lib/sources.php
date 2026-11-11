@@ -610,7 +610,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
-            ->execute([json_encode($ext), $summary, !empty($ext['gen']) ? json_encode($ext['gen'], JSON_UNESCAPED_UNICODE) : ($sub['genres'] ?: '[]'), (int) ($r['numFound'] ?? count($works)), $sid]);
+            ->execute([json_encode($ext), $summary, !empty($ext['gen']) ? json_encode($ext['gen'], JSON_UNESCAPED_UNICODE) : ($sub['genres'] ?: '[]'), ($ext['works_src'] === 'DNB' ? count($works) : (int) ($r['numFound'] ?? count($works))), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
