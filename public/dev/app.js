@@ -110,6 +110,16 @@
     if (idx === 'music') idx = d === 'amazon.com' ? 'music' : 'popular'; else if (idx === 'video') idx = d === 'amazon.com' ? 'movies-tv' : 'dvd';
     var u = 'https://www.' + d + '/s?k=' + encodeURIComponent(term) + '&i=' + idx; if (S.site.tag) u += '&tag=' + encodeURIComponent(S.site.tag); return u;
   }
+  // Podcast-Folge: Titel mit Kurzfassung aus dem Feed per „i“ (Klick oder Hover), kein Spoiler-Hinweis nötig
+  function podTitle(w) {
+    var ttl = h('div', { class: 'ttl' }, w.title); if (!w.sum) return ttl;
+    var box = h('div', { class: 'epsum', role: 'tooltip', hidden: true }, w.sum), shown = false;
+    var ib = h('button', { class: 'epinfo', type: 'button', 'aria-label': 'Kurzfassung der Folge anzeigen', 'aria-expanded': 'false' }, 'i');
+    function show(on) { shown = on; box.hidden = !on; ib.setAttribute('aria-expanded', on ? 'true' : 'false'); }
+    ib.addEventListener('click', function () { show(!shown); });
+    if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
+    ttl.append(' ', ib); return h('div', null, ttl, box);
+  }
   function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon'); }
   function popup(title, text) { // Bestätigung als Fenster, schließt mit OK, Esc oder Klick daneben
     var prev = document.activeElement, ok = h('button', { class: 'btn', type: 'button' }, 'OK');
@@ -436,7 +446,7 @@
     flt.addEventListener('click', function () { hideDone = !hideDone; flt.className = 'pill' + (hideDone ? ' on' : ''); flt.setAttribute('aria-pressed', hideDone ? 'true' : 'false'); updAll(); });
     if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt), wbar);
     r.works.forEach(function (w) {
-      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), pill), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
+      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), pill), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
       pill.addEventListener('click', function () { var on = !done[w.k]; setDone(e, [w.k], on, function () { if (on) done[w.k] = 1; else delete done[w.k]; updAll(); }); });
       rows.push({ w: w, pill: pill, row: row }); grid.append(row);
     });

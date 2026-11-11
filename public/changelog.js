@@ -1,6 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'F|Podcasts: Bei den Folgen gibt es jetzt ein „i“ mit einer Kurzfassung aus dem Feed des Podcasts (Klick oder Mauszeiger). Bei schon geladenen Podcasts erscheint sie nach der nächsten Aktualisierung.',
+    'B|Bücher: Titel in Englisch, Spanisch, Französisch, Italienisch, Türkisch und anderen Sprachen werden bei Autor:innen nicht mehr angezeigt.',
     'U|Listen: „Neu hinzufügen“ hat jetzt die Lupe, „In der Liste filtern“ ist schlicht; beide Felder sind gleich hoch.',
     'U|Serien: „Staffel als gesehen markieren“ und „Bei Amazon“ stehen jetzt direkt unter dem Staffelkasten, vor der Folgenliste.',
     'U|Menü: Der gelbe Balken unter der gewählten Kategorie liegt nur noch unter dem Wort.',

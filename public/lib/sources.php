@@ -623,7 +623,10 @@ function podcast_refresh(PDO $pdo, array $sub): array {
     foreach ($ch->item as $it) {
         $title = trim(preg_replace('/\s+/u', ' ', (string) $it->title)); if ($title === '') continue;
         $ts = strtotime((string) $it->pubDate); if (!$ts) continue;
-        $eps[] = [$ts, mb_substr($title, 0, 255)];
+        $desc = trim((string) $it->description);
+        if ($desc === '') { $ns = $it->children('http://www.itunes.com/dtds/podcast-1.0.dtd'); $desc = trim((string) ($ns->summary ?? '')) ?: trim((string) ($ns->subtitle ?? '')); }
+        if ($desc === '') { $cn = $it->children('http://purl.org/rss/1.0/modules/content/'); $desc = trim((string) ($cn->encoded ?? '')); }
+        $eps[] = [$ts, mb_substr($title, 0, 255), clean_text($desc, 600)];
     }
     usort($eps, fn($a, $b) => $b[0] <=> $a[0]);
     $eps = array_slice($eps, 0, 30);
@@ -639,11 +642,12 @@ function podcast_refresh(PDO $pdo, array $sub): array {
             ->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), $sum !== '' ? $sum : null, json_encode($genres, JSON_UNESCAPED_UNICODE), count($eps), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
-        $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
+        $hasSum = true; try { $pdo->query('SELECT summary FROM works LIMIT 1'); } catch (Throwable $t0) { $hasSum = false; } // Spalte kommt mit Migration 063
+        $w = $pdo->prepare($hasSum ? 'INSERT INTO works (subject_id,title,year,kind,note,summary) VALUES (?,?,?,?,?,?)' : 'INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_reverse($eps) as $e) { // älteste zuerst, damit die neueste Folge die höchste Kennung hat
             $d = (new DateTime('@' . $e[0]))->setTimezone($tz);
-            $w->execute([$sid, $e[1], (int) $d->format('Y'), 'Folge', $d->format('d.m.Y')]);
+            $w->execute(array_merge([$sid, $e[1], (int) $d->format('Y'), 'Folge', $d->format('d.m.Y')], $hasSum ? [$e[2] !== '' ? mb_substr($e[2], 0, 700) : null] : []));
             if ($e[0] >= $recent && $e[0] <= time() + 86400) $r->execute([$sid, $e[1], $d->format('Y-m-d'), 'Folge', null]);
         }
         $pdo->commit();

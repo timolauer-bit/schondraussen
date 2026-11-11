@@ -473,7 +473,8 @@ if ($a === 'entry') {
     if ($e['type'] === 'film') $e['selfkey'] = done_key_work($e['name'], 0); // Film selbst als gesehen markieren
     $eps = [];
     if ($e['type'] === 'series') { try { try { $q = $pdo->prepare("SELECT season,number,title,airdate,(summary IS NOT NULL AND summary<>'') AS has_sum FROM episodes WHERE subject_id=? ORDER BY season, number"); $q->execute([$id]); } catch (Throwable $t2) { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); } $eps = $q->fetchAll(); } catch (Throwable $t) {} }
-    $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]);
+    try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
+    catch (Throwable $t3) { $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); } // vor Migration 063
     $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
     $works = $w->fetchAll(); foreach ($works as &$x) $x['k'] = done_key_work($x['title'], $x['year']); unset($x);
     foreach ($eps as &$x) $x['k'] = done_key_ep($x['season'], $x['number']); unset($x);
