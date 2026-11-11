@@ -311,12 +311,12 @@ function dnb_author_works(string $name): array {
     $recs = []; $total = 0; $info = ''; $t0 = time();
     foreach (['per="' . $last . ', ' . $first . '" and spr=ger', 'per="' . $first . ' ' . $last . '" and spr=ger'] as $query) {
         $recs = []; $total = 0;
-        for ($st = 1; $st <= 501; $st += 100) { // höchstens 600 Katalogeinträge je Abruf
+        for ($st = 1; $st <= 1401; $st += 100) { // höchstens 1500 Katalogeinträge je Abruf
             $r = dnb_sru($query, $st);
             if (isset($r['err'])) { $info = $r['err']; break; }
             if ($r['diag'] !== '' && !$r['recs']) { $info = 'Fehlermeldung: ' . mb_substr($r['diag'], 0, 120); break; }
             $total = $r['total']; foreach ($r['recs'] as $x) $recs[] = $x;
-            if (count($r['recs']) < 100 || count($recs) >= $total || time() - $t0 > 45) break;
+            if (count($r['recs']) < 100 || count($recs) >= $total || time() - $t0 > 50) break;
         }
         if ($recs) break;
     }
