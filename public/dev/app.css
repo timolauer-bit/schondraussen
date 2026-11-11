@@ -698,3 +698,8 @@ html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}
 
 /* Staffel-Knöpfe stehen zwischen Staffelkasten und Folgenliste */
 .season-foot{border-top:0;border-bottom:1px solid var(--line);padding:12px 0}
+
+/* Gelber Balken nur unter dem Wort, nicht unter dem Farbpunkt */
+.nav .nt{position:relative}
+.nav:has(.cdot)[aria-current=page]{border-bottom-color:transparent}
+.nav:has(.cdot)[aria-current=page] .nt::after{content:"";position:absolute;left:0;right:0;bottom:-15px;height:3px;background:var(--accent)}
