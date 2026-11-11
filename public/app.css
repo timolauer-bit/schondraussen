@@ -82,8 +82,8 @@ footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font
 .rail{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:16px;gap:16px}
 .rail .label{margin:0 0 6px}
 .srchrow{position:relative;display:flex;gap:8px;align-items:center}
-.srchrow input[type=search]{flex:1;height:36px;padding-left:32px;background:var(--bg) no-repeat 10px 50%/16px 16px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a939c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");border-radius:8px}
-.filtbtn{position:relative;width:40px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;flex:0 0 auto}
+.srchrow input[type=search]{flex:1;height:40px;padding:0 11px;background:var(--bg)}
+.filtbtn{position:relative;width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;flex:0 0 auto}
 .filtbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .fbadge{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:700 10px/16px var(--font-body);text-align:center}
 .filtpop{position:absolute;z-index:40;left:0;right:0;top:44px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
@@ -691,3 +691,15 @@ html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}
 .wishrow{padding:12px 0;border-top:1px dashed var(--line)}.wishrow:first-child{border-top:0}.wishpv{display:flex;gap:8px;margin:8px 0}.wishpv img{border-radius:50%;border:1px solid var(--line);background:var(--surface)}.wishrow .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.wishrow .acts input[type=text]{flex:1;min-width:160px}
 .profbox .custg{display:grid;gap:8px;margin-top:6px}.profbox .custg .inline{display:flex;gap:8px;flex-wrap:wrap}.profbox .custg select{max-width:150px}.gchip.own{background:transparent;border:1px dashed var(--muted)}
 .btn.danger{background:#a23f1c;color:#fff;border-color:#a23f1c}.btn.danger:hover{filter:brightness(.92)}.dangerbox .hint{margin:0 0 6px}
+
+/* Neu hinzufügen: Suchfeld mit Lupe; Liste durchsuchen: schlichtes Filterfeld; beide gleich hoch */
+.rail .add input#q{height:40px;padding:0 11px 0 34px;background:var(--bg) no-repeat 10px 50%/16px 16px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a939c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E")}
+.rail .add .btn{height:40px;padding:0 14px}
+
+/* Staffel-Knöpfe stehen zwischen Staffelkasten und Folgenliste */
+.season-foot{border-top:0;border-bottom:1px solid var(--line);padding:12px 0}
+
+/* Gelber Balken nur unter dem Wort, nicht unter dem Farbpunkt */
+.nav .nt{position:relative}
+.nav:has(.cdot)[aria-current=page]{border-bottom-color:transparent}
+.nav:has(.cdot)[aria-current=page] .nt::after{content:"";position:absolute;left:0;right:0;bottom:-15px;height:3px;background:var(--accent)}
