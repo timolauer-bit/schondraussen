@@ -657,5 +657,8 @@ function looks_english_title(string $t): bool {
     $en = preg_match_all('/ (?=(the|of|and|with|for|from|into|your|his|her|their|my|our|is|are|was|were|to|in|on|at|by|a|an) )/', $l);
     $de = preg_match_all('/ (?=(der|die|das|den|dem|des|und|mit|für|von|ein|eine|einer|eines|ist|sind|im|zum|zur|nicht|ich|wir|sie|er|es|auf|aus|nach|über|unter|ohne|wie) )/u', $l);
     if ($de > 0 || preg_match('/[äöüß]/u', $l)) return false;
-    return $en >= 2 || preg_match('/^ (the|a|an) /', $l) === 1 || preg_match("/[a-z]'(s|t|re|ve|ll) /", $l) === 1;
+    if ($en >= 2 || preg_match('/^ (the|a|an) /', $l) === 1 || preg_match("/[a-z]'(s|t|re|ve|ll) /", $l) === 1) return true;
+    // Spanisch, Französisch, Italienisch, Portugiesisch, Niederländisch: Akzentbuchstaben, die im Deutschen nicht vorkommen, oder eindeutige Funktionswörter
+    if (preg_match('/[éèêëàâçñíìîóòôúùûãõœ¿¡]/u', $l)) return true;
+    return preg_match('/ (el|los|las|del|una|por|que|les|des|du|une|pour|avec|dans|sur|est|il|gli|della|degli|che|per|os|das|dos|uma|para|com|het|een|van|voor|naar) /', $l) === 1;
 }
