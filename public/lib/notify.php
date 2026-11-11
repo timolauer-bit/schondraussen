@@ -90,7 +90,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
         $known->execute([$uid]); $K = array_flip($known->fetchAll(PDO::FETCH_COLUMN));
         $seenSub->execute([$uid]); $SS = array_flip($seenSub->fetchAll(PDO::FETCH_COLUMN));
         $subs->execute([$uid]);
-        $new = []; $day = []; $week = []; $mark = [];
+        $new = []; $day = []; $past = []; $week = []; $mark = []; $cm = $hour >= 7;
         foreach ($subs->fetchAll() as $s) {
             $sid = (int) $s['id']; $rels->execute([$sid]); $R = $rels->fetchAll();
             if (!isset($SS[$sid])) { // erstes Mal (oder Glocke neu an): bisherigen Stand merken, nichts melden
@@ -102,11 +102,18 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
                 $d = $r['release_date']; $line = $s['name'] . ' – ' . $r['title'] . ' (' . fmt_date($d) . ')';
                 $kn = $h($uid, $sid, $r['title'], $d, 'new'); $kd = $h($uid, $sid, $r['title'], $d, 'day');
                 if (!isset($K[$kn])) {
-                    if ($u['n_new']) { $new[] = [$d, $line, $sid, $s['name'], $r['title'], $s['summary'], $s['type']]; $mark[] = [$sid, $kn, 'new']; }
+                    $full = strlen($d) === 10; $nrow = [$d, $line, $sid, $s['name'], $r['title'], $s['summary'], $s['type']];
+                    if ($cm && $s['type'] !== 'podcast' && $full && $d === $today && ($u['n_new'] || $u['n_day'])) { // erst jetzt bekannt, erscheint aber heute: gehört zu den heutigen Veröffentlichungen
+                        $day[$sid . '|' . $r['title']] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kn, 'new']; $mark[] = [$sid, $kd, 'day'];
+                    } elseif ($u['n_new']) {
+                        if ($s['type'] !== 'podcast' && $full && $d < $today) $past[] = $nrow; // schon erschienen
+                        else $new[] = $nrow;
+                        $mark[] = [$sid, $kn, 'new'];
+                    }
                     else $ins->execute([$uid, $sid, $kn, 'new']); // still merken, damit später nichts auf einmal kommt
                 }
                 if (strlen($d) === 10) {
-                    if ($d === $today && $u['n_day'] && !isset($K[$kd]) && $s['type'] !== 'podcast') { $day[] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kd, 'day']; }
+                    if ($d === $today && $u['n_day'] && !isset($K[$kd]) && $s['type'] !== 'podcast') { $day[$sid . '|' . $r['title']] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kd, 'day']; }
                     if ($d >= $today && $d <= $weekTo) $week[] = [$d, $line];
                 }
             }
@@ -116,15 +123,16 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
         $canMorning = $hour >= 7;
         $window = $digest ? ($canMorning && $u['last_morning'] !== $today) : ($hour >= 7 && $hour < 22);
         if (!$canMorning) $day = []; // Erscheinungstag-Mails erst ab 7 Uhr
-        if ($window && ($new || $day || $pod)) {
+        if ($window && ($new || $day || $pod || $past)) {
             if ($sent >= $maxMails) break;
             $bud = 8;
             $text = "Hallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
-            if ($day) $text .= "\nHEUTE ERSCHEINT\n" . $fmt($day) . "\n";
+            if ($day) $text .= "\nHEUTIGE VERÖFFENTLICHUNGEN\n" . $fmt($day) . "\n";
+            if ($past) $text .= "\nNEU ERSCHIENEN\n" . $fmt($past) . "\n";
             if ($new) $text .= "\nNEU ANGEKÜNDIGT\n" . $fmt($new) . "\n";
             if ($pod) $text .= "\nNEUE PODCAST-FOLGEN\n" . $fmt($pod) . "\n";
-            $text .= "\nAlles im Überblick: " . base_url() . "/\n" . ($new || $day ? "\nDie Schlagzeilen stammen aus der Google-News-Suche, die Kurzinfos aus den Datenquellen der Seite.\n" : '');
-            $subj = (count($day) && !count($new) && !count($pod)) ? (count($day) === 1 ? 'Heute erscheint 1 Titel' : 'Heute erscheinen ' . count($day) . ' Titel') : ((count($new) + count($day) + count($pod)) === 1 ? '1 Neuigkeit' : (count($new) + count($day) + count($pod)) . ' Neuigkeiten');
+            $text .= "\nAlles im Überblick: " . base_url() . "/\n" . ($new || $day || $past ? "\nDie Schlagzeilen stammen aus der Google-News-Suche, die Kurzinfos aus den Datenquellen der Seite.\n" : '');
+            $subj = (count($day) && !count($new) && !count($pod) && !count($past)) ? (count($day) === 1 ? 'Heute erscheint 1 Titel' : 'Heute erscheinen ' . count($day) . ' Titel') : ((count($new) + count($day) + count($pod) + count($past)) === 1 ? '1 Neuigkeit' : (count($new) + count($day) + count($pod) + count($past)) . ' Neuigkeiten');
             if (send_user_mail($pdo, $u, 'Schondraussen.de: ' . $subj, $text)) {
                 foreach ($mark as $m) $ins->execute([$uid, $m[0], $m[1], $m[2]]);
                 if ($digest) $pdo->prepare('UPDATE users SET last_morning=? WHERE id=?')->execute([$today, $uid]);
@@ -161,7 +169,7 @@ function build_preview(PDO $pdo, array $u): array {
     $text = "VORSCHAU: So sieht deine Benachrichtigungsmail nach deinen aktuellen Einstellungen aus.\n" .
             "Die Termine sind nur als Beispiel eingesetzt" . ($demo ? " (Beispieldaten, du hast noch keine kommenden Termine mit Glocke)" : " (deine nächsten echten Termine mit Glocke)") . ". In der echten Mail steht nur, was wirklich zutrifft.\n\n" .
             "--- Morgenmail ---\n\nHallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
-    if ($nDay) $text .= "\nHEUTE ERSCHEINT\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . '- Beispiel-Serie – S01E01 Folgentitel' . "\n";
+    if ($nDay) $text .= "\nHEUTIGE VERÖFFENTLICHUNGEN\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . '- Beispiel-Serie – S01E01 Folgentitel' . "\n";
     if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n[Beispiel: Hier steht jeder neue Termin nur einmal.]\n" . implode("\n", array_map($line, array_slice($R, 0, 6))) . "\n";
     if ($nNew || $nDay) $text .= "\n[Beispiel: In der echten Mail folgt unter jedem neuen Titel eine Kurzinfo (höchstens 8 Zeilen) und, wenn vorhanden, bis zu zwei aktuelle Schlagzeilen mit Link.]\n";
     if (!$nDay && !$nNew) $text .= "\n(Du hast gerade weder „Neu angekündigt“ noch „Am Erscheinungstag“ eingeschaltet, deshalb gäbe es keine solche Mail.)\n";

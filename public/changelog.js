@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'F|Benachrichtigungsmails: Titel, die heute erscheinen, stehen jetzt unter „Heutige Veröffentlichungen“ statt unter „Neu angekündigt“. Schon erschienene Titel, die neu in deiner Liste auftauchen, stehen unter „Neu erschienen“.',
     'U|Benachrichtigungsmails: Schlagzeilen sind jetzt anklickbare Links statt langer Internetadressen (Klartext bleibt als Alternative erhalten).',
     'A|Rechte der Nutzergruppen: Neues Recht „Entwicklerversion nutzen“. Wer es hat, sieht neben dem Benutzernamen den Schalter Live/Dev. Alphatester haben es standardmäßig, Nutzer nicht.',
     'F|Wunschbild: Wer keines der 50 Profilbilder mag, kann in den Einstellungen ein eigenes Bild beschreiben. Der Administrator stellt 2 bis 3 Vorschläge bereit, und du wählst eines aus.',
