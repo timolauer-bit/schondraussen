@@ -293,10 +293,49 @@ function dnb_sru(string $query, int $start): array {
             'a' => $sf('245', 'a')[0] ?? '', 'b' => $sf('245', 'b')[0] ?? '', 'n' => $sf('245', 'n')[0] ?? '', 'p' => $sf('245', 'p')[0] ?? '',
             'year' => ($sf('264', 'c') ?: $sf('260', 'c'))[0] ?? '',
             'ser' => array_merge($sf('490', 'a'), $sf('830', 'a')), 'serv' => array_merge($sf('490', 'v'), $sf('830', 'v')),
-            'lang' => $sf('041', 'a'),
+            'lang' => $sf('041', 'a'), 'aut' => $sf('100', 'a'), 'med' => $sf('245', 'h'),
         ];
     }
     return ['total' => $total, 'diag' => $diag, 'recs' => $recs];
+}
+
+// Bücher einer Person aus dem DNB-Katalog: deutsche Ausgaben mit deutschem Titel (Hauptverfasser:in, ohne Tonträger), je Titel das älteste Jahr.
+function dnb_name_key(string $s): string {
+    $s = mb_strtolower(preg_replace('/\s*[\(\[].*?[\)\]]/u', '', $s)); $s = strtr($s, ['ä' => 'a', 'ö' => 'o', 'ü' => 'u', 'ß' => 'ss', 'é' => 'e', 'è' => 'e', 'á' => 'a', 'à' => 'a', 'ó' => 'o', 'ñ' => 'n', 'ç' => 'c']);
+    $t = preg_split('/[^a-z]+/', $s, -1, PREG_SPLIT_NO_EMPTY); sort($t); return implode(' ', $t);
+}
+function dnb_author_works(string $name): array {
+    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim($s, " \t\n\r\0\x0B/:;,=-–")));
+    $parts = preg_split('/\s+/u', trim(str_replace('"', '', $name))); if (count($parts) < 2) return [[], [], 'Name besteht nur aus einem Wort'];
+    $last = array_pop($parts); $first = implode(' ', $parts); $want = dnb_name_key($name);
+    $recs = []; $total = 0; $info = ''; $t0 = time();
+    foreach (['per="' . $last . ', ' . $first . '" and spr=ger', 'per="' . $first . ' ' . $last . '" and spr=ger'] as $query) {
+        $recs = []; $total = 0;
+        for ($st = 1; $st <= 501; $st += 100) { // höchstens 600 Katalogeinträge je Abruf
+            $r = dnb_sru($query, $st);
+            if (isset($r['err'])) { $info = $r['err']; break; }
+            if ($r['diag'] !== '' && !$r['recs']) { $info = 'Fehlermeldung: ' . mb_substr($r['diag'], 0, 120); break; }
+            $total = $r['total']; foreach ($r['recs'] as $x) $recs[] = $x;
+            if (count($r['recs']) < 100 || count($recs) >= $total || time() - $t0 > 45) break;
+        }
+        if ($recs) break;
+    }
+    if (!$recs) return [[], [], 'DNB: ' . ($info !== '' ? $info : 'keine Treffer')];
+    $by = []; $nOther = 0; $nMed = 0; $nNoYear = 0; $y = (int) date('Y');
+    foreach ($recs as $x) {
+        $ok = false; foreach ($x['aut'] as $a) if (dnb_name_key($a) === $want) { $ok = true; break; }
+        if (!$ok) { $nOther++; continue; } // andere Hauptverfasser:in (z. B. Bücher über die Person)
+        if ($x['med'] && preg_match('/h[öo]rbuch|tontr|cd|dvd|film|video|elektron/iu', implode(' ', $x['med']))) { $nMed++; continue; }
+        if ($x['lang'] && !array_intersect(array_map('strtolower', $x['lang']), ['ger', 'mul', 'und'])) continue;
+        $t = $clean($x['a']); if ($t === '' || mb_strlen($t) > 200 || preg_match('/^(hörbuch|kalender)/iu', $t)) continue;
+        if (!preg_match('/\d{4}/', $x['year'], $m)) { $nNoYear++; continue; }
+        $yr = (int) $m[0]; $k = preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($t));
+        if (!isset($by[$k]) || $yr < $by[$k][1]) $by[$k] = [$t, $yr];
+    }
+    $works = []; $rel = [];
+    foreach ($by as $v) { if ($v[1] > $y) $rel[] = [$v[0], (string) $v[1], 'Buch']; else $works[] = [$v[0], $v[1], 'Buch']; }
+    usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
+    return [$works, $rel, 'DNB: ' . count($recs) . ' von ' . $total . ' Einträgen gelesen, ' . $nOther . ' mit anderer Hauptverfasserschaft, ' . $nMed . ' Tonträger/Medien, ' . $nNoYear . ' ohne Jahr, ' . count($by) . ' Titel']; 
 }
 
 function dnb_series(string $title): array {
@@ -551,6 +590,10 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         if ($yr > $y) $rel[] = [$t, (string) $yr, 'Buch'];
         else $works[] = [$t, $yr ?: null, 'Buch'];
     }
+    // Bevorzugt der DNB-Katalog (deutsche Titel); liefert er zu wenig oder bricht ab, bleibt es bei Open Library mit Sprachfilter.
+    $dn = []; try { $dn = dnb_author_works((string) $sub['name']); } catch (Throwable $e) { $dn = [[], [], 'DNB: Fehler']; }
+    $ext['works_src'] = 'Open Library'; $ext['works_info'] = (string) ($dn[2] ?? '');
+    if (count($dn[0] ?? []) + count($dn[1] ?? []) >= 3) { $works = $dn[0]; $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; }
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
     // Neu bei der Quelle aufgetauchte Bücher (letzte 4 Wochen) wie Ankündigungen behandeln; beim ersten Abruf wird nur der Bestand gemerkt.
