@@ -248,7 +248,8 @@ function wiki_intro_from(array $pages, ?string $qid): ?string {
 
 // Google Books: angekündigte Bücher einer Person (Datum als JJJJ, JJJJ-MM oder JJJJ-MM-TT). $seen = bereits bekannte Titel (klein geschrieben).
 function googlebooks_upcoming(string $name, array $seen): array {
-    $r = http_json('https://www.googleapis.com/books/v1/volumes?maxResults=40&orderBy=newest&printType=books&q=' . rawurlencode('inauthor:"' . str_replace('"', '', $name) . '"'), 8);
+    $key = trim((string) cfg('google_books_key', ''));
+    $r = http_json('https://www.googleapis.com/books/v1/volumes?maxResults=40&orderBy=newest&printType=books' . ($key !== '' ? '&key=' . rawurlencode($key) : '') . '&q=' . rawurlencode('inauthor:"' . str_replace('"', '', $name) . '"'), 8);
     $out = []; $today = date('Y-m-d'); $ym = date('Y-m'); $y = date('Y');
     $norm = fn($t) => trim(mb_strtolower(preg_split('/\s*[:–-]\s/u', $t)[0]));
     $known = []; foreach ($seen as $k => $_) $known[$norm((string) $k)] = 1;
