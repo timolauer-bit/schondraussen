@@ -20,7 +20,7 @@ if ($a === 'wish_upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($list as $svg) {
         $svg = trim($svg); $svg = preg_replace('/^\xEF\xBB\xBF/', '', $svg); $svg = preg_replace('/^<\?xml[^>]*\?>\s*/i', '', $svg);
         if (strlen($svg) > 80000 || stripos($svg, '<svg') !== 0) json_out(['error' => 'Eine Datei ist keine gültige SVG-Datei (oder größer als 80 KB).'], 422);
-        if (preg_match('/<script|<foreignObject|<iframe|<object|<embed|<audio|<video|<image|<a[\s>]|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:|@import|(?:xlink:)?href\s*=\s*["\']?(?!#)|url\(\s*["\']?(?!#)/i', $svg)) json_out(['error' => 'Eine Datei enthält nicht erlaubte Inhalte (Skripte, Links oder eingebettete Bilder).'], 422);
+        if (preg_match('/<script|<foreignObject|<iframe|<object|<embed|<audio|<video|<image|<a[\s>]|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:|@import|(?:xlink:)?href\s*=\s*["\']?+(?!#)|url\(\s*["\']?+(?!#)/i', $svg)) json_out(['error' => 'Eine Datei enthält nicht erlaubte Inhalte (Skripte, Links oder eingebettete Bilder).'], 422);
         libxml_use_internal_errors(true); $x = simplexml_load_string($svg, 'SimpleXMLElement', LIBXML_NONET);
         if (!$x || strtolower($x->getName()) !== 'svg') json_out(['error' => 'Eine Datei ist keine gültige SVG-Datei.'], 422);
         $clean[] = $svg;

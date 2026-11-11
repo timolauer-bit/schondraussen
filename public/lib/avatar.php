@@ -1,10 +1,11 @@
 <?php
 // Bilder von DiceBear (api.dicebear.com): Der Server holt das SVG einmal selbst, prüft es streng und speichert es. Das Bild wird nie von außen eingebunden.
-function avatar_svg_clean(string $svg): ?string {
+function avatar_svg_clean(string $svg, ?string &$why = null): ?string {
     $svg = trim($svg); $svg = preg_replace('/^\xEF\xBB\xBF/', '', $svg); $svg = preg_replace('/^<\?xml[^>]*\?>\s*/i', '', $svg);
     $svg = preg_replace('~<metadata\b.*?</metadata>~is', '', $svg); // Lizenzangaben (RDF) stehen in der Quelladresse, nicht im Bild
     if (strlen($svg) > 80000 || stripos($svg, '<svg') !== 0) return null;
-    if (preg_match('/<script|<foreignObject|<iframe|<object|<embed|<audio|<video|<image|<a[\s>]|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:|@import|(?:xlink:)?href\s*=\s*["\']?(?!#)|url\(\s*["\']?(?!#)/i', $svg)) return null;
+    // Hinweis: ["\']?+ (besitzergreifend), sonst gilt href="#x" fälschlich als externer Verweis
+    if (preg_match('/<script|<foreignObject|<iframe|<object|<embed|<audio|<video|<image|<a[\s>]|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:|@import|(?:xlink:)?href\s*=\s*["\']?+(?!#)|url\(\s*["\']?+(?!#)/i', $svg, $mm)) { $why = mb_substr($mm[0], 0, 30); return null; }
     $prev = libxml_use_internal_errors(true); $x = simplexml_load_string($svg, 'SimpleXMLElement', LIBXML_NONET); libxml_clear_errors(); libxml_use_internal_errors($prev);
     if (!$x || strtolower($x->getName()) !== 'svg') return null;
     return $svg;
@@ -26,7 +27,7 @@ function dicebear_fetch(string $in): array {
     curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $ct = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE); curl_close($ch);
     if ($code !== 200 || $buf === '') return [null, 'DiceBear hat das Bild nicht geliefert (Status ' . $code . '). Prüfe den Link oder versuche es später noch einmal.', null];
     if (stripos($ct, 'svg') === false) return [null, 'Der Link liefert kein SVG-Bild.', null];
-    $svg = avatar_svg_clean($buf);
-    if ($svg === null) return [null, 'Dieses Bild enthält Teile, die wir aus Sicherheitsgründen nicht übernehmen (z. B. eingebettete Fotos). Wähle bitte einen anderen Stil.', null];
+    $why = ''; $svg = avatar_svg_clean($buf, $why);
+    if ($svg === null) return [null, 'Dieses Bild enthält Teile, die wir aus Sicherheitsgründen nicht übernehmen' . ($why !== '' ? ' (gefunden: „' . $why . '“)' : '') . ', zum Beispiel eingebettete Fotos oder Verweise nach außen. Wähle bitte einen anderen Stil.', null];
     return [$svg, '', $url];
 }
