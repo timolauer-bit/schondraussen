@@ -1681,7 +1681,7 @@
     }
     p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Statistik'), stBox); statLoad();
     var wsBox = h('div', { class: 'adm' });
-    p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Wunschbilder'), h('p', { class: 'hint' }, 'Nutzer können ein eigenes Profilbild wünschen. Lade 1 bis 3 passende SVG-Dateien hoch, dann wählt der Nutzer eines aus.'), wsBox);
+    p.append(h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Wunschbilder'), h('p', { class: 'hint' }, 'Nutzer können ein eigenes Profilbild wünschen. Lade 1 bis 3 passende SVG-Dateien hoch, dann wählt der Nutzer eines aus.'), h('p', { class: 'hint' }, 'Hinweis für dich: Die Bilder lässt du aktuell von Claude generieren. Geplant ist, hier später eine andere, externe Möglichkeit einzubinden.'), wsBox);
     function wishes() {
       api('/api/admin.php?a=wishes').then(function (r) {
         wsBox.textContent = ''; var l = r.wishes || [];
