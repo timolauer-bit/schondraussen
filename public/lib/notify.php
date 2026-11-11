@@ -22,6 +22,11 @@ function send_user_mail(PDO $pdo, array $u, string $subject, string $text): bool
     return send_mail($u['email'], $subject, $text . mail_footer($unsub), ["List-Unsubscribe: <$unsub>", 'List-Unsubscribe-Post: List-Unsubscribe=One-Click']);
 }
 
+/** Zählt versendete Benachrichtigungsmails (für die Seitenstatistik auf der Info-Seite). Fehler dabei dürfen den Versand nie stören. */
+function mail_count(PDO $pdo, array $kinds): void {
+    try { foreach (array_merge(['all'], $kinds) as $k) $pdo->prepare('INSERT INTO mail_stats (kind,n) VALUES (?,1) ON DUPLICATE KEY UPDATE n=n+1')->execute([$k]); } catch (Throwable $e) {}
+}
+
 function fmt_date(string $d): string {
     $p = explode('-', $d);
     if (count($p) === 3) return "$p[2].$p[1].$p[0]";
@@ -135,6 +140,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
             $subj = (count($day) && !count($new) && !count($pod) && !count($past)) ? (count($day) === 1 ? 'Heute erscheint 1 Titel' : 'Heute erscheinen ' . count($day) . ' Titel') : ((count($new) + count($day) + count($pod) + count($past)) === 1 ? '1 Neuigkeit' : (count($new) + count($day) + count($pod) + count($past)) . ' Neuigkeiten');
             if (send_user_mail($pdo, $u, 'Schondraussen.de: ' . $subj, $text)) {
                 foreach ($mark as $m) $ins->execute([$uid, $m[0], $m[1], $m[2]]);
+                mail_count($pdo, array_values(array_filter([($new || $past || $pod) ? 'new' : null, $day ? 'day' : null])));
                 if ($digest) $pdo->prepare('UPDATE users SET last_morning=? WHERE id=?')->execute([$today, $uid]);
                 $sent++;
             } else $fail++;
@@ -145,7 +151,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
             $bud = 0;
             if ($week) {
                 $text = "Hallo,\n\nhier sind die Termine der nächsten 14 Tage aus deinen Listen:\n\n" . $fmt($week) . "\n\nAlles im Überblick: " . base_url() . "/\n";
-                if (send_user_mail($pdo, $u, 'Schondraussen.de: Deine Wochenübersicht (' . count($week) . ($week && count($week) === 1 ? ' Termin)' : ' Termine)'), $text)) $sent++; else $fail++;
+                if (send_user_mail($pdo, $u, 'Schondraussen.de: Deine Wochenübersicht (' . count($week) . ($week && count($week) === 1 ? ' Termin)' : ' Termine)'), $text)) { $sent++; mail_count($pdo, ['week']); } else $fail++;
             }
         }
     }

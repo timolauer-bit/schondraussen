@@ -1282,6 +1282,19 @@
         ['Werke zu deinen Einträgen', n(r.works)], ['Eingereichte Ideen', n(r.ideas)], ['Eingereichte Bugs', n(r.bugs)], ['Gesendete Chatnachrichten', n(r.messages)]];
       if (r.top_percent) mine.append(h('p', { style: 'margin:6px 0 10px;font-weight:600' }, 'Du gehörst zu den ' + r.top_percent + ' % der aktivsten Nutzer.'), h('p', { class: 'hint', style: 'margin:-6px 0 10px' }, 'Gezählt werden Einträge, eingereichte Ideen und Bugs sowie gesendete Chatnachrichten, im Vergleich mit allen aktiven Nutzern.')); var dl = h('dl', { class: 'mystats' }); rows.forEach(function (x) { dl.append(h('dt', null, x[0]), h('dd', null, x[1])); }); mine.append(dl);
     });
+    var site = h('section', { class: 'infosec' }, h('h3', null, 'Zahlen zur Seite'), h('p', { class: 'hint' }, 'Lade …')); d.append(site);
+    api('/api/data.php?a=sitestats').then(function (r) {
+      site.textContent = ''; site.append(h('h3', null, 'Zahlen zur Seite'));
+      if (!r || r.error || !r.ok) { site.append(h('p', { class: 'hint' }, 'Die Zahlen sind gerade nicht verfügbar.')); return; }
+      var n = function (v) { return Number(v || 0).toLocaleString('de-DE'); }, dt = function (v) { return v ? new Date(String(v).replace(' ', 'T')).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–'; }, sb = r.subjects || {}, m = r.mails;
+      var tot = (sb.author | 0) + (sb.series | 0) + (sb.artist | 0) + (sb.film | 0) + (sb.tv | 0) + (sb.podcast | 0);
+      var rows = [['Online seit', dt(r.online_since)], ['Nutzer insgesamt (seit dem Start)', n(r.users_ever)], ['Aktuelle Nutzer', n(r.users_now)], ['Davon in der Community', n(r.community)],
+        ['Bisher verfolgte Einträge', n(tot) + ' (' + n(sb.author) + ' Autor:innen, ' + n(sb.series) + ' Reihen, ' + n(sb.artist) + ' Musik, ' + n(sb.film) + ' Filme, ' + n(sb.tv) + ' Serien' + (sb.podcast != null ? ', ' + n(sb.podcast) + ' Podcasts' : '') + ')']];
+      if (m) rows.push(['Verschickte Mails', n(m.all) + ' (' + n(m.new) + ' mit neuen Terminen, ' + n(m.day) + ' mit Erscheinungstag, ' + n(m.week) + ' Wochenübersichten)']);
+      var dl2 = h('dl', { class: 'mystats' }); rows.forEach(function (x) { dl2.append(h('dt', null, x[0]), h('dd', null, x[1])); }); site.append(dl2);
+      var hint = 'Jeder Eintrag zählt einmal, egal wie viele Nutzer ihn verfolgen. Er bleibt in der Zahl, auch wenn ihn alle wieder entfernt haben.' + (m ? ' Mails werden seit dem ' + dt(m.since) + ' gezählt. Eine Mail kann neue Termine und Erscheinungstage enthalten, deshalb ergeben die Teilzahlen nicht die Summe.' : '');
+      site.append(h('p', { class: 'hint' }, hint));
+    });
     d.append(effortSection());
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
     var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);

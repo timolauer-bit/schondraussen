@@ -279,6 +279,34 @@ if ($a === 'effort') { // gemessene Umfangszahlen für „Entstehung und Aufwand
     $s = state_get($pdo, 'effort'); $d = $s ? json_decode($s['v'], true) : null;
     json_out(['ok' => true, 'm' => is_array($d) ? $d : null]);
 }
+if ($a === 'sitestats') { // Zahlen zur Seite für die Info-Seite: nur Summen, keine Konten
+    $one = fn(string $sql) => (int) $pdo->query($sql)->fetchColumn();
+    $o = ['ok' => true, 'online_since' => null, 'users_now' => 0, 'users_ever' => 0, 'community' => 0, 'subjects' => [], 'mails' => null];
+    try {
+        $o['online_since'] = $pdo->query('SELECT MIN(created_at) FROM users')->fetchColumn() ?: null;
+        $o['users_now'] = $one("SELECT COUNT(*) FROM users WHERE admin_deleted=0 AND delete_requested_at IS NULL AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL)");
+        $o['users_ever'] = $one('SELECT COUNT(*) FROM users') + $one('SELECT COUNT(*) FROM account_exits WHERE user_id IS NULL');
+        $o['community'] = $one("SELECT COUNT(*) FROM users u WHERE u.admin_deleted=0 AND u.delete_requested_at IS NULL AND u.email_verified_at IS NOT NULL AND (u.role='admin' OR u.approved_at IS NOT NULL) AND (u.community=1 OR (u.community IS NULL AND u.role='admin'))");
+    } catch (Throwable $e) {}
+    try {
+        $c = ['author' => 0, 'series' => 0, 'artist' => 0, 'film' => 0, 'tv' => 0, 'podcast' => 0];
+        foreach ($pdo->query("SELECT type, (external_ids LIKE '%\"gbs\"%') AS isser, COUNT(*) n FROM subjects GROUP BY type, isser")->fetchAll() as $r) {
+            if ($r['type'] === 'author') $c[$r['isser'] ? 'series' : 'author'] += (int) $r['n'];
+            elseif ($r['type'] === 'artist') $c['artist'] += (int) $r['n'];
+            elseif ($r['type'] === 'film') $c['film'] += (int) $r['n'];
+            elseif ($r['type'] === 'series') $c['tv'] += (int) $r['n'];
+            elseif ($r['type'] === 'podcast') $c['podcast'] += (int) $r['n'];
+        }
+        if (!(function_exists('podcast_ok') && podcast_ok($u))) unset($c['podcast']);
+        $o['subjects'] = $c;
+    } catch (Throwable $e) {}
+    try {
+        $m = []; $since = null;
+        foreach ($pdo->query('SELECT kind,n,since FROM mail_stats')->fetchAll() as $r) { $m[$r['kind']] = (int) $r['n']; if ($since === null || $r['since'] < $since) $since = $r['since']; }
+        if ($m) $o['mails'] = ['all' => $m['all'] ?? 0, 'new' => $m['new'] ?? 0, 'day' => $m['day'] ?? 0, 'week' => $m['week'] ?? 0, 'since' => $since];
+    } catch (Throwable $e) {}
+    json_out($o);
+}
 if ($a === 'mystats') { // persönliche Statistik für die Info-Seite (nur eigene Zahlen)
     $o = ['since' => null, 'entries' => ['author' => 0, 'artist' => 0, 'film' => 0, 'series' => 0], 'works' => 0, 'ideas' => 0, 'bugs' => 0, 'messages' => 0];
     try { $q = $pdo->prepare('SELECT created_at FROM users WHERE id=?'); $q->execute([$u['id']]); $o['since'] = $q->fetchColumn() ?: null; } catch (Throwable $e) {}
