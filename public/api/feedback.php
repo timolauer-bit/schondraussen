@@ -173,7 +173,11 @@ if ($a === 'vote') {
     $n = $pdo->prepare('SELECT COUNT(*) FROM feedback_votes WHERE feedback_id=?'); $n->execute([$id]);
     json_out(['ok' => true, 'votes' => (int) $n->fetchColumn()]);
 }
+function fb_unreleased(PDO $pdo, int $id): bool { // noch nicht für alle freigegeben? (ohne Spalte: nie gesperrt)
+    try { $q = $pdo->prepare('SELECT released_at FROM feedback WHERE id=?'); $q->execute([$id]); $r = $q->fetch(); return $r && empty($r['released_at']); } catch (Throwable $e) { return false; }
+}
 if ($a === 'done') {
+    if (!empty($b['on']) && fb_unreleased($pdo, $id)) json_out(['error' => 'Bitte gib den Beitrag zuerst frei.'], 422);
     $on = !empty($b['on']);
     try {
         $q = $pdo->prepare('SELECT user_id,title,bug_no,done_at FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
@@ -194,6 +198,7 @@ if ($a === 'reject') {
     if (!$admin) json_out(['error' => 'Nicht erlaubt.'], 403);
     if ($kind !== 'feature') json_out(['error' => 'Nur Ideen lassen sich ablehnen.'], 422);
     $on = !empty($b['on']);
+    if ($on && fb_unreleased($pdo, $id)) json_out(['error' => 'Bitte gib die Idee zuerst frei.'], 422);
     try {
         $q = $pdo->prepare('SELECT user_id,title,done_at,rejected FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET rejected=?, done_at=' . ($on ? 'COALESCE(done_at,NOW())' : 'NULL') . ' WHERE id=?')->execute([$on ? 1 : 0, $id]);
@@ -222,6 +227,7 @@ if ($a === 'withdraw') { // Die einreichende Person zieht ihren Beitrag zurück:
 if ($a === 'phase') { // Status für alle sichtbar: im Brainstorming, in Bearbeitung (leer = offen)
     if (!$alpha) json_out(['error' => 'Nicht erlaubt.'], 403);
     $ph = (string) ($b['phase'] ?? ''); if ($ph !== '' && !in_array($ph, ['brainstorm', 'progress', 'postponed'], true)) json_out(['error' => 'Ungültig.'], 422);
+    if ($ph !== '' && fb_unreleased($pdo, $id)) json_out(['error' => 'Bitte gib den Beitrag zuerst frei.'], 422);
     try {
         $q = $pdo->prepare('SELECT user_id,title,bug_no,phase FROM feedback WHERE id=?'); $q->execute([$id]); $it = $q->fetch();
         $pdo->prepare('UPDATE feedback SET phase=? WHERE id=?')->execute([$ph === '' ? null : $ph, $id]);
