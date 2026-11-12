@@ -1446,9 +1446,9 @@
 
   function support() {
     if (S.preview) { mainEl.append(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'), h('p', { class: 'hint' }, 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'), h('p', { class: 'warnbox' }, 'In der Vorschau kannst du hier nichts schreiben.'))); return; }
-    var admin = D.admin, p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'),
+    var admin = D.admin, staff = !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'),
       h('p', { class: 'hint' }, admin ? 'Hier siehst du die Nachrichten deiner Nutzer und kannst antworten.' : 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'));
-    var grid = h('div', { class: 'supgrid' + (admin ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !admin }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
+    var grid = h('div', { class: 'supgrid' + (staff ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !staff }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
     var inp = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Nachricht', placeholder: 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)' }), msg = h('p', { class: 'msg', role: 'status' });
     var drafts = [], draftBox = h('div', { class: 'drafts' });
     var mailCk = h('input', { type: 'checkbox' }), mailRow = h('label', { class: 'mailck', hidden: !admin }, mailCk, ' Zusätzlich per E-Mail senden (mit Hinweis, dass man darauf nicht antworten kann)');
@@ -1471,6 +1471,7 @@
       });
     }
     function send() {
+      if (S.sup.sel === 'team' && staff) { teamSend(); return; }
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (kindSel !== 'chat') { var ti = titleIn.value.trim(); if (ti.length < 3) { msg.className = 'msg err'; msg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; titleIn.focus(); return; } } else if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && kindSel === 'chat' && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
       if (kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kd === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kd === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; drafts = []; drawDrafts(); var wantMail = admin && mailCk.checked; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids, mail: wantMail }).then(function (r) { msg.textContent = r.ok ? (wantMail ? (r.mailed ? 'Gesendet, auch per E-Mail zugestellt.' : 'Im Chat gesendet, aber die E-Mail konnte nicht verschickt werden.') : '') : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok && (!wantMail || r.mailed) ? '' : ' err'); pull(); });
@@ -1486,11 +1487,13 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; threads.append(pick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
-      S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
+      threads.textContent = ''; if (admin) threads.append(pick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
+      S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
     }
     function pull() {
       var go2 = function () {
+        teamMode();
+        if (staff && S.sup.sel === 'team') { teamPull(); return; }
         if (admin && !S.sup.sel) { log.textContent = ''; log.append(h('p', { class: 'chatempty' }, 'Wähle links eine Unterhaltung.')); return; }
         api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
@@ -1501,9 +1504,63 @@
           if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
         });
       };
-      if (admin) api('/api/chat.php?a=threads').then(function (r) { S.sup.threads = r.threads || []; if (!S.sup.sel && S.sup.threads.length) S.sup.sel = S.sup.threads[0].id; drawThreads(); go2(); }); else go2();
+      if (staff) api('/api/chat.php?a=threads').then(function (r) {
+        var l = r.threads || []; if (!admin) l = l.concat([{ id: 'me', username: 'Chat mit dem Administrator', last_body: '', last_admin: 0, unread: 0 }]);
+        S.sup.threads = l;
+        if (!S.sup.sel) { var tm = l.filter(function (x) { return x.id === 'team'; })[0]; S.sup.sel = tm && +tm.unread > 0 ? 'team' : (admin ? ((l.filter(function (x) { return x.id !== 'team'; })[0] || tm || {}).id || null) : 'me'); }
+        drawThreads(); go2(); }); else go2();
     }
-    grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+
+    /* Team-Chat (Admin und Alphatester) */
+    var pollBox = h('div', { class: 'pollform', hidden: true }), teamSending = false;
+    function teamMode() {
+      var tm = staff && S.sup.sel === 'team';
+      [kindBox, kindHint, mailRow, draftBox, attNote, titleIn].forEach(function (e) { if (e) e.hidden = tm || (e === mailRow && !admin) || (e === titleIn && kindSel === 'chat'); });
+      var at = form.querySelector('.attach'); if (at) at.hidden = tm; pollBtn.hidden = !tm; if (!tm) pollBox.hidden = true;
+      composerCard.querySelector('h3').textContent = tm ? 'Nachricht an das Team' : (admin ? 'Antworten' : 'Neue Nachricht');
+      chatCard.querySelector('h3').textContent = tm ? 'Team-Chat: Admin und Alphatester' : (admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator');
+      inp.placeholder = tm ? 'Nachricht an das Team … (Enter sendet, Umschalt+Enter für neue Zeile)' : 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)';
+    }
+    function teamSend() {
+      var t = inp.value.trim(); if (!t || teamSending) return; teamSending = true;
+      api('/api/chat.php?a=team_send', { text: t }).then(function (r) { teamSending = false; if (r && r.ok) { inp.value = ''; msg.textContent = ''; teamPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Senden nicht möglich.'; } });
+    }
+    function drawPollForm() {
+      pollBox.textContent = ''; pollBox.hidden = false;
+      var q = h('input', { type: 'text', maxlength: '300', placeholder: 'Frage', 'aria-label': 'Frage der Abstimmung' }), opts = [], list = h('div', { class: 'pollopts' });
+      function addOpt(v) { var i = h('input', { type: 'text', maxlength: '120', placeholder: 'Antwort ' + (opts.length + 1), 'aria-label': 'Antwort ' + (opts.length + 1), value: v || '' }); opts.push(i); list.append(i); }
+      addOpt('Ja'); addOpt('Nein');
+      var pm = h('span', { class: 'msg', style: 'margin:0' });
+      pollBox.append(h('h4', { class: 'logcat' }, 'Neue Abstimmung'), q, list,
+        h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { if (opts.length < 8) addOpt(''); } }, 'Antwort hinzufügen'), ' ',
+          h('button', { class: 'btn small', type: 'button', onclick: function () { api('/api/chat.php?a=team_send', { poll: { q: q.value, options: opts.map(function (o) { return o.value; }) } }).then(function (r) { if (r && r.ok) { pollBox.hidden = true; teamPull(true); } else { pm.className = 'msg err'; pm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, 'Abstimmung senden'), ' ',
+          h('button', { class: 'btn ghost small', type: 'button', onclick: function () { pollBox.hidden = true; } }, 'Abbrechen'), ' ', pm));
+      q.focus();
+    }
+    function teamPull(scroll) {
+      api('/api/chat.php?a=team_thread').then(function (r) {
+        if (S.sup.sel !== 'team') return;
+        var atEnd = scroll || log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
+        if (!r || r.error) { log.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+        if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), 'Hier schreiben Admin und Alphatester untereinander. Mit „Abstimmung“ kannst du eine Frage mit Antworten stellen.'));
+        (r.messages || []).forEach(function (m) {
+          var who = h('small', { class: 'who' }, m.name + ' · ' + fmtChat(m.created_at));
+          if (!+m.is_poll) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, who)); return; }
+          var total = (m.options || []).reduce(function (a, o) { return a + o.votes; }, 0);
+          var pb = h('div', { class: 'bub poll ' + (m.mine ? 'me' : 'them') }, h('b', { class: 'pq' }, m.body));
+          (m.options || []).forEach(function (o) {
+            var pct = total ? Math.round(o.votes * 100 / total) : 0, sel = m.my_vote === o.id;
+            pb.append(h('button', { class: 'popt' + (sel ? ' on' : ''), type: 'button', 'aria-pressed': String(sel), title: sel ? 'Stimme zurücknehmen' : 'Dafür stimmen', onclick: function () { api('/api/chat.php?a=team_vote', { msg: m.id, opt: o.id }).then(function () { teamPull(); }); } },
+              h('span', { class: 'bar', style: 'width:' + pct + '%' }), h('span', { class: 'pl' }, (sel ? '✓ ' : '') + o.label), h('span', { class: 'pn' }, o.votes + (total ? ' · ' + pct + ' %' : ''))));
+          });
+          pb.append(h('small', { class: 'who' }, 'Abstimmung von ' + m.name + ' · ' + fmtChat(m.created_at) + ' · ' + total + (total === 1 ? ' Stimme' : ' Stimmen'))); log.append(pb);
+        });
+        if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
+      });
+    }
+    var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
+    var pollBtn = h('button', { class: 'btn ghost', type: 'button', hidden: true, onclick: drawPollForm }, 'Abstimmung'); form.insertBefore(pollBtn, form.querySelector('button[type=submit]'));
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
     if (!S.preview && (D.admin || D.alpha)) fbPoll();

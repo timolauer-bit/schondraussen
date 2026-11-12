@@ -18,6 +18,12 @@ $M = [
   "CREATE TABLE IF NOT EXISTS avatar_wishes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, wish VARCHAR(500) NOT NULL, status ENUM('open','ready','declined') NOT NULL DEFAULT 'open', note VARCHAR(300) NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "CREATE TABLE IF NOT EXISTS avatar_options (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, wish_id INT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL, svg MEDIUMTEXT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), KEY idx_wish (wish_id), FOREIGN KEY (wish_id) REFERENCES avatar_wishes(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+ '067_team_chat' => [
+  "CREATE TABLE IF NOT EXISTS team_messages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, body VARCHAR(1000) NOT NULL, is_poll TINYINT(1) NOT NULL DEFAULT 0, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY (created_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "CREATE TABLE IF NOT EXISTS team_poll_options (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, msg_id INT UNSIGNED NOT NULL, label VARCHAR(120) NOT NULL, KEY (msg_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "CREATE TABLE IF NOT EXISTS team_poll_votes (msg_id INT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL, opt_id INT UNSIGNED NOT NULL, PRIMARY KEY (msg_id, user_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "CREATE TABLE IF NOT EXISTS team_chat_seen (user_id INT UNSIGNED NOT NULL PRIMARY KEY, seen_at DATETIME NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
  '066_news' => [
   "CREATE TABLE IF NOT EXISTS news_days (day DATE NOT NULL PRIMARY KEY, site_title VARCHAR(160) NULL, site_text TEXT NULL, content_title VARCHAR(160) NULL, content_text TEXT NULL, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "INSERT IGNORE INTO news_days (day, site_title, site_text, content_title, content_text) VALUES ('2026-11-12', 'News-Seite im Test', 'Das ist ein erster Entwurf der News-Seite. Hier stehen künftig kurze Meldungen zur Seite selbst, zum Beispiel neue Funktionen oder geplante Wartungen.
