@@ -771,3 +771,14 @@ hr.newshr{margin-inline:auto}
   .navmain{justify-content:space-evenly;gap:0 4px;border-top:1px solid var(--line)}
   .navtop+.navmain{border-top:1px solid var(--line)}
 }
+/* Handy: dritte Zeile immer in einer Zeile, Symbole teilen sich die Breite */
+@media(max-width:760px){
+  .navrest{flex-wrap:nowrap;justify-content:stretch;gap:0}
+  .navrest .nav{flex:1 1 0;min-width:0;justify-content:center;padding-inline:0!important;margin-left:0}
+  .navrest .nav .ico{margin:0}
+  .navrest .nav.ionly svg{width:clamp(16px,5vw,20px);height:clamp(16px,5vw,20px)}
+  .navrest .nav .badge{margin-left:2px}
+  .navrest .devsw{flex:0 1 auto;min-width:0;padding-inline:6px}
+}
+/* Handy: die sechs Admin-Reiter passen in eine Zeile */
+@media(max-width:600px){.admtabs.admnav{flex-wrap:nowrap;gap:2px}.admtabs.admnav .admtab{flex:1 1 auto;min-width:0;padding:8px clamp(3px,1.3vw,8px);font-size:clamp(11.5px,3.5vw,14px);text-align:center;white-space:nowrap}.admtabs.admnav .admtab .badge{margin-left:3px}}
