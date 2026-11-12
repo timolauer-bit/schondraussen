@@ -45,6 +45,18 @@ if ($a === 'overview') {
         $out['top'][$t] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.is_sample=0 AND s.type=? AND (u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id'], $t]);
         $out['new'][$t] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.is_sample=0 AND s.type=? AND (u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT AND e.added_at >= (NOW() - INTERVAL 14 DAY) GROUP BY s.id, s.name ORDER BY c DESC, s.name LIMIT 50", [$u['id'], $t]);
     }
+    if ($LOCKED) { // Newcomer ohne Zustimmung nur als Platzhalter (Namen und Zahlen erfunden, negative Kennungen)
+        $out['locked'] = true;
+        foreach ($TYPES as $t) {
+            $fk = []; $k = 0;
+            foreach ($out['new'][$t] as $r) {
+                $k++; $c = (int) $r['c']; mt_srand(crc32('nc' . $u['id'] . '|' . $t . '|' . $k));
+                $fk[] = ['id' => -1000 - $k, 'name' => fake_words('nc' . $u['id'] . $t . $k, 8, 22), 'c' => mt_rand(1, max(2, min(30, $c + 3))), 'mine' => 0];
+            }
+            usort($fk, fn($x, $y) => $y['c'] <=> $x['c']);
+            $out['new'][$t] = $fk;
+        }
+    }
     // Meistgesehen/gelesen/gehört: pro Nutzer und Titel höchstens ein Punkt (nur Nutzer mit Zustimmung, keine Beispieleinträge)
     $out['seen'] = [];
     $cons = "(u.role='admin' OR u.approved_at IS NOT NULL) AND $CONSENT";

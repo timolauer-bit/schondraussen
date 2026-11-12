@@ -1137,9 +1137,9 @@
       return b;
     }
     var CT = ORDER.slice();
-    function rankTable(key, title, rows, unit, cat) {
+    function rankTable(key, title, rows, unit, cat, lock) {
       var open = !!C.open[key], shown = rows.slice(0, open ? 50 : 15);
-      var box = h('div', { class: 'commbox', style: '--cc:' + (CATCOL[cat] || 'var(--accent)') }, h('h4', null, title)), mx = rows.length ? Math.max.apply(null, rows.map(function (x) { return +x.c || 0; })) : 1;
+      var box = h('div', { class: 'commbox' + (lock ? ' locked' : ''), style: '--cc:' + (CATCOL[cat] || 'var(--accent)') }, h('h4', null, title)), mx = rows.length ? Math.max.apply(null, rows.map(function (x) { return +x.c || 0; })) : 1;
       if (!rows.length) { box.append(h('p', { class: 'hint' }, 'Noch keine Daten.')); return box; }
       box.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, shown.map(function (r, i) {
         return h('tr', null, h('td', { class: 'rk' + (i < 3 ? ' top' : '') }, String(i + 1)), h('td', { class: 'nm', style: 'background:linear-gradient(90deg,color-mix(in srgb,var(--cc) 16%,transparent) ' + Math.round(100 * (+r.c || 0) / (mx || 1)) + '%,transparent 0)' }, r.name), h('td', { class: 'ct', title: unit }, String(r.c)), h('td', { class: 'ad' }, adoptBtn(r)));
@@ -1180,9 +1180,9 @@
       body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
       var g = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer', t)); });
-      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.'));
+      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.' + (d.locked ? ' Bis du zustimmst, siehst du hier nur Platzhalter.' : '')));
       var g2 = h('div', { class: 'commgrid' });
-      CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t)); });
+      CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t, !!d.locked)); });
       body.append(g2);
       var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'gelesenen Büchern (jedes Buch ein Punkt)'], artist: ['Meistgehört Musik', 'mindestens 5 Alben'], film: ['Meistgesehen Filme', 'gesehen (jeder Film einzeln)'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
       var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], (t === 'author' ? 'Punkte: ' : 'Nutzer mit ') + SEENT[t][1], t)); });
