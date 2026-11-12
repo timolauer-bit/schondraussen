@@ -129,6 +129,7 @@ function perm_defs(): array {
         'cat_film' => ['Kategorie Filme', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
         'cat_series' => ['Kategorie Serien', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
         'podcast' => ['Kategorie Podcasts', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [$pl, $pl], 'live'],
+        'news' => ['Seite „News“ ansehen', 'Neuigkeiten zur Seite und zu Inhalten lesen (derzeit nur in der Entwicklungsversion sichtbar)', [1, 1], 'live'],
         'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen (Test)', [0, 0], 'live'],
         'devmode' => ['Entwicklerversion nutzen', 'Schalter „Live/Dev“ neben dem Benutzernamen: neue Funktionen testen, bevor sie für alle freigegeben werden', [0, 1], 'live'],
     ];

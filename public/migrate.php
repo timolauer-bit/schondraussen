@@ -18,6 +18,16 @@ $M = [
   "CREATE TABLE IF NOT EXISTS avatar_wishes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, wish VARCHAR(500) NOT NULL, status ENUM('open','ready','declined') NOT NULL DEFAULT 'open', note VARCHAR(300) NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "CREATE TABLE IF NOT EXISTS avatar_options (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, wish_id INT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL, svg MEDIUMTEXT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), KEY idx_wish (wish_id), FOREIGN KEY (wish_id) REFERENCES avatar_wishes(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+ '066_news' => [
+  "CREATE TABLE IF NOT EXISTS news_days (day DATE NOT NULL PRIMARY KEY, site_title VARCHAR(160) NULL, site_text TEXT NULL, content_title VARCHAR(160) NULL, content_text TEXT NULL, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "INSERT IGNORE INTO news_days (day, site_title, site_text, content_title, content_text) VALUES ('2026-11-12', 'News-Seite im Test', 'Das ist ein erster Entwurf der News-Seite. Hier stehen künftig kurze Meldungen zur Seite selbst, zum Beispiel neue Funktionen oder geplante Wartungen.
+Ältere Meldungen findest du eingeklappt weiter unten.', 'Medienbranche heute (Test)', 'Streaming: Am 12.11. starten unter anderem „Die Kaiserin“ (Staffel 3) und „Bros“ (Staffel 2) bei Netflix; bei Disney+ läuft „VisionQuest“ weiter.
+Kino: Neu ab 12.11. sind „Beware Boiúna“ (Riesenschlangen-Horror, Constantin Film) und „Ebenezer – Eine Weihnachtsgeschichte“.
+Bücher: Für den Preis der Leipziger Buchmesse 2027 haben 194 Verlage 457 Werke eingereicht; die Jury liest sie in den kommenden Monaten.
+Verlage: Kiepenheuer & Witsch macht seinen Veranstaltungsbereich zu einer eigenen Abteilung (Leitung: Anna-Lena Giershausen).
+Film und TV: Italien hat ein neues Kinogesetz mit einer eigenen Agentur für Film- und Fernsehförderung beschlossen.
+Quellen: kinocheck.de, thewrap.com, the-spot-mediafilm.com, buchmarkt.de, Branchenüberblick „Global TV, Film & Media Industry News Roundup“ (12.11.2026). Testeintrag.')",
+ ],
  '065_default_usernames' => [
   "UPDATE IGNORE users SET username=CONCAT('User-', id) WHERE username IS NULL OR username=''",
  ],

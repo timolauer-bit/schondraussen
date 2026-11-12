@@ -29,6 +29,7 @@
     film: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></svg>',
     series: '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m17 2-5 5-5-5"/></svg>',
     podcast: '<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg>',
+    news: '<svg viewBox="0 0 24 24"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM19 8h2v10a2 2 0 0 1-2 2M8 8h7M8 12h7M8 16h4"/></svg>',
     cal: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     clip: '<svg viewBox="0 0 24 24"><path d="M21 11.5 12.6 20a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>',
@@ -159,10 +160,11 @@
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
-        key === 'cal' ? ico(ICONS.cal) : null, ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
+        key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     navMain.append(btn('cal', 'Kalender', 0));
+    if (D.dev && D.news && !S.preview) navMain.append(btn('news', 'News', 0, ' newsnav'));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
@@ -192,7 +194,7 @@
     saveView();
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug');
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug'); else if (v === 'news' && D.dev && D.news) newsView();
   }
 
   /* ---------- Kalender ---------- */
@@ -1383,6 +1385,33 @@
     mainEl.append(p);
   }
 
+  /* ---------- News ---------- */
+  function newsBody(t) { // Klartext: Leerzeile = neuer Absatz, Zeilen mit „- “ als Liste
+    var out = [], lines = String(t || '').split('\n'), para = [], list = [];
+    function flush() { if (para.length) { out.push(h('p', null, para.join(' '))); para = []; } if (list.length) { out.push(h('ul', null, list.map(function (x) { return h('li', null, x); }))); list = []; } }
+    lines.forEach(function (ln) { if (!ln.trim()) { flush(); return; } if (/^\s*[-•]\s+/.test(ln)) { if (para.length) flush(); list.push(ln.replace(/^\s*[-•]\s+/, '')); } else { if (list.length) flush(); para.push(ln.trim()); flush(); } });
+    flush(); return out;
+  }
+  function newsDate(d) { try { return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (_) { return d; } }
+  function newsDay(x, forAdmin) {
+    var sec = function (cap, title, text) { return (title || text) ? h('div', { class: 'newssec' }, h('h4', { class: 'logcat' }, cap), title ? h('h5', { class: 'newst' }, title) : null, newsBody(text)) : null; };
+    return [sec('Seitennews', x.site_title, x.site_text), sec('News zu Inhalten', x.content_title, x.content_text)].filter(Boolean);
+  }
+  function newsView() {
+    var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.'));
+    var box = h('div', null, h('p', { class: 'state pulse' }, 'Lade …')); p.append(box); mainEl.append(p);
+    api('/api/news.php?a=list').then(function (r) {
+      box.textContent = '';
+      if (!r || r.error) { box.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+      var l = (r.days || []).filter(function (x) { return !x.future || r.admin; });
+      if (!l.length) { box.append(h('p', { class: 'hint' }, 'Noch keine News.')); return; }
+      l.forEach(function (x, i) {
+        var hd = h('h3', null, newsDate(x.day), x.future ? h('small', null, 'geplant') : null), body = newsDay(x);
+        if (i === 0) box.append(h('div', { class: 'logv newsv' }, hd, body)); else box.append(h('details', { class: 'logv logold newsv' }, h('summary', null, hd), body));
+      });
+    });
+  }
+
   /* ---------- Kontakt ---------- */
   /* ---------- Bilder (Chat, Ideen, Bugs) ---------- */
   function imgUrl(id) { return '/api/image.php?id=' + id; }
@@ -1781,9 +1810,40 @@
       });
     }
     wishes();
+
+    var newsAdm = h('div', { class: 'wide2' }), newsMsg = h('span', { class: 'msg', style: 'margin:0' });
+    (function () {
+      var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+      var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }),
+        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), cx = h('textarea', { rows: '6', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }), old = h('div', null), all = [];
+      function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; }
+      function say2(t, bad) { newsMsg.className = 'msg' + (bad ? ' err' : ''); newsMsg.textContent = t; }
+      function load() {
+        api('/api/news.php?a=list').then(function (r) {
+          if (!r || r.error) { say2((r && r.error) || 'Das hat nicht geklappt.', true); return; }
+          all = r.days || []; old.textContent = '';
+          if (!all.length) old.append(h('p', { class: 'hint' }, 'Noch keine News.'));
+          all.forEach(function (x) {
+            old.append(h('details', { class: 'logv logold newsv' }, h('summary', null, h('h3', null, newsDate(x.day), x.future ? h('small', null, 'geplant') : null)), newsDay(x),
+              h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { day.value = x.day; fill(x.day); say2('Zum Bearbeiten oben geladen.'); window.scrollTo(0, 0); } }, 'Bearbeiten'), ' ',
+                h('button', { class: 'btn ghost small', type: 'button', onclick: function () { if (!confirm('News vom ' + newsDate(x.day) + ' löschen?')) return; api('/api/news.php?a=delete', { day: x.day }).then(function (z) { if (z && z.ok) { say2('Gelöscht.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Löschen'))));
+          });
+          fill(day.value);
+        });
+      }
+      day.addEventListener('change', function () { fill(day.value); say2(''); });
+      newsAdm.append(
+        h('label', { class: 'field' }, h('span', null, 'Tag (gleicher Tag überschreibt die vorhandene Meldung)'), day),
+        h('h4', { class: 'logcat' }, 'Seitennews'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), st), h('label', { class: 'field' }, h('span', null, 'Haupttext'), sx),
+        h('h4', { class: 'logcat' }, 'News zu Inhalten'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), ct), h('label', { class: 'field' }, h('span', null, 'Haupttext'), cx),
+        h('p', null, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/news.php?a=save', { day: day.value, site_title: st.value, site_text: sx.value, content_title: ct.value, content_text: cx.value }).then(function (z) { if (z && z.ok) { say2('Gespeichert.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Speichern'), ' ', newsMsg),
+        h('h4', { class: 'logcat' }, 'Bisherige News'), old);
+      load();
+    })();
+    p.append(h('h3', { class: 'sec' }, 'News'), newsAdm);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['News', ['News']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });
@@ -1854,7 +1914,7 @@
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
-      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true };
+      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true, news: !!(D.dev && D.news) };
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
