@@ -14,6 +14,8 @@ if ($a === 'get') {
         if ($admin || (int) $im['user_id'] === (int) $u['id']) $ok = true;
         elseif ($im['ref_id'] !== null && $im['scope'] === 'chat') {
             $m = $pdo->prepare('SELECT user_id FROM messages WHERE id=?'); $m->execute([$im['ref_id']]); $ok = (int) $m->fetchColumn() === (int) $u['id'];
+        } elseif ($im['ref_id'] !== null && $im['scope'] === 'team') {
+            $ok = $alpha; // Team-Chat: nur Admin und Alphatester
         } elseif ($im['ref_id'] !== null && $im['scope'] === 'feedback') {
             // Anhänge sehen Admin/Alpha immer, alle anderen nur bei freigegebenen Beiträgen und freigegebenen Anhängen
             $ok = $alpha;
@@ -31,17 +33,18 @@ if ($a === 'get') {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
 
 if ($a === 'upload') {
-    $scope = ($_GET['scope'] ?? '') === 'feedback' ? 'feedback' : 'chat';
+    $scope = ['feedback' => 'feedback', 'team' => 'team'][$_GET['scope'] ?? ''] ?? 'chat';
+    if ($scope === 'team' && !$alpha) json_out(['error' => 'Nicht erlaubt.'], 403);
     $c = $pdo->prepare('SELECT COUNT(*) FROM images WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
     if ((int) $c->fetchColumn() >= 15) json_out(['error' => 'Bitte etwas später weitere Bilder hochladen.'], 429);
     if (($_GET['kind'] ?? '') === 'text') { // Textdatei als Anhang (nur bei Ideen und Bugs)
-        if ($scope !== 'feedback') json_out(['error' => 'Textdateien sind nur bei Ideen und Bugs möglich.'], 422);
+        if ($scope === 'chat') json_out(['error' => 'Textdateien sind nur bei Ideen, Bugs und im Team-Chat möglich.'], 422);
         $raw = file_get_contents('php://input', false, null, 0, 200 * 1024 + 1);
         if ($raw === '' || strlen($raw) > 200 * 1024) json_out(['error' => 'Die Textdatei ist leer oder zu groß (höchstens 200 KB).'], 422);
         if (strpos($raw, "\0") !== false || !mb_check_encoding($raw, 'UTF-8')) json_out(['error' => 'Das ist keine Textdatei (UTF-8).'], 422);
         $raw = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $raw);
         $nm = preg_replace('/[^\p{L}\p{N}._ -]/u', '', basename((string) ($_GET['name'] ?? 'anhang.txt'))); $nm = mb_substr($nm !== '' ? $nm : 'anhang.txt', 0, 100);
-        try { $pdo->prepare("INSERT INTO images (user_id,scope,data,kind,name) VALUES (?,?,?,'text',?)")->execute([$u['id'], 'feedback', $raw, $nm]); }
+        try { $pdo->prepare("INSERT INTO images (user_id,scope,data,kind,name) VALUES (?,?,?,'text',?)")->execute([$u['id'], $scope, $raw, $nm]); }
         catch (Throwable $e) { json_out(['error' => 'Textdateien sind noch nicht freigeschaltet (migrate.php einspielen).'], 500); }
         json_out(['ok' => true, 'id' => (int) $pdo->lastInsertId(), 'name' => $nm]);
     }

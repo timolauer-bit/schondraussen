@@ -30,6 +30,12 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
                 foreach ($pdo->query("SELECT msg_id, opt_id FROM team_poll_votes WHERE user_id=" . (int) $u['id'] . " AND msg_id IN ($in)")->fetchAll(PDO::FETCH_ASSOC) as $v) $mine[$v['msg_id']] = (int) $v['opt_id'];
             }
             foreach ($rows as &$r) { $r['name'] = trim((string) $r['username']) ?: 'Mitglied Nr. ' . (int) $r['user_id']; $r['mine'] = (int) $r['user_id'] === (int) $u['id']; $r['can_close'] = $r['mine'] || $admin; $r['closed'] = !empty($r['closed_at']); unset($r['username'], $r['closed_at']); if ($r['is_poll']) { $r['options'] = $opts[$r['id']] ?? []; $r['my_vote'] = $mine[$r['id']] ?? null; } }
+            try { // Bilder und Textdateien zu den Nachrichten
+                $all = implode(',', array_map(fn($r) => (int) $r['id'], $rows)); $by = [];
+                if ($all) foreach ($pdo->query("SELECT id, ref_id, kind, name FROM images WHERE scope='team' AND ref_id IN ($all) AND removed_at IS NULL ORDER BY id")->fetchAll(PDO::FETCH_ASSOC) as $im) $by[$im['ref_id']][] = ['id' => (int) $im['id'], 'kind' => $im['kind'] ?? 'image', 'name' => $im['name']];
+                foreach ($rows as &$r) $r['images'] = $by[$r['id']] ?? [];
+                unset($r);
+            } catch (Throwable $e) {}
             $pdo->prepare('INSERT INTO team_chat_seen (user_id, seen_at) VALUES (?, NOW()) ON DUPLICATE KEY UPDATE seen_at=NOW()')->execute([$u['id']]);
             json_out(['messages' => $rows, 'team' => true]);
         }
@@ -37,7 +43,7 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'Unbekannte Aktion'], 400);
         $b = body();
         if ($a === 'team_send') {
-            $text = trim((string) ($b['text'] ?? '')); $poll = is_array($b['poll'] ?? null) ? $b['poll'] : null;
+            $text = trim((string) ($b['text'] ?? '')); $poll = is_array($b['poll'] ?? null) ? $b['poll'] : null; $imgs = is_array($b['images'] ?? null) ? $b['images'] : [];
             if ($poll) {
                 $q = trim((string) ($poll['q'] ?? '')); $os = array_values(array_unique(array_filter(array_map(fn($x) => trim(mb_substr((string) $x, 0, 120)), (array) ($poll['options'] ?? [])), fn($x) => $x !== '')));
                 if ($q === '' || mb_strlen($q) > 300) json_out(['error' => 'Bitte eine Frage bis 300 Zeichen eingeben.'], 422);
@@ -46,10 +52,11 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
                 $ins = $pdo->prepare('INSERT INTO team_poll_options (msg_id, label) VALUES (?,?)'); foreach ($os as $o) $ins->execute([$mid, $o]);
                 json_out(['ok' => true]);
             }
-            if ($text === '' || mb_strlen($text) > 1000) json_out(['error' => 'Bitte eine Nachricht bis 1000 Zeichen eingeben.'], 422);
+            if (($text === '' && !$imgs) || mb_strlen($text) > 1000) json_out(['error' => 'Bitte eine Nachricht bis 1000 Zeichen eingeben.'], 422);
             $c = $pdo->prepare('SELECT COUNT(*) FROM team_messages WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
             if ((int) $c->fetchColumn() >= 60) json_out(['error' => 'Bitte etwas später weiterschreiben.'], 429);
-            $pdo->prepare('INSERT INTO team_messages (user_id, body) VALUES (?,?)')->execute([$u['id'], $text]);
+            $pdo->prepare('INSERT INTO team_messages (user_id, body) VALUES (?,?)')->execute([$u['id'], $text]); $mid = (int) $pdo->lastInsertId();
+            if ($imgs) { try { images_attach($pdo, $imgs, (int) $u['id'], 'team', $mid, 'approved'); } catch (Throwable $e) {} }
             json_out(['ok' => true]);
         }
         if ($a === 'team_close') { // Ersteller (oder Admin) schließt die Abstimmung oder öffnet sie wieder

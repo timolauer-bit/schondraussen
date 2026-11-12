@@ -1432,9 +1432,9 @@
       im.src = u;
     });
   }
-  function uploadText(file) {
+  function uploadText(file, scope) {
     if (file.size > 200 * 1024) return Promise.reject(new Error('Die Textdatei ist zu groß (höchstens 200 KB).'));
-    return fetch('/api/image.php?a=upload&scope=feedback&kind=text&name=' + encodeURIComponent(file.name), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'text/plain' }, body: file })
+    return fetch('/api/image.php?a=upload&scope=' + (scope || 'feedback') + '&kind=text&name=' + encodeURIComponent(file.name), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'text/plain' }, body: file })
       .then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); })
       .then(function (r) { if (!r.ok) throw new Error(r.error || 'Hochladen nicht möglich.'); return { id: r.id, name: r.name || file.name }; });
   }
@@ -1460,16 +1460,17 @@
     var titleIn = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', hidden: true, 'aria-label': 'Kurzbeschreibung', placeholder: 'Kurzbeschreibung (erscheint als Titel in der Liste)', autocomplete: 'off', onkeydown: function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.focus(); } } });
     var attNote = h('p', { class: 'hint picnote' });
     function drawNote() { attNote.textContent = kindSel === 'chat' ? 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.' : 'Anhänge: ' + drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
-    function scopeOf() { return kindSel === 'chat' ? 'chat' : 'feedback'; }
+    function isTeam() { return staff && S.sup.sel === 'team'; }
+    function scopeOf() { return isTeam() ? 'team' : (kindSel === 'chat' ? 'chat' : 'feedback'); }
     function drawDrafts() { draftBox.textContent = ''; drafts.forEach(function (d) { draftBox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Bild entfernen', onclick: function () { drafts = drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawDrafts(); } }, '×'))); }); drawNote(); }
     function addFiles(files) {
       [].slice.call(files).forEach(function (f) {
-        if (drafts.length >= 3) { msg.className = 'msg err'; msg.textContent = kindSel === 'chat' ? 'Höchstens 3 Bilder pro Nachricht.' : 'Höchstens 3 Anhänge.'; return; }
+        if (drafts.length >= 3) { msg.className = 'msg err'; msg.textContent = scopeOf() === 'chat' ? 'Höchstens 3 Bilder pro Nachricht.' : 'Höchstens 3 Anhänge.'; return; }
         var isTxt = !/^image\//.test(f.type) && (/^text\//.test(f.type) || /\.(txt|log|md|csv|json)$/i.test(f.name));
-        if (isTxt && kindSel === 'chat') { msg.className = 'msg err'; msg.textContent = 'Textdateien gehen nur bei Ideen und Bugmeldungen.'; return; }
+        if (isTxt && scopeOf() === 'chat') { msg.className = 'msg err'; msg.textContent = 'Textdateien gehen nur bei Ideen und Bugmeldungen.'; return; }
         msg.className = 'msg'; msg.textContent = isTxt ? 'Datei wird hochgeladen …' : 'Bild wird hochgeladen …';
         var sc = scopeOf();
-        (isTxt ? uploadText(f) : uploadImage(f, sc)).then(function (d) { d.scope = sc; if (scopeOf() !== sc) { api('/api/image.php?a=remove', { id: d.id }); return; } drafts.push(d); msg.textContent = ''; drawDrafts(); })
+        (isTxt ? uploadText(f, sc) : uploadImage(f, sc)).then(function (d) { d.scope = sc; if (scopeOf() !== sc) { api('/api/image.php?a=remove', { id: d.id }); return; } drafts.push(d); msg.textContent = ''; drawDrafts(); })
           .catch(function (e) { msg.className = 'msg err'; msg.textContent = e.message; });
       });
     }
@@ -1515,18 +1516,20 @@
     }
 
     /* Team-Chat (Admin und Alphatester) */
-    var pollBox = h('div', { class: 'pollform', hidden: true }), teamSending = false;
+    var pollBox = h('div', { class: 'pollform', hidden: true }), teamSending = false, lastScope = null;
     function teamMode() {
       var tm = staff && S.sup.sel === 'team';
-      [kindBox, kindHint, mailRow, draftBox, attNote, titleIn].forEach(function (e) { if (e) e.hidden = tm || (e === mailRow && !admin) || (e === titleIn && kindSel === 'chat'); });
-      var at = form.querySelector('.attach'); if (at) at.hidden = tm; pollBtn.hidden = !tm; if (!tm) pollBox.hidden = true;
+      var sc = scopeOf(); if (lastScope && sc !== lastScope && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); } lastScope = sc;
+      [kindBox, kindHint, mailRow, titleIn].forEach(function (e) { if (e) e.hidden = tm || (e === mailRow && !admin) || (e === titleIn && kindSel === 'chat'); });
+      if (tm) attNote.textContent = 'Bis zu 3 Anhänge pro Nachricht: Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; else drawNote();
+      pollBtn.hidden = !tm; if (!tm) pollBox.hidden = true;
       composerCard.querySelector('h3').textContent = tm ? 'Nachricht an das Team' : (admin ? 'Antworten' : 'Neue Nachricht');
       chatCard.querySelector('h3').textContent = tm ? 'Team-Chat: Admin und Alphatester' : (admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator');
       inp.placeholder = tm ? 'Nachricht an das Team … (Enter sendet, Umschalt+Enter für neue Zeile)' : 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)';
     }
     function teamSend() {
-      var t = inp.value.trim(); if (!t || teamSending) return; teamSending = true;
-      api('/api/chat.php?a=team_send', { text: t }).then(function (r) { teamSending = false; if (r && r.ok) { inp.value = ''; msg.textContent = ''; teamPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Senden nicht möglich.'; } });
+      var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if ((!t && !ids.length) || teamSending) return; teamSending = true;
+      api('/api/chat.php?a=team_send', { text: t, images: ids }).then(function (r) { teamSending = false; if (r && r.ok) { inp.value = ''; drafts = []; drawDrafts(); msg.textContent = ''; teamPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Senden nicht möglich.'; } });
     }
     function drawPollForm() {
       pollBox.textContent = ''; pollBox.hidden = false;
@@ -1548,7 +1551,7 @@
         if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), 'Hier schreiben Admin und Alphatester untereinander. Mit „Abstimmung“ kannst du eine Frage mit Antworten stellen.'));
         (r.messages || []).forEach(function (m) {
           var who = h('small', { class: 'who' }, m.name + ' · ' + fmtChat(m.created_at));
-          if (!+m.is_poll) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, who)); return; }
+          if (!+m.is_poll) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, (m.images || []).map(function (im) { return im.kind === 'text' ? h('a', { class: 'txtatt', href: imgUrl(im.id), target: '_blank', rel: 'noopener' }, '📄 ' + (im.name || 'Textdatei')) : picLink(im.id, 'inchat'); }), who)); return; }
           var total = (m.options || []).reduce(function (a, o) { return a + o.votes; }, 0);
           var cl = !!m.closed, pb = h('div', { class: 'bub poll ' + (m.mine ? 'me' : 'them') + (cl ? ' closed' : '') }, h('div', { class: 'pqrow' }, h('b', { class: 'pq' }, m.body),
             m.can_close ? h('button', { class: 'lockbtn', type: 'button', title: cl ? 'Abstimmung wieder öffnen' : 'Abstimmung schließen', 'aria-label': cl ? 'Abstimmung wieder öffnen' : 'Abstimmung schließen', 'aria-pressed': String(cl), onclick: function () { if (!cl && !confirm('Abstimmung schließen? Danach kann niemand mehr abstimmen.')) return; api('/api/chat.php?a=team_close', { msg: m.id }).then(function (z) { if (z && z.error) { msg.className = 'msg err'; msg.textContent = z.error; } teamPull(); }); } }, ico(cl ? ICONS.lock : ICONS.unlock)) : (cl ? h('span', { class: 'lockbtn static', title: 'Geschlossen' }, ico(ICONS.lock)) : null)));
