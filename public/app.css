@@ -473,6 +473,8 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .nav.commnav{font:600 14px var(--font-body)}
 .commpanel .commh{margin:22px 0 4px;font:650 17px var(--font-display)}
 .commnote{margin:0 0 12px;padding:10px 12px}
+.locked td,.locked .idcard>:not(.idstripe),h3.commh.locked{filter:blur(3px);user-select:none;-webkit-user-select:none}
+.locked td:not(.rk),.locked .idcard>:not(.idstripe){background-image:repeating-linear-gradient(135deg,rgba(120,120,120,.30) 0 3px,transparent 3px 7px)}
 .commgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:10px 0}
 .commbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
 .commbox h4{margin:0 0 6px;font:650 15px var(--font-display)}

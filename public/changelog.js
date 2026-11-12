@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 12, d: '12.11.2026', t: [
+    'U|Community: Wer der Nutzung seiner Einträge noch nicht zugestimmt hat, sieht bei „Aktivste User“, in den Profilkarten und den Listen anderer nur unscharfe Platzhalter statt echter Werte. Ein Hinweis oben erklärt das und verweist auf die Einstellungen.',
     'A|Info-Seite „Entstehung und Aufwand“: Zahlen auf den Stand 12.11.2026 aktualisiert (7.424 Zeilen, 14 API-Dateien). Die wöchentliche Messung zählt den Entwicklungsordner nicht mehr doppelt mit.',
   ] },
   { v: 11, d: '10.11.2026', t: [
