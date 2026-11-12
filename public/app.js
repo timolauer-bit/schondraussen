@@ -1779,9 +1779,34 @@
       });
     }
     wishes();
+    var tickGh = function () {}, ghBox = h('div', { class: 'wide2 ghbox' }, h('p', { class: 'state pulse' }, 'Lade …'));
+    (function () {
+      var timer = null, skew = 0;
+      function dur(ms) { var s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' min'; }
+      function ago(t) { var s = Math.max(0, (Date.now() + skew - new Date(t).getTime()) / 1000); return s < 90 ? 'gerade eben' : s < 3600 ? 'vor ' + Math.round(s / 60) + ' Min.' : s < 86400 ? 'vor ' + Math.round(s / 3600) + ' Std.' : 'vor ' + Math.round(s / 86400) + ' Tagen'; }
+      function state(r) { if (r.status !== 'completed') return r.status === 'queued' || r.status === 'waiting' || r.status === 'pending' ? ['wait', 'Wartet auf Start'] : ['run', 'Läuft']; var c = r.conclusion; return c === 'success' ? ['ok', 'Fertig'] : (c === 'cancelled' ? ['cancel', 'Abgebrochen'] : ['fail', 'Fehlgeschlagen']); }
+      function draw(r) {
+        ghBox.textContent = '';
+        if (!r || r.error) { ghBox.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return 15000; }
+        if (!r.configured) { ghBox.append(h('p', { class: 'hint' }, 'Noch nicht eingerichtet. Lege bei GitHub ein „Fine-grained personal access token“ nur für dieses Repo an (Berechtigung „Actions: Read-only“, mehr nicht) und trage es in der config.php als github_token ein. Das Token bleibt auf dem Server und wird nie angezeigt.')); return 0; }
+        var runs = r.runs || []; skew = r.now ? new Date(r.now).getTime() - Date.now() : 0;
+        if (!runs.length) { ghBox.append(h('p', { class: 'hint' }, 'Noch keine Läufe gefunden.')); return 20000; }
+        var cur = runs[0], st = state(cur), live = st[0] === 'run' || st[0] === 'wait', t0 = new Date(cur.started).getTime();
+        var big = h('div', { class: 'ghnow gh-' + st[0] }, h('span', { class: 'ghdot' }), h('div', null, h('b', null, live ? (st[0] === 'run' ? 'Update läuft gerade' : 'Update wartet auf Start') : 'Kein Update aktiv'), h('div', { class: 'ghsub' }, live ? h('span', { class: 'ghel' }, dur(Date.now() + skew - t0) + ' · ' + cur.title) : 'Letzter Lauf: ' + st[1].toLowerCase() + ' ' + ago(cur.updated || cur.started) + ' · ' + cur.title)));
+        ghBox.append(big);
+        var ul = h('ul', { class: 'ghlist' });
+        runs.slice(live ? 1 : 0).forEach(function (x) { var s = state(x); ul.append(h('li', { class: 'gh-' + s[0] }, h('span', { class: 'ghdot' }), h('span', { class: 'ght' }, x.title || '(ohne Titel)'), h('span', { class: 'ghm' }, s[1] + ' · ' + ago(x.updated || x.started) + (x.status === 'completed' && x.started && x.updated ? ' · ' + dur(new Date(x.updated) - new Date(x.started)) : '')))); });
+        if (ul.childNodes.length) ghBox.append(h('h4', { class: 'logcat' }, 'Frühere Läufe'), ul);
+        return live ? 4000 : 12000;
+      }
+      function tick() { if (!ghBox.isConnected) return; if (document.hidden) { timer = setTimeout(tick, 5000); return; } api('/api/admin.php?a=gh_status').then(function (r) { var d = draw(r); if (d) timer = setTimeout(tick, d); }); }
+      tickGh = tick;
+    })();
+    var ghAt = [].slice.call(p.children).filter(function (e) { return e.tagName === 'H3' && /^Rechte der Nutzergruppen/.test(e.textContent); })[0] || null;
+    p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });

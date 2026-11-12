@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 11, d: '10.11.2026', t: [
+    'A|Admin → Sicherheit: Neue Karte „Deployment (GitHub Actions)“ zeigt live, ob gerade ein Update läuft, und die letzten Läufe. Dafür steht ein schreibgeschütztes GitHub-Token in der config.php.',
     'F|Profilbild: Mit einem Link von DiceBear (dicebear.com) kannst du dein Bild selbst gestalten. Wir laden das Bild einmal, prüfen es und speichern es bei uns. Die Anleitung steht in den Einstellungen unter „Profil“.',
     'U|Profil: Ein zweiter Knopf „Profilkarte speichern“ steht jetzt direkt unter der Bilderauswahl.',
     'F|Bücher: Die Werkliste von Autor:innen kommt jetzt aus dem Katalog der Deutschen Nationalbibliothek, mit deutschen Titeln und Erscheinungsjahren. Ausgaben desselben Buchs werden zusammengefasst. Fällt der Katalog aus oder liefert zu wenig, gilt weiter Open Library.',
