@@ -763,3 +763,11 @@ hr.newshr{margin-inline:auto}
 @media (prefers-reduced-motion:reduce){.gh-run .ghdot,.gh-wait .ghdot{animation:none}}
 .ghnow.gh-run{border-color:#e3a21f}.ghnow.gh-fail{border-color:var(--danger,#b3261e)}
 .ghlist{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}.ghlist li{display:flex;gap:10px;align-items:center;font-size:13.5px}.ghlist .ght{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ghlist .ghm{color:var(--muted);white-space:nowrap}
+/* Handy: Zeile 1 Kalender und News, Zeile 2 die Kategorien, Zeile 3 die übrigen Punkte, jeweils zentriert */
+@media(max-width:760px){
+  .navtop{justify-content:center;gap:0 28px}
+  .navtop .nav{font-size:clamp(12px,3.4vw,15px);gap:5px;padding-inline:2px}
+  .navtop .nav svg{width:clamp(13px,3.8vw,16px);height:clamp(13px,3.8vw,16px)}
+  .navmain{justify-content:space-evenly;gap:0 4px;border-top:1px solid var(--line)}
+  .navtop+.navmain{border-top:1px solid var(--line)}
+}

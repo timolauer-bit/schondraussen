@@ -165,8 +165,9 @@
         key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
-    navMain.append(btn('cal', 'Kalender', 0));
-    if (D.dev && D.news && !S.preview) navMain.append(btn('news', 'News', 0, ' newsnav'));
+    var navTop = null;
+    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
+    else navMain.append(btn('cal', 'Kalender', 0));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
@@ -179,6 +180,7 @@
     navRest.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
     navRest.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); navRest.append(k);
+    if (navTop) topbar.append(navTop);
     topbar.append(navMain, navRest);
     renderVer();
   }
