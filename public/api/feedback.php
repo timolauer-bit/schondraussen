@@ -139,6 +139,13 @@ if ($a === 'newcount') { // rote Zahl an „Ideen“ und „Bugs“: Beiträge, 
     if (!$alpha) json_out(['ok' => true, 'n' => $o]);
     try {
         foreach ($pdo->query('SELECT kind, COUNT(*) c FROM feedback WHERE released_at IS NULL GROUP BY kind')->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($o[$r['kind']])) $o[$r['kind']] = (int) $r['c'];
+        // plus: seit dem letzten Besuch neu freigegeben („Aktuell“) oder erledigt („Erledigt“) – Summe aus allen drei Reiter-Zahlen
+        $sr = $pdo->prepare('SELECT fb_seen_feature, fb_seen_bug FROM users WHERE id=?'); $sr->execute([$u['id']]); $sn = $sr->fetch(PDO::FETCH_ASSOC) ?: [];
+        foreach (['feature' => 'fb_seen_feature', 'bug' => 'fb_seen_bug'] as $k => $col) {
+            if (empty($sn[$col])) continue;
+            $q = $pdo->prepare('SELECT SUM(done_at IS NULL AND released_at > ?) + SUM(done_at IS NOT NULL AND done_at > ?) FROM feedback WHERE kind=? AND released_at IS NOT NULL');
+            $q->execute([$sn[$col], $sn[$col], $k]); $o[$k] += (int) $q->fetchColumn();
+        }
     } catch (Throwable $e) {}
     json_out(['ok' => true, 'n' => $o]);
 }
