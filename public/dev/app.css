@@ -738,3 +738,4 @@ a.newssrc{display:inline-block;padding:2px 9px;border:1px solid var(--line);bord
 .chatform .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:10px;font-weight:650;line-height:1}
 .chatform .btn.attach{width:42px;min-width:42px;padding:0}
 .chatform .btn.attach .ico{width:18px;height:18px}
+.lockbtn .ico{margin:0;padding:0;width:16px;height:16px;display:flex;align-items:center;justify-content:center}.lockbtn .ico svg{width:16px;height:16px;display:block}
