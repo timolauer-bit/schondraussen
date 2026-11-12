@@ -1962,7 +1962,7 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links', 'Eintrag prüfen']], ['Mails', ['Testmail']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });
@@ -1971,6 +1971,8 @@
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Inhalte'; });
       }
+      var tl = TABS.filter(function (t) { return t[0] === 'Tools'; })[0][1].map(function (tt) { return cards.filter(function (c) { return c.querySelector('h3').textContent === tt; })[0]; }).filter(Boolean); // Tools: Karten in dieser Reihenfolge
+      tl.forEach(function (c) { c.parentNode.appendChild(c); });
       var nu = TABS.filter(function (t) { return t[0] === 'Nutzer'; })[0][1]; // „Rechte der Nutzergruppen“ steht ganz unten bei „Nutzer“
       var rgc = cards.filter(function (c) { return c.querySelector('h3').textContent === 'Rechte der Nutzergruppen'; })[0], lastNu = cards.filter(function (c) { return nu.indexOf(c.querySelector('h3').textContent) > -1 && c !== rgc; }).pop();
       if (rgc && lastNu) lastNu.after(rgc);
