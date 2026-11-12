@@ -189,6 +189,18 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         foreach (($r['release-groups'] ?? []) as $g) $groups[] = $g;
         if (count($groups) >= $total) break;
     }
+    $onlySingles = false;
+    if (!$groups) { // keine Alben oder EPs: dann die Singles anzeigen (sonst blieben viele Rap-/Pop-Künstler leer)
+        for ($page = 0; $page < 2; $page++) {
+            $r = http_json('https://musicbrainz.org/ws/2/release-group?fmt=json&limit=100&offset=' . ($page * 100) . '&type=single&artist=' . $ext['mbid']);
+            usleep(1100000);
+            if (!$r) break;
+            $total = (int) ($r['release-group-count'] ?? 0);
+            foreach (($r['release-groups'] ?? []) as $g) $groups[] = $g;
+            if (count($groups) >= $total) break;
+        }
+        $onlySingles = (bool) $groups;
+    }
     $works = []; $rel = [];
     foreach ($groups as $g) {
         $d = (string) ($g['first-release-date'] ?? '');
@@ -212,7 +224,7 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         foreach (array_slice($rel, 0, 40) as $x) $r->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
-    return ['ok' => true, 'msg' => count($works) . ' Alben, ' . count($rel) . ' kommende Veröffentlichungen'];
+    return ['ok' => true, 'msg' => count($works) . ($onlySingles ? ' Singles' : ' Alben') . ', ' . count($rel) . ' kommende Veröffentlichungen'];
 }
 
 // Kurzvorstellung (höchstens ca. 420 Zeichen) aus der Wikipedia, gefunden über die Verweise bei MusicBrainz bzw. Wikidata. Deutsch bevorzugt, sonst Englisch.

@@ -1074,7 +1074,7 @@
         lst('Noch nicht aktuell (älter als 12 Stunden oder nie geladen)', r.stale);
         var emp = r.empty || [];
         lst('Geprüft, aber ohne Werke', emp.filter(function (x) { return x.type !== 'artist'; }), 'Die Quelle hat nichts gefunden oder der Name passt nicht. „Treffer ändern“ im Menü des Eintrags hilft.');
-        lst('Künstler:innen ohne Alben oder EPs', emp.filter(function (x) { return x.type === 'artist'; }), 'Bei Musik werden nur Alben und EPs abgefragt. Wer nur Singles veröffentlicht hat (z. B. Noizy), bleibt hier stehen. Der Eintrag ist in Ordnung, die Beschreibung kommt aus Wikipedia.');
+        lst('Künstler:innen ohne Alben, EPs und Singles', emp.filter(function (x) { return x.type === 'artist'; }), 'Bei Musik werden Alben und EPs abgefragt, nur wenn es davon keine gibt, auch Singles. Wer hier steht, hat bei MusicBrainz nichts davon oder wurde noch nicht neu geladen. Die Beschreibung kommt aus Wikipedia.');
       });
     }
     cronLoad();
