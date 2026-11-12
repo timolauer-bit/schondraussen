@@ -741,3 +741,10 @@ a.newssrc{display:inline-block;padding:2px 9px;border:1px solid var(--line);bord
 .lockbtn .ico{margin:0;padding:0;width:16px;height:16px;display:flex;align-items:center;justify-content:center}.lockbtn .ico svg{width:16px;height:16px;display:block}
 .newsv .newsitem{margin:0}.newsv .newsitem>p:first-child{margin-top:4px}
 hr.newshr{width:55%;max-width:40ch;height:0;margin:12px 0;border:0;border-top:1px solid var(--line)}
+/* News testweise zentriert */
+.newsv{text-align:center}
+.newsv .newssec p,.newsv .newssec ul{margin-inline:auto}
+.newsv .newssec ul{display:table;text-align:left}
+.newsv .newssrcs{justify-content:center}
+.newsv .logold>summary h3,.newsv>summary h3{justify-content:center}
+hr.newshr{margin-inline:auto}
