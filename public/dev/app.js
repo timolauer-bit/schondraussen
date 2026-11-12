@@ -1470,6 +1470,8 @@
     var drafts = [], draftBox = h('div', { class: 'drafts' });
     var mailCk = h('input', { type: 'checkbox' }), mailRow = h('label', { class: 'mailck', hidden: !admin }, mailCk, ' Zusätzlich per E-Mail senden (mit Hinweis, dass man darauf nicht antworten kann)');
     var pick = h('select', { 'aria-label': 'Neue Unterhaltung mit einem Nutzer beginnen', class: 'userpick', onchange: function () { if (!pick.value) return; S.sup.sel = pick.value; pick.value = ''; drawThreads(); pull(); } }, h('option', { value: '' }, 'Nutzer anschreiben …'));
+    var dmPeers = [], dmPick = h('select', { 'aria-label': 'Chat mit einem Alphatester beginnen', class: 'userpick', onchange: function () { if (!dmPick.value) return; S.sup.sel = 'dm' + dmPick.value; dmPick.value = ''; drawThreads(); pull(); } }, h('option', { value: '' }, 'Alphatester anschreiben …'));
+    if (!admin && staff) api('/api/chat.php?a=dm_peers').then(function (r) { dmPeers = r.users || []; dmPeers.forEach(function (x) { dmPick.append(h('option', { value: String(x.id) }, x.username)); }); });
     if (admin) api('/api/chat.php?a=users').then(function (r) { (r.users || []).forEach(function (x) { pick.append(h('option', { value: String(x.id) }, (x.username || 'Mitglied') + ' · Nr. ' + x.id)); }); });
     var titleIn = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', hidden: true, 'aria-label': 'Kurzbeschreibung', placeholder: 'Kurzbeschreibung (erscheint als Titel in der Liste)', autocomplete: 'off', onkeydown: function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.focus(); } } });
     var attNote = h('p', { class: 'hint picnote' });
@@ -1507,7 +1509,7 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; if (admin) threads.append(pick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
+      threads.textContent = ''; if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
       S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
     }
     function pull() {
@@ -1526,7 +1528,7 @@
         });
       };
       if (staff) api('/api/chat.php?a=threads').then(function (r) {
-        var l = r.threads || []; if (!admin) { var tix = l.filter(function (x) { return x.id === 'team'; }), dms = l.filter(function (x) { return x.id !== 'team'; }); l = tix.concat([{ id: 'me', username: 'Chat mit dem Administrator', last_body: '', last_admin: 0, unread: 0 }], dms); }
+        var l = r.threads || []; if (!admin) { var tix = l.filter(function (x) { return x.id === 'team'; }), dms = l.filter(function (x) { return x.id !== 'team'; }); l = tix.concat([{ id: 'me', username: 'Chat mit dem Administrator', last_body: '', last_admin: 0, unread: 0 }], dms); if (isDm() && !l.some(function (x) { return x.id === S.sup.sel; })) { var pr = dmPeers.filter(function (x) { return 'dm' + x.id === S.sup.sel; })[0]; if (pr) l.push({ id: S.sup.sel, username: pr.username, last_body: '', last_admin: 0, unread: 0 }); } }
         S.sup.threads = l;
         if (!S.sup.sel) { var tm = l.filter(function (x) { return x.id === 'team'; })[0]; S.sup.sel = tm && +tm.unread > 0 ? 'team' : (admin ? ((l.filter(function (x) { return x.id !== 'team'; })[0] || tm || {}).id || null) : 'me'); }
         drawThreads(); go2(); }); else go2();

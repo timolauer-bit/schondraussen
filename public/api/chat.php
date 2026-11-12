@@ -85,6 +85,9 @@ function alpha_peers(PDO $pdo, int $me): array {
     try { return $pdo->query("SELECT id, username FROM users WHERE alpha=1 AND role<>'admin' AND id<>" . (int) $me . " AND approved_at IS NOT NULL AND admin_deleted=0 AND delete_requested_at IS NULL ORDER BY username IS NULL, username, id LIMIT 200")->fetchAll(PDO::FETCH_ASSOC); }
     catch (Throwable $e) { return []; }
 }
+if ($a === 'dm_peers' && is_alpha($u) && !$admin) { // Auswahlliste „Alphatester anschreiben …“
+    json_out(['users' => array_map(fn($r) => ['id' => (int) $r['id'], 'username' => trim((string) $r['username']) !== '' ? $r['username'] : 'User-' . $r['id']], alpha_peers($pdo, (int) $u['id']))]);
+}
 if (($a === 'dm_thread' || $a === 'dm_send') && is_alpha($u) && !$admin) {
     $peer = (int) ($_GET['uid'] ?? body()['uid'] ?? 0); $ok = false; foreach (alpha_peers($pdo, (int) $u['id']) as $pr) if ((int) $pr['id'] === $peer) $ok = true;
     if (!$ok) json_out(['error' => 'Diese Person ist kein Alphatester.'], 404);
@@ -122,7 +125,7 @@ if ($a === 'threads' && ($admin || is_alpha($u))) {
     if (!$admin) try { // Direktchats mit den anderen Alphatestern
         foreach (alpha_peers($pdo, (int) $u['id']) as $pr) {
             $pid = (int) $pr['id'];
-            $q = $pdo->prepare('SELECT body, from_id, created_at FROM alpha_dm WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY id DESC LIMIT 1'); $q->execute([$u['id'], $pid, $pid, $u['id']]); $l = $q->fetch(PDO::FETCH_ASSOC) ?: [];
+            $q = $pdo->prepare('SELECT body, from_id, created_at FROM alpha_dm WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY id DESC LIMIT 1'); $q->execute([$u['id'], $pid, $pid, $u['id']]); $l = $q->fetch(PDO::FETCH_ASSOC) ?: []; if (!$l) continue; // nur Unterhaltungen, die es schon gibt (neue über die Auswahl)
             $q = $pdo->prepare('SELECT COUNT(*) FROM alpha_dm WHERE from_id=? AND to_id=? AND read_at IS NULL'); $q->execute([$pid, $u['id']]);
             $rows[] = ['id' => 'dm' . $pid, 'username' => trim((string) $pr['username']) !== '' ? $pr['username'] : 'User-' . $pid, 'last_body' => $l['body'] ?? '', 'last_admin' => isset($l['from_id']) && (int) $l['from_id'] === (int) $u['id'] ? 1 : 0, 'last_at' => $l['created_at'] ?? null, 'unread' => (int) $q->fetchColumn(), 'dm' => 1];
         }
