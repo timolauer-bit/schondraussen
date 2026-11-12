@@ -1394,8 +1394,9 @@
   }
   function newsDate(d) { try { return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (_) { return d; } }
   function newsDay(x, forAdmin) {
-    var sec = function (cap, title, text) { return (title || text) ? h('div', { class: 'newssec' }, h('h4', { class: 'logcat' }, cap), title ? h('h5', { class: 'newst' }, title) : null, newsBody(text)) : null; };
-    return [sec('Seitennews', x.site_title, x.site_text), sec('News zu Inhalten', x.content_title, x.content_text)].filter(Boolean);
+    var src = function (t) { var l = String(t || '').split('\n').map(function (ln) { var i = ln.indexOf('|'), u = i < 0 ? ln.trim() : ln.slice(i + 1).trim(), n = i < 0 ? u : ln.slice(0, i).trim(); return /^https?:\/\//i.test(u) ? h('a', { class: 'newssrc', href: u, target: '_blank', rel: 'noopener noreferrer' }, n) : null; }).filter(Boolean); return l.length ? h('p', { class: 'newssrcs' }, h('span', null, 'Quellen'), l) : null; };
+    var sec = function (cap, title, text, sources) { return (title || text) ? h('div', { class: 'newssec' }, h('h4', { class: 'logcat' }, cap), title ? h('h5', { class: 'newst' }, title) : null, newsBody(text), src(sources)) : null; };
+    return [sec('Seitennews', x.site_title, x.site_text, x.site_sources), sec('News zu Inhalten', x.content_title, x.content_text, x.content_sources)].filter(Boolean);
   }
   function newsView() {
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.'));
@@ -1872,8 +1873,8 @@
     (function () {
       var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
       var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }),
-        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), cx = h('textarea', { rows: '6', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }), old = h('div', null), all = [];
-      function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; }
+        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), ss = h('textarea', { rows: '2', placeholder: 'Quellen, eine pro Zeile: Name | https://…' }), cs = h('textarea', { rows: '3', placeholder: 'Quellen, eine pro Zeile: Name | https://…' }), cx = h('textarea', { rows: '6', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }), old = h('div', null), all = [];
+      function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; ss.value = x.site_sources || ''; cs.value = x.content_sources || ''; }
       function say2(t, bad) { newsMsg.className = 'msg' + (bad ? ' err' : ''); newsMsg.textContent = t; }
       function load() {
         api('/api/news.php?a=list').then(function (r) {
@@ -1891,9 +1892,9 @@
       day.addEventListener('change', function () { fill(day.value); say2(''); });
       newsAdm.append(
         h('label', { class: 'field' }, h('span', null, 'Tag (gleicher Tag überschreibt die vorhandene Meldung)'), day),
-        h('h4', { class: 'logcat' }, 'Seitennews'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), st), h('label', { class: 'field' }, h('span', null, 'Haupttext'), sx),
-        h('h4', { class: 'logcat' }, 'News zu Inhalten'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), ct), h('label', { class: 'field' }, h('span', null, 'Haupttext'), cx),
-        h('p', null, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/news.php?a=save', { day: day.value, site_title: st.value, site_text: sx.value, content_title: ct.value, content_text: cx.value }).then(function (z) { if (z && z.ok) { say2('Gespeichert.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Speichern'), ' ', newsMsg),
+        h('h4', { class: 'logcat' }, 'Seitennews'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), st), h('label', { class: 'field' }, h('span', null, 'Haupttext'), sx), h('label', { class: 'field' }, h('span', null, 'Quellen (optional, eine pro Zeile: Name | Link)'), ss),
+        h('h4', { class: 'logcat' }, 'News zu Inhalten'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), ct), h('label', { class: 'field' }, h('span', null, 'Haupttext'), cx), h('label', { class: 'field' }, h('span', null, 'Quellen (optional, eine pro Zeile: Name | Link)'), cs),
+        h('p', null, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/news.php?a=save', { day: day.value, site_title: st.value, site_text: sx.value, content_title: ct.value, content_text: cx.value, site_sources: ss.value, content_sources: cs.value }).then(function (z) { if (z && z.ok) { say2('Gespeichert.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Speichern'), ' ', newsMsg),
         h('h4', { class: 'logcat' }, 'Bisherige News'), old);
       load();
     })();
