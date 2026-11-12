@@ -319,6 +319,7 @@ button.ver{min-width:7.8em;min-height:30px;box-sizing:border-box}
 .nav.ionly .badge{position:absolute;top:1px;right:-4px;margin:0}
 .nav.ionly[aria-current=page] .badge{position:static;margin-left:6px}
 .nav:not(.ionly) .ico svg{width:16px;height:16px}
+@media(min-width:761px) and (max-width:1699px){.nav.ionly[aria-current=page] .lbl{display:none}.nav.ionly[aria-current=page] .badge{position:absolute;margin:0}}
 .whobox{flex-direction:row;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:8px}
 @media(min-width:900px){.whobox{flex-wrap:nowrap}}
 

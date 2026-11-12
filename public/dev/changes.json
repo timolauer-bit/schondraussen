@@ -8,5 +8,6 @@
 "Einstellungen → Reiter umsortiert (Profil: Meine Daten, Profilkarte; Daten: Benutzername, E-Mail, Import), 5 eigene Genres; „Optik/Optionen“, „E-Mail-Benachrichtigungen“, Kalender-Abo davor",
 "Musik → Künstler:innen ohne Alben/EPs zeigen ihre Singles (Server, gilt auch live)",
 "Musik → bei Künstler:innen mit nur Singles steht „Veröffentlichungen“ statt „Alben“",
-"Kontakt → Alphatester können sich untereinander Direktnachrichten schreiben (links je ein Punkt pro Alphatester, Migration 073)"
+"Kontakt → Alphatester können sich untereinander Direktnachrichten schreiben (links je ein Punkt pro Alphatester, Migration 073)",
+"Obere Leiste (Desktop) → aktives Symbol zeigt seinen Namen nur noch ab 1700 px Breite, damit „Kontakt“ nicht in eine zweite Zeile rutscht"
 ]
