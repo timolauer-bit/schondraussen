@@ -168,8 +168,8 @@ try {
         if (!valid_email($email)) json_out(['error' => 'Bitte eine gültige E-Mail-Adresse eingeben.'], 422);
         if (strlen($pw) < 10) json_out(['error' => 'Das Passwort braucht mindestens 10 Zeichen.'], 422); if (strlen($pw) > 72) json_out(['error' => 'Das Passwort darf höchstens 72 Zeichen haben.'], 422);
         if (empty($b['accept'])) json_out(['error' => 'Bitte Datenschutzerklärung und Nutzungsbedingungen bestätigen.'], 422);
-        $uname = trim((string) ($b['username'] ?? ''));
-        if ($err = username_error($uname)) json_out(['error' => $err], 422);
+        $uname = trim((string) ($b['username'] ?? '')); // leer erlaubt: dann bekommt das Konto den Namen „User-<Nummer>“ (Anmeldung läuft hier über die E-Mail-Adresse)
+        if ($uname !== '' && ($err = username_error($uname))) json_out(['error' => $err], 422);
         $inv = null; $itok = trim((string) ($b['invite'] ?? ''));
         if ($itok !== '') { // Einladungslink (einmal verwendbar)
             try { $q = $pdo->prepare('SELECT id,email FROM invites WHERE token_hash=? AND used_at IS NULL AND expires_at > NOW()'); $q->execute([hash('sha256', $itok)]); $inv = $q->fetch() ?: null; } catch (Throwable $e) { $inv = null; }
@@ -184,9 +184,10 @@ try {
         } elseif (!email_blocked($pdo, $email)) {
             $first = (int) $pdo->query('SELECT COUNT(*) c FROM users')->fetch()['c'] === 0;
             try {
-                $t = $pdo->prepare('SELECT 1 FROM users WHERE username=?'); $t->execute([$uname]);
-                if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
-                $pdo->prepare('INSERT INTO users (email,pass_hash,role,username,username_changed_at) VALUES (?,?,?,?,NOW())')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user', $uname]);
+                if ($uname !== '') { $t = $pdo->prepare('SELECT 1 FROM users WHERE username=?'); $t->execute([$uname]);
+                    if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409); }
+                $pdo->prepare('INSERT INTO users (email,pass_hash,role,username,username_changed_at) VALUES (?,?,?,?,' . ($uname !== '' ? 'NOW()' : 'NULL') . ')')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user', $uname !== '' ? $uname : null]);
+                if ($uname === '') { $nid0 = (int) $pdo->lastInsertId(); try { $pdo->prepare('UPDATE users SET username=? WHERE id=? AND username IS NULL')->execute(['User-' . $nid0, $nid0]); } catch (Throwable $e0) {} }
             } catch (PDOException $e) {
                 if (strpos($e->getMessage(), 'username') !== false && strpos($e->getMessage(), 'Unknown column') === false) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
                 $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']); // Spalte fehlt noch (migrate.php)
