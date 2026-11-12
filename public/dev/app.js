@@ -1671,7 +1671,7 @@
             cf.append(cta, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' },
               h('button', { class: 'btn small', type: 'button', onclick: function () { var t = cta.value.trim(); if (!t) return; api('/api/feedback.php?a=comment', { id: x.id, text: t }).then(function (r2) { if (r2.ok) { S.fbOpen = S.fbOpen || {}; S.fbOpen[x.id] = 1; reload(); } else { cmsg.className = 'msg err'; cmsg.textContent = r2.error || 'Das hat nicht geklappt.'; } }); } }, 'Kommentar speichern'),
               h('button', { class: 'btn ghost small', type: 'button', onclick: function () { cf.hidden = true; } }, 'Abbrechen'), cmsg));
-            cBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Internen Kommentar schreiben', onclick: function () { body.hidden = false; head.setAttribute('aria-expanded', 'true'); cf.hidden = !cf.hidden; if (!cf.hidden) cta.focus(); } }, 'Kommentar' + ((x.comments || []).length ? ' (' + x.comments.length + ')' : ''));
+            cBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Internen Kommentar schreiben', onclick: function () { body.hidden = false; head.setAttribute('aria-expanded', 'true'); cf.hidden = !cf.hidden; if (!cf.hidden) cta.focus(); } }, 'Kommentar');
           }
           cBox = h('div', { class: 'fbcbox' }, cl, cf);
           if ((x.comments || []).length || lastR.cwrite) body.append(cBox);
