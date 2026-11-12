@@ -77,7 +77,12 @@ if ($a === 'list') {
             unset($r);
         } catch (Throwable $e) {}
     }
-    json_out(['items' => $rows, 'admin' => $admin, 'alpha' => $alpha]);
+    $out = ['items' => $rows, 'admin' => $admin, 'alpha' => $alpha];
+    if ($alpha && ($_GET['open'] ?? '') === '1') { // Beim Öffnen der Seite: letzten Besuch zurückgeben (für „neu“-Markierungen) und neu vermerken
+        $col = $kind === 'bug' ? 'fb_seen_bug' : 'fb_seen_feature';
+        try { $sq = $pdo->prepare("SELECT $col FROM users WHERE id=?"); $sq->execute([$u['id']]); $out['seen'] = $sq->fetchColumn() ?: null; $pdo->prepare("UPDATE users SET $col=NOW() WHERE id=?")->execute([$u['id']]); } catch (Throwable $e) { $out['seen'] = null; }
+    }
+    json_out($out);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
 $b = body();
@@ -129,17 +134,12 @@ if ($a === 'edit') { // Die einreichende Person darf Kurzbeschreibung und Detail
     } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
-if ($a === 'newcount') { // rote Zahl an „Ideen“ und „Bugs“: neue Beiträge anderer seit dem letzten Besuch (nur Admin und Alphatester)
+if ($a === 'newcount') { // rote Zahl an „Ideen“ und „Bugs“: Beiträge, die auf Freigabe warten (nur Admin und Alphatester, auch eigene)
     $o = ['feature' => 0, 'bug' => 0];
     if (!$alpha) json_out(['ok' => true, 'n' => $o]);
-    $cur = (string) ($_GET['cur'] ?? '');
     try {
-        $row = $pdo->prepare('SELECT fb_seen_feature, fb_seen_bug FROM users WHERE id=?'); $row->execute([$u['id']]); $seen = $row->fetch(PDO::FETCH_ASSOC) ?: [];
-        foreach (['feature' => 'fb_seen_feature', 'bug' => 'fb_seen_bug'] as $k => $col) {
-            if ($seen[$col] === null || $cur === $k) { $pdo->prepare("UPDATE users SET $col=NOW() WHERE id=?")->execute([$u['id']]); continue; }
-            $c = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE kind=? AND created_at > ? AND user_id<>?'); $c->execute([$k, $seen[$col], $u['id']]); $o[$k] = (int) $c->fetchColumn();
-        }
-    } catch (Throwable $e) { json_out(['ok' => true, 'n' => $o]); }
+        foreach ($pdo->query('SELECT kind, COUNT(*) c FROM feedback WHERE released_at IS NULL GROUP BY kind')->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($o[$r['kind']])) $o[$r['kind']] = (int) $r['c'];
+    } catch (Throwable $e) {}
     json_out(['ok' => true, 'n' => $o]);
 }
 if ($a === 'vote') { // Abstimmen dürfen alle, aber nur bei freigegebenen Ideen

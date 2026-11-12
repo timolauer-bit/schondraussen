@@ -170,7 +170,7 @@
     if ((D.admin || D.devsw) && !S.preview) { var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', title: D.dev ? 'Du siehst die Entwicklungsversion. Klicken für die Live-Version.' : 'Du siehst die Live-Version. Klicken für die Entwicklungsversion.', onclick: function () { api('/api/data.php?a=devmode', { on: !D.dev }).then(function () { location.reload(); }); } }, D.dev ? 'Dev' : 'Live'); var dn = (D.devnotes || []).filter(function (x) { return typeof x === 'string' && x; }); if (dn.length) { dsw.append(h('span', { class: 'devbadge', 'aria-hidden': 'true' }, String(dn.length))); dsw.title += '\n\nUnterschiede der Entwicklungsversion zur Live-Version (' + dn.length + '):\n• ' + dn.join('\n• '); dsw.setAttribute('aria-label', (D.dev ? 'Dev' : 'Live') + ', ' + dn.length + ' Unterschiede zur Live-Version'); } var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
     navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
-    function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' neu seit deinem letzten Besuch' }, n > 99 ? '99+' : String(n))); return b; }
+    function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' warten auf Freischaltung' }, n > 99 ? '99+' : String(n))); return b; }
     if (feat('feat')) navRest.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
     navRest.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
     navRest.append(btn('info', 'Info', 0, ' info'));
@@ -1477,25 +1477,26 @@
     grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
-    if (!S.preview && (D.admin || D.alpha)) { S.fbNew = S.fbNew || {}; S.fbNew[kind === 'bug' ? 'bug' : 'feat'] = 0; fbPoll(true); }
+    if (!S.preview && (D.admin || D.alpha)) fbPoll();
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
       h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
-    S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null;
+    S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null, seen = null, firstLoad = true, tabSeen = {};
     function grp(x) { return staff && !x.released_at ? 'rel' : (x.done_at ? 'done' : 'cur'); }
+    function isNew(x) { if (!staff || !seen) return false; var g = grp(x), t = g === 'cur' ? x.released_at : (g === 'done' ? x.done_at : null); return !!t && String(t) > String(seen); }
     var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen']].concat(staff ? [['rel', 'Freischaltungen']] : []), tbtn = {};
     if (!TABS.some(function (t) { return t[0] === S.fbTab[tabKey]; })) S.fbTab[tabKey] = 'cur';
     var tbar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': bug ? 'Bugs' : 'Ideen' });
-    TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
+    TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; tabSeen[t[0]] = true; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
     mainEl.prepend(tbar);
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
-      var cnt = { cur: 0, done: 0, rel: 0 }; l.forEach(function (x) { cnt[grp(x)]++; });
-      TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); });
+      var cnt = { cur: 0, done: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
+      TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); var nn = t[0] === 'rel' ? cnt.rel : (tabSeen[t[0]] ? 0 : newN[t[0]]); if (on && t[0] !== 'rel') tabSeen[t[0]] = true; if (nn && !(on && t[0] !== 'rel')) b.append(h('span', { class: 'badge', 'aria-label': nn + (t[0] === 'rel' ? ' warten auf Freischaltung' : ' neu seit deinem letzten Besuch') }, String(nn))); });
       var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
       if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? 'Nichts wartet auf Freischaltung.' : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
       var pendHead = false;
@@ -1568,12 +1569,12 @@
           ownBtns.slice().reverse().forEach(function (b) { rg2.prepend(b); });
           acts.append(rg2);
         } else if (ownBtns.length) acts.append(h('span', { class: 'fbright' }, ownBtns));
-        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
+        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') + (isNew(x) ? ' isnew' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
         if (!x.released_at && !staff && !pendHead) { pendHead = true; box.append(h('h3', { class: 'fbdiv' }, staff ? 'Noch nicht freigegeben (nur für Admin und Alphatester sichtbar)' : 'Deine Beiträge, die noch auf Freigabe warten')); }
         box.append(row);
       });
     }
-    function reload() { api('/api/feedback.php?a=list&kind=' + kind).then(draw); }
+    function reload() { var op = firstLoad && staff; firstLoad = false; api('/api/feedback.php?a=list&kind=' + kind + (op ? '&open=1' : '')).then(function (r) { if (op && r) seen = r.seen || null; draw(r); }); }
     reload();
   }
   function editedSpan(x, field, text) {
@@ -1584,8 +1585,7 @@
   }
   function fbPoll(mark) { // mark: nur beim Öffnen der Liste als „gesehen“ vermerken, nicht bei den Abfragen im Hintergrund
     if (S.preview || !(D.admin || D.alpha)) return;
-    var cur = mark ? (S.view === 'feat' ? 'feature' : (S.view === 'bug' ? 'bug' : '')) : '';
-    api('/api/feedback.php?a=newcount&cur=' + cur).then(function (r) {
+    api('/api/feedback.php?a=newcount').then(function (r) {
       if (!r || !r.n) return; var n = { feat: +r.n.feature || 0, bug: +r.n.bug || 0 }, o = S.fbNew || {};
       if (n.feat !== (o.feat || 0) || n.bug !== (o.bug || 0)) { S.fbNew = n; nav(); }
     });
@@ -1858,5 +1858,5 @@
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(true); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();
