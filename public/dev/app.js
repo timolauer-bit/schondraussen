@@ -711,14 +711,14 @@
         draw(); gcols.append(h('div', { class: 'gcol' }, h('p', { class: 'plab' }, TYPES[t].plural, cap), box));
       });
       wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres (bis zu 5 je Kategorie)'), gcols);
-      var cu = (v.favs.custom = (v.favs.custom || []).filter(function (x) { return x && typeof x === 'object'; }).slice(0, 2)), crow = h('div', { class: 'custg' });
-      [0, 1].forEach(function (i) {
+      var cu = (v.favs.custom = (v.favs.custom || []).filter(function (x) { return x && typeof x === 'object'; }).slice(0, 5)), crow = h('div', { class: 'custg' });
+      [0, 1, 2, 3, 4].forEach(function (i) {
         var cur = cu[i] || { t: 'artist', g: '' }; cu[i] = cur;
         var sl = h('select', { 'aria-label': 'Kategorie von Genre ' + (i + 1), onchange: function () { cur.t = sl.value; } }, ['author', 'artist', 'film', 'series'].map(function (t) { return h('option', { value: t, selected: cur.t === t ? true : null }, TYPES[t].plural); }));
-        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i ? 'z. B. Neoklassik' : 'z. B. Cozy Crime', oninput: function () { cur.g = ti.value; } });
+        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i === 1 ? 'z. B. Neoklassik' : (i === 0 ? 'z. B. Cozy Crime' : ''), oninput: function () { cur.g = ti.value; } });
         crow.append(h('div', { class: 'inline' }, sl, ti));
       });
-      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
+      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 5)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
       function doSave(m) {
         m.className = 'msg'; m.textContent = '';
         api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { m.className = 'msg ok'; m.textContent = 'Gespeichert.'; } else { m.className = 'msg err'; m.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
@@ -813,7 +813,7 @@
       h('p', { style: 'margin:4px 0 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
         h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/data.php?a=bellall', { on: true }).then(function () { load(function () { render(); }); }); } }, 'Alle Glocken an'),
         h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/data.php?a=bellall', { on: false }).then(function () { load(function () { render(); }); }); } }, 'Alle Glocken aus'), sv));
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benachrichtigungen'), D.email ? null : h('p', { class: 'warnbox', style: 'margin:0 0 10px' }, 'Dein Konto hat keine E-Mail-Adresse, deshalb bekommst du keine Benachrichtigungen per Mail. Den Kalender und die Einträge siehst du weiter hier auf der Seite.'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'E-Mail-Benachrichtigungen'), D.email ? null : h('p', { class: 'warnbox', style: 'margin:0 0 10px' }, 'Dein Konto hat keine E-Mail-Adresse, deshalb bekommst du keine Benachrichtigungen per Mail. Den Kalender und die Einträge siehst du weiter hier auf der Seite.'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'), opts,
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
     var imp = h('div', { class: 'wide2' }), impBtns = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }), impPanels = h('div'); imp.append(impBtns, impPanels);
@@ -1012,12 +1012,12 @@
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
     // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
-    st.append(setCard('Profil', [K[0], K[1], emailBox(), K[2]]), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Optik/Optionen', [K[3]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
-    st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'), setCard('Meine Daten', [K[9], K[11]], 'solo'));
+    st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      var T = [['Profil', ['Profil', 'Profilkarte']], ['Darstellung', ['Darstellung', 'Benachrichtigungen', 'Kalender-Abo']], ['Daten', ['Import', 'Meine Daten']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var T = [['Profil', ['Meine Daten', 'Benutzername', 'E-Mail und Wiederherstellung', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });

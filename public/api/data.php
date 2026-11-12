@@ -111,14 +111,14 @@ if ($a === 'profile_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $l = []; foreach ((array) (($b['favs'] ?? [])[$t] ?? []) as $g) { $g = trim((string) $g); if ($g !== '' && mb_strlen($g) <= 40 && preg_match('/^[\p{L}\p{N} &\-\/.,\x27]+$/u', $g) && !in_array($g, $l, true)) $l[] = $g; }
         if ($l) $favs[$t] = array_slice($l, 0, 5);
     }
-    $cust = []; // bis zu 2 eigene Genres, je mit Kategorie
+    $cust = []; // bis zu 5 eigene Genres, je mit Kategorie
     foreach ((array) (($b['favs'] ?? [])['custom'] ?? []) as $c) {
         if (!is_array($c)) continue; $ct = (string) ($c['t'] ?? ''); $cg = trim((string) ($c['g'] ?? ''));
         if ($cg === '' || !in_array($ct, ['author', 'artist', 'film', 'series'], true)) continue;
         if (mb_strlen($cg) > 24 || !preg_match('/^[\p{L}\p{N} &\-\/.,\x27]+$/u', $cg)) json_out(['error' => 'Eigene Genres: höchstens 24 Zeichen, nur Buchstaben, Ziffern und einfache Satzzeichen.'], 422);
         $cust[] = ['t' => $ct, 'g' => $cg];
     }
-    if ($cust) $favs['custom'] = array_slice($cust, 0, 2);
+    if ($cust) $favs['custom'] = array_slice($cust, 0, 5);
     try { $pdo->prepare('UPDATE users SET display_name=?, birth_year=?, birth_date=?, age_fixed=?, age_show=?, avatar=?, fav_genres=? WHERE id=?')->execute([$name !== '' ? $name : null, $yr, $bdv, $fixed, $show, $av !== '' ? $av : null, $favs ? json_encode($favs, JSON_UNESCAPED_UNICODE) : null, $u['id']]); }
     catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
