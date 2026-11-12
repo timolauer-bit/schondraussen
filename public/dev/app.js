@@ -1072,7 +1072,9 @@
         }
         function lst(title, items, note) { if (!items || !items.length) return; cronBox.append(h('details', { class: 'cronlist' }, h('summary', null, title + ' (' + items.length + (items.length >= 40 ? '+' : '') + ')'), note ? h('p', { class: 'hint' }, note) : null, h('ul', null, items.map(function (x) { return h('li', null, (TYPES[x.type] ? TYPES[x.type].label : x.type) + ': ' + x.name + ' · Stand ' + ts(x.fetched_at)); })))); }
         lst('Noch nicht aktuell (älter als 12 Stunden oder nie geladen)', r.stale);
-        lst('Geprüft, aber ohne Werke', r.empty, 'Die Quelle hat nichts gefunden oder der Name passt nicht. „Treffer ändern“ im Menü des Eintrags hilft.');
+        var emp = r.empty || [];
+        lst('Geprüft, aber ohne Werke', emp.filter(function (x) { return x.type !== 'artist'; }), 'Die Quelle hat nichts gefunden oder der Name passt nicht. „Treffer ändern“ im Menü des Eintrags hilft.');
+        lst('Künstler:innen ohne Alben oder EPs', emp.filter(function (x) { return x.type === 'artist'; }), 'Bei Musik werden nur Alben und EPs abgefragt. Wer nur Singles veröffentlicht hat (z. B. Noizy), bleibt hier stehen. Der Eintrag ist in Ordnung, die Beschreibung kommt aus Wikipedia.');
       });
     }
     cronLoad();
