@@ -1017,7 +1017,7 @@
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      var T = [['Profil', ['Meine Daten', 'Benutzername', 'E-Mail und Wiederherstellung', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });
