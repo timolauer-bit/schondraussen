@@ -782,3 +782,13 @@ hr.newshr{margin-inline:auto}
 }
 /* Handy: die sechs Admin-Reiter passen in eine Zeile */
 @media(max-width:600px){.admtabs.admnav{flex-wrap:nowrap;gap:2px}.admtabs.admnav .admtab{flex:1 1 auto;min-width:0;padding:8px clamp(3px,1.3vw,8px);font-size:clamp(11.5px,3.5vw,14px);text-align:center;white-space:nowrap}.admtabs.admnav .admtab .badge{margin-left:3px}}
+/* Handy: Dev/Live, Benutzername, Version und Abmelden in einer Zeile */
+@media(max-width:760px){
+  .whobox{flex-wrap:nowrap;gap:6px;justify-content:flex-start;width:100%}
+  .whobox .who{min-width:0;max-width:34vw;padding:6px 10px}
+  .whobox .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex}
+  .whorow{flex-wrap:nowrap;gap:6px;margin-left:auto}
+  button.ver{min-width:0;padding:6px 10px}
+}
+@media(max-width:760px){button.ver{white-space:nowrap}}
+@media(max-width:360px){button.ver{font-size:11px;padding:6px 7px;letter-spacing:0}.whobox .who{max-width:26vw}}
