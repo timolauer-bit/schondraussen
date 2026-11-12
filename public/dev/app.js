@@ -301,7 +301,7 @@
     if (kd) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Filter zurücksetzen', onclick: function () { S.kind.author = ''; filt(); rows(); } }, (kd === 'series' ? 'Reihen' : 'Autor:innen') + ' ×'));
     if (g) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Genre-Filter zurücksetzen', onclick: function () { S.genre[S.cat] = ''; filt(); rows(); } }, g + ' ×'));
   }
-  function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? pl(e.works, 'Album', 'Alben') : e.type === 'podcast' ? pl(e.works, 'Folge', 'Folgen') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
+  function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? (+e.singles === +e.works ? pl(e.works, 'Veröffentlichung', 'Veröffentlichungen') : pl(e.works, 'Album', 'Alben')) : e.type === 'podcast' ? pl(e.works, 'Folge', 'Folgen') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
   function rows() {
     var box = $('list'); box.textContent = '';
     var es = sortedEntries(S.cat), t = TYPES[S.cat], gq = S.genre[S.cat] || '', fq = (S.filter || '').trim().toLowerCase();
@@ -356,7 +356,7 @@
   function nextBox(e, r, up, t) {
     var now = today0(), nxt = null, node = h('aside', { class: 'nextbox' });
     up.slice().sort(function (a, b) { return a.p.sort - b.p.sort; }).forEach(function (it) { if (!nxt && it.p.prec !== 'none' && it.p.end >= now) nxt = it; });
-    var cap = { series: 'Nächste Folge', podcast: 'Aktuelle Folge', author: 'Nächste Veröffentlichung', artist: 'Neues Album', film: 'Im Kino' }[e.type] || 'Nächster Termin';
+    var cap = { series: 'Nächste Folge', podcast: 'Aktuelle Folge', author: 'Nächste Veröffentlichung', artist: +e.singles > 0 && +e.singles === +e.works ? 'Neue Veröffentlichung' : 'Neues Album', film: 'Im Kino' }[e.type] || 'Nächster Termin';
     if (e.type === 'podcast') nxt = up.length ? up.slice().sort(function (a, b) { return b.p.sort - a.p.sort; })[0] : null;
     node.append(h('small', null, cap));
     if (nxt) {
@@ -375,7 +375,7 @@
       var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
     } else {
       var tot = Math.max(+e.total_works || 0, r.works.length), dn2 = doneSetOf(r), c1 = 0; r.works.forEach(function (w) { if (dn2[w.k]) c1++; });
-      if (tot) st.append(h('span', null, h('b', null, tot), ' ' + (e.type === 'author' ? 'Bücher' : e.type === 'artist' ? 'Alben' : e.type === 'podcast' ? 'Folgen' : 'Werke')));
+      if (tot) st.append(h('span', null, h('b', null, tot), ' ' + (e.type === 'author' ? 'Bücher' : e.type === 'artist' ? (+e.singles > 0 && +e.singles === +e.works ? 'Veröffentlichungen' : 'Alben') : e.type === 'podcast' ? 'Folgen' : 'Werke')));
       if (r.works.length && e.type !== 'podcast') { var dv0 = (DONEV[e.type] || DONEV.artist)[0]; st.append(h('span', null, h('b', null, c1), ' ' + dv0)); }
       if (st.childNodes.length) node.append(st);
     }
