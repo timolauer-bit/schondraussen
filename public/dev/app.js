@@ -1388,7 +1388,17 @@
   }
 
   /* ---------- News ---------- */
-  function newsBody(t) { // Klartext: Leerzeile = neuer Absatz, Zeilen mit „- “ als Liste
+  function newsSrc(list) { var l = list.map(function (ln) { var i = ln.indexOf('|'), u = i < 0 ? ln.trim() : ln.slice(i + 1).trim(), n = i < 0 ? u : ln.slice(0, i).trim(); return /^https?:\/\//i.test(u) ? h('a', { class: 'newssrc', href: u, target: '_blank', rel: 'noopener noreferrer' }, n) : null; }).filter(Boolean); return l.length ? h('p', { class: 'newssrcs' }, h('span', null, 'Quellen'), l) : null; }
+  function newsBody(t) { // einzelne News durch eine Zeile „---“ getrennt; Zeilen „Quelle: Name | Link“ gehören zur jeweiligen News
+    var items = String(t || '').split(/\n\s*-{3,}\s*(?:\n|$)/).map(function (s) { return s.trim(); }).filter(Boolean), out = [];
+    items.forEach(function (it, i) {
+      var src = [], txt = []; it.split('\n').forEach(function (ln) { var m = /^\s*Quellen?:\s*(.+)$/i.exec(ln); if (m) src.push(m[1]); else txt.push(ln); });
+      if (i) out.push(h('hr', { class: 'newshr' }));
+      out.push(h('div', { class: 'newsitem' }, newsText(txt.join('\n')), newsSrc(src)));
+    });
+    return out;
+  }
+  function newsText(t) { // Klartext: Leerzeile = neuer Absatz, Zeilen mit „- “ als Liste
     var out = [], lines = String(t || '').split('\n'), para = [], list = [];
     function flush() { if (para.length) { out.push(h('p', null, para.join(' '))); para = []; } if (list.length) { out.push(h('ul', null, list.map(function (x) { return h('li', null, x); }))); list = []; } }
     lines.forEach(function (ln) { if (!ln.trim()) { flush(); return; } if (/^\s*[-•]\s+/.test(ln)) { if (para.length) flush(); list.push(ln.replace(/^\s*[-•]\s+/, '')); } else { if (list.length) flush(); para.push(ln.trim()); flush(); } });
@@ -1396,7 +1406,7 @@
   }
   function newsDate(d) { try { return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (_) { return d; } }
   function newsDay(x, forAdmin) {
-    var src = function (t) { var l = String(t || '').split('\n').map(function (ln) { var i = ln.indexOf('|'), u = i < 0 ? ln.trim() : ln.slice(i + 1).trim(), n = i < 0 ? u : ln.slice(0, i).trim(); return /^https?:\/\//i.test(u) ? h('a', { class: 'newssrc', href: u, target: '_blank', rel: 'noopener noreferrer' }, n) : null; }).filter(Boolean); return l.length ? h('p', { class: 'newssrcs' }, h('span', null, 'Quellen'), l) : null; };
+    var src = function (t) { return newsSrc(String(t || '').split('\n')); };
     var sec = function (cap, title, text, sources) { return (title || text) ? h('div', { class: 'newssec' }, h('h4', { class: 'logcat' }, cap), title ? h('h5', { class: 'newst' }, title) : null, newsBody(text), src(sources)) : null; };
     return [sec('Seitennews', x.site_title, x.site_text, x.site_sources), sec('News zu Inhalten', x.content_title, x.content_text, x.content_sources)].filter(Boolean);
   }
@@ -1878,9 +1888,9 @@
     var newsAdm = h('div', { class: 'wide2' }), newsMsg = h('span', { class: 'msg', style: 'margin:0' });
     (function () {
       var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-      var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }),
-        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), ss = h('textarea', { rows: '2', placeholder: 'Quellen, eine pro Zeile: Name | https://…' }), cs = h('textarea', { rows: '3', placeholder: 'Quellen, eine pro Zeile: Name | https://…' }), cx = h('textarea', { rows: '6', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste.' }), old = h('div', null), all = [];
-      function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; ss.value = x.site_sources || ''; cs.value = x.content_sources || ''; }
+      var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }),
+        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), cx = h('textarea', { rows: '10', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }), old = h('div', null), all = [];
+      function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; }
       function say2(t, bad) { newsMsg.className = 'msg' + (bad ? ' err' : ''); newsMsg.textContent = t; }
       function load() {
         api('/api/news.php?a=list').then(function (r) {
@@ -1897,10 +1907,10 @@
       }
       day.addEventListener('change', function () { fill(day.value); say2(''); });
       newsAdm.append(
-        h('label', { class: 'field' }, h('span', null, 'Tag (gleicher Tag überschreibt die vorhandene Meldung)'), day),
-        h('h4', { class: 'logcat' }, 'Seitennews'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), st), h('label', { class: 'field' }, h('span', null, 'Haupttext'), sx), h('label', { class: 'field' }, h('span', null, 'Quellen (optional, eine pro Zeile: Name | Link)'), ss),
-        h('h4', { class: 'logcat' }, 'News zu Inhalten'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), ct), h('label', { class: 'field' }, h('span', null, 'Haupttext'), cx), h('label', { class: 'field' }, h('span', null, 'Quellen (optional, eine pro Zeile: Name | Link)'), cs),
-        h('p', null, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/news.php?a=save', { day: day.value, site_title: st.value, site_text: sx.value, content_title: ct.value, content_text: cx.value, site_sources: ss.value, content_sources: cs.value }).then(function (z) { if (z && z.ok) { say2('Gespeichert.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Speichern'), ' ', newsMsg),
+        h('label', { class: 'field' }, h('span', null, 'Tag (gleicher Tag überschreibt die vorhandene Meldung)'), day), h('p', { class: 'hint' }, 'Mehrere News pro Bereich: durch eine Zeile mit --- trennen. Quellen direkt unter die jeweilige News schreiben, eine pro Zeile: Quelle: Name | https://…'),
+        h('h4', { class: 'logcat' }, 'Seitennews'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), st), h('label', { class: 'field' }, h('span', null, 'Haupttext'), sx),
+        h('h4', { class: 'logcat' }, 'News zu Inhalten'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), ct), h('label', { class: 'field' }, h('span', null, 'Haupttext'), cx),
+        h('p', null, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/news.php?a=save', { day: day.value, site_title: st.value, site_text: sx.value, content_title: ct.value, content_text: cx.value, site_sources: '', content_sources: '' }).then(function (z) { if (z && z.ok) { say2('Gespeichert.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Speichern'), ' ', newsMsg),
         h('h4', { class: 'logcat' }, 'Bisherige News'), old);
       load();
     })();
