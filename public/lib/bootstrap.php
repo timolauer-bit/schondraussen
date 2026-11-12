@@ -153,3 +153,9 @@ function perm(?array $u, string $k): bool {
     if (($u['role'] ?? '') === 'admin') return true;
     $v = perm_values(); return !empty($v[$k][!empty($u['alpha']) ? 'alpha' : 'user']);
 }
+/** Kurze Liste der Bereiche, in denen die Entwicklungsversion von der Live-Version abweicht (public/dev/changes.json, Texte wie „Serien → Seite einer einzelnen Serie“). */
+function dev_notes(): array {
+    $f = __DIR__ . '/../dev/changes.json'; if (!is_file($f)) return [];
+    $j = json_decode((string) @file_get_contents($f), true); if (!is_array($j)) return [];
+    return array_values(array_filter(array_map(fn($x) => is_string($x) ? mb_substr(trim($x), 0, 120) : '', $j), fn($x) => $x !== ''));
+}
