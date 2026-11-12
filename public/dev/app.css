@@ -749,3 +749,8 @@ hr.newshr{width:55%;max-width:40ch;height:0;margin:12px 0;border:0;border-top:1p
 .newsv .logold>summary h3,.newsv>summary h3{justify-content:center}
 hr.newshr{margin-inline:auto}
 .newsv .newssrcs{margin:8px auto 0!important}
+.fbcbox{margin:10px 0 0;border-top:1px dashed var(--line);padding-top:8px}
+.fbcomments{display:grid;gap:8px}
+.fbcm{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;background:var(--surface);padding:7px 10px}
+.fbcwho{font:500 12px var(--font-mono);color:var(--muted);margin:0 0 3px}.fbctext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.fbcform{margin:8px 0 0}.fbcform textarea{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit;resize:vertical}

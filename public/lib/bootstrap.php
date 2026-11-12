@@ -122,8 +122,8 @@ function perm_defs(): array {
     $pl = podcast_level() === 'all' ? 1 : 0; // bisherige Einstellung bleibt als Ausgangswert
     return [
         'fb_staff' => ['Ideen und Bugs: alle Beiträge sehen und verwalten', 'Auch noch nicht freigegebene Beiträge mit Absender sehen, freigeben, Status setzen, bearbeiten, Bilder prüfen', [0, 1], 'live'],
-        'fb_comment_view' => ['Kommentare zu Ideen und Bugs lesen', 'Gilt, sobald es Kommentare gibt', [1, 1], 'soon'],
-        'fb_comment_write' => ['Kommentare zu Ideen und Bugs schreiben', 'Gilt, sobald es Kommentare gibt', [0, 1], 'soon'],
+        'fb_comment_view' => ['Kommentare zu Ideen und Bugs lesen', 'Nur Admin und Alphatester sehen sie (Standard)', [0, 1], 'live'],
+        'fb_comment_write' => ['Kommentare zu Ideen und Bugs schreiben', 'Interne Kommentare unter einem Beitrag hinterlassen', [0, 1], 'live'],
         'cat_author' => ['Kategorie Bücher / Autor:innen', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
         'cat_artist' => ['Kategorie Musik', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
         'cat_film' => ['Kategorie Filme', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],

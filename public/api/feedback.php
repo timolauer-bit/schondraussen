@@ -77,7 +77,16 @@ if ($a === 'list') {
             unset($r);
         } catch (Throwable $e) {}
     }
-    $out = ['items' => $rows, 'admin' => $admin, 'alpha' => $alpha];
+    $cview = $alpha && perm($u, 'fb_comment_view'); $cwrite = $alpha && perm($u, 'fb_comment_write');
+    if ($rows && $cview) { // interne Kommentare (nur Admin und Alphatester)
+        try {
+            $ids3 = implode(',', array_map('intval', array_column($rows, 'id'))); $cm = [];
+            foreach ($pdo->query("SELECT c.feedback_id, c.id, c.user_id, c.body, c.created_at, u.username FROM feedback_comments c LEFT JOIN users u ON u.id=c.user_id WHERE c.feedback_id IN ($ids3) ORDER BY c.id")->fetchAll() as $c) $cm[$c['feedback_id']][] = ['id' => (int) $c['id'], 'name' => trim((string) $c['username']) ?: ($c['user_id'] ? 'Mitglied Nr. ' . (int) $c['user_id'] : 'gelöschtes Konto'), 'body' => $c['body'], 'at' => $c['created_at'], 'mine' => (int) $c['user_id'] === (int) $u['id']];
+            foreach ($rows as &$r) $r['comments'] = $cm[$r['id']] ?? [];
+            unset($r);
+        } catch (Throwable $e) { $cview = false; }
+    }
+    $out = ['items' => $rows, 'admin' => $admin, 'alpha' => $alpha, 'cview' => $cview, 'cwrite' => $cwrite && $cview];
     if ($alpha && ($_GET['open'] ?? '') === '1') { // Beim Öffnen der Seite: letzten Besuch zurückgeben (für „neu“-Markierungen) und neu vermerken
         $col = $kind === 'bug' ? 'fb_seen_bug' : 'fb_seen_feature';
         try { $sq = $pdo->prepare("SELECT $col FROM users WHERE id=?"); $sq->execute([$u['id']]); $out['seen'] = $sq->fetchColumn() ?: null; $pdo->prepare("UPDATE users SET $col=NOW() WHERE id=?")->execute([$u['id']]); } catch (Throwable $e) { $out['seen'] = null; }
@@ -87,6 +96,19 @@ if ($a === 'list') {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'POST nötig'], 405);
 $b = body();
 
+if ($a === 'comment') { // interner Kommentar unter einer Idee oder einem Bug: nur Admin und Alphatester
+    if (!$alpha || !perm($u, 'fb_comment_write')) json_out(['error' => 'Nicht erlaubt.'], 403);
+    $id = (int) ($b['id'] ?? 0); $text = trim((string) ($b['text'] ?? ''));
+    $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', str_replace("\r\n", "\n", $text));
+    if ($text === '' || mb_strlen($text) > 1000) json_out(['error' => 'Bitte einen Kommentar bis 1000 Zeichen schreiben.'], 422);
+    try {
+        $e = $pdo->prepare('SELECT 1 FROM feedback WHERE id=?'); $e->execute([$id]); if (!$e->fetchColumn()) json_out(['error' => 'Beitrag nicht gefunden.'], 404);
+        $c = $pdo->prepare('SELECT COUNT(*) FROM feedback_comments WHERE user_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
+        if ((int) $c->fetchColumn() >= 60) json_out(['error' => 'Bitte etwas später weiterschreiben.'], 429);
+        $pdo->prepare('INSERT INTO feedback_comments (feedback_id, user_id, body) VALUES (?,?,?)')->execute([$id, $u['id'], $text]);
+    } catch (PDOException $e) { json_out(['error' => 'Kommentare sind noch nicht eingerichtet (Migration 072 einspielen).'], 500); }
+    json_out(['ok' => true]);
+}
 if ($a === 'add') {
     $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? '')); $given = trim((string) ($b['title'] ?? ''));
     if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Idee oder Bugmeldung.'], 422);

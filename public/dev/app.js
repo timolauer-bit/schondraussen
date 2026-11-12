@@ -1642,6 +1642,21 @@
           editBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Meinen Beitrag bearbeiten', onclick: function () { body.hidden = false; eBox.hidden = !eBox.hidden; } }, 'Bearbeiten');
         }
         var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
+        var cBox = null, cBtn = null;
+        if (staff && lastR && lastR.cview) { // interne Kommentare (nur Admin und Alphatester)
+          var cl = h('div', { class: 'fbcomments' }), cf = h('div', { class: 'fbcform', hidden: true }), cmsg = h('span', { class: 'msg', style: 'margin:0' });
+          (x.comments || []).forEach(function (m) { cl.append(h('div', { class: 'fbcm' }, h('div', { class: 'fbcwho' }, m.name + ' · ' + fmtC(m.at)), h('div', { class: 'fbctext' }, m.body))); });
+          if (lastR.cwrite) {
+            var cta = h('textarea', { rows: '3', maxlength: '1000', placeholder: 'Interner Kommentar (nur Admin und Alphatester sehen ihn)', 'aria-label': 'Kommentar' });
+            cf.append(cta, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' },
+              h('button', { class: 'btn small', type: 'button', onclick: function () { var t = cta.value.trim(); if (!t) return; api('/api/feedback.php?a=comment', { id: x.id, text: t }).then(function (r2) { if (r2.ok) { S.fbOpen = S.fbOpen || {}; S.fbOpen[x.id] = 1; reload(); } else { cmsg.className = 'msg err'; cmsg.textContent = r2.error || 'Das hat nicht geklappt.'; } }); } }, 'Kommentar speichern'),
+              h('button', { class: 'btn ghost small', type: 'button', onclick: function () { cf.hidden = true; } }, 'Abbrechen'), cmsg));
+            cBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Internen Kommentar schreiben', onclick: function () { body.hidden = false; head.setAttribute('aria-expanded', 'true'); cf.hidden = !cf.hidden; if (!cf.hidden) cta.focus(); } }, 'Kommentar' + ((x.comments || []).length ? ' (' + x.comments.length + ')' : ''));
+          }
+          cBox = h('div', { class: 'fbcbox' }, cl, cf);
+          if ((x.comments || []).length || lastR.cwrite) body.append(cBox);
+          if (S.fbOpen && S.fbOpen[x.id]) { body.hidden = false; head.setAttribute('aria-expanded', 'true'); }
+        }
         var acts = h('div', { class: 'fbacts' });
         var noteForm = h('div', { class: 'fbnoteform', hidden: true });
         function askNote(label, send) {
@@ -1666,6 +1681,7 @@
           if (D.admin && !S.preview && (x.released_at || +x.rejected)) acts.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!+x.rejected), onclick: function () { if (+x.rejected) api('/api/feedback.php?a=reject', { id: x.id, on: false }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); else askNote('Ablehnen', function (t) { return api('/api/feedback.php?a=reject', { id: x.id, on: true, note: t }); }); } }, +x.rejected ? 'Ablehnung zurücknehmen' : 'Ablehnen'));
         }
         if (staff && x.released_at && !x.done_at && !+x.rejected) Object.keys(PHASE).forEach(function (k) { acts.append(h('button', { class: 'btn ghost small ph-' + k, type: 'button', title: 'Status für alle sichtbar setzen, nochmal klicken setzt ihn zurück', 'aria-pressed': String(x.phase === k), onclick: function () { if (x.phase === k || k !== 'postponed') api('/api/feedback.php?a=phase', { id: x.id, phase: x.phase === k ? '' : k }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); else askNote('Zurückstellen', function (t) { return api('/api/feedback.php?a=phase', { id: x.id, phase: k, note: t }); }); } }, PHASE[k])); });
+        if (cBtn) acts.append(cBtn);
         if (staff) {
           var rg2 = h('span', { class: 'fbright' }, h('button', { class: 'btn small' + (x.released_at ? ' ghost' : ''), type: 'button', title: x.released_at ? 'Beitrag wieder ausblenden' : 'Beitrag für alle sichtbar machen', onclick: function () { api('/api/feedback.php?a=release', { id: x.id, on: !x.released_at }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, x.released_at ? 'Freigabe zurücknehmen' : 'Freigeben'));
           if (D.admin) rg2.append(h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen'));
@@ -1680,6 +1696,7 @@
     function reload() { var op = firstLoad && staff; firstLoad = false; api('/api/feedback.php?a=list&kind=' + kind + (op ? '&open=1' : '')).then(function (r) { if (op && r) seen = r.seen || null; draw(r); }); }
     reload();
   }
+  function fmtC(t) { try { var d = new Date(String(t).replace(' ', 'T')); return d.toLocaleDateString('de-DE') + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'; } catch (_) { return String(t); } }
   function editedSpan(x, field, text) {
     var ed = (x.edits || []).filter(function (e) { return e.field === field; });
     if (!ed.length) return text;
