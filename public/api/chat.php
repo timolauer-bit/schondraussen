@@ -19,7 +19,9 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
     if (!is_alpha($u)) json_out(['error' => 'Nur für Admin und Alphatester.'], 403);
     try {
         if ($a === 'team_thread') {
-            $rows = $pdo->query('SELECT m.id, m.user_id, m.body, m.is_poll, m.created_at, u.username FROM team_messages m LEFT JOIN users u ON u.id=m.user_id ORDER BY m.id DESC LIMIT 200')->fetchAll(PDO::FETCH_ASSOC); $rows = array_reverse($rows);
+            try { $rows = $pdo->query('SELECT m.id, m.user_id, m.body, m.is_poll, m.created_at, m.closed_at, u.username FROM team_messages m LEFT JOIN users u ON u.id=m.user_id ORDER BY m.id DESC LIMIT 200')->fetchAll(PDO::FETCH_ASSOC); }
+            catch (Throwable $e) { $rows = $pdo->query('SELECT m.id, m.user_id, m.body, m.is_poll, m.created_at, u.username FROM team_messages m LEFT JOIN users u ON u.id=m.user_id ORDER BY m.id DESC LIMIT 200')->fetchAll(PDO::FETCH_ASSOC); }
+            $rows = array_reverse($rows);
             $ids = array_map(fn($r) => (int) $r['id'], array_filter($rows, fn($r) => $r['is_poll']));
             $opts = []; $mine = []; 
             if ($ids) {
@@ -27,7 +29,7 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
                 foreach ($pdo->query("SELECT o.id, o.msg_id, o.label, (SELECT COUNT(*) FROM team_poll_votes v WHERE v.opt_id=o.id) AS votes FROM team_poll_options o WHERE o.msg_id IN ($in) ORDER BY o.id")->fetchAll(PDO::FETCH_ASSOC) as $o) $opts[$o['msg_id']][] = ['id' => (int) $o['id'], 'label' => $o['label'], 'votes' => (int) $o['votes']];
                 foreach ($pdo->query("SELECT msg_id, opt_id FROM team_poll_votes WHERE user_id=" . (int) $u['id'] . " AND msg_id IN ($in)")->fetchAll(PDO::FETCH_ASSOC) as $v) $mine[$v['msg_id']] = (int) $v['opt_id'];
             }
-            foreach ($rows as &$r) { $r['name'] = trim((string) $r['username']) ?: 'Mitglied Nr. ' . (int) $r['user_id']; $r['mine'] = (int) $r['user_id'] === (int) $u['id']; unset($r['username']); if ($r['is_poll']) { $r['options'] = $opts[$r['id']] ?? []; $r['my_vote'] = $mine[$r['id']] ?? null; } }
+            foreach ($rows as &$r) { $r['name'] = trim((string) $r['username']) ?: 'Mitglied Nr. ' . (int) $r['user_id']; $r['mine'] = (int) $r['user_id'] === (int) $u['id']; $r['can_close'] = $r['mine'] || $admin; $r['closed'] = !empty($r['closed_at']); unset($r['username'], $r['closed_at']); if ($r['is_poll']) { $r['options'] = $opts[$r['id']] ?? []; $r['my_vote'] = $mine[$r['id']] ?? null; } }
             $pdo->prepare('INSERT INTO team_chat_seen (user_id, seen_at) VALUES (?, NOW()) ON DUPLICATE KEY UPDATE seen_at=NOW()')->execute([$u['id']]);
             json_out(['messages' => $rows, 'team' => true]);
         }
@@ -50,8 +52,16 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
             $pdo->prepare('INSERT INTO team_messages (user_id, body) VALUES (?,?)')->execute([$u['id'], $text]);
             json_out(['ok' => true]);
         }
+        if ($a === 'team_close') { // Ersteller (oder Admin) schließt die Abstimmung oder öffnet sie wieder
+            $mid = (int) ($b['msg'] ?? 0); $q = $pdo->prepare('SELECT user_id, closed_at FROM team_messages WHERE id=? AND is_poll=1'); $q->execute([$mid]); $m = $q->fetch(PDO::FETCH_ASSOC);
+            if (!$m) json_out(['error' => 'Abstimmung nicht gefunden.'], 404);
+            if ((int) $m['user_id'] !== (int) $u['id'] && !$admin) json_out(['error' => 'Nur wer die Abstimmung erstellt hat, kann sie schließen.'], 403);
+            $pdo->prepare($m['closed_at'] ? 'UPDATE team_messages SET closed_at=NULL WHERE id=?' : 'UPDATE team_messages SET closed_at=NOW() WHERE id=?')->execute([$mid]);
+            json_out(['ok' => true, 'closed' => !$m['closed_at']]);
+        }
         if ($a === 'team_vote') {
             $mid = (int) ($b['msg'] ?? 0); $oid = (int) ($b['opt'] ?? 0);
+            try { $cl = $pdo->prepare('SELECT closed_at FROM team_messages WHERE id=?'); $cl->execute([$mid]); if ($cl->fetchColumn()) json_out(['error' => 'Die Abstimmung ist geschlossen.'], 409); } catch (PDOException $e) {}
             $ok = $pdo->prepare('SELECT 1 FROM team_poll_options o JOIN team_messages m ON m.id=o.msg_id AND m.is_poll=1 WHERE o.id=? AND o.msg_id=?'); $ok->execute([$oid, $mid]);
             if (!$ok->fetchColumn()) json_out(['error' => 'Antwort nicht gefunden.'], 404);
             $cur = $pdo->prepare('SELECT opt_id FROM team_poll_votes WHERE msg_id=? AND user_id=?'); $cur->execute([$mid, $u['id']]);

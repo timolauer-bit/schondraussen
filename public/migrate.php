@@ -18,6 +18,9 @@ $M = [
   "CREATE TABLE IF NOT EXISTS avatar_wishes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, wish VARCHAR(500) NOT NULL, status ENUM('open','ready','declined') NOT NULL DEFAULT 'open', note VARCHAR(300) NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
   "CREATE TABLE IF NOT EXISTS avatar_options (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, wish_id INT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL, svg MEDIUMTEXT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_user (user_id), KEY idx_wish (wish_id), FOREIGN KEY (wish_id) REFERENCES avatar_wishes(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
  ],
+ '069_team_poll_close' => [
+  "ALTER TABLE team_messages ADD COLUMN closed_at DATETIME NULL",
+ ],
  '068_news_sources' => [
   "ALTER TABLE news_days ADD COLUMN site_sources TEXT NULL, ADD COLUMN content_sources TEXT NULL",
   "UPDATE news_days SET content_sources='Netflix-Streaming-Guide (KinoCheck) | https://kinocheck.de/news/0i18cj/alle-neuheiten-im-streaming-november-2026-kinocheck-streaming-guide\nStreaming im November (TheWrap) | https://www.thewrap.com/creative-content/movies/everything-new-on-streaming-november-2026/\nFilmstarts der Woche (The Spot) | https://the-spot-mediafilm.com/\nbuchmarkt.de | https://buchmarkt.de/\nGlobal TV, Film & Media Roundup | https://furtherandbetter.substack.com/p/global-tv-film-and-media-industry-00c', content_text=TRIM(TRAILING FROM SUBSTRING_INDEX(content_text, '\\nQuellen:', 1)) WHERE day='2026-11-12'",

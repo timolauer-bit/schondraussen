@@ -29,6 +29,8 @@
     film: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></svg>',
     series: '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m17 2-5 5-5-5"/></svg>',
     podcast: '<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg>',
+    lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    unlock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
     news: '<svg viewBox="0 0 24 24"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM19 8h2v10a2 2 0 0 1-2 2M8 8h7M8 12h7M8 16h4"/></svg>',
     cal: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
@@ -1548,13 +1550,14 @@
           var who = h('small', { class: 'who' }, m.name + ' · ' + fmtChat(m.created_at));
           if (!+m.is_poll) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, who)); return; }
           var total = (m.options || []).reduce(function (a, o) { return a + o.votes; }, 0);
-          var pb = h('div', { class: 'bub poll ' + (m.mine ? 'me' : 'them') }, h('b', { class: 'pq' }, m.body));
+          var cl = !!m.closed, pb = h('div', { class: 'bub poll ' + (m.mine ? 'me' : 'them') + (cl ? ' closed' : '') }, h('div', { class: 'pqrow' }, h('b', { class: 'pq' }, m.body),
+            m.can_close ? h('button', { class: 'lockbtn', type: 'button', title: cl ? 'Abstimmung wieder öffnen' : 'Abstimmung schließen', 'aria-label': cl ? 'Abstimmung wieder öffnen' : 'Abstimmung schließen', 'aria-pressed': String(cl), onclick: function () { if (!cl && !confirm('Abstimmung schließen? Danach kann niemand mehr abstimmen.')) return; api('/api/chat.php?a=team_close', { msg: m.id }).then(function (z) { if (z && z.error) { msg.className = 'msg err'; msg.textContent = z.error; } teamPull(); }); } }, ico(cl ? ICONS.lock : ICONS.unlock)) : (cl ? h('span', { class: 'lockbtn static', title: 'Geschlossen' }, ico(ICONS.lock)) : null)));
           (m.options || []).forEach(function (o) {
             var pct = total ? Math.round(o.votes * 100 / total) : 0, sel = m.my_vote === o.id;
-            pb.append(h('button', { class: 'popt' + (sel ? ' on' : ''), type: 'button', 'aria-pressed': String(sel), title: sel ? 'Stimme zurücknehmen' : 'Dafür stimmen', onclick: function () { api('/api/chat.php?a=team_vote', { msg: m.id, opt: o.id }).then(function () { teamPull(); }); } },
+            pb.append(h('button', { class: 'popt' + (sel ? ' on' : ''), type: 'button', 'aria-pressed': String(sel), title: cl ? 'Die Abstimmung ist geschlossen' : (sel ? 'Stimme zurücknehmen' : 'Dafür stimmen'), disabled: cl, onclick: function () { api('/api/chat.php?a=team_vote', { msg: m.id, opt: o.id }).then(function () { teamPull(); }); } },
               h('span', { class: 'bar', style: 'width:' + pct + '%' }), h('span', { class: 'pl' }, (sel ? '✓ ' : '') + o.label), h('span', { class: 'pn' }, o.votes + (total ? ' · ' + pct + ' %' : ''))));
           });
-          pb.append(h('small', { class: 'who' }, 'Abstimmung von ' + m.name + ' · ' + fmtChat(m.created_at) + ' · ' + total + (total === 1 ? ' Stimme' : ' Stimmen'))); log.append(pb);
+          pb.append(h('small', { class: 'who' }, 'Abstimmung von ' + m.name + ' · ' + fmtChat(m.created_at) + ' · ' + total + (total === 1 ? ' Stimme' : ' Stimmen') + (cl ? ' · geschlossen' : ''))); log.append(pb);
         });
         if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
       });
