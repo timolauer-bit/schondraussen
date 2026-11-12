@@ -1475,6 +1475,7 @@
     var attNote = h('p', { class: 'hint picnote' });
     function drawNote() { attNote.textContent = kindSel === 'chat' ? 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.' : 'Anhänge: ' + drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
     function isTeam() { return staff && S.sup.sel === 'team'; }
+    function isDm() { return !admin && staff && /^dm\d+$/.test(String(S.sup.sel)); }
     function scopeOf() { return isTeam() ? 'team' : (kindSel === 'chat' ? 'chat' : 'feedback'); }
     function drawDrafts() { draftBox.textContent = ''; drafts.forEach(function (d) { draftBox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Bild entfernen', onclick: function () { drafts = drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawDrafts(); } }, '×'))); }); drawNote(); }
     function addFiles(files) {
@@ -1490,6 +1491,7 @@
     }
     function send() {
       if (S.sup.sel === 'team' && staff) { teamSend(); return; }
+      if (isDm()) { var dt = inp.value.trim(); if (!dt) return; api('/api/chat.php?a=dm_send', { uid: String(S.sup.sel).slice(2), text: dt }).then(function (r) { if (r && r.ok) { inp.value = ''; msg.textContent = ''; dmPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); return; }
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (kindSel !== 'chat') { var ti = titleIn.value.trim(); if (ti.length < 3) { msg.className = 'msg err'; msg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; titleIn.focus(); return; } } else if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && kindSel === 'chat' && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
       if (kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kd === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kd === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; drafts = []; drawDrafts(); var wantMail = admin && mailCk.checked; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids, mail: wantMail }).then(function (r) { msg.textContent = r.ok ? (wantMail ? (r.mailed ? 'Gesendet, auch per E-Mail zugestellt.' : 'Im Chat gesendet, aber die E-Mail konnte nicht verschickt werden.') : '') : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok && (!wantMail || r.mailed) ? '' : ' err'); pull(); });
@@ -1512,6 +1514,7 @@
       var go2 = function () {
         teamMode();
         if (staff && S.sup.sel === 'team') { teamPull(); return; }
+        if (isDm()) { dmPull(); return; }
         if (admin && !S.sup.sel) { log.textContent = ''; log.append(h('p', { class: 'chatempty' }, 'Wähle links eine Unterhaltung.')); return; }
         api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
@@ -1523,7 +1526,7 @@
         });
       };
       if (staff) api('/api/chat.php?a=threads').then(function (r) {
-        var l = r.threads || []; if (!admin) l = l.concat([{ id: 'me', username: 'Chat mit dem Administrator', last_body: '', last_admin: 0, unread: 0 }]);
+        var l = r.threads || []; if (!admin) { var tix = l.filter(function (x) { return x.id === 'team'; }), dms = l.filter(function (x) { return x.id !== 'team'; }); l = tix.concat([{ id: 'me', username: 'Chat mit dem Administrator', last_body: '', last_admin: 0, unread: 0 }], dms); }
         S.sup.threads = l;
         if (!S.sup.sel) { var tm = l.filter(function (x) { return x.id === 'team'; })[0]; S.sup.sel = tm && +tm.unread > 0 ? 'team' : (admin ? ((l.filter(function (x) { return x.id !== 'team'; })[0] || tm || {}).id || null) : 'me'); }
         drawThreads(); go2(); }); else go2();
@@ -1532,11 +1535,13 @@
     /* Team-Chat (Admin und Alphatester) */
     var pollBox = h('div', { class: 'pollform', hidden: true }), teamSending = false, lastScope = null;
     function teamMode() {
-      var tm = staff && S.sup.sel === 'team';
+      var tm = staff && S.sup.sel === 'team', dm = isDm();
       var sc = scopeOf(); if (lastScope && sc !== lastScope && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); } lastScope = sc;
-      [kindBox, kindHint, mailRow, titleIn].forEach(function (e) { if (e) e.hidden = tm || (e === mailRow && !admin) || (e === titleIn && kindSel === 'chat'); });
+      [kindBox, kindHint, mailRow, titleIn].forEach(function (e) { if (e) e.hidden = tm || dm || (e === mailRow && !admin) || (e === titleIn && kindSel === 'chat'); });
       if (tm) attNote.textContent = 'Bis zu 3 Anhänge pro Nachricht: Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; else drawNote();
       pollBtn.hidden = !tm; if (!tm) pollBox.hidden = true;
+      var atb = form.querySelector('.attach'); if (atb) atb.hidden = dm;
+      if (dm) { var pn = (S.sup.threads.filter(function (x) { return x.id === S.sup.sel; })[0] || {}).username || 'Alphatester'; attNote.textContent = 'Direktnachricht nur zwischen dir und ' + pn + '. Der Administrator liest nicht mit.'; composerCard.querySelector('h3').textContent = 'Nachricht an ' + pn; chatCard.querySelector('h3').textContent = 'Direktchat mit ' + pn; inp.placeholder = 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)'; return; }
       composerCard.querySelector('h3').textContent = tm ? 'Nachricht an das Team' : (admin ? 'Antworten' : 'Neue Nachricht');
       chatCard.querySelector('h3').textContent = tm ? 'Team-Chat: Admin und Alphatester' : (admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator');
       inp.placeholder = tm ? 'Nachricht an das Team … (Enter sendet, Umschalt+Enter für neue Zeile)' : 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)';
@@ -1556,6 +1561,17 @@
           h('button', { class: 'btn small', type: 'button', onclick: function () { api('/api/chat.php?a=team_send', { poll: { q: q.value, options: opts.map(function (o) { return o.value; }) } }).then(function (r) { if (r && r.ok) { pollBox.hidden = true; teamPull(true); } else { pm.className = 'msg err'; pm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, 'Abstimmung senden'), ' ',
           h('button', { class: 'btn ghost small', type: 'button', onclick: function () { pollBox.hidden = true; } }, 'Abbrechen'), ' ', pm));
       q.focus();
+    }
+    function dmPull(scroll) {
+      var sel = S.sup.sel;
+      api('/api/chat.php?a=dm_thread&uid=' + String(sel).slice(2)).then(function (r) {
+        if (S.sup.sel !== sel) return;
+        var atEnd = scroll || log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
+        if (!r || r.error) { log.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+        if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), 'Schreibe unten die erste Nachricht. Nur ihr beide seht diesen Chat.'));
+        (r.messages || []).forEach(function (m) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, h('small', null, fmtChat(m.created_at)))); });
+        if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
+      });
     }
     function teamPull(scroll) {
       api('/api/chat.php?a=team_thread').then(function (r) {

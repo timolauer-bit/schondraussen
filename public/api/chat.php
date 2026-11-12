@@ -12,6 +12,7 @@ if ($a === 'unread') {
     if ($admin) { $n = $pdo->query('SELECT COUNT(*) FROM messages WHERE from_admin=0 AND read_at IS NULL')->fetchColumn(); try { $n += (int) $pdo->query('SELECT COUNT(*) FROM admin_notices WHERE read_at IS NULL')->fetchColumn(); } catch (Throwable $e) {} }
     else { $s = $pdo->prepare('SELECT COUNT(*) FROM messages WHERE user_id=? AND from_admin=1 AND read_at IS NULL'); $s->execute([$u['id']]); $n = $s->fetchColumn(); }
     if (is_alpha($u)) { try { $q = $pdo->prepare('SELECT COUNT(*) FROM team_messages WHERE user_id<>? AND created_at > COALESCE((SELECT seen_at FROM team_chat_seen WHERE user_id=?), \'1970-01-01\')'); $q->execute([$u['id'], $u['id']]); $n += (int) $q->fetchColumn(); } catch (Throwable $e) {} }
+    if (is_alpha($u) && !$admin) { try { $q = $pdo->prepare('SELECT COUNT(*) FROM alpha_dm WHERE to_id=? AND read_at IS NULL'); $q->execute([$u['id']]); $n += (int) $q->fetchColumn(); } catch (Throwable $e) {} }
     json_out(['unread' => (int) $n]);
 }
 // ---- Team-Chat: gemeinsamer Chat von Admin und Alphatestern (Rechte: „Ideen und Bugs: alle Beiträge sehen und verwalten“) ----
@@ -79,6 +80,30 @@ if (strncmp($a, 'team_', 5) === 0 || $a === 'team') {
     } catch (Throwable $e) { json_out(['error' => 'Der Team-Chat ist noch nicht eingerichtet (Migration 067 einspielen).'], 500); }
     json_out(['error' => 'Unbekannte Aktion'], 400);
 }
+// ---- Direktnachrichten zwischen Alphatestern (Admin liest nicht mit, mit ihm gibt es den normalen Chat) ----
+function alpha_peers(PDO $pdo, int $me): array {
+    try { return $pdo->query("SELECT id, username FROM users WHERE alpha=1 AND role<>'admin' AND id<>" . (int) $me . " AND approved_at IS NOT NULL AND admin_deleted=0 AND delete_requested_at IS NULL ORDER BY username IS NULL, username, id LIMIT 200")->fetchAll(PDO::FETCH_ASSOC); }
+    catch (Throwable $e) { return []; }
+}
+if (($a === 'dm_thread' || $a === 'dm_send') && is_alpha($u) && !$admin) {
+    $peer = (int) ($_GET['uid'] ?? body()['uid'] ?? 0); $ok = false; foreach (alpha_peers($pdo, (int) $u['id']) as $pr) if ((int) $pr['id'] === $peer) $ok = true;
+    if (!$ok) json_out(['error' => 'Diese Person ist kein Alphatester.'], 404);
+    try {
+        if ($a === 'dm_thread') {
+            $pdo->prepare('UPDATE alpha_dm SET read_at=NOW() WHERE from_id=? AND to_id=? AND read_at IS NULL')->execute([$peer, $u['id']]);
+            $q = $pdo->prepare('SELECT id, from_id, body, created_at, read_at FROM alpha_dm WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY id DESC LIMIT 200');
+            $q->execute([$u['id'], $peer, $peer, $u['id']]); $rows = array_reverse($q->fetchAll(PDO::FETCH_ASSOC));
+            foreach ($rows as &$r) { $r['mine'] = (int) $r['from_id'] === (int) $u['id']; unset($r['from_id']); } unset($r);
+            json_out(['messages' => $rows]);
+        }
+        $text = trim((string) (body()['text'] ?? ''));
+        if ($text === '' || mb_strlen($text) > 1000) json_out(['error' => 'Bitte eine Nachricht bis 1000 Zeichen eingeben.'], 422);
+        $c = $pdo->prepare('SELECT COUNT(*) FROM alpha_dm WHERE from_id=? AND created_at > NOW() - INTERVAL 1 HOUR'); $c->execute([$u['id']]);
+        if ((int) $c->fetchColumn() >= 60) json_out(['error' => 'Bitte etwas später weiterschreiben.'], 429);
+        $pdo->prepare('INSERT INTO alpha_dm (from_id, to_id, body) VALUES (?,?,?)')->execute([$u['id'], $peer, $text]);
+        json_out(['ok' => true]);
+    } catch (PDOException $e) { json_out(['error' => 'Die Direktnachrichten sind noch nicht eingerichtet (Migration 073 einspielen).'], 500); }
+}
 if ($a === 'threads' && ($admin || is_alpha($u))) {
     $rows = !$admin ? [] : $pdo->query("SELECT u.id,u.username,
         (SELECT IF(body='','[Bild]',body) FROM messages m WHERE m.user_id=u.id ORDER BY m.id DESC LIMIT 1) AS last_body,
@@ -93,6 +118,14 @@ if ($a === 'threads' && ($admin || is_alpha($u))) {
     try { $tm = $pdo->query('SELECT (SELECT CONCAT(IFNULL(NULLIF(TRIM(uu.username),\'\'),\'Mitglied\'), \': \', IF(m.is_poll, \'[Abstimmung] \', \'\'), m.body) FROM team_messages m LEFT JOIN users uu ON uu.id=m.user_id ORDER BY m.id DESC LIMIT 1) AS last_body, (SELECT MAX(created_at) FROM team_messages) AS last_at')->fetch(PDO::FETCH_ASSOC);
         $q = $pdo->prepare('SELECT COUNT(*) FROM team_messages WHERE user_id<>? AND created_at > COALESCE((SELECT seen_at FROM team_chat_seen WHERE user_id=?), \'1970-01-01\')'); $q->execute([$u['id'], $u['id']]);
         array_unshift($rows, ['id' => 'team', 'username' => 'Team (Admin und Alphatester)', 'last_body' => $tm['last_body'] ?? '', 'last_admin' => 0, 'last_at' => $tm['last_at'] ?? null, 'unread' => (int) $q->fetchColumn()]);
+    } catch (Throwable $e) {}
+    if (!$admin) try { // Direktchats mit den anderen Alphatestern
+        foreach (alpha_peers($pdo, (int) $u['id']) as $pr) {
+            $pid = (int) $pr['id'];
+            $q = $pdo->prepare('SELECT body, from_id, created_at FROM alpha_dm WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY id DESC LIMIT 1'); $q->execute([$u['id'], $pid, $pid, $u['id']]); $l = $q->fetch(PDO::FETCH_ASSOC) ?: [];
+            $q = $pdo->prepare('SELECT COUNT(*) FROM alpha_dm WHERE from_id=? AND to_id=? AND read_at IS NULL'); $q->execute([$pid, $u['id']]);
+            $rows[] = ['id' => 'dm' . $pid, 'username' => trim((string) $pr['username']) !== '' ? $pr['username'] : 'User-' . $pid, 'last_body' => $l['body'] ?? '', 'last_admin' => isset($l['from_id']) && (int) $l['from_id'] === (int) $u['id'] ? 1 : 0, 'last_at' => $l['created_at'] ?? null, 'unread' => (int) $q->fetchColumn(), 'dm' => 1];
+        }
     } catch (Throwable $e) {}
     json_out(['threads' => $rows]);
 }
