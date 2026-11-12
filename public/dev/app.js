@@ -1085,20 +1085,20 @@
       return h('div', { class: 'nerdtbl fit' }, h('table', null, h('thead', null, h('tr', null, head.map(function (x) { return h('th', null, x); }))),
         h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, x); })); }))));
     }
-    var BASE = 5406, START = new Date(2026, 9, 14), nf = new Intl.NumberFormat('de-DE');
+    var BASE = 5406, FB = { lines: 7424, files: 45, api: 14, versions: 11, items: 91, d: '2026-11-12' }, START = new Date(2026, 9, 14), nf = new Intl.NumberFormat('de-DE');
     function rd(v, st) { return Math.round(v / st) * st; }
     function rng(a, b, f, st, unit) { return 'etwa ' + nf.format(rd(a * f, st)) + '–' + nf.format(rd(b * f, st)) + (unit ? ' ' + unit : ''); }
     var sec = h('section', { class: 'infosec' });
     function draw(m) {
-      var L = m && +m.lines > 0 ? +m.lines : BASE, f = Math.max(1, L / BASE), dt = m && m.d ? m.d.split('-') : null;
-      var stand = dt ? dt[2] + '.' + dt[1] + '.' + dt[0] : '08.11.2026', ref = dt ? new Date(+dt[0], +dt[1] - 1, +dt[2]) : new Date(2026, 10, 8);
+      var src = m || FB, L = +src.lines > 0 ? +src.lines : BASE, f = Math.max(1, L / BASE), dt = src.d ? src.d.split('-') : null;
+      var stand = dt ? dt[2] + '.' + dt[1] + '.' + dt[0] : '12.11.2026', ref = dt ? new Date(+dt[0], +dt[1] - 1, +dt[2]) : new Date(2026, 10, 12);
       var wk = Math.max(1, Math.round((ref - START) / 604800000 * 2) / 2);
       var devLo = rd(350 * f, 10), devHi = rd(600 * f, 10);
       sec.textContent = '';
       sec.append(h('h3', null, 'Entstehung und Aufwand'),
         h('p', { class: 'hint' }, 'Stand ' + stand + (m ? ' (wird jeden Sonntagmorgen automatisch neu gemessen)' : '') + '. Gemessen werden nur Umfang und Laufzeit. Alle anderen Zahlen sind grobe Schätzungen, die mit dem Umfang hochgerechnet werden, und können deutlich danebenliegen: Es gibt keinen Zähler für Zeit, Tokens oder Wasser.'),
         h('p', null, 'Diese Seite ist mit Hilfe einer KI entstanden: Der Betreiber hat sie gemeinsam mit Claude (Anthropic) entwickelt. Die Idee, die Entscheidungen, das Testen und die Freigaben liegen beim Betreiber, den Code hat überwiegend die KI geschrieben.'),
-        h('p', null, 'Umfang (gemessen): rund ' + nf.format(L) + ' Zeilen PHP, JavaScript und CSS in ' + (m && m.files ? m.files : 'über 50') + ' Dateien (davon ' + (m && m.api ? m.api : 13) + ' API-Dateien)' + (m && m.versions ? ', ' + m.versions + ' Versionen mit ' + m.items + ' Einträgen im Versionsverlauf' : '') + '. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa ' + String(wk).replace('.', ',') + ' Wochen.'),
+        h('p', null, 'Umfang (gemessen): rund ' + nf.format(L) + ' Zeilen PHP, JavaScript und CSS in ' + (src.files || 'über 40') + ' Dateien (davon ' + (src.api || 14) + ' API-Dateien)' + (src.versions ? ', ' + src.versions + ' Versionen mit ' + src.items + ' Einträgen im Versionsverlauf' : '') + '. Die Gespräche zur Seite laufen seit Mitte Oktober 2026, also etwa ' + String(wk).replace('.', ',') + ' Wochen.'),
         tbl(['Größe', 'Schätzung'], [
           ['Aktive Arbeitszeit des Betreibers (testen, Screenshots, Entscheidungen)', rng(30, 50, f, 5, 'Stunden')],
           ['Ausgabe der KI (Code und Texte)', 'grob ' + String(rd(2 * f, .5)).replace('.', ',') + '–' + String(rd(4 * f, .5)).replace('.', ',') + ' Mio. Tokens'],

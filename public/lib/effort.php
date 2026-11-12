@@ -7,7 +7,7 @@ function effort_measure(): array {
     $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
     foreach ($it as $f) {
         $p = str_replace('\\', '/', $f->getPathname()); $rel = substr($p, strlen($root) + 1);
-        if (!preg_match('/\.(php|js|css)$/', $rel) || preg_match('#^(vendor|shots|appicons)/#', $rel) || $rel === 'sw.js' || $rel === 'config.php') continue;
+        if (!preg_match('/\.(php|js|css)$/', $rel) || preg_match('#^(vendor|shots|appicons|dev)/#', $rel) || $rel === 'sw.js' || $rel === 'config.php') continue;
         $c = @file($p); if ($c === false) continue; $lines += count($c); $files++;
     }
     $api = count(glob($root . '/api/*.php') ?: []);
