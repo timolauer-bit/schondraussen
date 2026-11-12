@@ -735,7 +735,7 @@
     ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || [], own = cust.filter(function (x) { return x.t === t; }); if (!l.length && !own.length) return; any = true;
       gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); }).concat(own.map(function (x) { return h('span', { class: 'gchip own' }, x.g); }))))); });
     if (!c.name && !c.age && !any) info.append(h('p', { class: 'hint', style: 'margin:6px 0 0' }, 'Noch keine Angaben.'));
-    return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (c.no || d.user.id))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
+    return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (d.locked ? '…' : (c.no || d.user.id)))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
   }
   function emailBox() {
     var wrap = h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'E-Mail-Adresse'));
@@ -1117,7 +1117,9 @@
     mainEl.append(p);
     if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
     var body = h('div'); p.append(body);
+    var LOCKNOTE = function () { return devMark(h('p', { class: 'warnbox commnote', role: 'status' }, 'Diese Details siehst du erst, wenn du der Nutzung deiner Einträge für die Community zustimmst. Bis dahin zeigen wir nur Platzhalter: Du siehst, wie die Übersicht aussieht, die Inhalte sind aber nicht lesbar. Aktiviere es in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' unter „Meine Einträge für die Community nutzen“.'), 'community-locked'); };
     function adoptBtn(row) {
+      if (row.id < 0) return '';
       if (+row.mine) return h('span', { class: 'commhave', title: 'Schon in deiner Liste' }, '✓');
       var b = h('button', { class: 'btn ghost small commadd', type: 'button', title: 'In meine Liste übernehmen', 'aria-label': row.name + ' in meine Liste übernehmen', onclick: function () {
         b.disabled = true;
@@ -1161,7 +1163,7 @@
         CT.forEach(function (t) { tr.append(h('td', { class: 'num' }, String(u.by[t] || 0))); });
         tb.append(tr);
       });
-      var ub = h('section', { class: 'commusers' }, h('h3', { class: 'commh' }, 'Aktivste User'),
+      var ub = h('section', { class: 'commusers' + (d.locked ? ' locked' : '') }, h('h3', { class: 'commh' }, 'Aktivste User'), d.locked ? LOCKNOTE() : '',
         h('p', { class: 'hint' }, 'Nur Nutzer, die der Nutzung ihrer Einträge für die Community ausdrücklich zugestimmt haben (Beispieleinträge zählen nicht). Namen sind anklickbar.'), per);
       if (!us.length) ub.append(h('p', { class: 'hint' }, 'Noch niemand in diesem Zeitraum.'));
       else {
@@ -1195,8 +1197,8 @@
         return;
       }
       var d = C.ud, tot = 0; CT.forEach(function (t) { tot += (d.lists[t] || []).length; });
-      body.append(h('h3', { class: 'commh' }, d.user.name), idCard(d), h('p', { class: 'hint' }, pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
-      var last = h('section', { class: 'commbox commlast' }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
+      body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)), h('p', { class: 'hint' }, d.locked ? 'Platzhalter-Beispiel.' : pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
+      var last = h('section', { class: 'commbox commlast' + (d.locked ? ' locked' : '') }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
       if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));
       else last.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, d.last.map(function (r) {
         return h('tr', null, h('td', { class: 'ty' }, TYPES[r.type] ? TYPES[r.type].label : ''), h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r)));
@@ -1204,7 +1206,7 @@
       body.append(last);
       var g = h('div', { class: 'commgrid' });
       CT.forEach(function (t) {
-        var rows = d.lists[t] || [], bx = h('div', { class: 'commbox' }, h('h4', null, TYPES[t].plural + ' (' + rows.length + ')'));
+        var rows = d.lists[t] || [], bx = h('div', { class: 'commbox' + (d.locked ? ' locked' : '') }, h('h4', null, TYPES[t].plural + (d.locked ? '' : ' (' + rows.length + ')')));
         if (!rows.length) bx.append(h('p', { class: 'hint' }, 'Leer.'));
         else bx.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rows.map(function (r) { return h('tr', null, h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r))); })))));
         g.append(bx);

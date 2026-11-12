@@ -9,6 +9,20 @@ $TYPES = allowed_cats($u); // nur Kategorien, die für die Gruppe des Nutzers fr
 $CONSENT = "(u.community=1 OR (u.community IS NULL AND u.role='admin'))";
 $UOK = "(u.role='admin' OR u.approved_at IS NOT NULL) AND u.username IS NOT NULL AND u.username<>''";
 
+// Wer der Nutzung der eigenen Daten nicht zugestimmt hat, bekommt für Nutzerübersicht, Profilkarte und Listen nur Platzhalter-Texte vom Server (keine echten Daten, auch nicht im Quelltext).
+$LOCKED = !((isset($u['community']) && (int) $u['community'] === 1) || (!isset($u['community']) && ($u['role'] ?? '') === 'admin'));
+function fake_text(string $pattern, string $seed): string { // gleiche Form (Wortlängen) wie Muster, aber zufällige Buchstaben
+    mt_srand(crc32($seed . '|' . $pattern)); $o = '';
+    foreach (preg_split('//u', $pattern, -1, PREG_SPLIT_NO_EMPTY) as $ch) {
+        if (preg_match('/\p{Lu}/u', $ch)) $o .= chr(mt_rand(65, 90)); elseif (preg_match('/\p{Ll}/u', $ch)) $o .= chr(mt_rand(97, 122)); elseif (preg_match('/\d/', $ch)) $o .= (string) mt_rand(0, 9); else $o .= $ch;
+    }
+    return $o;
+}
+function fake_words(string $seed, int $minLen, int $maxLen): string {
+    mt_srand(crc32($seed)); $n = mt_rand(1, 3); $w = [];
+    for ($i = 0; $i < $n; $i++) { $l = mt_rand(max(3, (int) ($minLen / $n)), max(4, (int) ($maxLen / $n))); $w[] = ucfirst(strtolower(fake_text(str_repeat('a', $l), $seed . $i))); }
+    return implode(' ', $w);
+}
 function q_all(PDO $pdo, string $sql, array $p = []): array {
     try { $s = $pdo->prepare($sql); $s->execute($p); return $s->fetchAll(PDO::FETCH_ASSOC); }
     catch (Throwable $e) {
@@ -79,11 +93,25 @@ if ($a === 'overview') {
         $by[$id]['all'][$r['type']] = (int) $r['c']; $by[$id]['rec'][$r['type']] = (int) $r['r'];
     }
     $out['users'] = array_values($by);
+    if ($LOCKED) { // Platzhalter statt echter Namen und Zahlen; Kennungen negativ, damit nichts zuordenbar ist
+        $out['locked'] = true; $i = 0;
+        foreach ($out['users'] as &$fu) {
+            $i++; mt_srand(crc32('u' . $u['id'] . '|' . $i)); $fu['id'] = -$i; $fu['name'] = fake_words('n' . $u['id'] . '_' . $i, 5, 11);
+            foreach (['all', 'rec'] as $k) foreach ($fu[$k] as $t => $c) $fu[$k][$t] = $c > 0 ? mt_rand(1, max(2, min(30, $c + 3))) : 0;
+        } unset($fu);
+    }
     json_out($out);
 }
 
 if ($a === 'user') {
     $id = (int) ($_GET['id'] ?? 0);
+    if ($LOCKED || $id < 0) { // Platzhalter-Profil, keine echten Daten
+        $sd = 'p' . $u['id'] . '_' . $id; $lists = array_fill_keys($TYPES, []); $last = []; $n = 0;
+        foreach ($TYPES as $t) { mt_srand(crc32($sd . $t)); $c = mt_rand(3, 9); for ($k = 0; $k < $c; $k++) { $n++; $lists[$t][] = ['id' => -$n, 'name' => fake_words($sd . $t . $k, 6, 20), 'type' => $t, 'mine' => 0]; } }
+        for ($k = 0; $k < 8; $k++) { $t = $TYPES[$k % max(1, count($TYPES))]; $last[] = ['id' => -100 - $k, 'name' => fake_words($sd . 'l' . $k, 6, 20), 'type' => $t, 'added_at' => '', 'mine' => 0]; }
+        $favs = []; foreach (['artist', 'film', 'series', 'author'] as $t) { mt_srand(crc32($sd . 'f' . $t)); $favs[$t] = [fake_words($sd . $t . '1', 5, 9), fake_words($sd . $t . '2', 5, 9)]; }
+        json_out(['locked' => true, 'user' => ['id' => $id, 'name' => fake_words($sd . 'name', 5, 11)], 'card' => ['name' => fake_words($sd . 'dn', 5, 9), 'age' => fake_text('00 Jahre', $sd), 'avatar' => '', 'favs' => $favs, 'no' => 0], 'lists' => $lists, 'last' => $last]);
+    }
     $cu = consenting_user($pdo, $id, $CONSENT, $UOK);
     if (!$cu) json_out(['error' => 'Diese Person teilt ihre Liste nicht.'], 404);
     $lists = array_fill_keys($TYPES, []);
