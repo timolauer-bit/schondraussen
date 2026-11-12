@@ -754,3 +754,12 @@ hr.newshr{margin-inline:auto}
 .fbcm{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;background:var(--surface);padding:7px 10px}
 .fbcwho{font:500 12px var(--font-mono);color:var(--muted);margin:0 0 3px}.fbctext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 .fbcform{margin:8px 0 0}.fbcform textarea{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit;resize:vertical}
+.ghnow{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.ghnow b{font:650 16px var(--font-display)}.ghsub{font-size:13.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.ghdot{flex:none;width:12px;height:12px;border-radius:50%;background:var(--muted)}
+.gh-ok .ghdot{background:#2a9d52}.gh-fail .ghdot{background:var(--danger,#b3261e)}.gh-cancel .ghdot{background:#8a8a8a}.gh-wait .ghdot,.gh-run .ghdot{background:#e3a21f}
+.gh-run .ghdot,.gh-wait .ghdot{animation:ghp 1.1s ease-in-out infinite}
+@keyframes ghp{50%{opacity:.3;transform:scale(.8)}}
+@media (prefers-reduced-motion:reduce){.gh-run .ghdot,.gh-wait .ghdot{animation:none}}
+.ghnow.gh-run{border-color:#e3a21f}.ghnow.gh-fail{border-color:var(--danger,#b3261e)}
+.ghlist{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}.ghlist li{display:flex;gap:10px;align-items:center;font-size:13.5px}.ghlist .ght{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ghlist .ghm{color:var(--muted);white-space:nowrap}

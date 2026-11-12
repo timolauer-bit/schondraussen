@@ -7,6 +7,19 @@ if (!function_exists('valid_email')) { function valid_email(string $e): bool { r
 $u = current_user();
 if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
+if ($a === 'gh_status') { // Live-Anzeige der letzten GitHub-Actions-Läufe (Deploy)
+    $tok = trim((string) cfg('github_token', '')); $repo = trim((string) cfg('github_repo', 'timolauer-bit/schondraussen'));
+    if ($tok === '' || !preg_match('~^[\w.-]+/[\w.-]+$~', $repo)) json_out(['configured' => false]);
+    $ch = curl_init('https://api.github.com/repos/' . $repo . '/actions/runs?per_page=6');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $tok, 'Accept: application/vnd.github+json', 'X-GitHub-Api-Version: 2022-11-28', 'User-Agent: Schondraussen.de/1.0']]);
+    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($raw === false || $code === 0) json_out(['configured' => true, 'error' => 'GitHub ist gerade nicht erreichbar.']);
+    if ($code === 401 || $code === 403 || $code === 404) json_out(['configured' => true, 'error' => 'GitHub lehnt das Token ab (Code ' . $code . '). Prüfe Token, Ablaufdatum, Repo-Name und die Berechtigung „Actions: Read-only“.']);
+    $j = json_decode((string) $raw, true); if (!is_array($j)) json_out(['configured' => true, 'error' => 'Unerwartete Antwort von GitHub.']);
+    $runs = [];
+    foreach (array_slice((array) ($j['workflow_runs'] ?? []), 0, 6) as $r) $runs[] = ['id' => (int) $r['id'], 'status' => (string) $r['status'], 'conclusion' => $r['conclusion'] ?? null, 'title' => mb_substr((string) ($r['display_title'] ?? ''), 0, 120), 'event' => (string) ($r['event'] ?? ''), 'started' => $r['run_started_at'] ?? ($r['created_at'] ?? null), 'updated' => $r['updated_at'] ?? null];
+    json_out(['configured' => true, 'runs' => $runs, 'now' => gmdate('c')]);
+}
 if ($a === 'wishes') { // Bildwünsche der Nutzer
     try {
         $r = $pdo->query("SELECT w.id,w.wish,w.status,w.created_at,u.username,u.id AS uid,(SELECT COUNT(*) FROM avatar_options o WHERE o.wish_id=w.id) AS n FROM avatar_wishes w JOIN users u ON u.id=w.user_id WHERE w.status='open' OR w.created_at > NOW() - INTERVAL 30 DAY ORDER BY (w.status='open') DESC, w.id DESC LIMIT 40")->fetchAll();
