@@ -1675,7 +1675,7 @@
           body.append(eBox);
           editBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Meinen Beitrag bearbeiten', onclick: function () { body.hidden = false; eBox.hidden = !eBox.hidden; } }, 'Bearbeiten');
         }
-        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
+        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); if (typeof acts !== 'undefined' && acts) acts.hidden = body.hidden; S.fbOpen = S.fbOpen || {}; if (body.hidden) delete S.fbOpen[x.id]; else S.fbOpen[x.id] = 1; } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
         var cBox = null, cBtn = null;
         if (staff && lastR && lastR.cview) { // interne Kommentare (nur Admin und Alphatester)
           var cl = h('div', { class: 'fbcomments' }), cf = h('div', { class: 'fbcform', hidden: true }), cmsg = h('span', { class: 'msg', style: 'margin:0' });
@@ -1689,8 +1689,8 @@
           }
           cBox = h('div', { class: 'fbcbox' }, cl, cf);
           if ((x.comments || []).length || lastR.cwrite) body.append(cBox);
-          if (S.fbOpen && S.fbOpen[x.id]) { body.hidden = false; head.setAttribute('aria-expanded', 'true'); }
         }
+        if (S.fbOpen && S.fbOpen[x.id]) { body.hidden = false; head.setAttribute('aria-expanded', 'true'); }
         var acts = h('div', { class: 'fbacts' });
         var noteForm = h('div', { class: 'fbnoteform', hidden: true });
         function askNote(label, send) {
@@ -1722,6 +1722,7 @@
           ownBtns.slice().reverse().forEach(function (b) { rg2.prepend(b); });
           acts.append(rg2);
         } else if (ownBtns.length) acts.append(h('span', { class: 'fbright' }, ownBtns));
+        acts.hidden = body.hidden; // Knopfleiste erst zeigen, wenn der Beitrag angewählt (aufgeklappt) ist
         var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') + (isNew(x) ? ' isnew' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
         if (!x.released_at && !staff && !pendHead) { pendHead = true; box.append(h('h3', { class: 'fbdiv' }, staff ? 'Noch nicht freigegeben (nur für Admin und Alphatester sichtbar)' : 'Deine Beiträge, die noch auf Freigabe warten')); }
         box.append(row);
