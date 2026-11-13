@@ -1,5 +1,18 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 13, d: '13.11.2026', t: [
+    'F|News: Neuer Punkt neben dem Kalender mit Seitennews und News zu Inhalten, je Tag eine Meldung, mit Quellen und aufklappbaren älteren Tagen.',
+    'F|Kontakt: Team-Chat für Admin und Alphatester mit Abstimmungen (vom Ersteller per Schloss schließbar), Bildern und Textdateien.',
+    'F|Kontakt: Alphatester können sich untereinander Direktnachrichten schreiben, der Chat startet über „Alphatester anschreiben …“.',
+    'F|Ideen und Bugs: Interne Kommentare für Admin und Alphatester.',
+    'O|Einstellungen: Bis zu 5 eigene Genres auf der Profilkarte; „Darstellung“ heißt jetzt „Optik/Optionen“, „Benachrichtigungen“ heißt „E-Mail-Benachrichtigungen“, das Kalender-Abo steht davor.',
+    'O|Einstellungen: Neu sortiert. Profil: Meine Daten und Profilkarte. Daten: Benutzername, E-Mail und Wiederherstellung, Import.',
+    'U|Musik: Bei Künstler:innen mit nur Singles steht „Veröffentlichungen“ statt „Alben“, die Kachel „Alben in deiner Liste“ zählt keine Singles.',
+    'U|Ideen und Bugs: Rote Zahlen an Knopf und Reitern, farbiger Rahmen für Neues. Der Kommentar-Knopf zeigt keine Anzahl.',
+    'U|Obere Leiste: Auf dem Handy in drei zentrierten Zeilen; am Desktop zeigt das aktive Symbol seinen Namen erst ab 1700 px Breite, damit nichts umbricht. Chat-Knöpfe sind vereinheitlicht.',
+    'A|Admin: Neuer Reiter „Tools“ (Testmail, Einladen, Systemnachrichten, Eintrag prüfen); „Rechte der Nutzergruppen“ steht unter Nutzer, Reiter „News“ für die Meldungen.',
+    'A|Admin: Künstler:innen ohne Alben, EPs und Singles stehen in der Aktualisierung in einer eigenen Liste.',
+  ] },
   { v: 12, d: '12.11.2026', t: [
     'F|Musik: Hat ein:e Künstler:in bei MusicBrainz keine Alben oder EPs, zeigen wir stattdessen die Singles. Wer Alben hat, bekommt keine Singles dazu, die Listen bleiben also übersichtlich.',
     'U|Community: Auch die Newcomer-Listen zeigen ohne Zustimmung nur Platzhalter statt echter Titel und Zahlen.',

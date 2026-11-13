@@ -29,6 +29,9 @@
     film: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></svg>',
     series: '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m17 2-5 5-5-5"/></svg>',
     podcast: '<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg>',
+    lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    unlock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
+    news: '<svg viewBox="0 0 24 24"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM19 8h2v10a2 2 0 0 1-2 2M8 8h7M8 12h7M8 16h4"/></svg>',
     cal: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     clip: '<svg viewBox="0 0 24 24"><path d="M21 11.5 12.6 20a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>',
@@ -159,10 +162,12 @@
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
-        key === 'cal' ? ico(ICONS.cal) : null, ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
+        key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
-    navMain.append(btn('cal', 'Kalender', 0));
+    var navTop = null;
+    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
+    else navMain.append(btn('cal', 'Kalender', 0));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
@@ -170,11 +175,12 @@
     if ((D.admin || D.devsw) && !S.preview) { var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', title: D.dev ? 'Du siehst die Entwicklungsversion. Klicken für die Live-Version.' : 'Du siehst die Live-Version. Klicken für die Entwicklungsversion.', onclick: function () { api('/api/data.php?a=devmode', { on: !D.dev }).then(function () { location.reload(); }); } }, D.dev ? 'Dev' : 'Live'); var dn = (D.devnotes || []).filter(function (x) { return typeof x === 'string' && x; }); if (dn.length) { dsw.append(h('span', { class: 'devbadge', 'aria-hidden': 'true' }, String(dn.length))); dsw.title += '\n\nUnterschiede der Entwicklungsversion zur Live-Version (' + dn.length + '):\n• ' + dn.join('\n• '); dsw.setAttribute('aria-label', (D.dev ? 'Dev' : 'Live') + ', ' + dn.length + ' Unterschiede zur Live-Version'); } var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
     if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
     navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
-    function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' neu seit deinem letzten Besuch' }, n > 99 ? '99+' : String(n))); return b; }
+    function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' offen: Freischaltungen und Neues' }, n > 99 ? '99+' : String(n))); return b; }
     if (feat('feat')) navRest.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
     navRest.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
     navRest.append(btn('info', 'Info', 0, ' info'));
     var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); navRest.append(k);
+    if (navTop) topbar.append(navTop);
     topbar.append(navMain, navRest);
     renderVer();
   }
@@ -192,7 +198,7 @@
     saveView();
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug');
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug'); else if (v === 'news' && D.dev && D.news) newsView();
   }
 
   /* ---------- Kalender ---------- */
@@ -295,7 +301,7 @@
     if (kd) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Filter zurücksetzen', onclick: function () { S.kind.author = ''; filt(); rows(); } }, (kd === 'series' ? 'Reihen' : 'Autor:innen') + ' ×'));
     if (g) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Genre-Filter zurücksetzen', onclick: function () { S.genre[S.cat] = ''; filt(); rows(); } }, g + ' ×'));
   }
-  function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? pl(e.works, 'Album', 'Alben') : e.type === 'podcast' ? pl(e.works, 'Folge', 'Folgen') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
+  function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? (+e.singles === +e.works ? pl(e.works, 'Veröffentlichung', 'Veröffentlichungen') : pl(e.works, 'Album', 'Alben')) : e.type === 'podcast' ? pl(e.works, 'Folge', 'Folgen') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
   function rows() {
     var box = $('list'); box.textContent = '';
     var es = sortedEntries(S.cat), t = TYPES[S.cat], gq = S.genre[S.cat] || '', fq = (S.filter || '').trim().toLowerCase();
@@ -327,7 +333,7 @@
   function fmtN(n) { try { return Number(n).toLocaleString('de-DE'); } catch (_) { return String(n); } }
   function overview(cat) {
     var t = TYPES[cat], es = entriesOf(cat), wrap = h('div', { class: 'overview' }), works = 0, ups = 0, eps = 0, epsKnown = 0, tot = 0, totKnown = 0, items = [];
-    es.forEach(function (e) { works += e.works; var l = itemsOf(e); ups += l.length; items = items.concat(l); var ne = +e.episodes || 0; eps += ne; if (ne) epsKnown++; var tw = +e.total_works; if (tw > 0) { tot += tw; totKnown++; } });
+    es.forEach(function (e) { works += e.works - (e.type === 'artist' ? (+e.singles || 0) : 0); var l = itemsOf(e); ups += l.length; items = items.concat(l); var ne = +e.episodes || 0; eps += ne; if (ne) epsKnown++; var tw = +e.total_works; if (tw > 0) { tot += tw; totKnown++; } });
     var tiles = cat === 'author' ? [['Autor:innen', es.length], ['Bücher in deiner Liste', works, null, 'Die Bücher, die wir pro Autor:in tatsächlich speichern: höchstens 200 Treffer je Person, mehrfache Ausgaben desselben Titels nur einmal, angekündigte Bücher zählen unter „Kommende Veröffentlichungen“.'], ['Bücher insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben', 'Trefferzahl von Open Library. Sie enthält mehrfache Ausgaben und Übersetzungen desselben Buchs und Treffer über der Grenze von 200 je Autor:in, deshalb liegt sie höher als die Zahl in deiner Liste.'], ['Kommende Veröffentlichungen', ups, null, 'Angekündigte Bücher oder Alben mit Termin oder zumindest Erscheinungsjahr in der Zukunft.']]
       : cat === 'artist' ? [['Musiker:innen', es.length], ['Alben in deiner Liste', works, null, 'Die Alben und EPs, die wir pro Musiker:in speichern. Livealben, Compilations, Remixe, Soundtracks und Ähnliches werden nur gezählt, wenn sie noch kommen.'], ['Alben insgesamt (geschätzt)', tot, totKnown ? 'Angabe bei ' + totKnown + ' von ' + es.length : 'noch keine Angaben', 'Zahl der Alben und EPs, die MusicBrainz zur Person führt, inklusive mancher Doppel- oder Sonderfassungen.'], ['Kommende Veröffentlichungen', ups, null, 'Angekündigte Bücher oder Alben mit Termin oder zumindest Erscheinungsjahr in der Zukunft.']]
       : cat === 'film' ? [['Filme', es.length], ['Filme und Teile der Reihen', works], ['Kommende Starts', ups]]
@@ -350,7 +356,7 @@
   function nextBox(e, r, up, t) {
     var now = today0(), nxt = null, node = h('aside', { class: 'nextbox' });
     up.slice().sort(function (a, b) { return a.p.sort - b.p.sort; }).forEach(function (it) { if (!nxt && it.p.prec !== 'none' && it.p.end >= now) nxt = it; });
-    var cap = { series: 'Nächste Folge', podcast: 'Aktuelle Folge', author: 'Nächste Veröffentlichung', artist: 'Neues Album', film: 'Im Kino' }[e.type] || 'Nächster Termin';
+    var cap = { series: 'Nächste Folge', podcast: 'Aktuelle Folge', author: 'Nächste Veröffentlichung', artist: +e.singles > 0 && +e.singles === +e.works ? 'Neue Veröffentlichung' : 'Neues Album', film: 'Im Kino' }[e.type] || 'Nächster Termin';
     if (e.type === 'podcast') nxt = up.length ? up.slice().sort(function (a, b) { return b.p.sort - a.p.sort; })[0] : null;
     node.append(h('small', null, cap));
     if (nxt) {
@@ -369,7 +375,7 @@
       var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
     } else {
       var tot = Math.max(+e.total_works || 0, r.works.length), dn2 = doneSetOf(r), c1 = 0; r.works.forEach(function (w) { if (dn2[w.k]) c1++; });
-      if (tot) st.append(h('span', null, h('b', null, tot), ' ' + (e.type === 'author' ? 'Bücher' : e.type === 'artist' ? 'Alben' : e.type === 'podcast' ? 'Folgen' : 'Werke')));
+      if (tot) st.append(h('span', null, h('b', null, tot), ' ' + (e.type === 'author' ? 'Bücher' : e.type === 'artist' ? (+e.singles > 0 && +e.singles === +e.works ? 'Veröffentlichungen' : 'Alben') : e.type === 'podcast' ? 'Folgen' : 'Werke')));
       if (r.works.length && e.type !== 'podcast') { var dv0 = (DONEV[e.type] || DONEV.artist)[0]; st.append(h('span', null, h('b', null, c1), ' ' + dv0)); }
       if (st.childNodes.length) node.append(st);
     }
@@ -705,14 +711,14 @@
         draw(); gcols.append(h('div', { class: 'gcol' }, h('p', { class: 'plab' }, TYPES[t].plural, cap), box));
       });
       wrap.append(h('p', { class: 'plab' }, 'Lieblingsgenres (bis zu 5 je Kategorie)'), gcols);
-      var cu = (v.favs.custom = (v.favs.custom || []).filter(function (x) { return x && typeof x === 'object'; }).slice(0, 2)), crow = h('div', { class: 'custg' });
-      [0, 1].forEach(function (i) {
+      var cu = (v.favs.custom = (v.favs.custom || []).filter(function (x) { return x && typeof x === 'object'; }).slice(0, 5)), crow = h('div', { class: 'custg' });
+      [0, 1, 2, 3, 4].forEach(function (i) {
         var cur = cu[i] || { t: 'artist', g: '' }; cu[i] = cur;
         var sl = h('select', { 'aria-label': 'Kategorie von Genre ' + (i + 1), onchange: function () { cur.t = sl.value; } }, ['author', 'artist', 'film', 'series'].map(function (t) { return h('option', { value: t, selected: cur.t === t ? true : null }, TYPES[t].plural); }));
-        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i ? 'z. B. Neoklassik' : 'z. B. Cozy Crime', oninput: function () { cur.g = ti.value; } });
+        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i === 1 ? 'z. B. Neoklassik' : (i === 0 ? 'z. B. Cozy Crime' : ''), oninput: function () { cur.g = ti.value; } });
         crow.append(h('div', { class: 'inline' }, sl, ti));
       });
-      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 2)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
+      wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 5)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
       function doSave(m) {
         m.className = 'msg'; m.textContent = '';
         api('/api/data.php?a=profile_set', { name: v.name, year: v.year, date: v.date, age_show: v.age_show, avatar: v.avatar, favs: (function () { var f = Object.assign({}, v.favs); f.custom = (v.favs.custom || []).filter(function (c) { return c && c.g && c.g.trim(); }); return f; })() }).then(function (x) { if (x && x.ok) { m.className = 'msg ok'; m.textContent = 'Gespeichert.'; } else { m.className = 'msg err'; m.textContent = (x && x.error) || 'Das hat nicht geklappt.'; } });
@@ -735,7 +741,7 @@
     ['artist', 'film', 'series', 'author'].forEach(function (t) { var l = favs[t] || [], own = cust.filter(function (x) { return x.t === t; }); if (!l.length && !own.length) return; any = true;
       gl.append(h('div', { class: 'idgrow' }, h('span', { class: 'idcat', style: '--cc:' + CATCOL[t] }, TYPES[t].plural), h('span', { class: 'gchips' }, l.map(function (g) { return h('span', { class: 'gchip' }, g); }).concat(own.map(function (x) { return h('span', { class: 'gchip own' }, x.g); }))))); });
     if (!c.name && !c.age && !any) info.append(h('p', { class: 'hint', style: 'margin:6px 0 0' }, 'Noch keine Angaben.'));
-    return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (c.no || d.user.id))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
+    return h('section', { class: 'idcard', 'aria-label': 'Profilkarte von ' + name }, h('div', { class: 'idstripe' }, h('span', null, 'Schondraussen.de'), h('span', null, 'Mitglied Nr. ' + (d.locked ? '…' : (c.no || d.user.id)))), h('div', { class: 'idbody' }, pic, info), any ? gl : null);
   }
   function emailBox() {
     var wrap = h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'E-Mail-Adresse'));
@@ -807,7 +813,7 @@
       h('p', { style: 'margin:4px 0 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
         h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/data.php?a=bellall', { on: true }).then(function () { load(function () { render(); }); }); } }, 'Alle Glocken an'),
         h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/data.php?a=bellall', { on: false }).then(function () { load(function () { render(); }); }); } }, 'Alle Glocken aus'), sv));
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benachrichtigungen'), D.email ? null : h('p', { class: 'warnbox', style: 'margin:0 0 10px' }, 'Dein Konto hat keine E-Mail-Adresse, deshalb bekommst du keine Benachrichtigungen per Mail. Den Kalender und die Einträge siehst du weiter hier auf der Seite.'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'E-Mail-Benachrichtigungen'), D.email ? null : h('p', { class: 'warnbox', style: 'margin:0 0 10px' }, 'Dein Konto hat keine E-Mail-Adresse, deshalb bekommst du keine Benachrichtigungen per Mail. Den Kalender und die Einträge siehst du weiter hier auf der Seite.'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'), opts,
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
     var imp = h('div', { class: 'wide2' }), impBtns = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }), impPanels = h('div'); imp.append(impBtns, impPanels);
@@ -1006,12 +1012,12 @@
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
     // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
-    st.append(setCard('Profil', [K[0], K[1], emailBox(), K[2]]), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Darstellung', [K[3]], 'solo'), setCard('Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Optik/Optionen', [K[3]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
-    st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'), setCard('Meine Daten', [K[9], K[11]], 'solo'));
+    st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      var T = [['Profil', ['Profil', 'Profilkarte']], ['Darstellung', ['Darstellung', 'Benachrichtigungen', 'Kalender-Abo']], ['Daten', ['Import', 'Meine Daten']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });
@@ -1066,7 +1072,9 @@
         }
         function lst(title, items, note) { if (!items || !items.length) return; cronBox.append(h('details', { class: 'cronlist' }, h('summary', null, title + ' (' + items.length + (items.length >= 40 ? '+' : '') + ')'), note ? h('p', { class: 'hint' }, note) : null, h('ul', null, items.map(function (x) { return h('li', null, (TYPES[x.type] ? TYPES[x.type].label : x.type) + ': ' + x.name + ' · Stand ' + ts(x.fetched_at)); })))); }
         lst('Noch nicht aktuell (älter als 12 Stunden oder nie geladen)', r.stale);
-        lst('Geprüft, aber ohne Werke', r.empty, 'Die Quelle hat nichts gefunden oder der Name passt nicht. „Treffer ändern“ im Menü des Eintrags hilft.');
+        var emp = r.empty || [];
+        lst('Geprüft, aber ohne Werke', emp.filter(function (x) { return x.type !== 'artist'; }), 'Die Quelle hat nichts gefunden oder der Name passt nicht. „Treffer ändern“ im Menü des Eintrags hilft.');
+        lst('Künstler:innen ohne Alben, EPs und Singles', emp.filter(function (x) { return x.type === 'artist'; }), 'Bei Musik werden Alben und EPs abgefragt, nur wenn es davon keine gibt, auch Singles. Wer hier steht, hat bei MusicBrainz nichts davon oder wurde noch nicht neu geladen. Die Beschreibung kommt aus Wikipedia.');
       });
     }
     cronLoad();
@@ -1383,6 +1391,44 @@
     mainEl.append(p);
   }
 
+  /* ---------- News ---------- */
+  function newsSrc(list) { var l = list.map(function (ln) { var i = ln.indexOf('|'), u = i < 0 ? ln.trim() : ln.slice(i + 1).trim(), n = i < 0 ? u : ln.slice(0, i).trim(); return /^https?:\/\//i.test(u) ? h('a', { class: 'newssrc', href: u, target: '_blank', rel: 'noopener noreferrer' }, n) : null; }).filter(Boolean); return l.length ? h('p', { class: 'newssrcs' }, h('span', null, 'Quellen'), l) : null; }
+  function newsBody(t) { // einzelne News durch eine Zeile „---“ getrennt; Zeilen „Quelle: Name | Link“ gehören zur jeweiligen News
+    var items = String(t || '').split(/\n\s*-{3,}\s*(?:\n|$)/).map(function (s) { return s.trim(); }).filter(Boolean), out = [];
+    items.forEach(function (it, i) {
+      var src = [], txt = []; it.split('\n').forEach(function (ln) { var m = /^\s*Quellen?:\s*(.+)$/i.exec(ln); if (m) src.push(m[1]); else txt.push(ln); });
+      if (i) out.push(h('hr', { class: 'newshr' }));
+      out.push(h('div', { class: 'newsitem' }, newsText(txt.join('\n')), newsSrc(src)));
+    });
+    return out;
+  }
+  function newsText(t) { // Klartext: Leerzeile = neuer Absatz, Zeilen mit „- “ als Liste
+    var out = [], lines = String(t || '').split('\n'), para = [], list = [];
+    function flush() { if (para.length) { out.push(h('p', null, para.join(' '))); para = []; } if (list.length) { out.push(h('ul', null, list.map(function (x) { return h('li', null, x); }))); list = []; } }
+    lines.forEach(function (ln) { if (!ln.trim()) { flush(); return; } if (/^\s*[-•]\s+/.test(ln)) { if (para.length) flush(); list.push(ln.replace(/^\s*[-•]\s+/, '')); } else { if (list.length) flush(); para.push(ln.trim()); flush(); } });
+    flush(); return out;
+  }
+  function newsDate(d) { try { return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (_) { return d; } }
+  function newsDay(x, forAdmin) {
+    var src = function (t) { return newsSrc(String(t || '').split('\n')); };
+    var sec = function (cap, title, text, sources) { return (title || text) ? h('div', { class: 'newssec' }, h('h4', { class: 'logcat' }, cap), title ? h('h5', { class: 'newst' }, title) : null, newsBody(text), src(sources)) : null; };
+    return [sec('Seitennews', x.site_title, x.site_text, x.site_sources), sec('News zu Inhalten', x.content_title, x.content_text, x.content_sources)].filter(Boolean);
+  }
+  function newsView() {
+    var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.'));
+    var box = h('div', null, h('p', { class: 'state pulse' }, 'Lade …')); p.append(box); mainEl.append(p);
+    api('/api/news.php?a=list').then(function (r) {
+      box.textContent = '';
+      if (!r || r.error) { box.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+      var l = (r.days || []).filter(function (x) { return !x.future || r.admin; });
+      if (!l.length) { box.append(h('p', { class: 'hint' }, 'Noch keine News.')); return; }
+      l.forEach(function (x, i) {
+        var hd = h('h3', null, newsDate(x.day), x.future ? h('small', null, 'geplant') : null), body = newsDay(x);
+        if (i === 0) box.append(h('div', { class: 'logv newsv' }, hd, body)); else box.append(h('details', { class: 'logv logold newsv' }, h('summary', null, hd), body));
+      });
+    });
+  }
+
   /* ---------- Kontakt ---------- */
   /* ---------- Bilder (Chat, Ideen, Bugs) ---------- */
   function imgUrl(id) { return '/api/image.php?id=' + id; }
@@ -1400,9 +1446,9 @@
       im.src = u;
     });
   }
-  function uploadText(file) {
+  function uploadText(file, scope) {
     if (file.size > 200 * 1024) return Promise.reject(new Error('Die Textdatei ist zu groß (höchstens 200 KB).'));
-    return fetch('/api/image.php?a=upload&scope=feedback&kind=text&name=' + encodeURIComponent(file.name), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'text/plain' }, body: file })
+    return fetch('/api/image.php?a=upload&scope=' + (scope || 'feedback') + '&kind=text&name=' + encodeURIComponent(file.name), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'text/plain' }, body: file })
       .then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); })
       .then(function (r) { if (!r.ok) throw new Error(r.error || 'Hochladen nicht möglich.'); return { id: r.id, name: r.name || file.name }; });
   }
@@ -1417,31 +1463,37 @@
 
   function support() {
     if (S.preview) { mainEl.append(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'), h('p', { class: 'hint' }, 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'), h('p', { class: 'warnbox' }, 'In der Vorschau kannst du hier nichts schreiben.'))); return; }
-    var admin = D.admin, p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'),
+    var admin = D.admin, staff = !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'),
       h('p', { class: 'hint' }, admin ? 'Hier siehst du die Nachrichten deiner Nutzer und kannst antworten.' : 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'));
-    var grid = h('div', { class: 'supgrid' + (admin ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !admin }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
+    var grid = h('div', { class: 'supgrid' + (staff ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !staff }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
     var inp = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Nachricht', placeholder: 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)' }), msg = h('p', { class: 'msg', role: 'status' });
     var drafts = [], draftBox = h('div', { class: 'drafts' });
     var mailCk = h('input', { type: 'checkbox' }), mailRow = h('label', { class: 'mailck', hidden: !admin }, mailCk, ' Zusätzlich per E-Mail senden (mit Hinweis, dass man darauf nicht antworten kann)');
     var pick = h('select', { 'aria-label': 'Neue Unterhaltung mit einem Nutzer beginnen', class: 'userpick', onchange: function () { if (!pick.value) return; S.sup.sel = pick.value; pick.value = ''; drawThreads(); pull(); } }, h('option', { value: '' }, 'Nutzer anschreiben …'));
+    var dmPeers = [], dmPick = h('select', { 'aria-label': 'Chat mit einem Alphatester beginnen', class: 'userpick', onchange: function () { if (!dmPick.value) return; S.sup.sel = 'dm' + dmPick.value; dmPick.value = ''; drawThreads(); pull(); } }, h('option', { value: '' }, 'Alphatester anschreiben …'));
+    if (!admin && staff) api('/api/chat.php?a=dm_peers').then(function (r) { dmPeers = r.users || []; dmPeers.forEach(function (x) { dmPick.append(h('option', { value: String(x.id) }, x.username)); }); });
     if (admin) api('/api/chat.php?a=users').then(function (r) { (r.users || []).forEach(function (x) { pick.append(h('option', { value: String(x.id) }, (x.username || 'Mitglied') + ' · Nr. ' + x.id)); }); });
     var titleIn = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', hidden: true, 'aria-label': 'Kurzbeschreibung', placeholder: 'Kurzbeschreibung (erscheint als Titel in der Liste)', autocomplete: 'off', onkeydown: function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.focus(); } } });
     var attNote = h('p', { class: 'hint picnote' });
     function drawNote() { attNote.textContent = kindSel === 'chat' ? 'Bilder (JPG, PNG, WebP) bis zu 3 pro Nachricht. Zeige bitte keine fremden Personen oder privaten Daten.' : 'Anhänge: ' + drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
-    function scopeOf() { return kindSel === 'chat' ? 'chat' : 'feedback'; }
+    function isTeam() { return staff && S.sup.sel === 'team'; }
+    function isDm() { return !admin && staff && /^dm\d+$/.test(String(S.sup.sel)); }
+    function scopeOf() { return isTeam() ? 'team' : (kindSel === 'chat' ? 'chat' : 'feedback'); }
     function drawDrafts() { draftBox.textContent = ''; drafts.forEach(function (d) { draftBox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Bild entfernen', onclick: function () { drafts = drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawDrafts(); } }, '×'))); }); drawNote(); }
     function addFiles(files) {
       [].slice.call(files).forEach(function (f) {
-        if (drafts.length >= 3) { msg.className = 'msg err'; msg.textContent = kindSel === 'chat' ? 'Höchstens 3 Bilder pro Nachricht.' : 'Höchstens 3 Anhänge.'; return; }
+        if (drafts.length >= 3) { msg.className = 'msg err'; msg.textContent = scopeOf() === 'chat' ? 'Höchstens 3 Bilder pro Nachricht.' : 'Höchstens 3 Anhänge.'; return; }
         var isTxt = !/^image\//.test(f.type) && (/^text\//.test(f.type) || /\.(txt|log|md|csv|json)$/i.test(f.name));
-        if (isTxt && kindSel === 'chat') { msg.className = 'msg err'; msg.textContent = 'Textdateien gehen nur bei Ideen und Bugmeldungen.'; return; }
+        if (isTxt && scopeOf() === 'chat') { msg.className = 'msg err'; msg.textContent = 'Textdateien gehen nur bei Ideen und Bugmeldungen.'; return; }
         msg.className = 'msg'; msg.textContent = isTxt ? 'Datei wird hochgeladen …' : 'Bild wird hochgeladen …';
         var sc = scopeOf();
-        (isTxt ? uploadText(f) : uploadImage(f, sc)).then(function (d) { d.scope = sc; if (scopeOf() !== sc) { api('/api/image.php?a=remove', { id: d.id }); return; } drafts.push(d); msg.textContent = ''; drawDrafts(); })
+        (isTxt ? uploadText(f, sc) : uploadImage(f, sc)).then(function (d) { d.scope = sc; if (scopeOf() !== sc) { api('/api/image.php?a=remove', { id: d.id }); return; } drafts.push(d); msg.textContent = ''; drawDrafts(); })
           .catch(function (e) { msg.className = 'msg err'; msg.textContent = e.message; });
       });
     }
     function send() {
+      if (S.sup.sel === 'team' && staff) { teamSend(); return; }
+      if (isDm()) { var dt = inp.value.trim(); if (!dt) return; api('/api/chat.php?a=dm_send', { uid: String(S.sup.sel).slice(2), text: dt }).then(function (r) { if (r && r.ok) { inp.value = ''; msg.textContent = ''; dmPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); return; }
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (kindSel !== 'chat') { var ti = titleIn.value.trim(); if (ti.length < 3) { msg.className = 'msg err'; msg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; titleIn.focus(); return; } } else if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && kindSel === 'chat' && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
       if (kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kd === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kd === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
       inp.value = ''; drafts = []; drawDrafts(); var wantMail = admin && mailCk.checked; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids, mail: wantMail }).then(function (r) { msg.textContent = r.ok ? (wantMail ? (r.mailed ? 'Gesendet, auch per E-Mail zugestellt.' : 'Im Chat gesendet, aber die E-Mail konnte nicht verschickt werden.') : '') : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok && (!wantMail || r.mailed) ? '' : ' err'); pull(); });
@@ -1457,11 +1509,14 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; threads.append(pick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
-      S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
+      threads.textContent = ''; if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
+      S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
     }
     function pull() {
       var go2 = function () {
+        teamMode();
+        if (staff && S.sup.sel === 'team') { teamPull(); return; }
+        if (isDm()) { dmPull(); return; }
         if (admin && !S.sup.sel) { log.textContent = ''; log.append(h('p', { class: 'chatempty' }, 'Wähle links eine Unterhaltung.')); return; }
         api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
@@ -1472,30 +1527,101 @@
           if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
         });
       };
-      if (admin) api('/api/chat.php?a=threads').then(function (r) { S.sup.threads = r.threads || []; if (!S.sup.sel && S.sup.threads.length) S.sup.sel = S.sup.threads[0].id; drawThreads(); go2(); }); else go2();
+      if (staff) api('/api/chat.php?a=threads').then(function (r) {
+        var l = r.threads || []; if (!admin) { var tix = l.filter(function (x) { return x.id === 'team'; }), dms = l.filter(function (x) { return x.id !== 'team'; }); l = tix.concat([{ id: 'me', username: 'Chat mit dem Administrator', last_body: '', last_admin: 0, unread: 0 }], dms); if (isDm() && !l.some(function (x) { return x.id === S.sup.sel; })) { var pr = dmPeers.filter(function (x) { return 'dm' + x.id === S.sup.sel; })[0]; if (pr) l.push({ id: S.sup.sel, username: pr.username, last_body: '', last_admin: 0, unread: 0 }); } }
+        S.sup.threads = l;
+        if (!S.sup.sel) { var tm = l.filter(function (x) { return x.id === 'team'; })[0]; S.sup.sel = tm && +tm.unread > 0 ? 'team' : (admin ? ((l.filter(function (x) { return x.id !== 'team'; })[0] || tm || {}).id || null) : 'me'); }
+        drawThreads(); go2(); }); else go2();
     }
-    grid.append(threads, h('div', { class: 'chat' }, setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer'))); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+
+    /* Team-Chat (Admin und Alphatester) */
+    var pollBox = h('div', { class: 'pollform', hidden: true }), teamSending = false, lastScope = null;
+    function teamMode() {
+      var tm = staff && S.sup.sel === 'team', dm = isDm();
+      var sc = scopeOf(); if (lastScope && sc !== lastScope && drafts.length) { drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); drafts = []; drawDrafts(); } lastScope = sc;
+      [kindBox, kindHint, mailRow, titleIn].forEach(function (e) { if (e) e.hidden = tm || dm || (e === mailRow && !admin) || (e === titleIn && kindSel === 'chat'); });
+      if (tm) attNote.textContent = 'Bis zu 3 Anhänge pro Nachricht: Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; else drawNote();
+      pollBtn.hidden = !tm; if (!tm) pollBox.hidden = true;
+      var atb = form.querySelector('.attach'); if (atb) atb.hidden = dm;
+      if (dm) { var pn = (S.sup.threads.filter(function (x) { return x.id === S.sup.sel; })[0] || {}).username || 'Alphatester'; attNote.textContent = 'Direktnachricht nur zwischen dir und ' + pn + '. Der Administrator liest nicht mit.'; composerCard.querySelector('h3').textContent = 'Nachricht an ' + pn; chatCard.querySelector('h3').textContent = 'Direktchat mit ' + pn; inp.placeholder = 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)'; return; }
+      composerCard.querySelector('h3').textContent = tm ? 'Nachricht an das Team' : (admin ? 'Antworten' : 'Neue Nachricht');
+      chatCard.querySelector('h3').textContent = tm ? 'Team-Chat: Admin und Alphatester' : (admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator');
+      inp.placeholder = tm ? 'Nachricht an das Team … (Enter sendet, Umschalt+Enter für neue Zeile)' : 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)';
+    }
+    function teamSend() {
+      var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if ((!t && !ids.length) || teamSending) return; teamSending = true;
+      api('/api/chat.php?a=team_send', { text: t, images: ids }).then(function (r) { teamSending = false; if (r && r.ok) { inp.value = ''; drafts = []; drawDrafts(); msg.textContent = ''; teamPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Senden nicht möglich.'; } });
+    }
+    function drawPollForm() {
+      pollBox.textContent = ''; pollBox.hidden = false;
+      var q = h('input', { type: 'text', maxlength: '300', placeholder: 'Frage', 'aria-label': 'Frage der Abstimmung' }), opts = [], list = h('div', { class: 'pollopts' });
+      function addOpt(v) { var i = h('input', { type: 'text', maxlength: '120', placeholder: 'Antwort ' + (opts.length + 1), 'aria-label': 'Antwort ' + (opts.length + 1), value: v || '' }); opts.push(i); list.append(i); }
+      addOpt('Ja'); addOpt('Nein');
+      var pm = h('span', { class: 'msg', style: 'margin:0' });
+      pollBox.append(h('h4', { class: 'logcat' }, 'Neue Abstimmung'), q, list,
+        h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { if (opts.length < 8) addOpt(''); } }, 'Antwort hinzufügen'), ' ',
+          h('button', { class: 'btn small', type: 'button', onclick: function () { api('/api/chat.php?a=team_send', { poll: { q: q.value, options: opts.map(function (o) { return o.value; }) } }).then(function (r) { if (r && r.ok) { pollBox.hidden = true; teamPull(true); } else { pm.className = 'msg err'; pm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, 'Abstimmung senden'), ' ',
+          h('button', { class: 'btn ghost small', type: 'button', onclick: function () { pollBox.hidden = true; } }, 'Abbrechen'), ' ', pm));
+      q.focus();
+    }
+    function dmPull(scroll) {
+      var sel = S.sup.sel;
+      api('/api/chat.php?a=dm_thread&uid=' + String(sel).slice(2)).then(function (r) {
+        if (S.sup.sel !== sel) return;
+        var atEnd = scroll || log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
+        if (!r || r.error) { log.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+        if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), 'Schreibe unten die erste Nachricht. Nur ihr beide seht diesen Chat.'));
+        (r.messages || []).forEach(function (m) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, h('small', null, fmtChat(m.created_at)))); });
+        if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
+      });
+    }
+    function teamPull(scroll) {
+      api('/api/chat.php?a=team_thread').then(function (r) {
+        if (S.sup.sel !== 'team') return;
+        var atEnd = scroll || log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
+        if (!r || r.error) { log.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; }
+        if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), 'Hier schreiben Admin und Alphatester untereinander. Mit „Abstimmung“ kannst du eine Frage mit Antworten stellen.'));
+        (r.messages || []).forEach(function (m) {
+          var who = h('small', { class: 'who' }, m.name + ' · ' + fmtChat(m.created_at));
+          if (!+m.is_poll) { log.append(h('div', { class: 'bub ' + (m.mine ? 'me' : 'them') }, m.body, (m.images || []).map(function (im) { return im.kind === 'text' ? h('a', { class: 'txtatt', href: imgUrl(im.id), target: '_blank', rel: 'noopener' }, '📄 ' + (im.name || 'Textdatei')) : picLink(im.id, 'inchat'); }), who)); return; }
+          var total = (m.options || []).reduce(function (a, o) { return a + o.votes; }, 0);
+          var cl = !!m.closed, pb = h('div', { class: 'bub poll ' + (m.mine ? 'me' : 'them') + (cl ? ' closed' : '') }, h('div', { class: 'pqrow' }, h('b', { class: 'pq' }, m.body),
+            m.can_close ? h('button', { class: 'lockbtn', type: 'button', title: cl ? 'Abstimmung wieder öffnen' : 'Abstimmung schließen', 'aria-label': cl ? 'Abstimmung wieder öffnen' : 'Abstimmung schließen', 'aria-pressed': String(cl), onclick: function () { if (!cl && !confirm('Abstimmung schließen? Danach kann niemand mehr abstimmen.')) return; api('/api/chat.php?a=team_close', { msg: m.id }).then(function (z) { if (z && z.error) { msg.className = 'msg err'; msg.textContent = z.error; } teamPull(); }); } }, ico(cl ? ICONS.lock : ICONS.unlock)) : (cl ? h('span', { class: 'lockbtn static', title: 'Geschlossen' }, ico(ICONS.lock)) : null)));
+          (m.options || []).forEach(function (o) {
+            var pct = total ? Math.round(o.votes * 100 / total) : 0, sel = m.my_vote === o.id;
+            pb.append(h('button', { class: 'popt' + (sel ? ' on' : ''), type: 'button', 'aria-pressed': String(sel), title: cl ? 'Die Abstimmung ist geschlossen' : (sel ? 'Stimme zurücknehmen' : 'Dafür stimmen'), disabled: cl, onclick: function () { api('/api/chat.php?a=team_vote', { msg: m.id, opt: o.id }).then(function () { teamPull(); }); } },
+              h('span', { class: 'bar', style: 'width:' + pct + '%' }), h('span', { class: 'pl' }, (sel ? '✓ ' : '') + o.label), h('span', { class: 'pn' }, o.votes + (total ? ' · ' + pct + ' %' : ''))));
+          });
+          pb.append(h('small', { class: 'who' }, 'Abstimmung von ' + m.name + ' · ' + fmtChat(m.created_at) + ' · ' + total + (total === 1 ? ' Stimme' : ' Stimmen') + (cl ? ' · geschlossen' : ''))); log.append(pb);
+        });
+        if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
+      });
+    }
+    var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
+    var pollBtn = h('button', { class: 'btn ghost', type: 'button', hidden: true, onclick: drawPollForm }, 'Abstimmung'); form.insertBefore(pollBtn, form.querySelector('button[type=submit]'));
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
-    if (!S.preview && (D.admin || D.alpha)) { S.fbNew = S.fbNew || {}; S.fbNew[kind === 'bug' ? 'bug' : 'feat'] = 0; fbPoll(true); }
+    if (!S.preview && (D.admin || D.alpha)) fbPoll();
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
       h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
-    S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null;
+    S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null, seen = null, firstLoad = true, tabSeen = {};
     function grp(x) { return staff && !x.released_at ? 'rel' : (x.done_at ? 'done' : 'cur'); }
+    function isNew(x) { if (!staff || !seen) return false; var g = grp(x), t = g === 'cur' ? x.released_at : (g === 'done' ? x.done_at : null); return !!t && String(t) > String(seen); }
     var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen']].concat(staff ? [['rel', 'Freischaltungen']] : []), tbtn = {};
     if (!TABS.some(function (t) { return t[0] === S.fbTab[tabKey]; })) S.fbTab[tabKey] = 'cur';
     var tbar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': bug ? 'Bugs' : 'Ideen' });
-    TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
+    TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; tabSeen[t[0]] = true; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
     mainEl.prepend(tbar);
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
-      var cnt = { cur: 0, done: 0, rel: 0 }; l.forEach(function (x) { cnt[grp(x)]++; });
-      TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); });
+      var cnt = { cur: 0, done: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
+      TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); var nn = t[0] === 'rel' ? cnt.rel : (tabSeen[t[0]] ? 0 : newN[t[0]]); if (on && t[0] !== 'rel') tabSeen[t[0]] = true; if (nn && !(on && t[0] !== 'rel')) b.append(h('span', { class: 'badge', 'aria-label': nn + (t[0] === 'rel' ? ' offen: Freischaltungen und Neues' : ' neu seit deinem letzten Besuch') }, String(nn))); });
       var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
       if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? 'Nichts wartet auf Freischaltung.' : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
       var pendHead = false;
@@ -1538,6 +1664,21 @@
           editBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Meinen Beitrag bearbeiten', onclick: function () { body.hidden = false; eBox.hidden = !eBox.hidden; } }, 'Bearbeiten');
         }
         var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
+        var cBox = null, cBtn = null;
+        if (staff && lastR && lastR.cview) { // interne Kommentare (nur Admin und Alphatester)
+          var cl = h('div', { class: 'fbcomments' }), cf = h('div', { class: 'fbcform', hidden: true }), cmsg = h('span', { class: 'msg', style: 'margin:0' });
+          (x.comments || []).forEach(function (m) { cl.append(h('div', { class: 'fbcm' }, h('div', { class: 'fbcwho' }, m.name + ' · ' + fmtC(m.at)), h('div', { class: 'fbctext' }, m.body))); });
+          if (lastR.cwrite) {
+            var cta = h('textarea', { rows: '3', maxlength: '1000', placeholder: 'Interner Kommentar (nur Admin und Alphatester sehen ihn)', 'aria-label': 'Kommentar' });
+            cf.append(cta, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' },
+              h('button', { class: 'btn small', type: 'button', onclick: function () { var t = cta.value.trim(); if (!t) return; api('/api/feedback.php?a=comment', { id: x.id, text: t }).then(function (r2) { if (r2.ok) { S.fbOpen = S.fbOpen || {}; S.fbOpen[x.id] = 1; reload(); } else { cmsg.className = 'msg err'; cmsg.textContent = r2.error || 'Das hat nicht geklappt.'; } }); } }, 'Kommentar speichern'),
+              h('button', { class: 'btn ghost small', type: 'button', onclick: function () { cf.hidden = true; } }, 'Abbrechen'), cmsg));
+            cBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Internen Kommentar schreiben', onclick: function () { body.hidden = false; head.setAttribute('aria-expanded', 'true'); cf.hidden = !cf.hidden; if (!cf.hidden) cta.focus(); } }, 'Kommentar');
+          }
+          cBox = h('div', { class: 'fbcbox' }, cl, cf);
+          if ((x.comments || []).length || lastR.cwrite) body.append(cBox);
+          if (S.fbOpen && S.fbOpen[x.id]) { body.hidden = false; head.setAttribute('aria-expanded', 'true'); }
+        }
         var acts = h('div', { class: 'fbacts' });
         var noteForm = h('div', { class: 'fbnoteform', hidden: true });
         function askNote(label, send) {
@@ -1562,20 +1703,22 @@
           if (D.admin && !S.preview && (x.released_at || +x.rejected)) acts.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!+x.rejected), onclick: function () { if (+x.rejected) api('/api/feedback.php?a=reject', { id: x.id, on: false }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); else askNote('Ablehnen', function (t) { return api('/api/feedback.php?a=reject', { id: x.id, on: true, note: t }); }); } }, +x.rejected ? 'Ablehnung zurücknehmen' : 'Ablehnen'));
         }
         if (staff && x.released_at && !x.done_at && !+x.rejected) Object.keys(PHASE).forEach(function (k) { acts.append(h('button', { class: 'btn ghost small ph-' + k, type: 'button', title: 'Status für alle sichtbar setzen, nochmal klicken setzt ihn zurück', 'aria-pressed': String(x.phase === k), onclick: function () { if (x.phase === k || k !== 'postponed') api('/api/feedback.php?a=phase', { id: x.id, phase: x.phase === k ? '' : k }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); else askNote('Zurückstellen', function (t) { return api('/api/feedback.php?a=phase', { id: x.id, phase: k, note: t }); }); } }, PHASE[k])); });
+        if (cBtn) acts.append(cBtn);
         if (staff) {
           var rg2 = h('span', { class: 'fbright' }, h('button', { class: 'btn small' + (x.released_at ? ' ghost' : ''), type: 'button', title: x.released_at ? 'Beitrag wieder ausblenden' : 'Beitrag für alle sichtbar machen', onclick: function () { api('/api/feedback.php?a=release', { id: x.id, on: !x.released_at }).then(function (r2) { if (r2.ok) reload(); else say(r2.error || 'Das hat nicht geklappt.', true); }); } }, x.released_at ? 'Freigabe zurücknehmen' : 'Freigeben'));
           if (D.admin) rg2.append(h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Wirklich löschen?')) api('/api/feedback.php?a=delete', { id: x.id }).then(function () { reload(); }); } }, 'Löschen'));
           ownBtns.slice().reverse().forEach(function (b) { rg2.prepend(b); });
           acts.append(rg2);
         } else if (ownBtns.length) acts.append(h('span', { class: 'fbright' }, ownBtns));
-        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
+        var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') + (isNew(x) ? ' isnew' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
         if (!x.released_at && !staff && !pendHead) { pendHead = true; box.append(h('h3', { class: 'fbdiv' }, staff ? 'Noch nicht freigegeben (nur für Admin und Alphatester sichtbar)' : 'Deine Beiträge, die noch auf Freigabe warten')); }
         box.append(row);
       });
     }
-    function reload() { api('/api/feedback.php?a=list&kind=' + kind).then(draw); }
+    function reload() { var op = firstLoad && staff; firstLoad = false; api('/api/feedback.php?a=list&kind=' + kind + (op ? '&open=1' : '')).then(function (r) { if (op && r) seen = r.seen || null; draw(r); }); }
     reload();
   }
+  function fmtC(t) { try { var d = new Date(String(t).replace(' ', 'T')); return d.toLocaleDateString('de-DE') + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'; } catch (_) { return String(t); } }
   function editedSpan(x, field, text) {
     var ed = (x.edits || []).filter(function (e) { return e.field === field; });
     if (!ed.length) return text;
@@ -1584,8 +1727,7 @@
   }
   function fbPoll(mark) { // mark: nur beim Öffnen der Liste als „gesehen“ vermerken, nicht bei den Abfragen im Hintergrund
     if (S.preview || !(D.admin || D.alpha)) return;
-    var cur = mark ? (S.view === 'feat' ? 'feature' : (S.view === 'bug' ? 'bug' : '')) : '';
-    api('/api/feedback.php?a=newcount&cur=' + cur).then(function (r) {
+    api('/api/feedback.php?a=newcount').then(function (r) {
       if (!r || !r.n) return; var n = { feat: +r.n.feature || 0, bug: +r.n.bug || 0 }, o = S.fbNew || {};
       if (n.feat !== (o.feat || 0) || n.bug !== (o.bug || 0)) { S.fbNew = n; nav(); }
     });
@@ -1781,6 +1923,38 @@
       });
     }
     wishes();
+
+    var newsAdm = h('div', { class: 'wide2' }), newsMsg = h('span', { class: 'msg', style: 'margin:0' });
+    (function () {
+      var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+      var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }),
+        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), cx = h('textarea', { rows: '10', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }), old = h('div', null), all = [];
+      function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; }
+      function say2(t, bad) { newsMsg.className = 'msg' + (bad ? ' err' : ''); newsMsg.textContent = t; }
+      function load() {
+        api('/api/news.php?a=list').then(function (r) {
+          if (!r || r.error) { say2((r && r.error) || 'Das hat nicht geklappt.', true); return; }
+          all = r.days || []; old.textContent = '';
+          if (!all.length) old.append(h('p', { class: 'hint' }, 'Noch keine News.'));
+          all.forEach(function (x) {
+            old.append(h('details', { class: 'logv logold newsv' }, h('summary', null, h('h3', null, newsDate(x.day), x.future ? h('small', null, 'geplant') : null)), newsDay(x),
+              h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { day.value = x.day; fill(x.day); say2('Zum Bearbeiten oben geladen.'); window.scrollTo(0, 0); } }, 'Bearbeiten'), ' ',
+                h('button', { class: 'btn ghost small', type: 'button', onclick: function () { if (!confirm('News vom ' + newsDate(x.day) + ' löschen?')) return; api('/api/news.php?a=delete', { day: x.day }).then(function (z) { if (z && z.ok) { say2('Gelöscht.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Löschen'))));
+          });
+          fill(day.value);
+        });
+      }
+      day.addEventListener('change', function () { fill(day.value); say2(''); });
+      newsAdm.append(
+        h('label', { class: 'field' }, h('span', null, 'Tag (gleicher Tag überschreibt die vorhandene Meldung)'), day), h('p', { class: 'hint' }, 'Mehrere News pro Bereich: durch eine Zeile mit --- trennen. Quellen direkt unter die jeweilige News schreiben, eine pro Zeile: Quelle: Name | https://…'),
+        h('h4', { class: 'logcat' }, 'Seitennews'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), st), h('label', { class: 'field' }, h('span', null, 'Haupttext'), sx),
+        h('h4', { class: 'logcat' }, 'News zu Inhalten'), h('label', { class: 'field' }, h('span', null, 'Überschrift'), ct), h('label', { class: 'field' }, h('span', null, 'Haupttext'), cx),
+        h('p', null, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/news.php?a=save', { day: day.value, site_title: st.value, site_text: sx.value, content_title: ct.value, content_text: cx.value, site_sources: '', content_sources: '' }).then(function (z) { if (z && z.ok) { say2('Gespeichert.'); load(); } else say2((z && z.error) || 'Das hat nicht geklappt.', true); }); } }, 'Speichern'), ' ', newsMsg),
+        h('h4', { class: 'logcat' }, 'Bisherige News'), old);
+      load();
+    })();
+    p.append(h('h3', { class: 'sec' }, 'News'), newsAdm);
+
     var tickGh = function () {}, ghBox = h('div', { class: 'wide2 ghbox' }, h('p', { class: 'state pulse' }, 'Lade …'));
     (function () {
       var timer = null, skew = 0;
@@ -1808,8 +1982,8 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Einladen', 'Wunschbilder', 'Gesperrte E-Mail-Adressen']], ['Statistik', ['Statistik']], ['Inhalte', ['Systemnachrichten', 'Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Mails', ['Testmail']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Rechte der Nutzergruppen', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Eintrag prüfen', 'Aktualisierung der Einträge']]];
-      var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs', role: 'tablist' });
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });
       var btns = TABS.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_admtab', cur); } catch (_) {} show(); } }, t[0]); if (t[0] === 'Nutzer') b.append(' ', admBadge); bar.append(b); return b; });
@@ -1817,6 +1991,11 @@
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Inhalte'; });
       }
+      var tl = TABS.filter(function (t) { return t[0] === 'Tools'; })[0][1].map(function (tt) { return cards.filter(function (c) { return c.querySelector('h3').textContent === tt; })[0]; }).filter(Boolean); // Tools: Karten in dieser Reihenfolge
+      tl.forEach(function (c) { c.parentNode.appendChild(c); });
+      var nu = TABS.filter(function (t) { return t[0] === 'Nutzer'; })[0][1]; // „Rechte der Nutzergruppen“ steht ganz unten bei „Nutzer“
+      var rgc = cards.filter(function (c) { return c.querySelector('h3').textContent === 'Rechte der Nutzergruppen'; })[0], lastNu = cards.filter(function (c) { return nu.indexOf(c.querySelector('h3').textContent) > -1 && c !== rgc; }).pop();
+      if (rgc && lastNu) lastNu.after(rgc);
       p.querySelector('h2.sec').after(bar); show();
     })();
     function blocked() {
@@ -1879,9 +2058,9 @@
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
-      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true };
+      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true, news: !!(D.dev && D.news) };
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(true); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();
