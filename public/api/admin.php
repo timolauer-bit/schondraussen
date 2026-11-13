@@ -82,6 +82,11 @@ if ($a === 'users') {
     } catch (Throwable $e) {}
     json_out(['users' => $r, 'me' => (int) $u['id']]);
 }
+if ($a === 'mail_previews') { // Reiter „Infomails“: alle Mailarten als Vorschau für das Admin-Konto, ohne etwas zu verschicken
+    require_once __DIR__ . '/../lib/mailpreview.php';
+    try { json_out(['items' => mail_previews($pdo, $u), 'from' => (string) (cfg('mail', [])['from'] ?? 'benachrichtigung@schondraussen.de')]); }
+    catch (Throwable $e) { json_out(['error' => 'Die Vorschau konnte nicht erstellt werden.'], 500); }
+}
 if ($a === 'testmail' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Testmail im Format der echten Benachrichtigungen (für mail-tester.com u. ä.)
     require_once __DIR__ . '/../lib/notify.php';
     $to = trim((string) ($b['email'] ?? ''));

@@ -5,6 +5,7 @@ window.CHANGELOG = [
     'F|Kontakt: Team-Chat für Admin und Alphatester mit Abstimmungen (vom Ersteller per Schloss schließbar), Bildern und Textdateien.',
     'F|Kontakt: Alphatester können sich untereinander Direktnachrichten schreiben, der Chat startet über „Alphatester anschreiben …“.',
     'F|Ideen und Bugs: Interne Kommentare für Admin und Alphatester.',
+    'A|Admin: Neuer Reiter „Infomails“ mit allen Mailarten (Benachrichtigungen, Konto, Mails an den Admin) als Vorschau mit deinem Konto als Empfänger, umschaltbar zwischen Normal, Handy und Text. Es wird nichts verschickt.',
     'O|Einstellungen: Bis zu 5 eigene Genres auf der Profilkarte; „Darstellung“ heißt jetzt „Optik/Optionen“, „Benachrichtigungen“ heißt „E-Mail-Benachrichtigungen“, das Kalender-Abo steht davor.',
     'O|Einstellungen: Neu sortiert. Profil: Meine Daten und Profilkarte. Daten: Benutzername, E-Mail und Wiederherstellung, Import.',
     'U|Musik: Bei Künstler:innen mit nur Singles steht „Veröffentlichungen“ statt „Alben“, die Kachel „Alben in deiner Liste“ zählt keine Singles.',

@@ -23,3 +23,6 @@ Zum Ausprobieren von Umgestaltungen gibt es zusätzlich Design-Varianten. Der Sc
 - Eingetragen wird sie in `public/designs/index.json`: `[{"slug":"nav-b","name":"Navigation B","desc":"Kurzbeschreibung"}]`. Nur eingetragene Varianten mit beiden Dateien erscheinen im Menü.
 - Gleiche Datenbank und API wie Live und Dev. Eine Variante wird gelöscht, indem Ordner und Eintrag entfernt werden.
 - Gefällt eine Variante: Dateien nach `public/dev/` und `public/` kopieren (wie bei der Freigabe), Eintrag und Ordner danach entfernen.
+
+## Mailtexte und Admin-Reiter „Infomails“
+Die Vorschau (`public/lib/mailpreview.php`) spiegelt die festen Mailtexte aus auth.php, admin.php, chat.php, feedback.php und notify.php. Ändert sich dort ein Text, bitte in `mailpreview.php` mitändern.

@@ -1854,7 +1854,31 @@
       h('form', { autocomplete: 'off', style: 'display:grid;gap:8px', onsubmit: function (ev) { ev.preventDefault(); nwMsg.className = 'msg'; nwMsg.textContent = 'Veröffentliche …'; api('/api/admin.php?a=news_create', { title: nwT.value, body: nwB.value }).then(function (r) { if (r.ok) { nwT.value = ''; nwB.value = ''; nwMsg.textContent = 'Veröffentlicht.'; nwLoad(); } else { nwMsg.className = 'msg err'; nwMsg.textContent = r.error || 'Das hat nicht geklappt.'; } }); } }, nwT, nwB, h('div', null, h('button', { class: 'btn', type: 'submit' }, 'Veröffentlichen'))), nwMsg, nwList);
     nwLoad();
     var cs = cronSection();
-    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Registrierung'), apBox, anBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Rechte der Nutzergruppen'), permBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Eintrag prüfen'), ecBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Aktualisierung der Einträge'), cs[0], cs[1], h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Wartende Konten (falls die manuelle Freischaltung an ist) siehst du hier zuerst. Beim Löschen verschwinden Konto und Liste.'));
+    var mailLoad, mailBox = h('div', { class: 'mailprev' }); // Reiter „Infomails“: Vorschau aller Mailarten (Normal, Handy, Text)
+    (function () {
+      var items = null, mode = 'normal', sel = h('select', { 'aria-label': 'Mailart' }), meta = h('div', { class: 'mpmeta' }), frame = h('iframe', { class: 'mpframe', title: 'Vorschau der Mail', sandbox: '' }), plain = h('pre', { class: 'mpplain', hidden: true }), modes = {}, state = h('p', { class: 'hint' }, 'Lade …');
+      var bar = h('div', { class: 'mpbar' }, sel, h('div', { class: 'mpmodes', role: 'group', 'aria-label': 'Ansicht' }, [['normal', 'Normal'], ['phone', 'Handy'], ['text', 'Text']].map(function (m) { var b = h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': 'false', onclick: function () { mode = m[0]; draw(); } }, m[1]); modes[m[0]] = b; return b; })));
+      function draw() {
+        var it = items && items[+sel.value]; if (!it) return;
+        Object.keys(modes).forEach(function (k) { modes[k].setAttribute('aria-pressed', String(k === mode)); });
+        meta.textContent = ''; [['Anlass', it.when], ['An', 'dein Konto (Beispielwerte, es wird nichts verschickt)'], ['Betreff', it.subject]].forEach(function (r) { meta.append(h('div', null, h('span', { class: 'mplbl' }, r[0]), ' ', r[1])); });
+        frame.hidden = mode === 'text'; plain.hidden = mode !== 'text';
+        frame.className = 'mpframe' + (mode === 'phone' ? ' phone' : '');
+        if (mode === 'text') plain.textContent = it.text; else frame.srcdoc = it.html;
+      }
+      sel.addEventListener('change', draw);
+      mailBox.append(h('p', { class: 'hint' }, 'So sehen die Mails der Seite aus, mit deinem Konto als Empfänger. Die Beispieltexte und Links sind Platzhalter, die Texte entsprechen dem aktuellen Stand im Code. „Normal“ ist die Ansicht am Rechner, „Handy“ eine schmale Spalte, „Text“ die reine Textfassung.'), state);
+      mailLoad = function () {
+        if (items) return;
+        api('/api/admin.php?a=mail_previews').then(function (r) {
+          if (!r || r.error || !r.items) { state.className = 'warnbox'; state.textContent = (r && r.error) || 'Die Vorschau konnte nicht geladen werden.'; return; }
+          items = r.items; state.remove(); var gr = {};
+          items.forEach(function (it, i) { var g = gr[it.group]; if (!g) { g = gr[it.group] = h('optgroup', { label: it.group }); sel.append(g); } g.append(h('option', { value: String(i) }, it.label)); });
+          sel.value = '0'; mailBox.append(bar, meta, frame, plain); draw();
+        }, function () { state.className = 'warnbox'; state.textContent = 'Die Vorschau konnte nicht geladen werden.'; });
+      };
+    })();
+    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Registrierung'), apBox, anBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Rechte der Nutzergruppen'), permBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Eintrag prüfen'), ecBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Aktualisierung der Einträge'), cs[0], cs[1], h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Infomails'), mailBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Wartende Konten (falls die manuelle Freischaltung an ist) siehst du hier zuerst. Beim Löschen verschwinden Konto und Liste.'));
     var box = h('div', { class: 'adm' }), ulast = null, usearch = h('input', { type: 'search', maxlength: '40', placeholder: 'Suchen nach Nummer oder Benutzername', 'aria-label': 'Nutzer suchen', style: 'width:100%;max-width:360px;margin:8px 0', oninput: function () { paint(); } });
     p.append(usearch, box); mainEl.append(p);
     function users() { api('/api/admin.php?a=users').then(function (r) { ulast = r; S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; if (admBadge) { admBadge.textContent = S.pend + ' neu'; admBadge.hidden = !S.pend; } nav(); pendPaint(r.users); apLoad(); paint(); }); }
@@ -1995,7 +2019,7 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
       var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });
@@ -2003,6 +2027,7 @@
       function show() {
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Inhalte'; });
+        if (cur === 'Infomails' && mailLoad) mailLoad();
       }
       var tl = TABS.filter(function (t) { return t[0] === 'Tools'; })[0][1].map(function (tt) { return cards.filter(function (c) { return c.querySelector('h3').textContent === tt; })[0]; }).filter(Boolean); // Tools: Karten in dieser Reihenfolge
       tl.forEach(function (c) { c.parentNode.appendChild(c); });

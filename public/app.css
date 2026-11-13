@@ -802,3 +802,14 @@ hr.newshr{margin-inline:auto}
 .devmenu .dmi b{font-size:14px}.devmenu .dmi small{font-size:12px;color:var(--muted);font-family:inherit;white-space:normal}
 .devmenu .dmi:hover,.devmenu .dmi:focus-visible{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .devmenu .dmi.on{box-shadow:inset 3px 0 0 var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+
+.mailprev .mpbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mailprev select{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+.mailprev .mpmodes{display:flex;gap:6px}
+.mailprev .mpmeta{margin-top:12px;font-size:14px;line-height:1.6}
+.mailprev .mplbl{display:inline-block;min-width:56px;color:var(--muted)}
+.mailprev .mpframe{display:block;width:100%;height:560px;margin-top:12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.mailprev .mpframe.phone{width:375px;max-width:100%;height:640px;margin-left:auto;margin-right:auto;border-radius:22px;border-width:6px;border-color:var(--ink)}
+.mailprev .mpplain{margin:12px 0 0;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);white-space:pre-wrap;word-break:break-word;font:14px/1.5 ui-monospace,monospace;max-height:560px;overflow:auto}
+.mailprev .mpframe[hidden],.mailprev .mpplain[hidden]{display:none}
+.mailprev .mpmodes .btn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
