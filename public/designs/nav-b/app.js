@@ -125,7 +125,7 @@
     if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
     ttl.append(' ', ib); return h('div', null, ttl, box);
   }
-  function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon'); }
+  function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon', h('small', { class: 'adtag' }, 'Werbung')); }
   function popup(title, text) { // Bestätigung als Fenster, schließt mit OK, Esc oder Klick daneben
     var prev = document.activeElement, ok = h('button', { class: 'btn', type: 'button' }, 'OK');
     var box = h('div', { class: 'unmodal', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'pph' }, h('div', { class: 'unbox' }, h('h2', { id: 'pph', style: 'margin:0 0 6px;font-size:20px' }, title), h('p', { class: 'hint', style: 'margin:0 0 14px' }, text), ok));
