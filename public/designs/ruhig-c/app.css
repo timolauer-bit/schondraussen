@@ -907,3 +907,10 @@ input[type=search],.srch input,#q{border-radius:99px;padding-inline:16px}
   .navmain .nav{font-size:13.5px;padding:0 12px}
 }
 @media(max-width:760px){html .topbar{position:static}}
+/* Fix: aktive Symbol-Knöpfe bleiben rund (kein Aufklappen mit Text), kein Trennstrich */
+@media(min-width:761px){
+  .nav.ionly[aria-current=page]{width:40px;padding:0}
+  .nav.ionly[aria-current=page] .lbl,.nav.ionly .lbl{display:none!important}
+  .nav.rg,.nav.rg::before{border-left:0}
+  .nav.rg{margin-left:auto}
+}
