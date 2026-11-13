@@ -12,6 +12,7 @@ window.CHANGELOG = [
     'U|Obere Leiste: Auf dem Handy in drei zentrierten Zeilen; am Desktop zeigt das aktive Symbol seinen Namen erst ab 1700 px Breite, damit nichts umbricht. Chat-Knöpfe sind vereinheitlicht.',
     'A|Admin: Neuer Reiter „Tools“ (Testmail, Einladen, Systemnachrichten, Eintrag prüfen); „Rechte der Nutzergruppen“ steht unter Nutzer, Reiter „News“ für die Meldungen.',
     'A|Admin: Künstler:innen ohne Alben, EPs und Singles stehen in der Aktualisierung in einer eigenen Liste.',
+    'A|Version wählen: Der Schalter oben öffnet ein Menü mit Live, Entwicklung und Design-Varianten zum Ausprobieren. Erste Variante: „Navigation B“ (Ideen, Bugs und Kontakt unter „Feedback“).',
   ] },
   { v: 12, d: '12.11.2026', t: [
     'F|Musik: Hat ein:e Künstler:in bei MusicBrainz keine Alben oder EPs, zeigen wir stattdessen die Singles. Wer Alben hat, bekommt keine Singles dazu, die Listen bleiben also übersichtlich.',

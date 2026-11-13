@@ -155,6 +155,18 @@ function perm(?array $u, string $k): bool {
     $v = perm_values(); return !empty($v[$k][!empty($u['alpha']) ? 'alpha' : 'user']);
 }
 /** Kurze Liste der Bereiche, in denen die Entwicklungsversion von der Live-Version abweicht (public/dev/changes.json, Texte wie „Serien → Seite einer einzelnen Serie“). */
+/** Design-Varianten zum Testen: public/designs/index.json + je Variante ein Ordner designs/<kennung>/ mit app.js und app.css. */
+function design_list(): array {
+    $f = __DIR__ . '/../designs/index.json'; if (!is_file($f)) return [];
+    $j = json_decode((string) @file_get_contents($f), true); if (!is_array($j)) return [];
+    $out = [];
+    foreach ($j as $x) {
+        $slug = is_array($x) ? (string) ($x['slug'] ?? '') : '';
+        if (!preg_match('/^[a-z0-9-]{1,30}$/', $slug) || !is_file(__DIR__ . "/../designs/$slug/app.js") || !is_file(__DIR__ . "/../designs/$slug/app.css")) continue;
+        $out[] = ['slug' => $slug, 'name' => mb_substr(trim((string) ($x['name'] ?? $slug)), 0, 40), 'desc' => mb_substr(trim((string) ($x['desc'] ?? '')), 0, 200)];
+    }
+    return $out;
+}
 function dev_notes(): array {
     $f = __DIR__ . '/../dev/changes.json'; if (!is_file($f)) return [];
     $j = json_decode((string) @file_get_contents($f), true); if (!is_array($j)) return [];

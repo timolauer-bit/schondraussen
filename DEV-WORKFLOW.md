@@ -14,3 +14,12 @@ Grenzen: PHP, API und Datenbank-Änderungen sind für beide Versionen gleich. Ne
 - `public/dev/changes.json` listet kurz, wo die Dev-Version abweicht, z. B. `["Serien → Seite einer einzelnen Serie"]`. Wer das Recht „Entwicklerversion nutzen“ hat, sieht die Anzahl als rote Zahl am Live/Dev-Schalter, der Hover-Text nennt die Bereiche.
 - Betroffene Elemente in `dev/app.js` mit `devMark(element, 'kurzname')` kennzeichnen. Im Dev-Modus bekommen sie einen schmalen gelben Rahmen (`.devmode [data-dev]`).
 - Bei jeder Freigabe: `public/dev/changes.json` auf `[]` zurücksetzen (und die Dateien wie oben kopieren).
+
+## Design-Varianten (parallel zu Live und Dev)
+
+Zum Ausprobieren von Umgestaltungen gibt es zusätzlich Design-Varianten. Der Schalter oben (Live / Dev / Name) öffnet ein Menü mit allen Versionen; gewählt wird per Cookie `sd_dev` (`d:<kennung>`), wirksam nur mit dem Recht „Entwicklerversion nutzen“.
+
+- Jede Variante liegt in `public/designs/<kennung>/app.js` und `app.css` (vollständige Kopien, z. B. von `dev/`). Kennung: Kleinbuchstaben, Ziffern, Bindestrich, höchstens 30 Zeichen.
+- Eingetragen wird sie in `public/designs/index.json`: `[{"slug":"nav-b","name":"Navigation B","desc":"Kurzbeschreibung"}]`. Nur eingetragene Varianten mit beiden Dateien erscheinen im Menü.
+- Gleiche Datenbank und API wie Live und Dev. Eine Variante wird gelöscht, indem Ordner und Eintrag entfernt werden.
+- Gefällt eine Variante: Dateien nach `public/dev/` und `public/` kopieren (wie bei der Freigabe), Eintrag und Ordner danach entfernen.
