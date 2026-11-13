@@ -815,3 +815,14 @@ hr.newshr{margin-inline:auto}
 .fbpop .fbi:hover,.fbpop .fbi:focus-visible{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .fbpop .fbi[aria-current=page]{box-shadow:inset 3px 0 0 var(--accent);font-weight:600}
 @media(max-width:760px){.navrest .nav.fbmenu{padding-inline:10px}.fbpop{right:50%;transform:translateX(50%)}}
+
+/* Design „Navigation B“: Kopf, Handy-Leiste, Kalender, Einwilligung */
+@media(max-width:760px){
+  .masthead p{display:none}
+  .navmain .nav,.navtop .nav{font-size:clamp(12px,3.2vw,14px);min-height:44px;align-items:center;gap:3px}
+  .navmain .nav .ico{display:none}
+  .navmain{justify-content:space-between;gap:0 2px}
+  .navrest .nav{min-height:44px}
+}
+.rel.calrow .ccat{display:inline-block;margin-right:8px;padding:0 7px;border:1px solid var(--line);border-radius:999px;font:600 11.5px/18px var(--font-body, inherit);color:var(--muted);vertical-align:1px}
+.rel.calrow.c-author .ccat{border-color:var(--c-author)}.rel.calrow.c-artist .ccat{border-color:var(--c-artist)}.rel.calrow.c-film .ccat{border-color:var(--c-film)}.rel.calrow.c-series .ccat{border-color:var(--c-series)}.rel.calrow.c-podcast .ccat{border-color:var(--c-podcast)}

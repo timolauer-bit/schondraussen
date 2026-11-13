@@ -239,7 +239,7 @@
     var sub = h('div', { class: 'sub' }, h('b', null, it.e.name), it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '', it.u.note ? ' · ' + it.u.note : '');
     var kindTxt = (it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : '');
     if (cal) return h('div', { class: 'rel calrow c-' + it.e.type }, h('i', { class: 'cbar', 'aria-hidden': 'true' }), left,
-      h('div', { class: 'one' }, nameLink(it.e), ' – ' + it.u.title + kindTxt), soon ? h('span', { class: 'soon' }, soon) : null);
+      h('div', { class: 'one' }, h('span', { class: 'ccat c-' + it.e.type }, (TYPES[it.e.type] || {}).label || ''), nameLink(it.e), ' – ' + it.u.title + kindTxt), soon ? h('span', { class: 'soon' }, soon) : null);
     return h('div', { class: 'rel wide hasacts' }, left,
       h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
       h('div', { class: 'acts' }, it.e.type === 'podcast' ? null : amazonLink(it.e, it.u.title)));
@@ -269,7 +269,7 @@
         if (o) {
           var cats = ORDER.filter(function (k) { return o.cats[k]; }), step = 100 / cats.length;
           var stops = cats.map(function (k, i) { return CATCOL[k] + ' ' + (i * step) + '% ' + ((i + 1) * step) + '%'; }).join(', ');
-          cell.append(h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', title: o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') }, h('span', { class: 'pn' }, String(d))));
+          cell.append(h('span', { class: 'pie', role: 'img', 'aria-label': d + '. ' + o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', '), style: 'background:conic-gradient(' + stops + ')', title: o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') }, h('span', { class: 'pn' }, String(d))));
         } else cell.append(h('span', { class: 'pn plain' }, String(d)));
         cal.append(cell);
       }
@@ -2064,8 +2064,8 @@
       h('p', { class: 'hint' }, 'Die Community-Seite zeigt Ranglisten und die aktivsten Nutzer. Wenn du zustimmst, können andere Teilnehmende mit deinem Benutzernamen deine Listen und deine zuletzt hinzugefügten Einträge sehen und Einträge übernehmen. Ohne Zustimmung bleibst du dort unsichtbar.'),
       h('p', { class: 'hint' }, 'Du kannst das jederzeit unter Einstellungen ändern („Meine Einträge für die Community nutzen“).'),
       h('div', { class: 'inline', style: 'margin-top:10px' },
-        h('button', { class: 'btn', type: 'button', onclick: function () { choose(true); } }, 'Zustimmen'),
-        h('button', { class: 'btn ghost', type: 'button', onclick: function () { choose(false); } }, 'Erstmal ablehnen'))));
+        h('button', { class: 'btn ghost', type: 'button', onclick: function () { choose(true); } }, 'Teilnehmen'),
+        h('button', { class: 'btn ghost', type: 'button', onclick: function () { choose(false); } }, 'Nicht teilnehmen'))));
     function choose(on) { api('/api/auth.php?a=community', { on: on }).then(function (r) { if (r.ok) { D.community = on; D.community_asked = true; box.remove(); } }); }
     document.body.append(box);
   }
