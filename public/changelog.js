@@ -11,6 +11,7 @@ window.CHANGELOG = [
     'U|Musik: Bei Künstler:innen mit nur Singles steht „Veröffentlichungen“ statt „Alben“, die Kachel „Alben in deiner Liste“ zählt keine Singles.',
     'U|Ideen und Bugs: Rote Zahlen an Knopf und Reitern, farbiger Rahmen für Neues. Der Kommentar-Knopf zeigt keine Anzahl.',
     'U|Ideen und Bugs: Die Knopfleiste eines Beitrags erscheint erst, wenn der Beitrag angewählt (aufgeklappt) ist; aufgeklappte Beiträge bleiben nach einer Aktion offen.',
+    'B|Ideen und Bugs: Das Aufklappdreieck springt bei langen Titeln nicht mehr in eine eigene Zeile über dem Text.',
     'U|Obere Leiste: Auf dem Handy in drei zentrierten Zeilen; am Desktop zeigt das aktive Symbol seinen Namen erst ab 1700 px Breite, damit nichts umbricht. Chat-Knöpfe sind vereinheitlicht.',
     'A|Admin: Neuer Reiter „Tools“ (Testmail, Einladen, Systemnachrichten, Eintrag prüfen); „Rechte der Nutzergruppen“ steht unter Nutzer, Reiter „News“ für die Meldungen.',
     'A|Admin: Künstler:innen ohne Alben, EPs und Singles stehen in der Aktualisierung in einer eigenen Liste.',
