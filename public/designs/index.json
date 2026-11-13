@@ -3,5 +3,15 @@
   "slug": "nav-b",
   "name": "Navigation B",
   "desc": "Feedback gebündelt, Kopf und Handy-Leiste kompakter, Kalender mit Kategorie-Text, gleichwertige Einwilligungsknöpfe."
+ },
+ {
+  "slug": "ruhig-a",
+  "name": "Ruhig A: Seitenleiste",
+  "desc": "Navigation links als Seitenleiste, weiche Karten, einheitliche Knöpfe und Staffel-Kacheln. Handy: Leiste oben zum Wischen."
+ },
+ {
+  "slug": "ruhig-c",
+  "name": "Ruhig C: Pillen",
+  "desc": "Kategorien als runde Pillen, runde Knöpfe, großzügige Kacheln mit gefüllten gesehenen Staffeln."
  }
 ]
