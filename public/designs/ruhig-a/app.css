@@ -859,7 +859,7 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline
 .badge{border-radius:99px}
 footer{color:var(--muted);font-size:13px}
 /* Kopfleiste ohne Rahmen, ohne Unterstrich-Balken */
-html .topbar,html.devmode .topbar{border:0;border-radius:0;box-shadow:none;margin-inline:0;padding-inline:0;min-height:0;background:transparent}
+html .topbar,html.devmode .topbar{border:0;border-radius:0;box-shadow:none;margin-inline:0;padding-inline:0;min-height:0;background:var(--bg)}
 .nav .nt::after,.nav:has(.cdot)[aria-current=page] .nt::after{display:none!important}
 .nav:has(.cdot)[aria-current=page]{border-bottom-color:transparent}
 /* Zusammenfassung ohne Initiale und Balken */
