@@ -262,7 +262,7 @@
     el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); });
   }
   document.addEventListener('scroll', hideDayTip, true); document.addEventListener('click', hideDayTip);
-  function renderMonths(items) {
+  function renderMonths(items, onFilter) {
     var now = today0(), byDay = {};
     items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {}, list: [] }); o.n++; o.cats[it.e.type] = 1; o.list.push(it); });
     var grid = h('div', { class: 'mgrid' });
@@ -281,14 +281,25 @@
       }
       grid.append(h('div', { class: 'mon' }, h('h3', null, MONTH.format(first)), cal));
     }
-    return devMark(h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, h('div', { class: 'legend' }, ORDER.map(function (k) { return h('span', null, h('i', { style: 'background:' + CATCOL[k] }), TYPES[k].plural); }))), 'cal-tip');
+    var cnt = {}; items.forEach(function (it) { cnt[it.e.type] = (cnt[it.e.type] || 0) + 1; });
+    var leg = h('div', { class: 'legend legfilt', role: 'group', 'aria-label': 'Kategorien filtern' }, ORDER.map(function (k) {
+      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
+      return b;
+    }));
+    return devMark(h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg), 'cal-tip');
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
     wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz und Open Library und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
-    wrap.append(renderMonths(items)); wrap.append(groupByMonth(items)); return wrap;
+    S.calHide = S.calHide || {};
+    var tbl = h('div', { class: 'caltbl' });
+    function drawTbl() {
+      var vis = items.filter(function (it) { return !S.calHide[it.e.type]; }); tbl.textContent = '';
+      if (!vis.length) tbl.append(h('p', { class: 'state' }, 'Alle Kategorien sind ausgeblendet. Wähle oben eine Kategorie, um Termine zu sehen.')); else tbl.append(groupByMonth(vis));
+    }
+    wrap.append(renderMonths(items, drawTbl)); wrap.append(tbl); drawTbl(); return wrap;
   }
 
   /* ---------- Listen ---------- */
