@@ -621,7 +621,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 /* Umschalter Live/Entwicklungsversion (nur Admin) */
 .devsw{font:600 12px var(--font-mono);padding:3px 8px;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:transparent;cursor:pointer;border-bottom-width:1px}
 .devsw.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-html.devmode .topbar{box-shadow:inset 0 3px 0 var(--accent)}
+html.devmode .topbar{box-shadow:inset 0 3px 0 #e3b21f}
 
 /* Werke als Karten (Bücher, Musik, Filme) mit Fortschrittsbalken */
 .wbar{display:block;height:5px;border-radius:5px;background:var(--line);overflow:hidden;margin:2px 0 14px}.wbar i{display:block;height:100%;width:0;background:#3b7d3f;transition:width .2s}
