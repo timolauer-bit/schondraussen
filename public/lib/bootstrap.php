@@ -132,11 +132,11 @@ function perm_defs(): array {
         'news' => ['Seite „News“ ansehen', 'Neuigkeiten zur Seite und zu Inhalten lesen (derzeit nur in der Entwicklungsversion sichtbar)', [1, 1], 'live'],
         'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen (Test)', [0, 0], 'live'],
         'adm_briefing' => ['Admin-Bereich: Briefing', 'Lage der letzten 24 Stunden (Nutzer, Kontakt, Ideen und Bugs, neue Einträge, Mails); ohne die Bereiche Zustand der Seite und Sicherheit', [0, 0, 1], 'live'],
-        'adm_users' => ['Admin-Bereich: Nutzer betreuen', 'Nutzerliste sehen, Konten freischalten, Namenswechsel verlangen, Wunschbilder bearbeiten', [0, 0, 1], 'live'],
-        'adm_users_danger' => ['Admin-Bereich: Konten sperren und löschen', 'Freischaltung entziehen, Konten löschen, E-Mail-Adressen sperren oder aufdecken', [0, 0, 0], 'live'],
+        'adm_users' => ['Admin-Bereich: Nutzerverwaltung und Wunschbilder', 'Nutzerliste sehen, Konten freischalten, Namenswechsel verlangen, Wunschbilder bearbeiten', [0, 0, 1], 'live'],
+        'adm_users_danger' => ['Admin-Bereich: Nutzerverwaltung, Sperren und Löschen; Gesperrte E-Mail-Adressen', 'Freischaltung entziehen, Konten löschen, E-Mail-Adressen aufdecken, sperren und die Sperrliste verwalten', [0, 0, 0], 'live'],
         'adm_stats' => ['Admin-Bereich: Statistik', 'Nutzer- und Anmeldezahlen, Löschungen und Abmeldegründe (nur Zahlen)', [0, 0, 1], 'live'],
-        'adm_news' => ['Admin-Bereich: News und Systemnachrichten', 'News verfassen und Systemnachrichten an alle Nutzer schreiben', [0, 0, 1], 'live'],
-        'adm_tools' => ['Admin-Bereich: Eintrag prüfen', 'Diagnose, wie ein Eintrag gespeichert ist und wem er auf der Liste steht', [0, 0, 0], 'live'],
+        'adm_news' => ['Admin-Bereich: News und Systemnachrichten', 'Reiter News: Meldungen verfassen; Tools: Systemnachrichten an alle Nutzer schreiben', [0, 0, 1], 'live'],
+        'adm_tools' => ['Admin-Bereich: Eintrag prüfen', 'Tools: Diagnose, wie ein Eintrag gespeichert ist und wem er auf der Liste steht', [0, 0, 0], 'live'],
         'devmode' => ['Entwicklerversion nutzen', 'Schalter „Live/Dev“ neben dem Benutzernamen: neue Funktionen testen, bevor sie für alle freigegeben werden', [0, 1], 'live'],
     ];
 }
