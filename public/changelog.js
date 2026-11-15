@@ -1,6 +1,9 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'U|Kontakt: „Idee melden“ und „Bug melden“ sind jetzt eigene Karten über dem Chat. Die Unterhaltungen stehen in der Liste nach Team, Nutzern und Direktchats gruppiert.',
+    'F|Ideen und Bugs: Bei der Meldung kann eine Kategorie gewählt werden (zum Beispiel Kalender, E-Mails, Neues Feature). Sie steht in der Liste und in der Mail an den Admin.',
+    'U|Chat: Systemnachrichten haben einen helleren Farbton und tragen fett den Hinweis „Systemnachricht“.',
     'B|Menü: Die rote Zahl am Schalter „Live/Dev“ wird nicht mehr vom Rahmen des Schalters abgeschnitten und hat keinen weißen Rand mehr, wie bei der Version.',
     'F|Community: Bei „Meistgelesen Bücher“ zählt jetzt jede Person einmal pro Autor:in oder Reihe, bei Gleichstand entscheidet die Zahl der gelesenen Bücher. Bei „Meistgehört Musik“ reichen für kleine Diskografien 20 % des Katalogs, statt immer 5 Alben.',
     'U|Menü: Der Streifen unter dem aktiven Punkt „Kalender“ (und „News“) liegt wie bei den Kategorien nur unter dem Text, nicht unter dem Symbol.',
