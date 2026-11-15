@@ -749,8 +749,8 @@
             else { dbMsg.className = 'msg err'; dbMsg.textContent = (x && x.error) || 'Das hat nicht geklappt.'; }
           }); } }, 'Bild übernehmen')), dbMsg);
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'off', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
-      var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
-      var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
+      var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', autocomplete: 'off', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
+      var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, autocomplete: 'off', 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
       wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), picRow, dbBox, wishBox,
@@ -771,7 +771,7 @@
       [0, 1, 2, 3, 4].forEach(function (i) {
         var cur = cu[i] || { t: 'artist', g: '' }; cu[i] = cur;
         var sl = h('select', { 'aria-label': 'Kategorie von Genre ' + (i + 1), onchange: function () { cur.t = sl.value; } }, ['author', 'artist', 'film', 'series'].map(function (t) { return h('option', { value: t, selected: cur.t === t ? true : null }, TYPES[t].plural); }));
-        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i === 1 ? 'z. B. Neoklassik' : (i === 0 ? 'z. B. Cozy Crime' : ''), oninput: function () { cur.g = ti.value; } });
+        var ti = h('input', { type: 'text', maxlength: '24', value: cur.g || '', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', name: 'eigenes-genre-' + (i + 1), 'aria-label': 'Eigenes Genre ' + (i + 1), placeholder: i === 1 ? 'z. B. Neoklassik' : (i === 0 ? 'z. B. Cozy Crime' : ''), oninput: function () { cur.g = ti.value; } });
         crow.append(h('div', { class: 'inline' }, sl, ti));
       });
       wrap.append(h('p', { class: 'plab' }, 'Eigene Genres (bis zu 5)'), h('p', { class: 'hint' }, 'Wähle die Kategorie und trag dein Genre ein. Es erscheint nur auf deiner Profilkarte in der Community, nicht in den Genre-Filtern.'), crow);
