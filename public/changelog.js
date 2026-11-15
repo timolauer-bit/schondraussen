@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'D|Datenschutzerklärung aktualisiert: Konto mit und ohne E-Mail-Adresse ist beschrieben, dazu die kurze Speicherung der IP-Adresse gegen Missbrauch und die gewählten Einstellungen (Version, Theme).',
     'U|Ideen und Bugs: Status (Brainstorming, In Bearbeitung …) und bei Bugs die Dringlichkeit stehen in festen Spalten an der gleichen Stelle. Das wirkt ruhiger.',
     'U|Ideen und Bugs: Wer einen Beitrag freigibt, landet direkt im geöffneten Beitrag und kann dort gleich den Status setzen.',
     'A|Nerdinfos: Text aktualisiert (Konto ohne E-Mail, Kalender, Themes, Ideen und Bugs, Bereitstellungsdauer, Cookies, Admin-Funktionen).',
