@@ -240,9 +240,31 @@
     });
     return wrap;
   }
+  /* Kalender: Tooltip an den Tagen mit Terminen (Maus, Tastatur und Antippen) */
+  var dayTipEl = null;
+  function hideDayTip() { if (dayTipEl) { dayTipEl.remove(); dayTipEl = null; } }
+  function showDayTip(anchor, date, list) {
+    hideDayTip();
+    var rows = list.slice(0, 8).map(function (it) { return h('li', null, h('i', { class: 'tdot', style: 'background:' + CATCOL[it.e.type] }), h('span', null, h('b', null, it.e.name), it.u.title && it.u.title !== it.e.name ? ' – ' + it.u.title : '', it.u.kind ? h('small', null, ' ' + it.u.kind) : null)); });
+    if (list.length > 8) rows.push(h('li', { class: 'more' }, '+ ' + (list.length - 8) + ' weitere'));
+    var tip = dayTipEl = h('div', { class: 'daytip', role: 'tooltip' }, h('p', { class: 'dthead' }, date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })), h('ul', null, rows));
+    document.body.append(tip);
+    var r = anchor.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, sx = window.pageXOffset, sy = window.pageYOffset;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, document.documentElement.clientWidth - tw - 8)) + sx, top = r.top - th - 8 >= 8 ? r.top - th - 8 + sy : r.bottom + 8 + sy;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  }
+  function dayTip(el, date, list) {
+    el.addEventListener('mouseenter', function () { showDayTip(el, date, list); });
+    el.addEventListener('mouseleave', hideDayTip);
+    el.addEventListener('focus', function () { showDayTip(el, date, list); });
+    el.addEventListener('blur', hideDayTip);
+    el.addEventListener('click', function (ev) { ev.stopPropagation(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); });
+    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); });
+  }
+  document.addEventListener('scroll', hideDayTip, true); document.addEventListener('click', hideDayTip);
   function renderMonths(items) {
     var now = today0(), byDay = {};
-    items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {} }); o.n++; o.cats[it.e.type] = 1; });
+    items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {}, list: [] }); o.n++; o.cats[it.e.type] = 1; o.list.push(it); });
     var grid = h('div', { class: 'mgrid' });
     for (var mi = 0; mi < 4; mi++) {
       var first = new Date(now.getFullYear(), now.getMonth() + mi, 1), y = first.getFullYear(), m = first.getMonth() + 1, days = new Date(y, m, 0).getDate(), lead = (first.getDay() + 6) % 7;
@@ -253,13 +275,13 @@
         if (o) {
           var cats = ORDER.filter(function (k) { return o.cats[k]; }), step = 100 / cats.length;
           var stops = cats.map(function (k, i) { return CATCOL[k] + ' ' + (i * step) + '% ' + ((i + 1) * step) + '%'; }).join(', ');
-          cell.append(h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', title: o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') }, h('span', { class: 'pn' }, String(d))));
+          var pie = h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', tabindex: '0', role: 'button', 'aria-label': d + '.' + m + '.: ' + o.n + (o.n === 1 ? ' Termin' : ' Termine') + ' (' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') + ')' }, h('span', { class: 'pn' }, String(d))); dayTip(pie, new Date(y, m - 1, d), o.list); cell.append(pie);
         } else cell.append(h('span', { class: 'pn plain' }, String(d)));
         cal.append(cell);
       }
       grid.append(h('div', { class: 'mon' }, h('h3', null, MONTH.format(first)), cal));
     }
-    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, h('div', { class: 'legend' }, ORDER.map(function (k) { return h('span', null, h('i', { style: 'background:' + CATCOL[k] }), TYPES[k].plural); })));
+    return devMark(h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, h('div', { class: 'legend' }, ORDER.map(function (k) { return h('span', null, h('i', { style: 'background:' + CATCOL[k] }), TYPES[k].plural); }))), 'cal-tip');
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
