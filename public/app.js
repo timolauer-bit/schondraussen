@@ -178,7 +178,7 @@
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     var navTop = null;
-    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
+    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), devMark(btn('news', 'News', 0, ' newsnav'), 'news')); } // Handy: eigene Zeile
     else navMain.append(btn('cal', 'Kalender', 0));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
@@ -240,9 +240,31 @@
     });
     return wrap;
   }
-  function renderMonths(items) {
+  /* Kalender: Tooltip an den Tagen mit Terminen (Maus, Tastatur und Antippen) */
+  var dayTipEl = null;
+  function hideDayTip() { if (dayTipEl) { dayTipEl.remove(); dayTipEl = null; } }
+  function showDayTip(anchor, date, list) {
+    hideDayTip();
+    var rows = list.slice(0, 8).map(function (it) { return h('li', null, h('i', { class: 'tdot', style: 'background:' + CATCOL[it.e.type] }), h('span', null, h('b', null, it.e.name), it.u.title && it.u.title !== it.e.name ? ' – ' + it.u.title : '', it.u.kind ? h('small', null, ' ' + it.u.kind) : null)); });
+    if (list.length > 8) rows.push(h('li', { class: 'more' }, '+ ' + (list.length - 8) + ' weitere'));
+    var tip = dayTipEl = h('div', { class: 'daytip', role: 'tooltip' }, h('p', { class: 'dthead' }, date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })), h('ul', null, rows));
+    document.body.append(tip);
+    var r = anchor.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, sx = window.pageXOffset, sy = window.pageYOffset;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, document.documentElement.clientWidth - tw - 8)) + sx, top = r.top - th - 8 >= 8 ? r.top - th - 8 + sy : r.bottom + 8 + sy;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  }
+  function dayTip(el, date, list) {
+    el.addEventListener('mouseenter', function () { showDayTip(el, date, list); });
+    el.addEventListener('mouseleave', hideDayTip);
+    el.addEventListener('focus', function () { showDayTip(el, date, list); });
+    el.addEventListener('blur', hideDayTip);
+    el.addEventListener('click', function (ev) { ev.stopPropagation(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); });
+    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); });
+  }
+  document.addEventListener('scroll', hideDayTip, true); document.addEventListener('click', hideDayTip);
+  function renderMonths(items, onFilter) {
     var now = today0(), byDay = {};
-    items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {} }); o.n++; o.cats[it.e.type] = 1; });
+    items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {}, list: [] }); o.n++; o.cats[it.e.type] = 1; o.list.push(it); });
     var grid = h('div', { class: 'mgrid' });
     for (var mi = 0; mi < 4; mi++) {
       var first = new Date(now.getFullYear(), now.getMonth() + mi, 1), y = first.getFullYear(), m = first.getMonth() + 1, days = new Date(y, m, 0).getDate(), lead = (first.getDay() + 6) % 7;
@@ -253,20 +275,36 @@
         if (o) {
           var cats = ORDER.filter(function (k) { return o.cats[k]; }), step = 100 / cats.length;
           var stops = cats.map(function (k, i) { return CATCOL[k] + ' ' + (i * step) + '% ' + ((i + 1) * step) + '%'; }).join(', ');
-          cell.append(h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', title: o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') }, h('span', { class: 'pn' }, String(d))));
+          var pie = h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', tabindex: '0', role: 'button', 'aria-label': d + '.' + m + '.: ' + o.n + (o.n === 1 ? ' Termin' : ' Termine') + ' (' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') + ')' }, h('span', { class: 'pn' }, String(d))); dayTip(pie, new Date(y, m - 1, d), o.list); cell.append(pie);
         } else cell.append(h('span', { class: 'pn plain' }, String(d)));
         cal.append(cell);
       }
       grid.append(h('div', { class: 'mon' }, h('h3', null, MONTH.format(first)), cal));
     }
-    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, h('div', { class: 'legend' }, ORDER.map(function (k) { return h('span', null, h('i', { style: 'background:' + CATCOL[k] }), TYPES[k].plural); })));
+    var cnt = {}; items.forEach(function (it) { cnt[it.e.type] = (cnt[it.e.type] || 0) + 1; });
+    var leg = h('div', { class: 'legend legfilt', role: 'group', 'aria-label': 'Kategorien filtern' }, ORDER.map(function (k) {
+      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
+      return b;
+    }));
+    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg);
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
     wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz und Open Library und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
-    wrap.append(renderMonths(items)); wrap.append(groupByMonth(items)); return wrap;
+    S.calHide = S.calHide || {};
+    var tbl = h('div', { class: 'caltbl' });
+    function drawTbl() {
+      var vis = items.filter(function (it) { return !S.calHide[it.e.type]; }); tbl.textContent = '';
+      /* Liste: von Podcasts höchstens die 10 letzten vergangenen Folgen (Monatsübersicht oben zeigt weiter alle) */
+      var now = new Date(), tdy = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate(), tym = Math.floor(tdy / 100);
+      function isPast(it) { var q = it.p || {}; if (!q.y) return false; return q.prec === 'day' ? q.y * 10000 + q.m * 100 + q.d < tdy : q.y * 100 + q.m < tym; }
+      var pastPod = vis.filter(function (it) { return it.e.type === 'podcast' && isPast(it); });
+      if (pastPod.length > 10) { var drop = pastPod.slice().sort(function (x, y) { return x.p.sort - y.p.sort; }).slice(0, pastPod.length - 10); vis = vis.filter(function (it) { return drop.indexOf(it) < 0; }); }
+      if (!vis.length) tbl.append(h('p', { class: 'state' }, 'Alle Kategorien sind ausgeblendet. Wähle oben eine Kategorie, um Termine zu sehen.')); else tbl.append(groupByMonth(vis));
+    }
+    wrap.append(renderMonths(items, drawTbl)); wrap.append(tbl); drawTbl(); return wrap;
   }
 
   /* ---------- Listen ---------- */
@@ -1427,7 +1465,7 @@
     return [sec('Seitennews', x.site_title, x.site_text, x.site_sources), sec('News zu Inhalten', x.content_title, x.content_text, x.content_sources)].filter(Boolean);
   }
   function newsView() {
-    var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.'));
+    var p = devMark(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.')), 'news');
     var box = h('div', null, h('p', { class: 'state pulse' }, 'Lade …')); p.append(box); mainEl.append(p);
     api('/api/news.php?a=list').then(function (r) {
       box.textContent = '';
@@ -1651,7 +1689,7 @@
       drawRepCards(); ti.focus();
     }
     drawRepCards();
-    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(repCards, repSlot, grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(repCards, repSlot, grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   var FBCATS = { bug: [['calendar', 'Kalender'], ['lists', 'Listen und Einträge'], ['search', 'Suche und Hinzufügen'], ['community', 'Community'], ['news', 'News'], ['contact', 'Kontakt und Chat'], ['account', 'Konto und Anmeldung'], ['email', 'E-Mails'], ['ui', 'Menü und Darstellung'], ['data', 'Falsche oder fehlende Daten'], ['other', 'Sonstiges']], feature: [['feature', 'Neues Feature'], ['improve', 'Verbesserung einer Funktion'], ['source', 'Neue Kategorie oder Datenquelle'], ['design', 'Aussehen und Design'], ['mail', 'E-Mails und Benachrichtigungen'], ['community', 'Community'], ['calendar', 'Kalender'], ['mobile', 'Handy und Bedienung'], ['content', 'Inhalte und Daten'], ['other', 'Sonstiges']] };
   function catLabel(kind, key) { var l = (FBCATS[kind] || []).filter(function (c) { return c[0] === key; })[0]; return l ? l[1] : ''; }
@@ -1677,6 +1715,14 @@
       var cnt = { cur: 0, done: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
       TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); var nn = t[0] === 'rel' ? cnt.rel : (tabSeen[t[0]] ? 0 : newN[t[0]]); if (on && t[0] !== 'rel') tabSeen[t[0]] = true; if (nn && !(on && t[0] !== 'rel')) b.append(h('span', { class: 'badge', 'aria-label': nn + (t[0] === 'rel' ? ' offen: Freischaltungen und Neues' : ' neu seit deinem letzten Besuch') }, String(nn))); });
       var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
+      S.fbCat = S.fbCat || {}; var cc = {}, ccN = 0; shown.forEach(function (x) { if (x.category && catLabel(bug ? 'bug' : 'feature', x.category)) { cc[x.category] = (cc[x.category] || 0) + 1; ccN++; } });
+      if (S.fbCat[tabKey] && !cc[S.fbCat[tabKey]]) S.fbCat[tabKey] = '';
+      if (ccN) {
+        var cur = S.fbCat[tabKey] || '', chips = h('div', { class: 'catfilt', role: 'group', 'aria-label': 'Nach Kategorie filtern' });
+        function chip(key, label, n) { chips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(cur === key), onclick: function () { S.fbCat[tabKey] = key; draw(lastR); } }, label, h('small', null, String(n)))); }
+        chip('', 'Alle', shown.length); (FBCATS[bug ? 'bug' : 'feature'] || []).forEach(function (c) { if (cc[c[0]]) chip(c[0], c[1], cc[c[0]]); });
+        box.append(chips); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
+      }
       if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? 'Nichts wartet auf Freischaltung.' : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
       var pendHead = false;
       shown.forEach(function (x) {
@@ -1717,7 +1763,7 @@
           body.append(eBox);
           editBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Meinen Beitrag bearbeiten', onclick: function () { body.hidden = false; eBox.hidden = !eBox.hidden; } }, 'Bearbeiten');
         }
-        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); if (typeof acts !== 'undefined' && acts) acts.hidden = body.hidden; S.fbOpen = S.fbOpen || {}; if (body.hidden) delete S.fbOpen[x.id]; else S.fbOpen[x.id] = 1; } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), x.category && catLabel(bug ? 'bug' : 'feature', x.category) ? h('span', { class: 'fbcat' }, catLabel(bug ? 'bug' : 'feature', x.category)) : null, nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
+        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); if (typeof acts !== 'undefined' && acts) acts.hidden = body.hidden; S.fbOpen = S.fbOpen || {}; if (body.hidden) delete S.fbOpen[x.id]; else S.fbOpen[x.id] = 1; } }, h('span', { class: 'fbt' }, x.category && catLabel(bug ? 'bug' : 'feature', x.category) ? h('span', { class: 'fbcat' }, catLabel(bug ? 'bug' : 'feature', x.category)) : null, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
         var cBox = null, cBtn = null;
         if (staff && lastR && lastR.cview) { // interne Kommentare (nur Admin und Alphatester)
           var cl = h('div', { class: 'fbcomments' }), cf = h('div', { class: 'fbcform', hidden: true }), cmsg = h('span', { class: 'msg', style: 'margin:0' });

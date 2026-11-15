@@ -1,6 +1,10 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'U|Kalender: Fährt man mit der Maus über einen Tag mit Terminen (am Handy: antippen), zeigt ein kleines Fenster, welche Termine an dem Tag sind.',
+    'U|Kalender: Die Kategorien unter den Monaten sind jetzt anklickbare Chips. Damit blendest du Kategorien in der Terminliste ein und aus.',
+    'O|Kalender: In der Liste erscheinen von den Podcasts höchstens die 10 zuletzt erschienenen Folgen. Die Monatsübersicht oben bleibt unverändert.',
+    'U|Ideen und Bugs: Die Kategorie steht jetzt links vor dem Titel, und über der Liste filtern Chips nach Kategorien.',
     'U|Kontakt: „Idee melden“ und „Bug melden“ sind jetzt eigene Karten über dem Chat. Die Unterhaltungen stehen in der Liste nach Team, Nutzern und Direktchats gruppiert.',
     'F|Ideen und Bugs: Bei der Meldung kann eine Kategorie gewählt werden (zum Beispiel Kalender, E-Mails, Neues Feature). Sie steht in der Liste und in der Mail an den Admin.',
     'U|Chat: Systemnachrichten haben einen helleren Farbton und tragen fett den Hinweis „Systemnachricht“.',

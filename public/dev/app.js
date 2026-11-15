@@ -286,7 +286,7 @@
       var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
       return b;
     }));
-    return devMark(h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg), 'cal-tip');
+    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg);
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
@@ -1721,7 +1721,7 @@
         var cur = S.fbCat[tabKey] || '', chips = h('div', { class: 'catfilt', role: 'group', 'aria-label': 'Nach Kategorie filtern' });
         function chip(key, label, n) { chips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(cur === key), onclick: function () { S.fbCat[tabKey] = key; draw(lastR); } }, label, h('small', null, String(n)))); }
         chip('', 'Alle', shown.length); (FBCATS[bug ? 'bug' : 'feature'] || []).forEach(function (c) { if (cc[c[0]]) chip(c[0], c[1], cc[c[0]]); });
-        box.append(devMark(chips, 'catfilt')); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
+        box.append(chips); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
       }
       if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? 'Nichts wartet auf Freischaltung.' : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
       var pendHead = false;
