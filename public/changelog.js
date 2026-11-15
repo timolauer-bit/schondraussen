@@ -6,7 +6,7 @@ window.CHANGELOG = [
     'F|Serien: Neben „Staffel als gesehen markieren“ gibt es „Alles als gesehen markieren“. Bei Musik, Podcasts und Büchern steht neben „Nur Neues für mich“ der Knopf „Alles gehört“ bzw. „Alles gelesen“ (ein zweiter Klick setzt zurück).',
     'F|Ideen und Bugs: „Idee melden“ und „Bug melden“ sind jetzt ein Reiter rechts neben „Freischaltungen“ mit aufklappbarem Formular. Die beiden Karten auf der Kontakt-Seite entfallen.',
     'U|Ideen und Bugs: Zurückgestellte Beiträge haben einen eigenen Reiter „Zurückgestellt“ links von „Freischaltungen“ und erscheinen nicht mehr unter „Aktuell“.',
-    'U|Einstellungen: Der Reiter „Optik/Optionen“ heißt jetzt „Farbschemata“. Die Auswahl der Kategorien und die Nerdoption stehen in einem eigenen Kasten „Oberflächenanpassungen“ unter „Themes“.',
+    'U|Einstellungen: Die Farbauswahl heißt jetzt „Farbschemata“. Die Auswahl der Kategorien und die Nerdoption stehen in einem eigenen Kasten „Oberflächenanpassungen“ unter „Themes“. Der Kasten „Benutzername“ steht jetzt im Reiter „Profil“ unter „Meine Daten“; die Zeile „Angemeldet als“ entfällt.',
     'A|Admin: Neuer erster Reiter „Briefing“ mit der Lage der letzten 24 Stunden. Neue Nutzergruppe „Moderatoren“ mit einstellbaren Admin-Rechten.',
     'A|Kontakt: Die Auswahl „Nutzer anschreiben …“ steht oben über allen Unterhaltungen statt darunter.',
     'B|Auswahlfelder (zum Beispiel „Nutzer anschreiben …“): Beim Anklicken erscheint kein Rahmen mit seltsamen Ecken mehr, das Feld wird stattdessen sauber umrandet.',
