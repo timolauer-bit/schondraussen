@@ -163,10 +163,12 @@ function design_list(): array {
     foreach ($j as $x) {
         $slug = is_array($x) ? (string) ($x['slug'] ?? '') : '';
         if (!preg_match('/^[a-z0-9-]{1,30}$/', $slug) || !is_file(__DIR__ . "/../designs/$slug/app.js") || !is_file(__DIR__ . "/../designs/$slug/app.css")) continue;
-        $out[] = ['slug' => $slug, 'name' => mb_substr(trim((string) ($x['name'] ?? $slug)), 0, 40), 'desc' => mb_substr(trim((string) ($x['desc'] ?? '')), 0, 200)];
+        $out[] = ['slug' => $slug, 'name' => mb_substr(trim((string) ($x['name'] ?? $slug)), 0, 40), 'desc' => mb_substr(trim((string) ($x['desc'] ?? '')), 0, 200), 'public' => !empty($x['public'])];
     }
     return $out;
 }
+// Für alle Nutzer wählbare (experimentelle) Themes: Einträge in designs/index.json mit "public": true
+function design_public(): array { return array_values(array_filter(design_list(), function ($d) { return !empty($d['public']); })); }
 function dev_notes(): array {
     $f = __DIR__ . '/../dev/changes.json'; if (!is_file($f)) return [];
     $j = json_decode((string) @file_get_contents($f), true); if (!is_array($j)) return [];

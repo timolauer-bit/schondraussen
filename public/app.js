@@ -1062,12 +1062,21 @@
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
     // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
-    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Optik/Optionen', [K[3]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    var optikC = null;
+    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), (optikC = setCard('Optik/Optionen', [K[3]], 'solo')), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
+    if ((D.pubdesigns || []).length) (function () { // Themes (experimentell): Standard und öffentliche Gestaltungsvarianten
+      var cur = D.theme || '', tm = h('p', { class: 'msg', role: 'status' }), row = h('div', { class: 'skins', role: 'group', 'aria-label': 'Theme wählen' });
+      [{ slug: '', name: 'Standard', desc: 'Die gewohnte Oberfläche.' }].concat(D.pubdesigns).forEach(function (x) {
+        row.append(h('button', { class: 'skin', type: 'button', 'aria-pressed': String(cur === x.slug), onclick: function () { if (cur === x.slug) return; tm.className = 'msg'; tm.textContent = 'Wechsle …'; api('/api/data.php?a=theme', { theme: x.slug }).then(function (r) { if (r && r.ok) location.reload(); else { tm.className = 'msg err'; tm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, h('b', null, x.name), h('small', { class: 'hint', style: 'margin:0;max-width:34ch' }, x.desc)));
+      });
+      var tc = (setCard('Themes', [h('div', { class: 'wide2' }, h('p', { class: 'hint', style: 'margin-top:0' }, 'Experimentell: Die Themes sind noch in Arbeit, manche Seiten können dabei etwas anders aussehen oder noch nicht ganz stimmig sein. Deine Farbwahl oben gilt auch für das Theme. Du kannst jederzeit zurück zu „Standard“ wechseln.'), row, tm)], 'solo'));
+      if (optikC) optikC.after(tc); else st.append(tc);
+    })();
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Themes', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });

@@ -22,6 +22,7 @@
  {
   "slug": "8bit",
   "name": "8-Bit",
-  "desc": "Pixelschrift (Press Start 2P und VT323, lokal eingebunden), eckige Kanten, dicke Rahmen mit hartem Schatten, Spielknöpfe, Rasterhintergrund. Alle Farbthemen funktionieren."
+  "desc": "Pixelschrift (Press Start 2P und VT323, lokal eingebunden), eckige Kanten, dicke Rahmen mit hartem Schatten, Spielknöpfe, Rasterhintergrund. Alle Farbthemen funktionieren.",
+  "public": true
  }
 ]

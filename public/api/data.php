@@ -186,6 +186,12 @@ if ($a === 'hidecats' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('UPDATE users SET hide_cats=? WHERE id=?')->execute([$c ? implode(',', $c) : null, $u['id']]); } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
+if ($a === 'theme' && $_SERVER['REQUEST_METHOD'] === 'POST') { // experimentelles Theme (Gestaltungsvariante) für alle Nutzer; nur Einträge mit "public"
+    $t = (string) (body()['theme'] ?? ''); $val = '';
+    foreach (design_public() as $dd) if ($dd['slug'] === $t) $val = $t;
+    setcookie('sd_theme', $val, ['expires' => $val !== '' ? time() + 365 * 86400 : time() - 3600, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+    json_out(['ok' => true]);
+}
 if ($a === 'skin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $sk = body()['skin'] ?? '';
     $sk = in_array($sk, ['light', 'dark', 'paper', 'cinema', 'mint', 'eighties'], true) ? $sk : null;

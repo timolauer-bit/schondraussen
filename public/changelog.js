@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'F|Einstellungen → Optik/Optionen: Neuer Kasten „Themes“ (experimentell). Neben „Standard“ gibt es das Theme „8-Bit“ mit Pixelschrift, eckigen Kanten und dicken Rahmen. Deine Farbwahl gilt auch dort.',
     'U|Kalender: Fährt man mit der Maus über einen Tag mit Terminen (am Handy: antippen), zeigt ein kleines Fenster, welche Termine an dem Tag sind.',
     'U|Kalender: Die Kategorien unter den Monaten sind jetzt anklickbare Chips. Damit blendest du Kategorien in der Terminliste ein und aus.',
     'O|Kalender: In der Liste erscheinen von den Podcasts höchstens die 10 zuletzt erschienenen Folgen. Die Monatsübersicht oben bleibt unverändert.',

@@ -178,7 +178,7 @@
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     var navTop = null;
-    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
+    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), devMark(btn('news', 'News', 0, ' newsnav'), 'news')); } // Handy: eigene Zeile
     else navMain.append(btn('cal', 'Kalender', 0));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
@@ -240,9 +240,31 @@
     });
     return wrap;
   }
-  function renderMonths(items) {
+  /* Kalender: Tooltip an den Tagen mit Terminen (Maus, Tastatur und Antippen) */
+  var dayTipEl = null;
+  function hideDayTip() { if (dayTipEl) { dayTipEl.remove(); dayTipEl = null; } }
+  function showDayTip(anchor, date, list) {
+    hideDayTip();
+    var rows = list.slice(0, 8).map(function (it) { return h('li', null, h('i', { class: 'tdot', style: 'background:' + CATCOL[it.e.type] }), h('span', null, h('b', null, it.e.name), it.u.title && it.u.title !== it.e.name ? ' – ' + it.u.title : '', it.u.kind ? h('small', null, ' ' + it.u.kind) : null)); });
+    if (list.length > 8) rows.push(h('li', { class: 'more' }, '+ ' + (list.length - 8) + ' weitere'));
+    var tip = dayTipEl = h('div', { class: 'daytip', role: 'tooltip' }, h('p', { class: 'dthead' }, date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })), h('ul', null, rows));
+    document.body.append(tip);
+    var r = anchor.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, sx = window.pageXOffset, sy = window.pageYOffset;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, document.documentElement.clientWidth - tw - 8)) + sx, top = r.top - th - 8 >= 8 ? r.top - th - 8 + sy : r.bottom + 8 + sy;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  }
+  function dayTip(el, date, list) {
+    el.addEventListener('mouseenter', function () { showDayTip(el, date, list); });
+    el.addEventListener('mouseleave', hideDayTip);
+    el.addEventListener('focus', function () { showDayTip(el, date, list); });
+    el.addEventListener('blur', hideDayTip);
+    el.addEventListener('click', function (ev) { ev.stopPropagation(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); });
+    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); });
+  }
+  document.addEventListener('scroll', hideDayTip, true); document.addEventListener('click', hideDayTip);
+  function renderMonths(items, onFilter) {
     var now = today0(), byDay = {};
-    items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {} }); o.n++; o.cats[it.e.type] = 1; });
+    items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {}, list: [] }); o.n++; o.cats[it.e.type] = 1; o.list.push(it); });
     var grid = h('div', { class: 'mgrid' });
     for (var mi = 0; mi < 4; mi++) {
       var first = new Date(now.getFullYear(), now.getMonth() + mi, 1), y = first.getFullYear(), m = first.getMonth() + 1, days = new Date(y, m, 0).getDate(), lead = (first.getDay() + 6) % 7;
@@ -253,20 +275,36 @@
         if (o) {
           var cats = ORDER.filter(function (k) { return o.cats[k]; }), step = 100 / cats.length;
           var stops = cats.map(function (k, i) { return CATCOL[k] + ' ' + (i * step) + '% ' + ((i + 1) * step) + '%'; }).join(', ');
-          cell.append(h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', title: o.n + (o.n === 1 ? ' Termin' : ' Termine') + ': ' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') }, h('span', { class: 'pn' }, String(d))));
+          var pie = h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', tabindex: '0', role: 'button', 'aria-label': d + '.' + m + '.: ' + o.n + (o.n === 1 ? ' Termin' : ' Termine') + ' (' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') + ')' }, h('span', { class: 'pn' }, String(d))); dayTip(pie, new Date(y, m - 1, d), o.list); cell.append(pie);
         } else cell.append(h('span', { class: 'pn plain' }, String(d)));
         cal.append(cell);
       }
       grid.append(h('div', { class: 'mon' }, h('h3', null, MONTH.format(first)), cal));
     }
-    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, h('div', { class: 'legend' }, ORDER.map(function (k) { return h('span', null, h('i', { style: 'background:' + CATCOL[k] }), TYPES[k].plural); })));
+    var cnt = {}; items.forEach(function (it) { cnt[it.e.type] = (cnt[it.e.type] || 0) + 1; });
+    var leg = h('div', { class: 'legend legfilt', role: 'group', 'aria-label': 'Kategorien filtern' }, ORDER.map(function (k) {
+      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
+      return b;
+    }));
+    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg);
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
     wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz und Open Library und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
-    wrap.append(renderMonths(items)); wrap.append(groupByMonth(items)); return wrap;
+    S.calHide = S.calHide || {};
+    var tbl = h('div', { class: 'caltbl' });
+    function drawTbl() {
+      var vis = items.filter(function (it) { return !S.calHide[it.e.type]; }); tbl.textContent = '';
+      /* Liste: von Podcasts höchstens die 10 letzten vergangenen Folgen (Monatsübersicht oben zeigt weiter alle) */
+      var now = new Date(), tdy = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate(), tym = Math.floor(tdy / 100);
+      function isPast(it) { var q = it.p || {}; if (!q.y) return false; return q.prec === 'day' ? q.y * 10000 + q.m * 100 + q.d < tdy : q.y * 100 + q.m < tym; }
+      var pastPod = vis.filter(function (it) { return it.e.type === 'podcast' && isPast(it); });
+      if (pastPod.length > 10) { var drop = pastPod.slice().sort(function (x, y) { return x.p.sort - y.p.sort; }).slice(0, pastPod.length - 10); vis = vis.filter(function (it) { return drop.indexOf(it) < 0; }); }
+      if (!vis.length) tbl.append(h('p', { class: 'state' }, 'Alle Kategorien sind ausgeblendet. Wähle oben eine Kategorie, um Termine zu sehen.')); else tbl.append(groupByMonth(vis));
+    }
+    wrap.append(renderMonths(items, drawTbl)); wrap.append(tbl); drawTbl(); return wrap;
   }
 
   /* ---------- Listen ---------- */
@@ -274,7 +312,7 @@
     var t = TYPES[S.cat], es = entriesOf(S.cat);
     var layout = h('div', { class: 'layout has-rail' }), rail = h('aside', { class: 'rail', id: 'rail', 'data-cat': S.cat, style: '--cc:' + CATCOL[S.cat] }), main = h('section', { class: 'main', id: 'content' });
     rail.append(h('section', null, h('p', { class: 'label' }, 'Neu hinzufügen'),
-      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, S.cat === 'film' ? 'Hinzufügen' : 'Suchen')),
+      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen')),
       h('p', { class: 'msg', id: 'msg', role: 'status' }), h('div', { id: 'sugg' })));
     rail.append(h('section', null, h('p', { class: 'label', id: 'listlbl' }, t.plural + ' · ' + es.length + ' / ' + MAXN),
       h('div', { class: 'srchrow' }, h('label', { class: 'field srch' }, h('input', { id: 'srch', type: 'search', maxlength: '80', 'aria-label': 'Einträge durchsuchen', placeholder: 'In der Liste filtern', value: S.filter, oninput: function () { S.filter = this.value; rows(); } })),
@@ -616,7 +654,7 @@
   /* Hinzufügen mit Suche */
   function addSubmit(ev) {
     ev.preventDefault(); var v = $('q').value.trim(); if (!v) { say('Gib erst einen Namen ein.', true); return; }
-    if (S.cat === 'film') return addNow(v, {});
+    if (S.cat === 'film') { S.sugg = { q: v, list: [], manual: true }; drawSugg(); say(''); return; } // Filme: noch keine Datenquelle, der Titel wird so übernommen
     S.sugg = { loading: true }; drawSugg(); say('');
     api('/api/data.php?a=search&type=' + S.cat + '&q=' + encodeURIComponent(v)).then(function (r) { S.sugg = { q: v, list: r.results || [] }; drawSugg(); });
   }
@@ -629,7 +667,7 @@
   function drawSugg() {
     var box = $('sugg'); if (!box) return; box.textContent = ''; var s = S.sugg; if (!s) return;
     if (s.loading) { box.append(h('p', { class: 'hint pulse' }, 'Suche …')); return; }
-    box.append(h('p', { class: 'hint' }, s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
+    box.append(h('p', { class: 'hint' }, s.manual ? 'Für Filme gibt es noch keine Suche. Der Titel wird so übernommen, wie du ihn eingegeben hast.' : s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
     var list = h('div', { class: 'suggest' });
     s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
       if (x.title_search) { S.sugg = { loading: true }; drawSugg(); api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { S.sugg = { q: s.q, list: r.results || [], byTitle: true }; drawSugg(); }); return; }
@@ -1024,12 +1062,21 @@
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
     // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
-    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), setCard('Optik/Optionen', [K[3]], 'solo'), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    var optikC = null;
+    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), (optikC = setCard('Optik/Optionen', [K[3]], 'solo')), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
+    if ((D.pubdesigns || []).length) (function () { // Themes (experimentell): Standard und öffentliche Gestaltungsvarianten
+      var cur = D.theme || '', tm = h('p', { class: 'msg', role: 'status' }), row = h('div', { class: 'skins', role: 'group', 'aria-label': 'Theme wählen' });
+      [{ slug: '', name: 'Standard', desc: 'Die gewohnte Oberfläche.' }].concat(D.pubdesigns).forEach(function (x) {
+        row.append(h('button', { class: 'skin', type: 'button', 'aria-pressed': String(cur === x.slug), onclick: function () { if (cur === x.slug) return; tm.className = 'msg'; tm.textContent = 'Wechsle …'; api('/api/data.php?a=theme', { theme: x.slug }).then(function (r) { if (r && r.ok) location.reload(); else { tm.className = 'msg err'; tm.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); } }, h('b', null, x.name), h('small', { class: 'hint', style: 'margin:0;max-width:34ch' }, x.desc)));
+      });
+      var tc = (setCard('Themes', [h('div', { class: 'wide2' }, h('p', { class: 'hint', style: 'margin-top:0' }, 'Experimentell: Die Themes sind noch in Arbeit, manche Seiten können dabei etwas anders aussehen oder noch nicht ganz stimmig sein. Deine Farbwahl oben gilt auch für das Theme. Du kannst jederzeit zurück zu „Standard“ wechseln.'), row, tm)], 'solo'));
+      if (optikC) optikC.after(tc); else st.append(tc);
+    })();
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Themes', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });
@@ -1427,7 +1474,7 @@
     return [sec('Seitennews', x.site_title, x.site_text, x.site_sources), sec('News zu Inhalten', x.content_title, x.content_text, x.content_sources)].filter(Boolean);
   }
   function newsView() {
-    var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.'));
+    var p = devMark(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.')), 'news');
     var box = h('div', null, h('p', { class: 'state pulse' }, 'Lade …')); p.append(box); mainEl.append(p);
     api('/api/news.php?a=list').then(function (r) {
       box.textContent = '';
@@ -1476,7 +1523,7 @@
   function support() {
     if (S.preview) { mainEl.append(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'), h('p', { class: 'hint' }, 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'), h('p', { class: 'warnbox' }, 'In der Vorschau kannst du hier nichts schreiben.'))); return; }
     var admin = D.admin, staff = !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'),
-      h('p', { class: 'hint' }, admin ? 'Hier siehst du die Nachrichten deiner Nutzer und kannst antworten.' : 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'));
+      h('p', { class: 'hint' }, admin ? 'Melde eine Idee oder einen Bug, oder antworte deinen Nutzern und dem Team.' : 'Melde eine Idee oder einen Bug, oder schreibe dem Administrator. Im Chat sieht nur der Administrator deine Nachrichten, Antworten erscheinen hier.'));
     var grid = h('div', { class: 'supgrid' + (staff ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !staff }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
     var inp = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Nachricht', placeholder: 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)' }), msg = h('p', { class: 'msg', role: 'status' });
     var drafts = [], draftBox = h('div', { class: 'drafts' });
@@ -1521,8 +1568,9 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
-      S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
+      threads.textContent = ''; if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.')); var lastG = null;
+      S.sup.threads.forEach(function (t) { var g = t.id === 'team' ? 'Team' : (admin ? 'Nutzer' : (t.id === 'me' ? 'Administrator' : 'Direkt')); if (g !== lastG) { threads.append(h('p', { class: 'thgrp' }, g)); lastG = g; } threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
+      if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick);
     }
     function pull() {
       var go2 = function () {
@@ -1534,8 +1582,8 @@
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
           if (admin) mailCk.checked = !(r.messages || []).length;
           if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), admin ? 'Hier ist noch nichts geschrieben worden. Deine Nachricht erscheint auch im Chat des Nutzers.' : 'Schreibe unten deine erste Nachricht. Antworten des Administrators erscheinen hier.'));
-          (r.messages || []).forEach(function (m) { var mine = admin ? +m.from_admin === 1 : +m.from_admin === 0;
-            log.append(h('div', { class: 'bub ' + (mine ? 'me' : 'them') }, m.body, (m.images || []).map(function (id) { return picLink(id, 'inchat'); }), h('small', null, fmtChat(m.created_at), mine ? h('span', { class: 'ticks' + (m.read_at ? ' seen' : ''), title: m.read_at ? 'Gelesen' : 'Gesendet' }, m.read_at ? '✓✓' : '✓') : null))); });
+          (r.messages || []).forEach(function (m) { var mine = admin ? +m.from_admin === 1 : +m.from_admin === 0, isSys = !!r.system || /^Systemnachricht:/.test(m.body || ''), bodyTxt = isSys ? String(m.body || '').replace(/^Systemnachricht:\s*/, '') : m.body;
+            log.append(h('div', { class: 'bub ' + (isSys ? 'them sys' : mine ? 'me' : 'them') }, isSys ? h('b', { class: 'syslbl' }, 'Systemnachricht') : null, bodyTxt, (m.images || []).map(function (id) { return picLink(id, 'inchat'); }), h('small', null, fmtChat(m.created_at), mine ? h('span', { class: 'ticks' + (m.read_at ? ' seen' : ''), title: m.read_at ? 'Gelesen' : 'Gesendet' }, m.read_at ? '✓✓' : '✓') : null))); });
           if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
         });
       };
@@ -1609,14 +1657,55 @@
         if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
       });
     }
-    var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
+    var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
     var pollBtn = h('button', { class: 'btn ghost', type: 'button', hidden: true, onclick: drawPollForm }, 'Abstimmung'); form.insertBefore(pollBtn, form.querySelector('button[type=submit]'));
-    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+    /* Idee und Bug melden: eigene Karten über dem Chat, das Formular klappt darunter auf */
+    var RK = { feature: ['Idee melden', 'Vorschlag für die Seite', 'Dir fehlt etwas oder du hast einen Vorschlag? Nach der Freigabe können alle dafür abstimmen.', ICONS.bulb, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Idee abschicken'], bug: ['Bug melden', 'Etwas funktioniert nicht', 'Etwas funktioniert nicht richtig? Beschreibe kurz, wo es passiert und was du gemacht hast.', ICONS.bug, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bug abschicken'] };
+    var rep = { kind: null, drafts: [] }, repCards = h('div', { class: 'repcards' + (staff ? ' slim' : '') }), repSlot = h('div', { class: 'repslot' });
+    function dropRepDrafts() { rep.drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); rep.drafts = []; }
+    function closeReport(drop) { if (drop) dropRepDrafts(); rep.drafts = []; rep.kind = null; repSlot.textContent = ''; drawRepCards(); }
+    function drawRepCards() {
+      repCards.textContent = '';
+      ['feature', 'bug'].forEach(function (k) { var r = RK[k]; repCards.append(h('button', { class: 'repcard', type: 'button', 'aria-expanded': String(rep.kind === k), onclick: function () { if (rep.kind === k) { closeReport(true); return; } if (rep.kind) dropRepDrafts(); openReport(k); } }, h('span', { class: 'repico' }, ico(r[3])), h('b', null, r[0]), h('small', null, staff ? r[1] : r[2]))); });
+    }
+    function openReport(kind) {
+      var r = RK[kind]; rep.kind = kind; rep.drafts = []; repSlot.textContent = '';
+      var catSel = h('select', { class: 'repcat', 'aria-label': 'Kategorie' }, h('option', { value: '' }, kind === 'bug' ? 'Kategorie: Wo tritt der Fehler auf? (optional)' : 'Kategorie: Worum geht es? (optional)'), FBCATS[kind].map(function (c) { return h('option', { value: c[0] }, c[1]); })), ti = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', 'aria-label': 'Kurzbeschreibung', placeholder: r[4], autocomplete: 'off' }), tx = h('textarea', { rows: '4', maxlength: '1000', 'aria-label': 'Details', placeholder: r[5] }), rmsg = h('p', { class: 'msg', role: 'status' }), dbox = h('div', { class: 'drafts' }), note = h('p', { class: 'hint picnote' });
+      var fi = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,text/plain,.txt,.log,.md,.csv,.json', multiple: true, hidden: true });
+      function drawRD() { dbox.textContent = ''; rep.drafts.forEach(function (d) { dbox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Anhang entfernen', onclick: function () { rep.drafts = rep.drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawRD(); } }, '×'))); }); note.textContent = 'Anhänge: ' + rep.drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
+      function addRF(files) {
+        [].slice.call(files).forEach(function (f) {
+          if (rep.drafts.length >= 3) { rmsg.className = 'msg err'; rmsg.textContent = 'Höchstens 3 Anhänge.'; return; }
+          var isTxt = !/^image\//.test(f.type) && (/^text\//.test(f.type) || /\.(txt|log|md|csv|json)$/i.test(f.name)); rmsg.className = 'msg'; rmsg.textContent = isTxt ? 'Datei wird hochgeladen …' : 'Bild wird hochgeladen …';
+          (isTxt ? uploadText(f, 'feedback') : uploadImage(f, 'feedback')).then(function (d) { if (rep.kind !== kind) { api('/api/image.php?a=remove', { id: d.id }); return; } rep.drafts.push(d); rmsg.textContent = ''; drawRD(); }).catch(function (e) { rmsg.className = 'msg err'; rmsg.textContent = e.message; });
+        });
+      }
+      fi.addEventListener('change', function () { addRF(fi.files); fi.value = ''; });
+      tx.addEventListener('paste', function (ev) { var fs = [].filter.call((ev.clipboardData && ev.clipboardData.files) || [], function (f) { return /^image\//.test(f.type); }); if (fs.length) { ev.preventDefault(); addRF(fs); } });
+      var sending = false;
+      function submit(ev) {
+        ev.preventDefault(); if (sending) return; var t = ti.value.trim(); if (t.length < 3) { rmsg.className = 'msg err'; rmsg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; ti.focus(); return; }
+        var ids = rep.drafts.map(function (d) { return d.id; }); sending = true;
+        api('/api/feedback.php?a=add', { kind: kind, category: catSel.value, title: t, text: tx.value.trim(), images: ids }).then(function (z) {
+          sending = false;
+          if (z && z.ok) { closeReport(false); popup(kind === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kind === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kind === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); }
+          else { rmsg.className = 'msg err'; rmsg.textContent = (z && z.error) || 'Senden nicht möglich.'; }
+        });
+      }
+      drawRD();
+      repSlot.append(setCard(r[0], [h('p', { class: 'hint' }, kind === 'feature' ? 'Der Admin schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.' : 'Der Admin schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.'),
+        h('form', { class: 'repform', autocomplete: 'off', onsubmit: submit }, catSel, ti, tx, fi, h('div', { class: 'reprow' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { fi.click(); } }, 'Anhängen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { closeReport(true); } }, 'Abbrechen'), h('button', { class: 'btn', type: 'submit' }, r[6]))), dbox, note, rmsg], 'composer'));
+      drawRepCards(); ti.focus();
+    }
+    drawRepCards();
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(repCards, repSlot, grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
+  var FBCATS = { bug: [['calendar', 'Kalender'], ['lists', 'Listen und Einträge'], ['search', 'Suche und Hinzufügen'], ['community', 'Community'], ['news', 'News'], ['contact', 'Kontakt und Chat'], ['account', 'Konto und Anmeldung'], ['email', 'E-Mails'], ['ui', 'Menü und Darstellung'], ['data', 'Falsche oder fehlende Daten'], ['other', 'Sonstiges']], feature: [['feature', 'Neues Feature'], ['improve', 'Verbesserung einer Funktion'], ['source', 'Neue Kategorie oder Datenquelle'], ['design', 'Aussehen und Design'], ['mail', 'E-Mails und Benachrichtigungen'], ['community', 'Community'], ['calendar', 'Kalender'], ['mobile', 'Handy und Bedienung'], ['content', 'Inhalte und Daten'], ['other', 'Sonstiges']] };
+  function catLabel(kind, key) { var l = (FBCATS[kind] || []).filter(function (c) { return c[0] === key; })[0]; return l ? l[1] : ''; }
   function feedbackView(kind) {
     if (!S.preview && (D.admin || D.alpha)) fbPoll();
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
-      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
+      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ mit „Bug melden“.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ mit „Idee melden“.'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
@@ -1635,6 +1724,14 @@
       var cnt = { cur: 0, done: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
       TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); var nn = t[0] === 'rel' ? cnt.rel : (tabSeen[t[0]] ? 0 : newN[t[0]]); if (on && t[0] !== 'rel') tabSeen[t[0]] = true; if (nn && !(on && t[0] !== 'rel')) b.append(h('span', { class: 'badge', 'aria-label': nn + (t[0] === 'rel' ? ' offen: Freischaltungen und Neues' : ' neu seit deinem letzten Besuch') }, String(nn))); });
       var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
+      S.fbCat = S.fbCat || {}; var cc = {}, ccN = 0; shown.forEach(function (x) { if (x.category && catLabel(bug ? 'bug' : 'feature', x.category)) { cc[x.category] = (cc[x.category] || 0) + 1; ccN++; } });
+      if (S.fbCat[tabKey] && !cc[S.fbCat[tabKey]]) S.fbCat[tabKey] = '';
+      if (ccN) {
+        var cur = S.fbCat[tabKey] || '', chips = h('div', { class: 'catfilt', role: 'group', 'aria-label': 'Nach Kategorie filtern' });
+        function chip(key, label, n) { chips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(cur === key), onclick: function () { S.fbCat[tabKey] = key; draw(lastR); } }, label, h('small', null, String(n)))); }
+        chip('', 'Alle', shown.length); (FBCATS[bug ? 'bug' : 'feature'] || []).forEach(function (c) { if (cc[c[0]]) chip(c[0], c[1], cc[c[0]]); });
+        box.append(chips); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
+      }
       if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? 'Nichts wartet auf Freischaltung.' : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
       var pendHead = false;
       shown.forEach(function (x) {
@@ -1675,7 +1772,7 @@
           body.append(eBox);
           editBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Meinen Beitrag bearbeiten', onclick: function () { body.hidden = false; eBox.hidden = !eBox.hidden; } }, 'Bearbeiten');
         }
-        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); if (typeof acts !== 'undefined' && acts) acts.hidden = body.hidden; S.fbOpen = S.fbOpen || {}; if (body.hidden) delete S.fbOpen[x.id]; else S.fbOpen[x.id] = 1; } }, h('span', { class: 'fbt' }, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
+        var head = h('button', { class: 'fbhead', type: 'button', 'aria-expanded': 'false', onclick: function () { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); if (typeof acts !== 'undefined' && acts) acts.hidden = body.hidden; S.fbOpen = S.fbOpen || {}; if (body.hidden) delete S.fbOpen[x.id]; else S.fbOpen[x.id] = 1; } }, h('span', { class: 'fbt' }, x.category && catLabel(bug ? 'bug' : 'feature', x.category) ? h('span', { class: 'fbcat' }, catLabel(bug ? 'bug' : 'feature', x.category)) : null, bug && x.bug_no ? h('span', { class: 'bugno' }, '#' + x.bug_no + ' ') : null, editedSpan(x, 'title', x.title), nAtt ? h('span', { class: 'attchip', title: pl(nAtt, 'Anhang', 'Anhänge') }, '📎 ' + nAtt) : null), bug ? h('span', { class: 'prio ' + x.priority }, PRIO[x.priority][0]) : (+x.rejected ? h('span', { class: 'prio low' }, 'abgelehnt') : null), (PHASE[x.phase] && !x.done_at && !+x.rejected) ? h('span', { class: 'prio ph-' + x.phase }, PHASE[x.phase]) : null, (x.withdrawn_at && !+x.rejected) ? ((staff && +x.new_wd) ? h('span', { class: 'prio newwd', title: 'Die einreichende Person hat den Beitrag in den letzten 24 Stunden zurückgezogen' }, 'Neu zurückgezogen') : h('span', { class: 'prio low' }, 'zurückgezogen')) : null, meta);
         var cBox = null, cBtn = null;
         if (staff && lastR && lastR.cview) { // interne Kommentare (nur Admin und Alphatester)
           var cl = h('div', { class: 'fbcomments' }), cf = h('div', { class: 'fbcform', hidden: true }), cmsg = h('span', { class: 'msg', style: 'margin:0' });
