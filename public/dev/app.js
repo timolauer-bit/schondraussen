@@ -1748,9 +1748,9 @@
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
     S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null, seen = null, firstLoad = true, tabSeen = {};
-    function grp(x) { return !x.released_at ? 'rel' : (x.done_at ? 'done' : 'cur'); }
+    function grp(x) { return !x.released_at ? 'rel' : (x.done_at ? 'done' : (x.phase === 'postponed' ? 'post' : 'cur')); }
     function isNew(x) { if (!staff || !seen) return false; var g = grp(x), t = g === 'cur' ? x.released_at : (g === 'done' ? x.done_at : null); return !!t && String(t) > String(seen); }
-    var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen'], ['rel', 'Freischaltungen']], tbtn = {};
+    var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen'], ['post', 'Zurückgestellt'], ['rel', 'Freischaltungen']], tbtn = {};
     if (!TABS.some(function (t) { return t[0] === S.fbTab[tabKey]; })) S.fbTab[tabKey] = 'cur';
     var tbar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': bug ? 'Bugs' : 'Ideen' });
     TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; tabSeen[t[0]] = true; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
@@ -1763,7 +1763,7 @@
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
-      var cnt = { cur: 0, done: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
+      var cnt = { cur: 0, done: 0, post: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
       TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); var nn = t[0] === 'rel' ? (staff ? cnt.rel : 0) : (tabSeen[t[0]] ? 0 : newN[t[0]]); if (on && t[0] !== 'rel') tabSeen[t[0]] = true; if (nn && !(on && t[0] !== 'rel')) b.append(h('span', { class: 'badge', 'aria-label': nn + (t[0] === 'rel' ? ' offen: Freischaltungen und Neues' : ' neu seit deinem letzten Besuch') }, String(nn))); });
       var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
       S.fbMine = S.fbMine || {}; var totAll = shown.length, mineAll = shown.filter(function (x) { return !!+x.mine; }).length; if (S.fbMine[tabKey] && !mineAll) S.fbMine[tabKey] = false; var mineOn = !!S.fbMine[tabKey]; if (mineOn) shown = shown.filter(function (x) { return !!+x.mine; });
@@ -1776,7 +1776,7 @@
         if (mineAll) chips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(mineOn), title: 'Nur die Beiträge anzeigen, die du selbst eingereicht hast', onclick: function () { S.fbMine[tabKey] = !mineOn; draw(lastR); } }, 'Meine', h('small', null, String(mineAll)))); (FBCATS[bug ? 'bug' : 'feature'] || []).forEach(function (c) { if (cc[c[0]]) chip(c[0], c[1], cc[c[0]]); });
         box.append(chips); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
       }
-      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? (staff ? 'Nichts wartet auf Freischaltung.' : 'Keiner deiner Beiträge wartet auf Freischaltung. Neue Beiträge erscheinen hier, bis der Admin sie freigibt.') : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib die erste mit „Idee melden“.'))); return; }
+      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'post' ? (bug ? 'Keine Bugs zurückgestellt.' : 'Keine Ideen zurückgestellt.') : S.fbTab[tabKey] === 'rel' ? (staff ? 'Nichts wartet auf Freischaltung.' : 'Keiner deiner Beiträge wartet auf Freischaltung. Neue Beiträge erscheinen hier, bis der Admin sie freigibt.') : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib die erste mit „Idee melden“.'))); return; }
       var pendHead = false;
       shown.forEach(function (x) {
         var pics = h('div', { class: 'pics' });
