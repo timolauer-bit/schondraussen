@@ -873,6 +873,18 @@
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
     var imp = h('div', { class: 'wide2' }), impBtns = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }), impPanels = h('div'); imp.append(impBtns, impPanels);
     function splitCsv(l, dl) { var o = [], cur = '', q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === dl && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; }
+    function unwrapRow(l) { return (l.length > 1 && l[0] === '"' && l[l.length - 1] === '"' && l.indexOf('""') > -1) ? l.slice(1, -1).replace(/""/g, '"') : l; }
+    function imdbFrom(text) { // IMDb-Export (Listen/Bewertungen als CSV): Titel samt Art (Film oder Serie), Folgen und Spiele werden übersprungen
+      var ls = text.replace(/^﻿/, '').split(/\r?\n/).filter(function (x) { return x.trim(); }); if (ls.length < 2) return null;
+      var hd = splitCsv(unwrapRow(ls[0]), ',').map(function (x) { return x.trim().toLowerCase(); }), ti = hd.indexOf('title'), ty = hd.indexOf('title type'); if (ti < 0 || ty < 0) return null;
+      var items = [], skipped = 0;
+      ls.slice(1).forEach(function (l) {
+        var c = splitCsv(unwrapRow(l), ','), n = (c[ti] || '').trim(), t = (c[ty] || '').toLowerCase(); if (!n) return;
+        if (/episode|folge|spiel|game/.test(t)) { skipped++; return; }
+        items.push({ n: n, k: /serie|series/.test(t) ? 'series' : 'film' });
+      });
+      return { items: items, skipped: skipped };
+    }
     function namesFrom(text, fname) {
       var out = [];
       function add(v) { if (typeof v === 'string' && v.trim()) out.push(v.trim()); }
@@ -882,7 +894,7 @@
       if (/\.csv$/i.test(fname) || (lines[0] && lines[0].indexOf(',') > -1 && /artist|name|interpret/i.test(lines[0]))) {
         var dl = lines[0].indexOf(',') > -1 ? ',' : (lines[0].indexOf('\t') > -1 ? '\t' : ';'), hd = lines[0].split(dl).map(function (x) { return x.replace(/^"|"$/g, '').toLowerCase(); }), ci = 0; hd.forEach(function (x, i) { if (/artist|interpret|name/.test(x) && !ci && i >= 0 && ci === 0 && /artist|interpret/.test(x)) ci = i; });
         if (!ci) hd.forEach(function (x, i) { if (!ci && x === 'name') ci = i; });
-        lines.slice(1).forEach(function (l) { var c = splitCsv(l, dl)[ci] || ''; c = c.replace(/^"|"$/g, ''); c.split(/;\s*/).forEach(add); });
+        lines.slice(1).forEach(function (l) { var c = splitCsv(unwrapRow(l), dl)[ci] || ''; c = c.replace(/^"|"$/g, ''); c.split(/;\s*/).forEach(add); });
         return out;
       }
       lines.forEach(add); return out;
@@ -890,13 +902,17 @@
     var IMPCATS = [['author', 'Bücher', 'Titel', 'Titel von Büchern', 'Der Name der Reihe\nDie Känguru-Chroniken'], ['artist', 'Musik', 'Musiker:in', 'Namen von Musiker:innen', 'Radiohead\nBlind Guardian\nNightwish'], ['film', 'Filme', 'Film', 'Titel von Filmen', 'Der Pate\nAlien'], ['series', 'Serien', 'Serie', 'Titel von Serien', 'Dark\nBreaking Bad']];
     function mkImporter(label, fixed, hintFn, cls) {
       var ifile = h('input', { type: 'file', accept: '.json,.csv,.txt,text/plain,application/json,text/csv', 'aria-label': 'Datei laden' }), itext = h('textarea', { rows: '6', 'aria-label': 'Namen, einer pro Zeile', style: 'width:100%;margin-top:8px' }), imsg = h('span', { class: 'msg', style: 'margin:0' }), ipanel = h('div', { hidden: true, style: 'margin-top:10px' }), sel = null, hint = h('p', { class: 'hint' });
+      var kindOf = {};
       function cat() { var v = fixed || (sel ? sel.value : 'artist'); return IMPCATS.filter(function (x) { return x[0] === v; })[0]; }
       function refresh() { var c = cat(); hint.textContent = hintFn(c); itext.placeholder = c[4]; }
       if (!fixed) { sel = h('select', { 'aria-label': 'Kategorie', onchange: refresh }); IMPCATS.forEach(function (x) { sel.append(h('option', { value: x[0] }, x[1])); }); sel.value = 'artist'; }
       ifile.addEventListener('change', function () {
         var f = ifile.files && ifile.files[0]; if (!f) return;
         if (f.size > 5 * 1024 * 1024) { imsg.className = 'msg err'; imsg.textContent = 'Die Datei ist größer als 5 MB.'; return; }
-        var rd = new FileReader(); rd.onload = function () { var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? ((l.length === 1 ? '1 Name erkannt. Du kannst ihn unten noch ändern.' : l.length + ' Namen erkannt. Du kannst sie unten noch ändern.')) : 'In der Datei habe ich keine Namen gefunden.'; };
+        var rd = new FileReader(); rd.onload = function () {
+          var im = fixed ? null : imdbFrom(String(rd.result || '')); kindOf = {};
+          if (im) { var nm = [], sn = {}, nF = 0, nS = 0; im.items.forEach(function (it) { var k = it.n.toLowerCase(); if (sn[k]) return; sn[k] = 1; kindOf[k] = it.k; nm.push(it.n); if (it.k === 'series') nS++; else nF++; }); itext.value = nm.join('\n'); imsg.className = 'msg'; imsg.textContent = nm.length ? (pl(nF, 'Film', 'Filme') + ' und ' + pl(nS, 'Serie', 'Serien') + ' erkannt' + (im.skipped ? ', ' + im.skipped + ' übersprungen (Folgen, Spiele)' : '') + '. Filme und Serien kommen beim Importieren automatisch in die richtige Liste. Du kannst sie unten noch ändern.') : 'In der Datei habe ich keine Titel gefunden.'; return; }
+          var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? ((l.length === 1 ? '1 Name erkannt. Du kannst ihn unten noch ändern.' : l.length + ' Namen erkannt. Du kannst sie unten noch ändern.')) : 'In der Datei habe ich keine Namen gefunden.'; };
         rd.onerror = function () { imsg.className = 'msg err'; imsg.textContent = 'Die Datei konnte nicht gelesen werden.'; }; rd.readAsText(f);
       });
       var kids = [hint];
@@ -904,7 +920,17 @@
       kids.push(ifile, itext, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn', type: 'button', onclick: function () {
         var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = 'Keine Namen gefunden.'; return; }
         var c = cat(); imsg.className = 'msg'; imsg.textContent = 'Importiere …';
-        api('/api/data.php?a=import', { names: l, type: c[0] }).then(function (r) { if (!r.ok) { imsg.className = 'msg err'; imsg.textContent = r.msg || r.error || 'Das hat nicht geklappt.'; return; } imsg.textContent = r.added + ' ' + (r.added === 1 ? c[2] : (c[0] === 'artist' ? 'Musiker:innen' : c[1])) + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'; itext.value = ''; load(function () { nav(); }); });
+        var groups = {}, order = []; l.forEach(function (x) { var k = kindOf[x.toLowerCase()] || c[0]; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(x); });
+        var parts = [], failed = null;
+        function runGroup(i) {
+          if (i >= order.length) { imsg.className = 'msg' + (failed ? ' err' : ''); imsg.textContent = failed || (parts.join(' ') || 'Nichts hinzugefügt.'); if (!failed) itext.value = ''; load(function () { nav(); }); return; }
+          var k = order[i], cc = IMPCATS.filter(function (x) { return x[0] === k; })[0];
+          api('/api/data.php?a=import', { names: groups[k], type: k }).then(function (r) {
+            if (!r.ok) { failed = (parts.length ? parts.join(' ') + ' ' : '') + (cc[1] + ': ' + (r.msg || r.error || 'Das hat nicht geklappt.')); runGroup(order.length); return; }
+            parts.push(cc[1] + ': ' + r.added + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'); runGroup(i + 1);
+          });
+        }
+        runGroup(0);
       } }, 'Importieren'), imsg));
       ipanel.append.apply(ipanel, kids); refresh();
       impBtns.append(h('button', { class: 'btn ghost small' + (cls ? ' ' + cls : ''), type: 'button', 'aria-expanded': 'false', onclick: function () { var open = ipanel.hidden; document.querySelectorAll('.imppanel').forEach(function (p) { p.hidden = true; }); ipanel.hidden = !open; impBtns.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); }); if (open) this.setAttribute('aria-expanded', 'true'); } }, label)); impPanels.append(ipanel);
