@@ -895,3 +895,4 @@ hr.newshr{margin-inline:auto}
 html{scrollbar-gutter:stable;overflow-y:scroll}
 .admtab.addrep{margin-left:auto;background:var(--accent);color:#fff;border:1px solid var(--accent);border-bottom:0;font-weight:700}.admtab.addrep:hover,.admtab.addrep.open{filter:brightness(1.08)}
 @media(max-width:600px){.infotabs.admtabs:has(.addrep){flex-wrap:wrap}.infotabs.admtabs:has(.addrep) .admtab:not(.addrep){flex:1 1 0;min-width:0}.infotabs .admtab.addrep{flex:1 0 100%;margin:6px 0 8px;border-radius:10px;padding:10px;text-align:center;border-bottom:1px solid var(--accent)}}
+.row-btn:disabled{opacity:.55;cursor:default}.row-btn:disabled:hover{background:transparent}

@@ -278,6 +278,19 @@ if ($a === 'search') {
     }
     json_out(['results' => $out]);
 }
+if ($a === 'suggest_local') { // Treffer aus den bereits vorhandenen Einträgen der Seite (ohne externe Dienste), für die Sofortanzeige beim Tippen
+    $type = $_GET['type'] ?? ''; $q = trim(preg_replace('/\s+/', ' ', (string) ($_GET['q'] ?? '')));
+    if (!in_array($type, $TYPES, true) || mb_strlen($q) < 2 || mb_strlen($q) > 80) json_out(['results' => []]);
+    $esc = addcslashes($q, '\\%_');
+    $st = $pdo->prepare('SELECT s.id, s.name, s.external_ids, (SELECT COUNT(*) FROM user_entries e WHERE e.user_id=? AND e.subject_id=s.id) AS mine FROM subjects s WHERE s.type=? AND s.name LIKE ? ORDER BY (s.name LIKE ?) DESC, s.name LIMIT 8');
+    $st->execute([$u['id'], $type, '%' . $esc . '%', $esc . '%']);
+    $out = [];
+    foreach ($st->fetchAll() as $r) {
+        $ext = json_decode((string) $r['external_ids'], true); if (!is_array($ext)) $ext = [];
+        $out[] = ['name' => $r['name'], 'hint' => !empty($ext['gbs']) ? 'Reihe' : '', 'ext' => $ext, 'mine' => (int) $r['mine'] > 0];
+    }
+    json_out(['results' => $out]);
+}
 if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $type = $b['type'] ?? ''; $name = trim(preg_replace('/\s+/', ' ', (string) ($b['name'] ?? '')));
     if (mb_strlen($name) > 3 && preg_match('/\p{Lu}{2}/u', $name) && $name === mb_strtoupper($name) && preg_match('/\s/', $name) && preg_match('/\p{L}/u', $name) && ($type === 'author')) $name = mb_convert_case(mb_strtolower($name), MB_CASE_TITLE); // Autorenname nur in Großbuchstaben: Groß-/Kleinschreibung herstellen
