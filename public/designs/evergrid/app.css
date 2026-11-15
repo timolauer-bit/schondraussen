@@ -796,7 +796,7 @@ hr.newshr{margin-inline:auto}
 
 /* Versionswahl (Live, Dev, Design-Varianten) */
 .whobox{position:relative}
-.devsw{max-width:15ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.devsw{max-width:15ch;white-space:nowrap}.devsw .devlbl{display:block;overflow:hidden;text-overflow:ellipsis}
 .devmenu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:240px;max-width:min(320px,92vw);padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:2px}
 .devmenu .dmi{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;font:inherit}
 .devmenu .dmi b{font-size:14px}.devmenu .dmi small{font-size:12px;color:var(--muted);font-family:inherit;white-space:normal}
