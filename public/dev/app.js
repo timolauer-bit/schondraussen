@@ -1509,7 +1509,7 @@
   function support() {
     if (S.preview) { mainEl.append(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'), h('p', { class: 'hint' }, 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'), h('p', { class: 'warnbox' }, 'In der Vorschau kannst du hier nichts schreiben.'))); return; }
     var admin = D.admin, staff = !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Kontakt'),
-      h('p', { class: 'hint' }, admin ? 'Hier siehst du die Nachrichten deiner Nutzer und kannst antworten.' : 'Schreibe dem Administrator eine Nachricht. Nur der Administrator sieht sie, Antworten erscheinen hier.'));
+      h('p', { class: 'hint' }, admin ? 'Melde eine Idee oder einen Bug, oder antworte deinen Nutzern und dem Team.' : 'Melde eine Idee oder einen Bug, oder schreibe dem Administrator. Im Chat sieht nur der Administrator deine Nachrichten, Antworten erscheinen hier.'));
     var grid = h('div', { class: 'supgrid' + (staff ? ' admin2' : '') }), threads = h('aside', { class: 'supthreads', hidden: !staff }), log = h('div', { class: 'chatlog', role: 'log', 'aria-live': 'polite' });
     var inp = h('textarea', { rows: '2', maxlength: '1000', 'aria-label': 'Nachricht', placeholder: 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)' }), msg = h('p', { class: 'msg', role: 'status' });
     var drafts = [], draftBox = h('div', { class: 'drafts' });
@@ -1554,8 +1554,9 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.'));
-      S.sup.threads.forEach(function (t) { threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
+      threads.textContent = ''; if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.')); var lastG = null;
+      S.sup.threads.forEach(function (t) { var g = t.id === 'team' ? 'Team' : (admin ? 'Nutzer' : (t.id === 'me' ? 'Administrator' : 'Direkt')); if (g !== lastG) { threads.append(h('p', { class: 'thgrp' }, g)); lastG = g; } threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
+      if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick);
     }
     function pull() {
       var go2 = function () {
@@ -1642,14 +1643,53 @@
         if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
       });
     }
-    var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [kindBox, kindHint, pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
+    var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
     var pollBtn = h('button', { class: 'btn ghost', type: 'button', hidden: true, onclick: drawPollForm }, 'Abstimmung'); form.insertBefore(pollBtn, form.querySelector('button[type=submit]'));
-    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(grid); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+    /* Idee und Bug melden: eigene Karten über dem Chat, das Formular klappt darunter auf */
+    var RK = { feature: ['Idee melden', 'Vorschlag für die Seite', 'Dir fehlt etwas oder du hast einen Vorschlag? Nach der Freigabe können alle dafür abstimmen.', ICONS.bulb, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Idee abschicken'], bug: ['Bug melden', 'Etwas funktioniert nicht', 'Etwas funktioniert nicht richtig? Beschreibe kurz, wo es passiert und was du gemacht hast.', ICONS.bug, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bug abschicken'] };
+    var rep = { kind: null, drafts: [] }, repCards = h('div', { class: 'repcards' + (staff ? ' slim' : '') }), repSlot = h('div', { class: 'repslot' });
+    function dropRepDrafts() { rep.drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); rep.drafts = []; }
+    function closeReport(drop) { if (drop) dropRepDrafts(); rep.drafts = []; rep.kind = null; repSlot.textContent = ''; drawRepCards(); }
+    function drawRepCards() {
+      repCards.textContent = '';
+      ['feature', 'bug'].forEach(function (k) { var r = RK[k]; repCards.append(h('button', { class: 'repcard', type: 'button', 'aria-expanded': String(rep.kind === k), onclick: function () { if (rep.kind === k) { closeReport(true); return; } if (rep.kind) dropRepDrafts(); openReport(k); } }, h('span', { class: 'repico' }, ico(r[3])), h('b', null, r[0]), h('small', null, staff ? r[1] : r[2]))); });
+    }
+    function openReport(kind) {
+      var r = RK[kind]; rep.kind = kind; rep.drafts = []; repSlot.textContent = '';
+      var ti = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', 'aria-label': 'Kurzbeschreibung', placeholder: r[4], autocomplete: 'off' }), tx = h('textarea', { rows: '4', maxlength: '1000', 'aria-label': 'Details', placeholder: r[5] }), rmsg = h('p', { class: 'msg', role: 'status' }), dbox = h('div', { class: 'drafts' }), note = h('p', { class: 'hint picnote' });
+      var fi = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,text/plain,.txt,.log,.md,.csv,.json', multiple: true, hidden: true });
+      function drawRD() { dbox.textContent = ''; rep.drafts.forEach(function (d) { dbox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Anhang entfernen', onclick: function () { rep.drafts = rep.drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawRD(); } }, '×'))); }); note.textContent = 'Anhänge: ' + rep.drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
+      function addRF(files) {
+        [].slice.call(files).forEach(function (f) {
+          if (rep.drafts.length >= 3) { rmsg.className = 'msg err'; rmsg.textContent = 'Höchstens 3 Anhänge.'; return; }
+          var isTxt = !/^image\//.test(f.type) && (/^text\//.test(f.type) || /\.(txt|log|md|csv|json)$/i.test(f.name)); rmsg.className = 'msg'; rmsg.textContent = isTxt ? 'Datei wird hochgeladen …' : 'Bild wird hochgeladen …';
+          (isTxt ? uploadText(f, 'feedback') : uploadImage(f, 'feedback')).then(function (d) { if (rep.kind !== kind) { api('/api/image.php?a=remove', { id: d.id }); return; } rep.drafts.push(d); rmsg.textContent = ''; drawRD(); }).catch(function (e) { rmsg.className = 'msg err'; rmsg.textContent = e.message; });
+        });
+      }
+      fi.addEventListener('change', function () { addRF(fi.files); fi.value = ''; });
+      tx.addEventListener('paste', function (ev) { var fs = [].filter.call((ev.clipboardData && ev.clipboardData.files) || [], function (f) { return /^image\//.test(f.type); }); if (fs.length) { ev.preventDefault(); addRF(fs); } });
+      var sending = false;
+      function submit(ev) {
+        ev.preventDefault(); if (sending) return; var t = ti.value.trim(); if (t.length < 3) { rmsg.className = 'msg err'; rmsg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; ti.focus(); return; }
+        var ids = rep.drafts.map(function (d) { return d.id; }); sending = true;
+        api('/api/feedback.php?a=add', { kind: kind, title: t, text: tx.value.trim(), images: ids }).then(function (z) {
+          sending = false;
+          if (z && z.ok) { closeReport(false); popup(kind === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kind === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kind === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); }
+          else { rmsg.className = 'msg err'; rmsg.textContent = (z && z.error) || 'Senden nicht möglich.'; }
+        });
+      }
+      drawRD();
+      repSlot.append(setCard(r[0], [h('p', { class: 'hint' }, kind === 'feature' ? 'Der Admin schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.' : 'Der Admin schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.'),
+        h('form', { class: 'repform', autocomplete: 'off', onsubmit: submit }, ti, tx, fi, h('div', { class: 'reprow' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { fi.click(); } }, 'Anhängen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { closeReport(true); } }, 'Abbrechen'), h('button', { class: 'btn', type: 'submit' }, r[6]))), dbox, note, rmsg], 'composer'));
+      drawRepCards(); ti.focus();
+    }
+    drawRepCards();
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(repCards, repSlot, grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
   }
   function feedbackView(kind) {
     if (!S.preview && (D.admin || D.alpha)) fbPoll();
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
-      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ (Auswahl „Bugmeldung“).' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ (Auswahl „Idee“).'))),
+      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ mit „Bug melden“.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ mit „Idee melden“.'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
