@@ -823,9 +823,9 @@ hr.newshr{margin-inline:auto}
 .repcard{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;align-items:center;text-align:left;padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
 .repcard:hover,.repcard[aria-expanded=true]{border-color:var(--accent)}
 .repcard[aria-expanded=true]{background:var(--accent-soft)}
-.repico{grid-row:span 2;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
+.repico{grid-row:span 2;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
 .repcard[aria-expanded=true] .repico{background:var(--surface)}
-.repico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.repico svg{flex:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .repcard b{font-size:16px}.repcard small{font-size:13px;color:var(--muted);line-height:1.35}
 .repcards.slim .repcard{padding:11px 16px}.repcards.slim .repico{width:36px;height:36px}
 .repslot{margin-bottom:16px}.repslot:empty{display:none}
