@@ -466,7 +466,7 @@ function done_key_work($title, $year): string { return 'w' . substr(md5(mb_strto
 function done_key_ep($season, $number): string { return 'e' . (int) $season . 'x' . (int) $number; }
 if ($a === 'done' && $_SERVER['REQUEST_METHOD'] === 'POST') { // gesehen / gelesen / gehört
     $b = body(); $sid = (int) ($b['id'] ?? 0); $keys = array_values(array_unique(array_filter((array) ($b['keys'] ?? []), fn($k) => is_string($k) && preg_match('/^(w[0-9a-f]{16}|e\d{1,3}x\d{1,4})$/', $k))));
-    if (!$sid || !$keys || count($keys) > 400) json_out(['error' => 'Ungültige Angabe.'], 422);
+    if (!$sid || !$keys || count($keys) > 5000) json_out(['error' => 'Ungültige Angabe.'], 422);
     $own = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $own->execute([$u['id'], $sid]); if (!$own->fetch()) json_out(['error' => 'Der Eintrag steht nicht auf deiner Liste.'], 404);
     try {
         if (!empty($b['on'])) { $q = $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)'); foreach ($keys as $k) $q->execute([$u['id'], $sid, $k]); }

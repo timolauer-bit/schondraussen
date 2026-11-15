@@ -505,10 +505,13 @@
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
     var dv = DONEV[e.type] || DONEV.artist, done = doneSetOf(r), hideDone = false, rows = [], cnt = h('span', { class: 'cnt' }), flt = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false' }, 'Nur Neues für mich'), wfill = h('i'), wbar = h('span', { class: 'wbar' }, wfill), grid = e.type === 'podcast' ? card : h('div', { class: 'wgrid' });
-    function updAll() { var n = r.works.filter(function (w) { return done[w.k]; }).length; wfill.style.width = (r.works.length ? Math.round(100 * n / r.works.length) : 0) + '%'; cnt.textContent = n + ' von ' + r.works.length + ' ' + t.work + ' ' + dv[0];
+    function updAll() { allLbl(); var n = r.works.filter(function (w) { return done[w.k]; }).length; wfill.style.width = (r.works.length ? Math.round(100 * n / r.works.length) : 0) + '%'; cnt.textContent = n + ' von ' + r.works.length + ' ' + t.work + ' ' + dv[0];
       rows.forEach(function (x) { var on = !!done[x.w.k]; x.pill.className = 'pill' + (on ? ' on' : ''); x.pill.setAttribute('aria-pressed', on ? 'true' : 'false'); x.pill.textContent = on ? dv[0].charAt(0).toUpperCase() + dv[0].slice(1) : dv[1]; x.row.hidden = hideDone && on; }); }
+    var allB = h('button', { class: 'pill', type: 'button', title: 'Markiert alle aufgelisteten Einträge auf einmal. Nur für dich sichtbar.' });
+    function allLbl() { var n = r.works.filter(function (w) { return done[w.k]; }).length; allB.textContent = r.works.length && n === r.works.length ? 'Alles zurücksetzen' : 'Alles ' + dv[0]; }
+    allB.addEventListener('click', function () { var keys = r.works.map(function (w) { return w.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); updAll(); }); });
     flt.addEventListener('click', function () { hideDone = !hideDone; flt.className = 'pill' + (hideDone ? ' on' : ''); flt.setAttribute('aria-pressed', hideDone ? 'true' : 'false'); updAll(); });
-    if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt), wbar);
+    if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt, allB), wbar);
     r.works.forEach(function (w) {
       var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), pill), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
       pill.addEventListener('click', function () { var on = !done[w.k]; setDone(e, [w.k], on, function () { if (on) done[w.k] = 1; else delete done[w.k]; updAll(); }); });
@@ -596,13 +599,13 @@
   function doneSetOf(r) { var o = {}; (r.done || []).forEach(function (k) { o[k] = 1; }); return o; }
   function renderEpisodes(e, eps, done, progCb) {
     done = done || {};
-    var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null;
+    var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null, gbtns = [], updFns = [];
     box.append(h('h3', { class: 'sec' }, 'Staffeln und Folgen'));
     box.append(h('p', { class: 'note' }, 'Folgen und Sendetermine von ', h('a', { href: e.tvmaze ? 'https://www.tvmaze.com/shows/' + e.tvmaze : 'https://www.tvmaze.com', target: '_blank', rel: 'noopener noreferrer' }, 'TVmaze'),
       e.fetched_at ? ', Stand ' + LONG.format(new Date(e.fetched_at.replace(' ', 'T'))) : '', e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
     eps.forEach(function (x) { (by[x.season] = by[x.season] || []).push(x); });
     var nums = Object.keys(by).map(Number).sort(function (a, b) { return a - b; }), liveSeason = null;
-    function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); }
+    function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); gbtns.forEach(function (b) { b.textContent = n === eps.length ? 'Alles zurücksetzen' : 'Alles als gesehen markieren'; }); }
     function pick(sn) { sel = sn; nums.forEach(function (n) { var on = n === sn; tiles[n].classList.toggle('on', on); tiles[n].setAttribute('aria-selected', on ? 'true' : 'false'); panels[n].hidden = !on; }); }
     nums.forEach(function (sn) {
       var l = by[sn], fut = 0; l.forEach(function (x) { var p = x.airdate ? parseDate(x.airdate) : null; if (p && p.prec !== 'none' && p.end >= now) fut++; });
@@ -637,8 +640,11 @@
         det.append(h('div', { class: 'work ep' }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', { class: 'epcell' }, ttl, h('div', { class: 'sub' }, when), sbox), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
       });
       allBtn.addEventListener('click', function () { var keys = cks.map(function (c) { return c.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); upd(); }); });
+      var gBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Markiert alle Folgen aller Staffeln dieser Serie auf einmal' }); gbtns.push(gBtn);
+      gBtn.addEventListener('click', function () { var keys = eps.map(function (x) { return x.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); updFns.forEach(function (f) { f(); }); }); });
+      updFns.push(upd);
       upd();
-      det.insertBefore(h('div', { class: 'season-foot' }, allBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)), det.firstChild);
+      det.insertBefore(h('div', { class: 'season-foot' }, allBtn, ' ', gBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)), det.firstChild);
       box.append(det);
     });
     box.insertBefore(strip, panels[nums[0]]);
