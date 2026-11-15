@@ -283,7 +283,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($name) > 3 && preg_match('/\p{Lu}{2}/u', $name) && $name === mb_strtoupper($name) && preg_match('/\s/', $name) && preg_match('/\p{L}/u', $name) && ($type === 'author')) $name = mb_convert_case(mb_strtolower($name), MB_CASE_TITLE); // Autorenname nur in Großbuchstaben: Groß-/Kleinschreibung herstellen
     if (!in_array($type, $TYPES, true) || $name === '' || mb_strlen($name) > 190) json_out(['error' => 'Bitte einen Namen eingeben.'], 422);
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
-    if ((int) $n->fetchColumn() >= 100) json_out(['error' => 'Du hast die Grenze von 100 Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
+    if ((int) $n->fetchColumn() >= ENTRY_LIMIT) json_out(['error' => 'Du hast die Grenze von ' . number_format(ENTRY_LIMIT, 0, ',', '.') . ' Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
     foreach (['tvmaze' => 'int', 'itunes' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
@@ -363,12 +363,12 @@ if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $t = trim(preg_replace('/[\x00-\x1f\s]+/u', ' ', (string) $x));
         if ($t === '' || mb_strlen($t) > 190 || isset($seen[mb_strtolower($t)])) continue;
         $seen[mb_strtolower($t)] = 1; $names[] = $t;
-        if (count($names) >= 300) break;
+        if (count($names) >= ENTRY_LIMIT) break;
     }
     if (!$names) json_out(['ok' => false, 'msg' => 'Keine Namen gefunden.']);
     $it = (string) (body()['type'] ?? 'artist'); if (!in_array($it, $TYPES, true)) $it = 'artist';
     $c = $pdo->prepare("SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?"); $c->execute([$u['id'], $it]);
-    $room = max(0, 100 - (int) $c->fetchColumn()); $added = 0; $had = 0; $over = 0;
+    $room = max(0, ENTRY_LIMIT - (int) $c->fetchColumn()); $added = 0; $had = 0; $over = 0;
     $sub = $pdo->prepare("INSERT INTO subjects (type,name) VALUES (?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)");
     $ue = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)');
     $off = isset($u['bell_default']) && !(int) $u['bell_default'];
@@ -384,7 +384,7 @@ if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 if ($a === 'trakt' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Import aus einem Trakt-Export (vom Browser vorbereitet: Serien/Filme + gesehene Folgen)
     $items = (array) (body()['items'] ?? []); $res = ['series' => ['added' => 0, 'had' => 0, 'over' => 0], 'film' => ['added' => 0, 'had' => 0, 'over' => 0], 'eps' => 0];
-    $room = []; foreach (['series', 'film'] as $t) { $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $t]); $room[$t] = max(0, 100 - (int) $c->fetchColumn()); }
+    $room = []; foreach (['series', 'film'] as $t) { $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $t]); $room[$t] = max(0, ENTRY_LIMIT - (int) $c->fetchColumn()); }
     $off = isset($u['bell_default']) && !(int) $u['bell_default']; $seen = []; $epBudget = 20000; $n = 0;
     $chk = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $ue = $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)');
     $dn = $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)');
@@ -418,7 +418,7 @@ if ($a === 'samples' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$adm || $adm === (int) $u['id']) json_out(['ok' => true, 'added' => 0]);
     foreach ($TYPES as $t) {
         $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $t]);
-        $room = 100 - (int) $c->fetchColumn(); if ($room <= 0) continue;
+        $room = ENTRY_LIMIT - (int) $c->fetchColumn(); if ($room <= 0) continue;
         $q = $pdo->prepare("SELECT s.id FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.is_sample=0 AND s.type=? AND s.fetched_at IS NOT NULL
             ORDER BY (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=?) DESC, s.name LIMIT 10");
         $q->execute([$adm, $t, $today]);

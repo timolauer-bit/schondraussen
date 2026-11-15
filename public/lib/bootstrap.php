@@ -1,4 +1,5 @@
 <?php
+if (!defined('ENTRY_LIMIT')) define('ENTRY_LIMIT', 1000); // höchstens so viele Einträge je Liste und Nutzer
 // Gemeinsame Grundfunktionen: Konfiguration, Datenbank, Sitzung, JSON-Antworten.
 $GLOBALS['CFG'] = is_file(__DIR__ . '/../config.php') ? require __DIR__ . '/../config.php' : [];
 function cfg(string $k, $d = null) { return $GLOBALS['CFG'][$k] ?? $d; }

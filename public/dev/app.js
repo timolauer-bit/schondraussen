@@ -16,7 +16,7 @@
     podcast: { label: 'Podcast', plural: 'Podcasts', who: 'Podcasts', ph: 'z. B. Lage der Nation', idx: '', work: 'Folgen' }
   };
   var ALLC = ['author', 'artist', 'film', 'series', 'podcast'];
-  var ORDER0 = ALLC.filter(function (t) { return t !== 'podcast' && (!D.cats || D.cats.indexOf(t) >= 0); }), ORDER = ORDER0.slice(), MAXN = 100;
+  var ORDER0 = ALLC.filter(function (t) { return t !== 'podcast' && (!D.cats || D.cats.indexOf(t) >= 0); }), ORDER = ORDER0.slice(), MAXN = 1000;
   if (D.podcast) ORDER.push('podcast');
   function isHid(t) { return (D.hide || []).indexOf(t) >= 0; }
   var CATCOL = { author: 'var(--c-author)', artist: 'var(--c-artist)', film: 'var(--c-film)', series: 'var(--c-series)', podcast: 'var(--c-podcast)' };
@@ -928,7 +928,7 @@
           var k = order[i], cc = IMPCATS.filter(function (x) { return x[0] === k; })[0];
           api('/api/data.php?a=import', { names: groups[k], type: k }).then(function (r) {
             if (!r.ok) { failed = (parts.length ? parts.join(' ') + ' ' : '') + (cc[1] + ': ' + (r.msg || r.error || 'Das hat nicht geklappt.')); runGroup(order.length); return; }
-            parts.push(cc[1] + ': ' + r.added + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 100 pro Liste)' : '') + '.'); runGroup(i + 1);
+            parts.push(cc[1] + ': ' + r.added + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 1.000 pro Liste)' : '') + '.'); runGroup(i + 1);
           });
         }
         runGroup(0);
@@ -990,7 +990,7 @@
         tItems = traktParse([].concat.apply([], parts));
         var ns = tItems.filter(function (x) { return x.type === 'series'; }).length, nf = tItems.length - ns, ne = tItems.reduce(function (a, x) { return a + x.eps.length; }, 0);
         if (!tItems.length) { tMsg.className = 'msg err'; tMsg.textContent = 'Ich habe keine Serien oder Filme gefunden. Wähle die ZIP-Datei aus dem Trakt-Export oder JSON-Dateien daraus (z. B. Watchlist und Verlauf).'; return; }
-        tMsg.className = 'msg'; tMsg.textContent = 'Erkannt: ' + pl(ns, 'Serie', 'Serien') + ', ' + pl(nf, 'Film', 'Filme') + (ne ? ' und ' + pl(ne, 'gesehene Folge', 'gesehene Folgen') : '') + '. Pro Liste passen höchstens 100 Einträge, der Rest wird übersprungen.'; tGo.hidden = false;
+        tMsg.className = 'msg'; tMsg.textContent = 'Erkannt: ' + pl(ns, 'Serie', 'Serien') + ', ' + pl(nf, 'Film', 'Filme') + (ne ? ' und ' + pl(ne, 'gesehene Folge', 'gesehene Folgen') : '') + '. Pro Liste passen höchstens 1.000 Einträge, der Rest wird übersprungen.'; tGo.hidden = false;
       }).catch(function (e) { tMsg.className = 'msg err'; tMsg.textContent = e.message || 'Die Datei konnte nicht gelesen werden.'; });
     });
     tGo.addEventListener('click', function () {
@@ -1306,8 +1306,12 @@
       var g = h('div', { class: 'commgrid' });
       CT.forEach(function (t) {
         var rows = d.lists[t] || [], bx = h('div', { class: 'commbox' + (d.locked ? ' locked' : '') }, h('h4', null, TYPES[t].plural + (d.locked ? '' : ' (' + rows.length + ')')));
+        var PS = 50, pgk = C.uid + '|' + t, pages = Math.ceil(rows.length / PS), pgi; C.pg = C.pg || {}; pgi = Math.min(C.pg[pgk] || 0, Math.max(0, pages - 1)); C.pg[pgk] = pgi;
+        var allRows = rows; rows = allRows.slice(pgi * PS, (pgi + 1) * PS);
+        if (C.pgFocus === pgk) { C.pgFocus = null; setTimeout(function () { try { bx.scrollIntoView({ block: 'start' }); } catch (_) {} }, 0); }
         if (!rows.length) bx.append(h('p', { class: 'hint' }, 'Leer.'));
         else bx.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rows.map(function (r) { return h('tr', null, h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r))); })))));
+        if (pages > 1) { var pgn = function (dl) { return function () { C.pg[pgk] = pgi + dl; C.pgFocus = pgk; drawUser(); }; }; bx.append(h('div', { class: 'commpg' }, h('button', { class: 'btn ghost small', type: 'button', disabled: pgi === 0, onclick: pgn(-1) }, '‹ Zurück'), h('span', { class: 'hint', style: 'margin:0' }, 'Seite ' + (pgi + 1) + ' von ' + pages + ' (' + (pgi * PS + 1) + ' bis ' + Math.min(allRows.length, (pgi + 1) * PS) + ')'), h('button', { class: 'btn ghost small', type: 'button', disabled: pgi >= pages - 1, onclick: pgn(1) }, 'Weiter ›'))); }
         g.append(bx);
       });
       body.append(g);
@@ -1337,7 +1341,7 @@
       ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt; Einnahmen nur über Amazon-Partnerlinks)', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Podcasts werden schrittweise freigegeben, Filme warten auf die Freigabe der Datenquelle (TMDB)']));
     sec('Funktionen für Nutzer', ul([
       'Konto mit E-Mail-Bestätigung oder, wenn der Admin es erlaubt, ganz ohne E-Mail-Adresse (Anmeldung mit Benutzername und Wiederherstellungscode); frei wählbarer Benutzername, optionale Zwei-Faktor-Anmeldung; Konto jederzeit löschbar (endgültig nach 7 Tagen)',
-      'Vier Listen (Bücher, Musik, Filme, Serien, je bis zu 100 Einträge) mit Werkübersicht, Beschreibung (deutsch, übersetzt) und Markierung als gesehen, gelesen oder gehört',
+      'Vier Listen (Bücher, Musik, Filme, Serien, je bis zu 1.000 Einträge) mit Werkübersicht, Beschreibung (deutsch, übersetzt) und Markierung als gesehen, gelesen oder gehört',
       'Kalender aller angekündigten Veröffentlichungen mit Kategorie-Chips zum Ein- und Ausblenden und Vorschau je Tag, dazu ein persönliches Kalender-Abo (ICS)',
       'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
       'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',

@@ -890,3 +890,4 @@ hr.newshr{margin-inline:auto}
 .brsub{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}.brsub .hint{margin:0 0 4px}
 .brmini{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:13px;color:var(--muted)}
 .brmini b{color:var(--ink)}
+.commpg{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:8px}

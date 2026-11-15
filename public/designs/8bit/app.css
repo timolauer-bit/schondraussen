@@ -870,6 +870,7 @@ hr.newshr{margin-inline:auto}
 @media (max-width:1100px){.fbhead .fbmeta{width:270px}}
 @media (max-width:760px){.fbhead .fbslot.sp,.fbhead .fbslot.ss{width:auto}.fbhead .fbslot:empty{display:none}.fbhead .fbmeta{width:auto}}
 
+.commpg{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:8px}
 /* ===== Design 8-Bit: Pixelschrift, harte Kanten, dicke Rahmen, Schlagschatten ohne Weichzeichnung ===== */
 @font-face{font-family:'SD Pixel';src:url('/designs/8bit/pixel.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'SD Pixel Text';src:url('/designs/8bit/text.woff2') format('woff2');font-display:swap;size-adjust:128%}

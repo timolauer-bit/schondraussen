@@ -149,7 +149,7 @@ if ($a === 'adopt' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $c->execute([$u['id'], $sub['type']]);
     $h = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $h->execute([$u['id'], $sid]);
     if ($h->fetchColumn()) json_out(['ok' => true, 'had' => true]);
-    if ((int) $c->fetchColumn() >= 100) json_out(['error' => 'Du hast die Grenze von 100 Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
+    if ((int) $c->fetchColumn() >= ENTRY_LIMIT) json_out(['error' => 'Du hast die Grenze von ' . number_format(ENTRY_LIMIT, 0, ',', '.') . ' Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)')->execute([$u['id'], $sid]);
     if (isset($u['bell_default']) && !(int) $u['bell_default']) { try { $pdo->prepare('UPDATE user_entries SET bell=0 WHERE user_id=? AND subject_id=?')->execute([$u['id'], $sid]); } catch (Throwable $e) {} }
     json_out(['ok' => true]);
