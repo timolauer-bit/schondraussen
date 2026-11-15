@@ -23,7 +23,15 @@ if ($a === 'lastrun') { // grobe Angabe für alle, ohne Namen oder Zahlen einzel
 if ($a === 'calinfo') {
     $tok = null; try { $s = $pdo->prepare('SELECT cal_token FROM users WHERE id=?'); $s->execute([$u['id']]); $tok = $s->fetchColumn() ?: null; } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
-    json_out(['url' => $tok ? $base . '/kalender/' . $tok . '.ics' : null]);
+    $cats = null; try { $c = $pdo->prepare('SELECT ical_cats FROM users WHERE id=?'); $c->execute([$u['id']]); $v = $c->fetchColumn(); if ($v) $cats = array_values(array_filter(explode(',', (string) $v))); } catch (Throwable $e) {}
+    json_out(['url' => $tok ? $base . '/kalender/' . $tok . '.ics' : null, 'cats' => $cats]);
+}
+if ($a === 'calcats' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Kategorien des Kalender-Abos (unabhängig vom Ausblenden in der Oberfläche); leer/alle = alle
+    $allow = allowed_cats($u); $in = array_values(array_intersect($allow, (array) (body()['cats'] ?? [])));
+    if (!$in) json_out(['error' => 'Mindestens eine Kategorie muss ausgewählt bleiben.'], 422);
+    $val = count($in) >= count($allow) ? null : implode(',', $in);
+    try { $pdo->prepare('UPDATE users SET ical_cats=? WHERE id=?')->execute([$val, $u['id']]); } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true, 'cats' => $val === null ? null : $in]);
 }
 if ($a === 'caltoken' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = (string) (body()['mode'] ?? '');

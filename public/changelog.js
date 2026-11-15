@@ -1,6 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'F|Kalender-Abo: Du kannst wählen, welche Kategorien im Abo erscheinen (zum Beispiel nur Serien auf dem Handy). Die Auswahl gilt nur für das Abo und ist unabhängig vom Ausblenden in den Oberflächenanpassungen.',
+    'O|Oberflächenanpassungen: Ausgeblendete Kategorien kommen auch nicht mehr in die Benachrichtigungs-Mails und deren Vorschau.',
     'F|Einstellungen → Optik/Optionen → Oberflächenanpassungen: Nicht benötigte Kategorien (Bücher, Musik, Filme, Serien, Podcasts) lassen sich ausblenden. Sie verschwinden dann aus Menü und Kalender (keine Markierungen in den Monaten, keine Einträge in der Liste). Auch die Filter-Knöpfe unter dem Kalender zeigen sie dann nicht mehr. Deine Einträge bleiben gespeichert, in der Community siehst du die Kategorien weiterhin.',
     'U|Bestätigungslink in der Mail: Nach dem Klick erscheint jetzt oben auf der Seite ein gut sichtbarer grüner Hinweis „E-Mail-Adresse bestätigt“ (auch bei einer neuen Adresse). Wer schon angemeldet ist, sieht eine kurze Einblendung.',
     'F|Neu hinzufügen: Schon beim Tippen (ab 2 Buchstaben) erscheinen Treffer aus den Einträgen, die es auf der Seite schon gibt. Gibt es keinen passenden, sucht Enter wie bisher im Netz.',

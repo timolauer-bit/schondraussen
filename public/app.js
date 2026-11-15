@@ -1049,10 +1049,17 @@
         h('button', { class: 'btn ghost small', type: 'button', onclick: function () { if (confirm('Einen neuen Link erzeugen? Der alte funktioniert dann nicht mehr und muss im Kalender ersetzt werden.')) calSet('reset'); } }, 'Neuen Link erzeugen'),
         h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Das Kalender-Abo beenden? Der Link funktioniert dann nicht mehr.')) calSet('off'); } }, 'Abo beenden'));
     }
+    var calCatBox = h('div', { style: 'margin-top:12px' }), calCatMsg = h('span', { class: 'msg', style: 'margin:0' });
+    function calCatDraw(sel) { // Kategorien des Abos: eigene Auswahl, unabhängig vom Ausblenden in der Oberfläche
+      calCatBox.textContent = ''; var cur = sel && sel.length ? sel.slice() : ORDER.slice(), row = h('div', { style: 'display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px' });
+      ORDER.forEach(function (t) { var ck = h('input', { type: 'checkbox', checked: cur.indexOf(t) >= 0, onchange: function () { var n = ORDER.filter(function (x) { return x === t ? ck.checked : cur.indexOf(x) >= 0; }); if (!n.length) { ck.checked = true; calCatMsg.className = 'msg err'; calCatMsg.textContent = 'Mindestens eine Kategorie muss ausgewählt bleiben.'; return; }
+        api('/api/data.php?a=calcats', { cats: n }).then(function (r) { if (!r.ok) { ck.checked = !ck.checked; calCatMsg.className = 'msg err'; calCatMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } cur = n; calCatMsg.className = 'msg'; calCatMsg.textContent = 'Gespeichert.'; }); } }); row.append(h('label', { style: 'display:flex;gap:6px;align-items:center' }, ck, TYPES[t].plural)); });
+      calCatBox.append(h('p', { class: 'label', style: 'margin-bottom:0' }, 'Kategorien im Kalender-Abo'), h('p', { class: 'hint', style: 'margin:0' }, 'Nur diese Kategorien erscheinen im Kalender-Abo, zum Beispiel wenn dich auf dem Handy nur ein Teil interessiert. Diese Auswahl gilt nur für das Abo und ist unabhängig vom Ausblenden unter „Oberflächenanpassungen“.'), row, calCatMsg);
+    }
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Kalender-Abo'),
       h('p', { class: 'hint' }, 'Mit diesem Link zeigt dein Kalender (Google, Apple, Outlook, Thunderbird) alle angekündigten Termine deiner Einträge und aktualisiert sich selbst. Der Link ist privat: Wer ihn kennt, sieht deine Termine, gib ihn also nicht weiter. Termine ohne genaues Datum erscheinen nicht. Je nach Kalender-App dauert die Aktualisierung einige Stunden.'),
-      calUrl, calBtns, calMsg));
-    calUrl.hidden = true; api('/api/data.php?a=calinfo').then(function (r) { if (r.error) { calMsg.className = 'msg err'; calMsg.textContent = r.error; return; } calDraw(r.url); });
+      calUrl, calBtns, calMsg, calCatBox));
+    calUrl.hidden = true; api('/api/data.php?a=calinfo').then(function (r) { if (r.error) { calMsg.className = 'msg err'; calMsg.textContent = r.error; return; } calDraw(r.url); calCatDraw(r.cats); });
     // Zwei-Faktor-Anmeldung
     var tfaBox = h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Zwei-Faktor-Anmeldung'));
     function tfaApi(a, data) { return fetch('/api/auth.php?a=' + a, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), credentials: 'same-origin' }).then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); }); }

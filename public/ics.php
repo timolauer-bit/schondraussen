@@ -18,9 +18,11 @@ if (preg_match('/^[A-Za-z0-9]{32}$/', $t)) {
 }
 if (!$row || ($row['role'] !== 'admin' && !$row['approved_at']) || !empty($row['delete_requested_at'])) { http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); exit('Nicht gefunden.'); }
 $pdo = db();
+$types = null; try { $c = $pdo->prepare('SELECT ical_cats FROM users WHERE id=?'); $c->execute([$row['id']]); $v = (string) $c->fetchColumn(); if ($v !== '') $types = array_values(array_intersect(explode(',', $v), ['author', 'artist', 'film', 'series', 'podcast'])); } catch (Throwable $e) {}
+$tf = $types ? ' AND s.type IN (' . implode(',', array_fill(0, count($types), '?')) . ')' : '';
 $q = $pdo->prepare("SELECT r.title,r.release_date,r.kind,s.id sid,s.name,s.type FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
-    WHERE e.user_id=? AND r.release_date REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND r.release_date >= CURDATE() - INTERVAL 14 DAY AND (s.type<>'podcast' OR r.release_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) ORDER BY r.release_date, s.name LIMIT 2000");
-$q->execute([$row['id']]);
+    WHERE e.user_id=? AND r.release_date REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND r.release_date >= CURDATE() - INTERVAL 14 DAY AND (s.type<>'podcast' OR r.release_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))" . $tf . " ORDER BY r.release_date, s.name LIMIT 2000");
+$q->execute(array_merge([$row['id']], $types ?: []));
 $cat = ['author' => 'Autor:in', 'artist' => 'Musiker:in', 'film' => 'Film', 'series' => 'Serie'];
 $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
 $now = gmdate('Ymd\THis\Z');

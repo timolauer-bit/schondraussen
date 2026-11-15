@@ -7,6 +7,9 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+ '078_ical_cats' => [
+  "ALTER TABLE users ADD COLUMN ical_cats VARCHAR(60) NULL",
+ ],
  '077_stefanh_film_clear' => [
   "DELETE d FROM user_done d JOIN subjects s ON s.id=d.subject_id JOIN users u ON u.id=d.user_id WHERE u.username='stefanh' AND s.type='film'",
   "DELETE e FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN users u ON u.id=e.user_id WHERE u.username='stefanh' AND s.type='film'",

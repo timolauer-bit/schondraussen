@@ -79,7 +79,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     date_default_timezone_set('Europe/Berlin');
     $sent = 0; $fail = 0;
     $hour = (int) date('G'); $today = date('Y-m-d'); $dow = (int) date('N'); $weekTo = date('Y-m-d', strtotime('+14 days'));
-    $users = $pdo->query("SELECT id,email,unsub_token,n_new,n_day,n_week,n_mode,n_weekday,last_morning,last_weekly FROM users
+    $users = $pdo->query("SELECT id,email,role,alpha,moderator,hide_cats,unsub_token,n_new,n_day,n_week,n_mode,n_weekday,last_morning,last_weekly FROM users
         WHERE notify=1 AND email IS NOT NULL AND email_verified_at IS NOT NULL AND (role='admin' OR approved_at IS NOT NULL) AND delete_requested_at IS NULL")->fetchAll();
     $subs = $pdo->prepare('SELECT s.id,s.name,s.summary,s.type FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.bell=1 AND s.fetched_at IS NOT NULL');
     $rels = $pdo->prepare("SELECT title,release_date FROM releases WHERE subject_id=? AND release_date<>'' AND release_date IS NOT NULL");
@@ -96,7 +96,9 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
         $seenSub->execute([$uid]); $SS = array_flip($seenSub->fetchAll(PDO::FETCH_COLUMN));
         $subs->execute([$uid]);
         $new = []; $day = []; $past = []; $week = []; $mark = []; $cm = $hour >= 7;
+        $hid = hidden_cats($u); // in den Einstellungen ausgeblendete Kategorien kommen auch nicht in die Mails
         foreach ($subs->fetchAll() as $s) {
+            if (in_array($s['type'], $hid, true)) continue;
             $sid = (int) $s['id']; $rels->execute([$sid]); $R = $rels->fetchAll();
             if (!isset($SS[$sid])) { // erstes Mal (oder Glocke neu an): bisherigen Stand merken, nichts melden
                 $ins->execute([$uid, $sid, $h($uid, $sid, '', '', 'new'), 'new']);
@@ -165,8 +167,8 @@ function build_preview(PDO $pdo, array $u): array {
     $today = date('Y-m-d');
     try {
         $s = $pdo->prepare("SELECT s.name, r.title, r.release_date FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
-            WHERE e.user_id=? AND e.bell=1 AND LENGTH(r.release_date)=10 AND r.release_date>=? ORDER BY r.release_date, s.name, r.title LIMIT 12");
-        $s->execute([$u['id'], $today]); $R = $s->fetchAll();
+            WHERE e.user_id=? AND e.bell=1 AND LENGTH(r.release_date)=10 AND r.release_date>=?" . (hidden_cats($u) ? ' AND s.type NOT IN (' . implode(',', array_fill(0, count(hidden_cats($u)), '?')) . ')' : '') . " ORDER BY r.release_date, s.name, r.title LIMIT 12");
+        $s->execute(array_merge([$u['id'], $today], hidden_cats($u))); $R = $s->fetchAll();
     } catch (Throwable $e) { $R = []; }
     $demo = !$R;
     if ($demo) $R = [['name' => 'Beispiel-Band', 'title' => 'Neues Album', 'release_date' => date('Y-m-d', strtotime('+3 days'))], ['name' => 'Beispiel-Serie', 'title' => 'S02E05 Folgentitel', 'release_date' => date('Y-m-d', strtotime('+9 days'))]];
