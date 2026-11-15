@@ -849,3 +849,6 @@ hr.newshr{margin-inline:auto}
 @media(max-width:760px){.repcards{grid-template-columns:1fr}}
 .repform textarea,.repform .fbtitle{width:100%;box-sizing:border-box;resize:vertical;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit}
 .repform textarea:focus-visible,.repform .fbtitle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+.repform select.repcat{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit}
+.fbcat{display:inline-block;margin-left:8px;padding:1px 9px;border:1px solid var(--line);border-radius:99px;font:500 12px var(--font-body);color:var(--muted);vertical-align:middle;white-space:nowrap}

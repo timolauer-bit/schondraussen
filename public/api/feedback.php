@@ -26,6 +26,7 @@ if ($a === 'list') {
     // Ohne Freigabe-Spalte (Migration fehlt) bleibt alles wie früher nur für Admin und Alphatester sichtbar
     if (!$alpha) { if (!$hasRel) json_out(['items' => [], 'error' => 'Die Liste ist noch nicht freigeschaltet.']); $vis = ' AND (f.released_at IS NOT NULL OR f.user_id=' . (int) $u['id'] . ')'; }
     $noSel = ''; try { $pdo->query('SELECT bug_no FROM feedback LIMIT 1'); $noSel = ',f.bug_no'; } catch (Throwable $e) {}
+    try { $pdo->query('SELECT category FROM feedback LIMIT 1'); $noSel .= ',f.category'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT author_gone FROM feedback LIMIT 1'); $noSel .= ',f.author_gone,uu.delete_requested_at AS author_del'; } catch (Throwable $e) {}
     try { $pdo->query('SELECT done_at FROM feedback LIMIT 1'); $doneSel = ',f.done_at'; $doneOrd = 'f.done_at IS NOT NULL, '; } catch (Throwable $e) {}
     try { $pdo->query('SELECT rejected FROM feedback LIMIT 1'); $noSel .= ',f.rejected'; } catch (Throwable $e) {}
@@ -109,9 +110,11 @@ if ($a === 'comment') { // interner Kommentar unter einer Idee oder einem Bug: n
     } catch (PDOException $e) { json_out(['error' => 'Kommentare sind noch nicht eingerichtet (Migration 072 einspielen).'], 500); }
     json_out(['ok' => true]);
 }
+$FBCATS = ['bug' => ['calendar' => 'Kalender', 'lists' => 'Listen und Einträge', 'search' => 'Suche und Hinzufügen', 'community' => 'Community', 'news' => 'News', 'contact' => 'Kontakt und Chat', 'account' => 'Konto und Anmeldung', 'email' => 'E-Mails', 'ui' => 'Menü und Darstellung', 'data' => 'Falsche oder fehlende Daten', 'other' => 'Sonstiges'], 'feature' => ['feature' => 'Neues Feature', 'improve' => 'Verbesserung einer Funktion', 'source' => 'Neue Kategorie oder Datenquelle', 'design' => 'Aussehen und Design', 'mail' => 'E-Mails und Benachrichtigungen', 'community' => 'Community', 'calendar' => 'Kalender', 'mobile' => 'Handy und Bedienung', 'content' => 'Inhalte und Daten', 'other' => 'Sonstiges']];
 if ($a === 'add') {
     $kind = (string) ($b['kind'] ?? ''); $text = trim((string) ($b['text'] ?? '')); $given = trim((string) ($b['title'] ?? ''));
     if (!isset($kinds[$kind])) json_out(['error' => 'Bitte wähle Idee oder Bugmeldung.'], 422);
+    $cat = (string) ($b['category'] ?? ''); if (!isset($FBCATS[$kind][$cat])) $cat = ''; // Kategorie nur aus der festen Liste
     if ($given !== '') { // Kurzbeschreibung und Details getrennt
         if (mb_strlen($given) < 3 || mb_strlen($given) > 120) json_out(['error' => 'Die Kurzbeschreibung braucht 3 bis 120 Zeichen.'], 422);
         if (mb_strlen($text) > 2000) json_out(['error' => 'Die Details dürfen höchstens 2000 Zeichen haben.'], 422);
@@ -121,8 +124,11 @@ if ($a === 'add') {
         if ((int) $c->fetchColumn() >= 10) json_out(['error' => 'Bitte etwas später weiterschreiben.'], 429);
         if ($given !== '') $title = $given; else { $first = trim(strtok($text, "\n")); $title = mb_strlen($first) > 80 ? mb_substr($first, 0, 79) . '…' : $first; }
         $bn = null; if ($kind === 'bug') { try { $bn = 1 + (int) $pdo->query("SELECT COALESCE(MAX(bug_no),0) FROM feedback WHERE kind='bug'")->fetchColumn(); } catch (Throwable $e) { $bn = null; } }
-        if ($bn !== null) $pdo->prepare('INSERT INTO feedback (user_id,kind,title,body,bug_no) VALUES (?,?,?,?,?)')->execute([$u['id'], $kind, $title, $text, $bn]);
-        else $pdo->prepare('INSERT INTO feedback (user_id,kind,title,body) VALUES (?,?,?,?)')->execute([$u['id'], $kind, $title, $text]);
+        $hasCat = false; try { $pdo->query('SELECT category FROM feedback LIMIT 1'); $hasCat = true; } catch (Throwable $e) {}
+        $cols = ['user_id', 'kind', 'title', 'body']; $vals = [$u['id'], $kind, $title, $text];
+        if ($bn !== null) { $cols[] = 'bug_no'; $vals[] = $bn; }
+        if ($hasCat && $cat !== '') { $cols[] = 'category'; $vals[] = $cat; }
+        $pdo->prepare('INSERT INTO feedback (' . implode(',', $cols) . ') VALUES (' . implode(',', array_fill(0, count($cols), '?')) . ')')->execute($vals);
         $fid = (int) $pdo->lastInsertId();
         // Bilder von Admin/Alpha gelten sofort als freigegeben, alle anderen warten auf die Prüfung
         if (!empty($b['images']) && is_array($b['images'])) { try { images_attach($pdo, $b['images'], (int) $u['id'], 'feedback', $fid, $alpha ? 'approved' : 'pending'); } catch (Throwable $e) {} }
@@ -130,7 +136,7 @@ if ($a === 'add') {
     try {
         $base = rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/');
         foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL AND id<>" . (int) $u['id'])->fetchAll(PDO::FETCH_COLUMN) as $adm)
-            send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . ($given !== '' ? $given . "\n\n" : '') . $text . "\n\nZur Liste: $base/\n");
+            send_mail($adm, 'Neue ' . $kinds[$kind] . ' auf Schondraussen.de', "Von " . user_label($u) . ":\n\n" . ($cat !== '' ? 'Kategorie: ' . $FBCATS[$kind][$cat] . "\n\n" : '') . ($given !== '' ? $given . "\n\n" : '') . $text . "\n\nZur Liste: $base/\n");
     } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }
