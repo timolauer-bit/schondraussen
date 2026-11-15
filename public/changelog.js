@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'B|Auswahlfelder (zum Beispiel „Nutzer anschreiben …“): Beim Anklicken erscheint kein Rahmen mit seltsamen Ecken mehr, das Feld wird stattdessen sauber umrandet.',
     'U|Ideen und Bugs: In den Hinweisen beim Melden steht jetzt „Das Team schaut sich … an“ statt „Der Admin“.',
     'B|Einstellungen → Profil: Chrome hielt das Feld „Geburtsjahr“ für ein Passwortfeld. Name, Geburtsdatum und Geburtsjahr sind jetzt eindeutig als solche gekennzeichnet.',
     'B|Bugs → Erledigt/Zurückgezogen: Das Datum („erledigt am …“) steht nicht mehr in der Kopfzeile, wo es über den Rand lief, sondern oben im aufgeklappten Beitrag.',
