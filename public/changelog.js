@@ -1,5 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 14, d: '15.11.2026', t: [
+    'U|Filme: Der Knopf der Suche heißt wie bei den anderen Kategorien „Suchen“. Der Titel wird danach mit einem Klick übernommen, weil es für Filme noch keine Datenquelle gibt.',
+  ] },
   { v: 13, d: '13.11.2026', t: [
     'F|News: Neuer Punkt neben dem Kalender mit Seitennews und News zu Inhalten, je Tag eine Meldung, mit Quellen und aufklappbaren älteren Tagen.',
     'F|Kontakt: Team-Chat für Admin und Alphatester mit Abstimmungen (vom Ersteller per Schloss schließbar), Bildern und Textdateien.',

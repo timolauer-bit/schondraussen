@@ -26,3 +26,6 @@ Zum Ausprobieren von Umgestaltungen gibt es zusätzlich Design-Varianten. Der Sc
 
 ## Mailtexte und Admin-Reiter „Infomails“
 Die Vorschau (`public/lib/mailpreview.php`) spiegelt die festen Mailtexte aus auth.php, admin.php, chat.php, feedback.php und notify.php. Ändert sich dort ein Text, bitte in `mailpreview.php` mitändern.
+
+## Einheitliche Knöpfe
+Gleiche Aktion, gleiche Beschriftung in allen Kategorien: Suchfeld mit „Suchen“, Hinzufügen eines gefundenen Treffers mit „Hinzufügen“, Abbrechen mit „Abbrechen“. Neue Knöpfe vorher mit `grep -n "'Suchen'\|'Hinzufügen'" public/app.js` auf vorhandene Beschriftungen prüfen und nur Klassen `btn`, `btn ghost`, `btn small`, `pill` verwenden.
