@@ -2206,7 +2206,7 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
       var OWN = { 'Briefing': 'adm_briefing', 'Nutzerverwaltung': 'adm_users', 'Wunschbilder': 'adm_users', 'Gesperrte E-Mail-Adressen': 'adm_users_danger', 'Statistik': 'adm_stats', 'Systemnachrichten': 'adm_news', 'News': 'adm_news', 'Eintrag prüfen': 'adm_tools' };
       if (!D.admin) { // Moderatoren: nur die in der Rechtetabelle freigegebenen Kästen und Reiter
         TABS = TABS.map(function (t) { return [t[0], t[1].filter(function (n) { return OWN[n] && CAN(OWN[n]); })]; }).filter(function (t) { return t[1].length; });
@@ -2219,7 +2219,7 @@
       var btns = TABS.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_admtab', cur); } catch (_) {} show(); } }, t[0]); if (t[0] === 'Nutzer') b.append(' ', admBadge); bar.append(b); return b; });
       function show() {
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
-        cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Inhalte'; });
+        cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Seitenadministration'; });
         if (cur === 'Infomails' && mailLoad) mailLoad();
         if (cur === 'Briefing' && !brBox.done) { brBox.done = true; brBox.load(); }
       }
