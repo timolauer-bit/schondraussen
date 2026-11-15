@@ -1568,8 +1568,8 @@
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
           if (admin) mailCk.checked = !(r.messages || []).length;
           if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), admin ? 'Hier ist noch nichts geschrieben worden. Deine Nachricht erscheint auch im Chat des Nutzers.' : 'Schreibe unten deine erste Nachricht. Antworten des Administrators erscheinen hier.'));
-          (r.messages || []).forEach(function (m) { var mine = admin ? +m.from_admin === 1 : +m.from_admin === 0;
-            log.append(h('div', { class: 'bub ' + (r.system ? 'them sys' : mine ? 'me' : 'them') }, r.system ? h('b', { class: 'syslbl' }, 'Systemnachricht') : null, m.body, (m.images || []).map(function (id) { return picLink(id, 'inchat'); }), h('small', null, fmtChat(m.created_at), mine ? h('span', { class: 'ticks' + (m.read_at ? ' seen' : ''), title: m.read_at ? 'Gelesen' : 'Gesendet' }, m.read_at ? '✓✓' : '✓') : null))); });
+          (r.messages || []).forEach(function (m) { var mine = admin ? +m.from_admin === 1 : +m.from_admin === 0, isSys = !!r.system || /^Systemnachricht:/.test(m.body || ''), bodyTxt = isSys ? String(m.body || '').replace(/^Systemnachricht:\s*/, '') : m.body;
+            log.append(h('div', { class: 'bub ' + (isSys ? 'them sys' : mine ? 'me' : 'them') }, isSys ? h('b', { class: 'syslbl' }, 'Systemnachricht') : null, bodyTxt, (m.images || []).map(function (id) { return picLink(id, 'inchat'); }), h('small', null, fmtChat(m.created_at), mine ? h('span', { class: 'ticks' + (m.read_at ? ' seen' : ''), title: m.read_at ? 'Gelesen' : 'Gesendet' }, m.read_at ? '✓✓' : '✓') : null))); });
           if (atEnd) log.scrollTop = log.scrollHeight; unreadPoll();
         });
       };
