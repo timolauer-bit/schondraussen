@@ -1406,7 +1406,7 @@
       '<p>Schondraussen.de hilft dir dabei, ganz ohne viel Schnickschnack: Du legst fest, wem du folgst, und die Seite informiert dich über Neuigkeiten, per Mail und im Kalender. So behältst du den Überblick und bestimmst selbst, was dich wirklich erreicht.</p>' +
       '<p>Auf der Suche nach neuem „Stoff“ hilft dir die Community: Dort siehst du, was andere Nutzer:innen gerade hinzufügen und was bei ihnen beliebt ist, und kannst Einträge mit einem Klick übernehmen. Dazu kannst du dir zu Musiker:innen, Autor:innen und Serien ähnliche Vorschläge anzeigen lassen.</p>' +
       (D.approval ? '<p class="muted">Neue Konten werden vom Admin freigeschaltet.</p>' : '') + '</div>' +
-      '<section class="infosec"><h3>Feedback</h3><p>Die Seite ist neu und wächst weiter. Die Daten kommen aus den Quellen unten und können Lücken haben; manchmal tauchen auch fremdsprachige Ergebnisse auf. Fehlt dir etwas oder stimmt eine Angabe nicht, schreib mir über „Kontakt“ oder reiche eine Idee oder Bugmeldung ein.</p></section>' +
+      '<section class="infosec"><h3>Feedback</h3><p>Die Seite ist neu und wächst weiter. Die Daten kommen aus den Quellen unten und können Lücken haben; manchmal tauchen auch fremdsprachige Ergebnisse auf. Fehlt dir etwas oder stimmt eine Angabe nicht, schreib mir über „Kontakt“ oder melde eine Idee oder einen Bug auf den Seiten „Ideen“ und „Bugs“.</p></section>' +
       '<section class="infosec"><h3>Wann werden Einträge erneuert?</h3><p>Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf. Beim Hinzufügen eines Eintrags und über „Aktualisieren“ werden die Daten sofort geladen. Das Datum steht als „Stand“ am Eintrag.</p><p class="muted" id="lastrun"></p><p class="muted"><a href="https://stats.uptimerobot.com/hWI2Kjc0jq" target="_blank" rel="noopener">Systemstatus ansehen</a> (zeigt, ob die Seite erreichbar ist)</p></section>' +
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Bücher</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
@@ -1701,17 +1701,14 @@
     }
     var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
     var pollBtn = h('button', { class: 'btn ghost', type: 'button', hidden: true, onclick: drawPollForm }, 'Abstimmung'); form.insertBefore(pollBtn, form.querySelector('button[type=submit]'));
-    /* Idee und Bug melden: eigene Karten über dem Chat, das Formular klappt darunter auf */
-    var RK = { feature: ['Idee melden', 'Vorschlag für die Seite', 'Dir fehlt etwas oder du hast einen Vorschlag? Nach der Freigabe können alle dafür abstimmen.', ICONS.bulb, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Idee abschicken'], bug: ['Bug melden', 'Etwas funktioniert nicht', 'Etwas funktioniert nicht richtig? Beschreibe kurz, wo es passiert und was du gemacht hast.', ICONS.bug, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bug abschicken'] };
-    var rep = { kind: null, drafts: [] }, repCards = h('div', { class: 'repcards' + (staff ? ' slim' : '') }), repSlot = h('div', { class: 'repslot' });
-    function dropRepDrafts() { rep.drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); rep.drafts = []; }
-    function closeReport(drop) { if (drop) dropRepDrafts(); rep.drafts = []; rep.kind = null; repSlot.textContent = ''; drawRepCards(); }
-    function drawRepCards() {
-      repCards.textContent = '';
-      ['feature', 'bug'].forEach(function (k) { var r = RK[k]; repCards.append(h('button', { class: 'repcard', type: 'button', 'aria-expanded': String(rep.kind === k), onclick: function () { if (rep.kind === k) { closeReport(true); return; } if (rep.kind) dropRepDrafts(); openReport(k); } }, h('span', { class: 'repico' }, ico(r[3])), h('b', null, r[0]), h('small', null, staff ? r[1] : r[2]))); });
-    }
-    function openReport(kind) {
-      var r = RK[kind]; rep.kind = kind; rep.drafts = []; repSlot.textContent = '';
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+  }
+  /* Idee und Bug melden: Formular, das auf den Seiten Ideen und Bugs aufklappt */
+  var RK = { feature: ['Idee melden', 'Vorschlag für die Seite', 'Dir fehlt etwas oder du hast einen Vorschlag? Nach der Freigabe können alle dafür abstimmen.', ICONS.bulb, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Idee abschicken'], bug: ['Bug melden', 'Etwas funktioniert nicht', 'Etwas funktioniert nicht richtig? Beschreibe kurz, wo es passiert und was du gemacht hast.', ICONS.bug, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bug abschicken'] };
+  function reportForm(kind, slot, onClose, onSent) {
+    var r = RK[kind], rep = { drafts: [], closed: false };
+    function closeReport(drop) { if (drop) rep.drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); rep.drafts = []; rep.closed = true; slot.textContent = ''; if (onClose) onClose(); }
+    slot.textContent = '';
       var catSel = h('select', { class: 'repcat', 'aria-label': 'Kategorie' }, h('option', { value: '' }, kind === 'bug' ? 'Kategorie: Wo tritt der Fehler auf? (optional)' : 'Kategorie: Worum geht es? (optional)'), FBCATS[kind].map(function (c) { return h('option', { value: c[0] }, c[1]); })), ti = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', 'aria-label': 'Kurzbeschreibung', placeholder: r[4], autocomplete: 'off' }), tx = h('textarea', { rows: '4', maxlength: '1000', 'aria-label': 'Details', placeholder: r[5] }), rmsg = h('p', { class: 'msg', role: 'status' }), dbox = h('div', { class: 'drafts' }), note = h('p', { class: 'hint picnote' });
       var fi = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,text/plain,.txt,.log,.md,.csv,.json', multiple: true, hidden: true });
       function drawRD() { dbox.textContent = ''; rep.drafts.forEach(function (d) { dbox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Anhang entfernen', onclick: function () { rep.drafts = rep.drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawRD(); } }, '×'))); }); note.textContent = 'Anhänge: ' + rep.drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
@@ -1719,7 +1716,7 @@
         [].slice.call(files).forEach(function (f) {
           if (rep.drafts.length >= 3) { rmsg.className = 'msg err'; rmsg.textContent = 'Höchstens 3 Anhänge.'; return; }
           var isTxt = !/^image\//.test(f.type) && (/^text\//.test(f.type) || /\.(txt|log|md|csv|json)$/i.test(f.name)); rmsg.className = 'msg'; rmsg.textContent = isTxt ? 'Datei wird hochgeladen …' : 'Bild wird hochgeladen …';
-          (isTxt ? uploadText(f, 'feedback') : uploadImage(f, 'feedback')).then(function (d) { if (rep.kind !== kind) { api('/api/image.php?a=remove', { id: d.id }); return; } rep.drafts.push(d); rmsg.textContent = ''; drawRD(); }).catch(function (e) { rmsg.className = 'msg err'; rmsg.textContent = e.message; });
+          (isTxt ? uploadText(f, 'feedback') : uploadImage(f, 'feedback')).then(function (d) { if (rep.closed) { api('/api/image.php?a=remove', { id: d.id }); return; } rep.drafts.push(d); rmsg.textContent = ''; drawRD(); }).catch(function (e) { rmsg.className = 'msg err'; rmsg.textContent = e.message; });
         });
       }
       fi.addEventListener('change', function () { addRF(fi.files); fi.value = ''; });
@@ -1730,24 +1727,22 @@
         var ids = rep.drafts.map(function (d) { return d.id; }); sending = true;
         api('/api/feedback.php?a=add', { kind: kind, category: catSel.value, title: t, text: tx.value.trim(), images: ids }).then(function (z) {
           sending = false;
-          if (z && z.ok) { closeReport(false); popup(kind === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kind === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kind === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); }
+          if (z && z.ok) { closeReport(false); if (onSent) onSent(); popup(kind === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kind === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kind === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald der Admin sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); }
           else { rmsg.className = 'msg err'; rmsg.textContent = (z && z.error) || 'Senden nicht möglich.'; }
         });
       }
       drawRD();
-      repSlot.append(setCard(r[0], [h('p', { class: 'hint' }, kind === 'feature' ? 'Der Admin schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.' : 'Der Admin schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.'),
+      slot.append(setCard(r[0], [h('p', { class: 'hint' }, kind === 'feature' ? 'Der Admin schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.' : 'Der Admin schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.'),
         h('form', { class: 'repform', autocomplete: 'off', onsubmit: submit }, catSel, ti, tx, fi, h('div', { class: 'reprow' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { fi.click(); } }, 'Anhängen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { closeReport(true); } }, 'Abbrechen'), h('button', { class: 'btn', type: 'submit' }, r[6]))), dbox, note, rmsg], 'composer'));
-      drawRepCards(); ti.focus();
-    }
-    drawRepCards();
-    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(repCards, repSlot, grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+      ti.focus();
+    return { close: closeReport };
   }
   var FBCATS = { bug: [['calendar', 'Kalender'], ['lists', 'Listen und Einträge'], ['search', 'Suche und Hinzufügen'], ['community', 'Community'], ['news', 'News'], ['contact', 'Kontakt und Chat'], ['account', 'Konto und Anmeldung'], ['email', 'E-Mails'], ['ui', 'Menü und Darstellung'], ['data', 'Falsche oder fehlende Daten'], ['other', 'Sonstiges']], feature: [['feature', 'Neues Feature'], ['improve', 'Verbesserung einer Funktion'], ['source', 'Neue Kategorie oder Datenquelle'], ['design', 'Aussehen und Design'], ['mail', 'E-Mails und Benachrichtigungen'], ['community', 'Community'], ['calendar', 'Kalender'], ['mobile', 'Handy und Bedienung'], ['content', 'Inhalte und Daten'], ['other', 'Sonstiges']] };
   function catLabel(kind, key) { var l = (FBCATS[kind] || []).filter(function (c) { return c[0] === key; })[0]; return l ? l[1] : ''; }
   function feedbackView(kind) {
     if (!S.preview && (D.admin || D.alpha)) fbPoll();
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
-      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ mit „Bug melden“.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ mit „Idee melden“.'))),
+      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du mit dem Knopf „Bug melden“ oben rechts.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du mit dem Knopf „Idee melden“ oben rechts.'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
@@ -1759,7 +1754,12 @@
     if (!TABS.some(function (t) { return t[0] === S.fbTab[tabKey]; })) S.fbTab[tabKey] = 'cur';
     var tbar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': bug ? 'Bugs' : 'Ideen' });
     TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; tabSeen[t[0]] = true; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
-    mainEl.prepend(tbar);
+    var repHost = h('div', { class: 'repslot' }), repForm = null, repBtn = h('button', { class: 'admtab addrep', type: 'button', 'aria-expanded': 'false', onclick: function () {
+      if (repForm) { repForm.close(true); return; }
+      repBtn.setAttribute('aria-expanded', 'true'); repBtn.classList.add('open');
+      repForm = reportForm(kind, repHost, function () { repForm = null; repBtn.setAttribute('aria-expanded', 'false'); repBtn.classList.remove('open'); }, function () { S.fbTab[tabKey] = 'rel'; reload(); });
+    } }, '＋ ' + (bug ? 'Bug melden' : 'Idee melden'));
+    tbar.append(repBtn); mainEl.prepend(tbar); tbar.after(repHost);
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
@@ -1776,7 +1776,7 @@
         if (mineAll) chips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(mineOn), title: 'Nur die Beiträge anzeigen, die du selbst eingereicht hast', onclick: function () { S.fbMine[tabKey] = !mineOn; draw(lastR); } }, 'Meine', h('small', null, String(mineAll)))); (FBCATS[bug ? 'bug' : 'feature'] || []).forEach(function (c) { if (cc[c[0]]) chip(c[0], c[1], cc[c[0]]); });
         box.append(chips); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
       }
-      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? (staff ? 'Nichts wartet auf Freischaltung.' : 'Keiner deiner Beiträge wartet auf Freischaltung. Neue Beiträge erscheinen hier, bis der Admin sie freigibt.') : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
+      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? (staff ? 'Nichts wartet auf Freischaltung.' : 'Keiner deiner Beiträge wartet auf Freischaltung. Neue Beiträge erscheinen hier, bis der Admin sie freigibt.') : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib die erste mit „Idee melden“.'))); return; }
       var pendHead = false;
       shown.forEach(function (x) {
         var pics = h('div', { class: 'pics' });
@@ -2054,7 +2054,7 @@
     anCb.addEventListener('change', function () { anMsg.className = 'msg'; anMsg.textContent = '…'; api('/api/admin.php?a=anon_set', { on: anCb.checked }).then(function (r) { if (!r.ok) { anCb.checked = !anCb.checked; anMsg.className = 'msg err'; anMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } anMsg.textContent = anCb.checked ? 'Gespeichert: Registrierung ohne E-Mail-Adresse ist möglich.' : 'Gespeichert: Neue Konten brauchen eine E-Mail-Adresse. Bestehende Konten ohne Adresse funktionieren weiter.'; }); });
     var permBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Hier legst du fest, was Nutzer, Alphatester und Moderatoren dürfen. Admins dürfen immer alles. Jede Stufe hat mindestens die Rechte der darunter: Alphatester die der Nutzer, Moderatoren die der Alphatester. Moderatoren ernennst du in der Nutzerverwaltung. Änderungen gelten sofort, die Nutzer sehen sie nach dem nächsten Laden der Seite.')), permMsg = h('p', { class: 'msg', role: 'status' });
     function permPaint(rows) {
-      var FIX = [['Kalender, Listen, Einträge hinzufügen und Benachrichtigungen', 1, 1, 1, 1], ['Community und ähnliche Vorschläge', 1, 1, 1, 1], ['Ideen und Bugs einreichen (über den Kontakt), freigegebene Beiträge lesen, abstimmen, eigene zurückziehen', 1, 1, 1, 1], ['Nur Admin: Registrierung und Freischaltung einstellen, Rechte der Nutzergruppen, Amazon-Partner-ID, Bilder der Anmeldeseite, Einladungen, Infomails und Testmail, Sicherheit (Deployment, Protokoll, Aktualisierung der Einträge), Alphatester und Moderatoren ernennen', 0, 0, 0, 1]];
+      var FIX = [['Kalender, Listen, Einträge hinzufügen und Benachrichtigungen', 1, 1, 1, 1], ['Community und ähnliche Vorschläge', 1, 1, 1, 1], ['Ideen und Bugs einreichen (Knopf auf den Seiten Ideen und Bugs), freigegebene Beiträge lesen, abstimmen, eigene zurückziehen', 1, 1, 1, 1], ['Nur Admin: Registrierung und Freischaltung einstellen, Rechte der Nutzergruppen, Amazon-Partner-ID, Bilder der Anmeldeseite, Einladungen, Infomails und Testmail, Sicherheit (Deployment, Protokoll, Aktualisierung der Einträge), Alphatester und Moderatoren ernennen', 0, 0, 0, 1]];
       var tb = h('table', { class: 'permtbl' }), hd = h('tr', null, h('th', null, 'Recht'), h('th', null, 'Nutzer'), h('th', null, 'Alphatester'), h('th', null, 'Moderator'), h('th', null, 'Admin'));
       tb.append(h('thead', null, hd)); var body = h('tbody');
       function mark(on) { return h('span', { class: 'permfix ' + (on ? 'on' : 'off'), 'aria-label': on ? 'Ja' : 'Nein' }, on ? '✓' : '–'); }
