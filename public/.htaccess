@@ -1,5 +1,5 @@
 # Zugangsdaten und Interna nie ausliefern
-<FilesMatch "^(config\.php|config\.example\.php|\.ftp-deploy-sync-state\.json)$">
+<FilesMatch "^(config\.php|config\.example\.php|\.ftp-deploy-sync-state\.json|maintenance\.flag)$">
   Require all denied
 </FilesMatch>
 Options -Indexes
