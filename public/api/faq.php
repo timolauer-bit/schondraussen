@@ -1,9 +1,9 @@
 <?php
-// FAQ: Themenbereiche mit Fragen und Antworten. Lesen: alle angemeldeten Nutzer; Bearbeiten: nur Admin.
+// FAQ: Themenbereiche mit Fragen und Antworten. Lesen: alle angemeldeten Nutzer; Bearbeiten: Recht „adm_faq“ (Admin, Moderatoren nach Rechtetabelle).
 require __DIR__ . '/../lib/bootstrap.php';
 $u = current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
-$admin = $u['role'] === 'admin'; $a = $_GET['a'] ?? 'list'; $pdo = db();
+$admin = perm($u, 'adm_faq'); $a = $_GET['a'] ?? 'list'; $pdo = db();
 function faq_clean($t, int $max): string { $t = str_replace(["\r\n", "\r"], "\n", (string) $t); $t = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $t); return mb_substr(trim($t), 0, $max); }
 function faq_renum(PDO $pdo, string $table, string $where, array $args): array { // Reihenfolge 1..n lückenlos setzen, liefert die Kennungen in Reihenfolge
     $s = $pdo->prepare("SELECT id FROM $table WHERE $where ORDER BY pos, id"); $s->execute($args); $ids = array_map('intval', $s->fetchAll(PDO::FETCH_COLUMN));
@@ -18,7 +18,7 @@ try {
         $out = []; foreach ($T as $t) $out[] = ['id' => (int) $t['id'], 'title' => $t['title'], 'items' => $by[(int) $t['id']] ?? []];
         json_out(['topics' => $out, 'admin' => $admin]);
     }
-    if (!$admin) json_out(['error' => 'Nur für Admins.'], 403);
+    if (!$admin) json_out(['error' => 'Dafür fehlt dir das Recht.'], 403);
     $b = body();
     if ($a === 'topic_save') {
         $title = faq_clean($b['title'] ?? '', 120); if ($title === '') json_out(['error' => 'Bitte einen Namen für den Themenbereich eingeben.'], 400);

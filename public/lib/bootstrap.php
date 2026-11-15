@@ -137,6 +137,7 @@ function perm_defs(): array {
         'adm_users_danger' => ['Admin-Bereich: Nutzerverwaltung, Sperren und Löschen; Gesperrte E-Mail-Adressen', 'Freischaltung entziehen, Konten löschen, E-Mail-Adressen aufdecken, sperren und die Sperrliste verwalten', [0, 0, 0], 'live'],
         'adm_stats' => ['Admin-Bereich: Statistik', 'Nutzer- und Anmeldezahlen, Löschungen und Abmeldegründe (nur Zahlen)', [0, 0, 1], 'live'],
         'adm_news' => ['Admin-Bereich: News und Systemnachrichten', 'Reiter News: Meldungen verfassen; Tools: Systemnachrichten an alle Nutzer schreiben', [0, 0, 1], 'live'],
+        'adm_faq' => ['Admin-Bereich: FAQ', 'Reiter FAQ: Fragen und Antworten bearbeiten, anlegen, löschen und umsortieren (derzeit nur in der Entwicklungsversion sichtbar)', [0, 0, 1], 'live'],
         'adm_tools' => ['Admin-Bereich: Eintrag prüfen', 'Tools: Diagnose, wie ein Eintrag gespeichert ist und wem er auf der Liste steht', [0, 0, 0], 'live'],
         'devmode' => ['Entwicklerversion nutzen', 'Schalter „Live/Dev“ neben dem Benutzernamen: neue Funktionen testen, bevor sie für alle freigegeben werden', [0, 1], 'live'],
     ];
@@ -167,7 +168,7 @@ function perm(?array $u, string $k): bool {
 /** Bereiche der Admin-Oberfläche, die dieses Konto nutzen darf (Moderatoren nach Rechtetabelle, Admins alle). */
 function adm_sections(?array $u): array {
     if (!$u) return [];
-    $keys = ['adm_briefing', 'adm_users', 'adm_users_danger', 'adm_stats', 'adm_news', 'adm_tools'];
+    $keys = ['adm_briefing', 'adm_users', 'adm_users_danger', 'adm_stats', 'adm_news', 'adm_faq', 'adm_tools'];
     return ($u['role'] ?? '') === 'admin' ? $keys : array_values(array_filter($keys, fn($k) => is_mod($u) && perm($u, $k)));
 }
 /** Kurze Liste der Bereiche, in denen die Entwicklungsversion von der Live-Version abweicht (public/dev/changes.json, Texte wie „Serien → Seite einer einzelnen Serie“). */
