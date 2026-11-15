@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'B|Einstellungen → Profil: Chrome hielt das Feld „Geburtsjahr“ für ein Passwortfeld. Name, Geburtsdatum und Geburtsjahr sind jetzt eindeutig als solche gekennzeichnet.',
     'B|Bugs → Erledigt/Zurückgezogen: Das Datum („erledigt am …“) steht nicht mehr in der Kopfzeile, wo es über den Rand lief, sondern oben im aufgeklappten Beitrag.',
     'B|Die Seite springt beim Wechsel zwischen kurzen und langen Ansichten (zum Beispiel Ideen → Freischaltungen) nicht mehr zur Seite, weil der Platz für die Bildlaufleiste jetzt immer frei bleibt.',
     'B|Podcasts: Das Infofeld mit der Kurzfassung einer Folge erscheint wieder direkt am i-Knopf statt am linken Bildrand.',
