@@ -909,3 +909,4 @@ html .topbar,html.devmode .topbar{border:0;border-radius:0;box-shadow:none;margi
 .fx{opacity:0;transform:translateY(45px);filter:blur(10px)}
 .fx.in{opacity:1;transform:none;filter:blur(0);transition:opacity .8s cubic-bezier(.16,1,.3,1) .15s,transform .8s cubic-bezier(.16,1,.3,1) .15s,filter .8s cubic-bezier(.16,1,.3,1) .15s}
 @media(prefers-reduced-motion:reduce){.fx,.fx.in{opacity:1;transform:none;filter:none;transition:none}}
+html{scrollbar-gutter:stable;overflow-y:scroll}

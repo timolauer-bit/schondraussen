@@ -914,3 +914,4 @@ input[type=search],.srch input,#q{border-radius:99px;padding-inline:16px}
   .nav.rg,.nav.rg::before{border-left:0}
   .nav.rg{margin-left:auto}
 }
+html{scrollbar-gutter:stable;overflow-y:scroll}
