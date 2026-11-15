@@ -297,6 +297,11 @@
     var tbl = h('div', { class: 'caltbl' });
     function drawTbl() {
       var vis = items.filter(function (it) { return !S.calHide[it.e.type]; }); tbl.textContent = '';
+      /* Liste: von Podcasts höchstens die 10 letzten vergangenen Folgen (Monatsübersicht oben zeigt weiter alle) */
+      var now = new Date(), tdy = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate(), tym = Math.floor(tdy / 100);
+      function isPast(it) { var q = it.p || {}; if (!q.y) return false; return q.prec === 'day' ? q.y * 10000 + q.m * 100 + q.d < tdy : q.y * 100 + q.m < tym; }
+      var pastPod = vis.filter(function (it) { return it.e.type === 'podcast' && isPast(it); });
+      if (pastPod.length > 10) { var drop = pastPod.slice().sort(function (x, y) { return x.p.sort - y.p.sort; }).slice(0, pastPod.length - 10); vis = vis.filter(function (it) { return drop.indexOf(it) < 0; }); }
       if (!vis.length) tbl.append(h('p', { class: 'state' }, 'Alle Kategorien sind ausgeblendet. Wähle oben eine Kategorie, um Termine zu sehen.')); else tbl.append(groupByMonth(vis));
     }
     wrap.append(renderMonths(items, drawTbl)); wrap.append(tbl); drawTbl(); return wrap;
