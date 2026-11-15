@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'A|Nerdinfos: Text aktualisiert (Konto ohne E-Mail, Kalender, Themes, Ideen und Bugs, Bereitstellungsdauer, Cookies, Admin-Funktionen).',
     'A|Admin: Der Reiter „Inhalte“ heißt jetzt „Seitenadministration“. „Bilder der Anmeldeseite“ steht ganz unten bei den Tools.',
     'A|Admin → Nutzerverwaltung: Der Text „E-Mail ausgeblendet“ entfällt, der Knopf „E-Mail anzeigen“ reicht. Bei Konten ohne E-Mail-Adresse steht dort nichts mehr.',
     'F|Einstellungen → Optik/Optionen: Neuer Kasten „Themes“ (experimentell). Neben „Standard“ gibt es das Theme „8-Bit“ mit Pixelschrift, eckigen Kanten und dicken Rahmen. Deine Farbwahl gilt auch dort.',

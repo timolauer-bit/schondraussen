@@ -1293,7 +1293,7 @@
   function nerdOn() { return !!D.nerd && !S.preview; }
   function nerdPage() {
     var P = h('section', { class: 'panel infopanel nerdinfo' }, h('h2', { class: 'sec' }, 'Nerdinfos'),
-      h('p', { class: 'hint' }, 'Wie Schondraussen.de gebaut ist, woher die Daten kommen und welche Dienste im Hintergrund laufen. Stand 08.11.2026.'));
+      h('p', { class: 'hint' }, 'Wie Schondraussen.de gebaut ist, woher die Daten kommen und welche Dienste im Hintergrund laufen. Stand 15.11.2026.'));
     function sec(title) { var s = h('section', { class: 'infosec' }, h('h3', null, title)); for (var i = 1; i < arguments.length; i++) s.append(arguments[i]); P.append(s); }
     function ul(items) { return h('ul', { class: 'nerdul' }, items.map(function (x) { return h('li', null, x); })); }
     function cell(x) { return (x && x.href) ? h('a', { href: x.href, target: '_blank', rel: 'noopener noreferrer' }, x.t) : x; }
@@ -1302,25 +1302,25 @@
         h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, cell(x)); })); }))));
     }
     sec('Kurzüberblick', h('p', null, 'Schondraussen.de ist ein kostenloser Medien-Tracker: Nutzer legen Autor:innen, Musiker:innen, Filme und Serien auf eine Liste und werden per Mail und Kalender über Neuerscheinungen informiert. Die Seite ist am 08.11.2026 offiziell gestartet.'),
-      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt; Einnahmen nur über Amazon-Partnerlinks)', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Filme warten auf die Freigabe der Datenquelle (TMDB)']));
+      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt; Einnahmen nur über Amazon-Partnerlinks)', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Podcasts werden schrittweise freigegeben, Filme warten auf die Freigabe der Datenquelle (TMDB)']));
     sec('Funktionen für Nutzer', ul([
-      'Konto mit E-Mail-Bestätigung, frei wählbarem Benutzernamen und optionaler Zwei-Faktor-Anmeldung; Konto jederzeit löschbar (endgültig nach 7 Tagen)',
+      'Konto mit E-Mail-Bestätigung oder, wenn der Admin es erlaubt, ganz ohne E-Mail-Adresse (Anmeldung mit Benutzername und Wiederherstellungscode); frei wählbarer Benutzername, optionale Zwei-Faktor-Anmeldung; Konto jederzeit löschbar (endgültig nach 7 Tagen)',
       'Vier Listen (Bücher, Musik, Filme, Serien, je bis zu 100 Einträge) mit Werkübersicht, Beschreibung (deutsch, übersetzt) und Markierung als gesehen, gelesen oder gehört',
-      'Kalender aller angekündigten Veröffentlichungen, dazu ein persönliches Kalender-Abo (ICS)',
+      'Kalender aller angekündigten Veröffentlichungen mit Kategorie-Chips zum Ein- und Ausblenden und Vorschau je Tag, dazu ein persönliches Kalender-Abo (ICS)',
       'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
       'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',
       'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Trakt und Spotify; Datenexport',
-      'Ideen, Bugmeldungen und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
-      'Mehrere Oberflächen (Skins), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster']));
+      'Ideen und Bugmeldungen (mit Kategorie, abstimmbar) und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
+      'Mehrere Oberflächen (Skins), dazu experimentelle Themes (Standard, 8-Bit), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster und im Chat']));
     sec('Funktionen für den Admin', ul([
-      'Nutzerverwaltung (freischalten, sperren, Alphatester, Einladen per Link), Option „Neue Konten manuell freischalten“ (Standard aus)',
-      'Systemnachrichten an alle Nutzer, Bilder der Anmeldeseite, Amazon-Partner-Daten, Testmail',
+      'Nutzerverwaltung (freischalten, sperren, Alphatester, Einladen per Link, Namensänderung verlangen), Rechte der Nutzergruppen, Optionen „Neue Konten manuell freischalten“ (Standard aus) und „Registrierung ohne E-Mail-Adresse erlauben“',
+      'Systemnachrichten an alle Nutzer, Infomails, News, Statistik, Bilder der Anmeldeseite, Amazon-Partner-Daten, Testmail',
       'Sicherheit: Protokoll der Admin-Zugriffe, Ansicht als normaler Nutzer, Eintrag prüfen (Diagnose)',
       'Cron-Status, Versionsverlauf (Changelog) mit Kategorien, Meldung bei neuen Ideen und Bugs']));
     sec('Technik und Betrieb', tbl(['Bereich', 'Umsetzung'], [
       ['Hosting', 'ALL-INKL (Webspace, MySQL, Mailserver), HTTPS erzwungen'],
       ['Sprache und Datenbank', 'PHP und MySQL; Oberfläche in JavaScript ohne Framework'],
-      ['Bereitstellung', 'Privates GitHub-Repository; jeder Push auf den Hauptzweig wird per GitHub Actions auf den Server übertragen (rund 1,5 Minuten)'],
+      ['Bereitstellung', 'Privates GitHub-Repository; jeder Push auf den Hauptzweig wird per GitHub Actions auf den Server übertragen (rund 3 bis 4 Minuten)'],
       ['Aktualisierung der Daten', 'Ein geplanter Server-Job (Cron) stößt die Aktualisierung an; älteste Einträge zuerst, je Lauf etwa 80 Sekunden Zeitbudget, Einträge werden alle 12 Stunden erneuert; danach laufen die Mails'],
       ['Mailversand', 'SMTP über den Mailserver des Hosters, Double-Opt-in, Abmeldelink und List-Unsubscribe-Kopfzeile'],
       ['Versionsverlauf', 'Eine Sammelversion je Kalendertag, Kategorien F, O, U, B, A, D, T']]));
@@ -1350,7 +1350,7 @@
       h('p', { class: 'hint' }, 'Schlüssel und Passwörter sind nur auf dem Server hinterlegt und hier bewusst nicht genannt.'));
     sec('Datenschutz, Sicherheit und Rechtliches', ul([
       'Impressum und Datenschutzerklärung (Stand 07.11.2026) sind online; sie nennen alle Quellen, DeepL, die Google-News-Schlagzeilen, Amazon-Partnerlinks, Aufbewahrungsfristen und die Rechte der Nutzer',
-      'Es gibt nur ein Sitzungs-Cookie, keine Werbe- oder Analyse-Dienste, und die Seite lädt nur von der eigenen Domain (keine externen Schriften, Skripte oder CDNs)',
+      'Es gibt nur technisch nötige Cookies (Sitzung, gewählte Version und Theme), keine Werbe- oder Analyse-Dienste, und die Seite lädt nur von der eigenen Domain (keine externen Schriften, Skripte oder CDNs)',
       'E-Mail-Adressen sieht der Admin in der Nutzerverwaltung nicht; ein Aufdecken im Ausnahmefall wird protokolliert',
       'Passwörter nur als Hash; optionale Zwei-Faktor-Anmeldung; Anmeldeversuche und Kontaktformular sind mengenbegrenzt',
       'Hochgeladene Bilder werden geprüft; Anhänge sind erst nach Freigabe für andere sichtbar',
