@@ -132,6 +132,76 @@ if ($a === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('DELETE FROM announcements WHERE id=?')->execute([$i]); $pdo->prepare('DELETE FROM announcement_reads WHERE ann_id=?')->execute([$i]); } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }
+if ($a === 'briefing') { // Morning-Briefing: Lage der Seite in den letzten 24 Stunden (nur Zahlen und Namen, keine E-Mail-Adressen)
+    $q1 = function (string $sql, array $args = []) use ($pdo) { try { $st = $pdo->prepare($sql); $st->execute($args); $v = $st->fetchColumn(); return $v === false || $v === null ? 0 : (int) $v; } catch (Throwable $e) { return null; } };
+    $qa = function (string $sql, array $args = []) use ($pdo) { try { $st = $pdo->prepare($sql); $st->execute($args); return $st->fetchAll(PDO::FETCH_ASSOC); } catch (Throwable $e) { return null; } };
+    $o = ['ok' => true, 'now' => date('Y-m-d H:i:s')];
+    $live = "role<>'admin' AND admin_deleted=0";
+    // Zustand der Seite
+    $h = ['cron_minutes' => null];
+    try { require_once __DIR__ . '/../lib/watchdog.php'; $h = ops_health($pdo); } catch (Throwable $e) {}
+    $o['health'] = [
+        'ops' => $h,
+        'runs24' => $q1('SELECT COUNT(*) FROM cron_runs WHERE started_at > NOW() - INTERVAL 24 HOUR'),
+        'fails24' => $q1('SELECT COALESCE(SUM(fail_count),0) FROM cron_runs WHERE started_at > NOW() - INTERVAL 24 HOUR'),
+        'early24' => $q1('SELECT COALESCE(SUM(stopped_early),0) FROM cron_runs WHERE started_at > NOW() - INTERVAL 24 HOUR'),
+        'last_run' => $qa('SELECT started_at,duration_ms,ok_count,fail_count,left_count FROM cron_runs ORDER BY id DESC LIMIT 1'),
+        'errors' => $qa('SELECT source,kind,http_code,message,cnt,last_at FROM api_errors WHERE last_at > NOW() - INTERVAL 24 HOUR ORDER BY last_at DESC LIMIT 10'),
+        'stale' => $q1('SELECT COUNT(*) FROM subjects WHERE fetched_at IS NULL OR fetched_at < NOW() - INTERVAL 12 HOUR'),
+    ];
+    // Nutzer
+    $o['users'] = [
+        'total' => $q1("SELECT COUNT(*) FROM users WHERE $live AND delete_requested_at IS NULL"),
+        'new24' => $q1("SELECT COUNT(*) FROM users WHERE role<>'admin' AND created_at > NOW() - INTERVAL 24 HOUR"),
+        'new_list' => $qa("SELECT id, IFNULL(NULLIF(TRIM(username),''), CONCAT('User-', id)) AS name, created_at, approved_at FROM users WHERE role<>'admin' AND created_at > NOW() - INTERVAL 24 HOUR ORDER BY id DESC LIMIT 8") ?? $qa("SELECT id, CONCAT('User-', id) AS name, created_at, approved_at FROM users WHERE role<>'admin' AND created_at > NOW() - INTERVAL 24 HOUR ORDER BY id DESC LIMIT 8"),
+        'waiting' => $q1("SELECT COUNT(*) FROM users WHERE role<>'admin' AND approved_at IS NULL AND admin_deleted=0"),
+        'active24' => $q1("SELECT COUNT(*) FROM users WHERE role<>'admin' AND last_seen_at > NOW() - INTERVAL 24 HOUR"),
+        'exit_req24' => $q1('SELECT COUNT(*) FROM users WHERE delete_requested_at > NOW() - INTERVAL 24 HOUR'),
+        'exit_pending' => $q1('SELECT COUNT(*) FROM users WHERE delete_requested_at IS NOT NULL AND admin_deleted=0'),
+        'exits24' => $q1('SELECT COUNT(*) FROM account_exits WHERE exited_on >= CURDATE() - INTERVAL 1 DAY AND by_admin=0'),
+        'rename' => $q1("SELECT COUNT(*) FROM users WHERE name_change_required=1 AND admin_deleted=0"),
+    ];
+    // Kontakt und Systemmeldungen
+    $o['contact'] = [
+        'unread' => $q1('SELECT COUNT(*) FROM messages WHERE from_admin=0 AND read_at IS NULL'),
+        'new24' => $q1('SELECT COUNT(*) FROM messages WHERE from_admin=0 AND created_at > NOW() - INTERVAL 24 HOUR'),
+        'senders24' => $q1('SELECT COUNT(DISTINCT user_id) FROM messages WHERE from_admin=0 AND created_at > NOW() - INTERVAL 24 HOUR'),
+        'notices24' => $qa('SELECT kind, body, created_at, read_at FROM admin_notices WHERE created_at > NOW() - INTERVAL 24 HOUR ORDER BY id DESC LIMIT 8'),
+        'notices_unread' => $q1('SELECT COUNT(*) FROM admin_notices WHERE read_at IS NULL'),
+    ];
+    // Ideen und Bugs
+    $fb = [];
+    foreach (['feature' => 'ideas', 'bug' => 'bugs'] as $kind => $k) {
+        $fb[$k] = [
+            'new24' => $q1('SELECT COUNT(*) FROM feedback WHERE kind=? AND created_at > NOW() - INTERVAL 24 HOUR', [$kind]),
+            'waiting' => $q1('SELECT COUNT(*) FROM feedback WHERE kind=? AND released_at IS NULL AND done_at IS NULL AND withdrawn_at IS NULL', [$kind]),
+            'open' => $q1('SELECT COUNT(*) FROM feedback WHERE kind=? AND released_at IS NOT NULL AND done_at IS NULL', [$kind]),
+            'withdrawn24' => $q1('SELECT COUNT(*) FROM feedback WHERE kind=? AND withdrawn_at > NOW() - INTERVAL 24 HOUR', [$kind]),
+            'titles' => $qa('SELECT id, title, created_at FROM feedback WHERE kind=? AND created_at > NOW() - INTERVAL 24 HOUR ORDER BY id DESC LIMIT 5', [$kind]),
+        ];
+    }
+    $fb['bugs']['urgent'] = $q1("SELECT COUNT(*) FROM feedback WHERE kind='bug' AND priority='urgent' AND done_at IS NULL AND withdrawn_at IS NULL AND released_at IS NOT NULL");
+    $fb['comments24'] = $q1('SELECT COUNT(*) FROM feedback_comments WHERE created_at > NOW() - INTERVAL 24 HOUR');
+    $o['feedback'] = $fb;
+    // Einträge und Inhalte
+    $o['content'] = [
+        'entries24' => $qa("SELECT s.type, COUNT(*) n FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.added_at > NOW() - INTERVAL 24 HOUR AND e.is_sample=0 GROUP BY s.type"),
+        'top' => $qa("SELECT s.type, s.name, COUNT(*) n FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.added_at > NOW() - INTERVAL 24 HOUR AND e.is_sample=0 GROUP BY s.id ORDER BY n DESC, s.name LIMIT 5"),
+        'wishes_open' => $q1("SELECT COUNT(*) FROM avatar_wishes WHERE status='open'"),
+    ];
+    // Mails
+    $o['mail'] = ['sent24' => $qa('SELECT kind, COUNT(*) n FROM notified WHERE sent_at > NOW() - INTERVAL 24 HOUR GROUP BY kind')];
+    // Sicherheit
+    $o['security'] = [
+        'failed24' => $q1("SELECT COUNT(*) FROM login_attempts WHERE kind='login' AND at > NOW() - INTERVAL 24 HOUR"),
+        'ips24' => $q1("SELECT COUNT(DISTINCT ip) FROM login_attempts WHERE kind='login' AND at > NOW() - INTERVAL 24 HOUR"),
+        'register24' => $q1("SELECT COUNT(*) FROM login_attempts WHERE kind='register' AND at > NOW() - INTERVAL 24 HOUR"),
+        'recover24' => $q1("SELECT COUNT(*) FROM login_attempts WHERE kind='recover' AND at > NOW() - INTERVAL 24 HOUR"),
+        'admin_log' => $qa("SELECT l.created_at, l.action, IFNULL(NULLIF(TRIM(t.username),''), IF(l.target_id IS NULL, '', CONCAT('User-', l.target_id))) AS target FROM admin_log l LEFT JOIN users t ON t.id=l.target_id WHERE l.created_at > NOW() - INTERVAL 24 HOUR ORDER BY l.id DESC LIMIT 10"),
+        'blocked' => $q1('SELECT COUNT(*) FROM blocked_emails WHERE created_at > NOW() - INTERVAL 24 HOUR'),
+    ];
+    json_out($o);
+}
 if ($a === 'stats') { // Überblick ohne einzelne Konten: nur Zahlen
     $one = fn(string $sql) => (int) $pdo->query($sql)->fetchColumn();
     $o = ['ok' => true];

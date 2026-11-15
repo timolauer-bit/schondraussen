@@ -869,3 +869,24 @@ hr.newshr{margin-inline:auto}
 .fbhead .fbmeta{width:330px}
 @media (max-width:1100px){.fbhead .fbmeta{width:270px}}
 @media (max-width:760px){.fbhead .fbslot.sp,.fbhead .fbslot.ss{width:auto}.fbhead .fbslot:empty{display:none}.fbhead .fbmeta{width:auto}}
+
+/* Admin: Morning-Briefing */
+.brtop{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.brstamp{margin:0 0 12px}
+.brattn{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px 16px;margin-bottom:14px}
+.brattn h4,.brcard h4{margin:0 0 8px;font:700 15px var(--font-display)}
+.brattl{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.brattl li{display:flex;gap:10px;align-items:center}
+.brattl i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.brattl .bad i{background:var(--danger)}.brattl .warn i{background:#e0a100}.brattl .info i{background:var(--accent)}
+.brgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.brcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px 16px;min-width:0}
+.brlist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.brlist li{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:3px 0;border-bottom:1px dashed var(--line)}
+.brlist li:last-child{border-bottom:0}
+.brlist li b{font-variant-numeric:tabular-nums}
+.brlist li.warn b{color:#a56a00}.brlist li.bad b{color:var(--danger)}.brlist li.sum{font-weight:700}
+.brlink{text-align:left}.brlink:hover{text-decoration:underline}
+.brsub{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}.brsub .hint{margin:0 0 4px}
+.brmini{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:13px;color:var(--muted)}
+.brmini b{color:var(--ink)}

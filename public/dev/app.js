@@ -154,7 +154,7 @@
   function isAdm() { return !!D.admin && !S.preview; }
   function setPreview(on) { S.preview = !!on; var pb = $('previewbar'); if (pb) pb.hidden = !on; S.view = on ? 'cal' : 'adm'; S.cat = S.view; S.sel = null; S.menuFor = null; say(''); nav(); render(); window.scrollTo(0, 0); }
   var po = $('previewOff'); if (po) po.addEventListener('click', function () { setPreview(false); });
-  function go(view, cat) { S.view = view; S.cat = cat || view; S.sel = null; S.confirm = null; S.menuFor = null; S.filter = ''; S.adding = false; S.sugg = null; say(''); render(); window.scrollTo(0, 0); }
+  function go(view, cat) { if (view === 'adm' && S.view !== 'adm') { try { sessionStorage.setItem('sd_admtab', 'Briefing'); } catch (_) {} } S.view = view; S.cat = cat || view; S.sel = null; S.confirm = null; S.menuFor = null; S.filter = ''; S.adding = false; S.sugg = null; say(''); render(); window.scrollTo(0, 0); }
   // Versionswahl (Live, Dev, Design-Varianten): kleines Menü am Schalter, setzt nur das Cookie
   function devMenu(anchor) {
     var old = document.getElementById('devmenu'); if (old) { old.remove(); return; }
@@ -1845,8 +1845,95 @@
   function unreadPoll() { api('/api/chat.php?a=unread').then(function (r) { var n = +r.unread || 0; if (n !== S.unread) { S.unread = n; var k = topbar.querySelector('.support'); if (k) { var b = k.querySelector('.badge'); if (b) b.remove(); if (n && S.view !== 'sup') k.append(h('span', { class: 'badge' }, n > 99 ? '99+' : String(n))); } } }); }
 
   /* ---------- Admin ---------- */
+  /* ---------- Admin: Morning-Briefing (letzte 24 Stunden) ---------- */
+  function briefingBox() {
+    var box = h('div', { class: 'brief' }), out = h('div', null);
+    function admTab(name) { try { sessionStorage.setItem('sd_admtab', name); } catch (_) {} go('adm'); }
+    function toFb(kind, tab) { S.fbTab = S.fbTab || {}; S.fbTab[kind] = tab; go(kind); }
+    function toSup(sel) { S.sup = S.sup || { sel: null, threads: [] }; S.sup.sel = sel; go('sup'); }
+    function lnk(txt, fn) { return h('button', { class: 'namelink brlink', type: 'button', onclick: fn }, txt); }
+    function row(label, val, fn, cls) { var v = val == null ? '–' : String(val); return h('li', { class: cls || '' }, fn && val ? lnk(label, fn) : h('span', null, label), h('b', null, v)); }
+    function card(title, rows, foot) { return h('section', { class: 'brcard' }, h('h4', null, title), h('ul', { class: 'brlist' }, rows.filter(Boolean)), foot || null); }
+    function fmt(t) { return String(t || '').slice(5, 16).replace('-', '.').replace('T', ' ').replace(' ', ' · '); }
+    function hm(t) { return String(t || '').slice(11, 16); }
+    var TL = { author: 'Bücher', artist: 'Musik', film: 'Filme', series: 'Serien', podcast: 'Podcasts' }, ML = { new: 'Neu angekündigt', soon: 'Termin', day: 'Tagesmails' };
+    var ACT = { reveal_email: 'E-Mail aufgedeckt', delete: 'Konto gelöscht', approve: 'Konto freigeschaltet', revoke: 'Freischaltung entzogen', block: 'E-Mail gesperrt', unblock: 'Sperre aufgehoben', alpha: 'Alphatester geändert', renamereq: 'Namenswechsel verlangt' };
+    function draw(r) {
+      out.textContent = '';
+      if (!r || !r.ok) { out.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das Briefing konnte nicht geladen werden.')); return; }
+      var H = r.health || {}, ops = H.ops || {}, U = r.users || {}, C = r.contact || {}, F = r.feedback || {}, I = F.ideas || {}, B = F.bugs || {}, K = r.content || {}, S2 = r.security || {}, M = r.mail || {};
+      var att = [];
+      if (ops.cron_overdue) att.push(['Der Cron-Job meldet sich seit ' + Math.round((ops.cron_minutes || 0) / 60 * 10) / 10 + ' Stunden nicht', function () { admTab('Sicherheit'); }, 'bad']);
+      if (ops.backup_overdue || ops.backup_error) att.push(['Datenbanksicherung überfällig oder fehlgeschlagen', function () { admTab('Sicherheit'); }, 'bad']);
+      if ((H.errors || []).length) att.push([pl((H.errors || []).length, 'Schnittstelle mit Fehlern', 'Schnittstellen mit Fehlern') + ' in 24 Stunden', function () { admTab('Sicherheit'); }, 'warn']);
+      if (B.urgent) att.push([pl(B.urgent, 'dringender Bug offen', 'dringende Bugs offen'), function () { toFb('bug', 'cur'); }, 'bad']);
+      if (U.waiting) att.push([pl(U.waiting, 'Konto wartet', 'Konten warten') + ' auf Freischaltung', function () { admTab('Nutzer'); }, 'warn']);
+      if (U.rename) att.push([pl(U.rename, 'Konto muss', 'Konten müssen') + ' den Namen ändern', function () { admTab('Nutzer'); }, 'info']);
+      if (C.unread) att.push([pl(C.unread, 'ungelesene Nachricht', 'ungelesene Nachrichten') + ' im Kontakt', function () { toSup(null); }, 'warn']);
+      if (C.notices_unread) att.push([pl(C.notices_unread, 'ungelesene Systemmeldung', 'ungelesene Systemmeldungen'), function () { toSup('sys'); }, 'info']);
+      if (I.waiting) att.push([pl(I.waiting, 'Idee wartet', 'Ideen warten') + ' auf Freigabe', function () { toFb('feature', 'rel'); }, 'warn']);
+      if (B.waiting) att.push([pl(B.waiting, 'Bugmeldung wartet', 'Bugmeldungen warten') + ' auf Freigabe', function () { toFb('bug', 'rel'); }, 'warn']);
+      if (K.wishes_open) att.push([pl(K.wishes_open, 'Wunschbild offen', 'Wunschbilder offen'), function () { admTab('Nutzer'); }, 'info']);
+      if (U.exit_pending) att.push([pl(U.exit_pending, 'Konto steht', 'Konten stehen') + ' zur Löschung an', function () { admTab('Nutzer'); }, 'info']);
+      var attBox = h('section', { class: 'brattn' }, h('h4', null, 'Braucht deine Aufmerksamkeit'));
+      if (!att.length) attBox.append(h('p', { class: 'hint', style: 'margin:0' }, 'Alles ruhig. Nichts wartet auf dich.'));
+      else attBox.append(h('ul', { class: 'brattl' }, att.map(function (a) { return h('li', { class: a[2] }, h('i', { 'aria-hidden': 'true' }), lnk(a[0], a[1])); })));
+      var lr = (H.last_run || [])[0];
+      var zust = card('Zustand der Seite', [
+        row('Letzter Cron-Lauf', ops.cron_minutes == null ? 'unbekannt' : 'vor ' + (ops.cron_minutes < 120 ? ops.cron_minutes + ' Min.' : Math.round(ops.cron_minutes / 60) + ' Std.'), null, ops.cron_overdue ? 'bad' : ''),
+        row('Cron-Läufe in 24 Std.', H.runs24, null),
+        row('Fehlgeschlagene Abrufe', H.fails24, function () { admTab('Sicherheit'); }, H.fails24 ? 'warn' : ''),
+        row('Vorzeitig beendete Läufe', H.early24, null, H.early24 ? 'warn' : ''),
+        row('Einträge älter als 12 Std.', H.stale, function () { admTab('Sicherheit'); }),
+        row('Datenbanksicherung', ops.backup_minutes == null ? 'keine' : 'vor ' + (ops.backup_minutes < 120 ? ops.backup_minutes + ' Min.' : Math.round(ops.backup_minutes / 60) + ' Std.'), null, (ops.backup_overdue || ops.backup_error) ? 'bad' : '')
+      ], (H.errors || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Schnittstellen mit Fehlern:'), h('ul', { class: 'brmini' }, H.errors.slice(0, 5).map(function (e) { return h('li', null, h('b', null, e.source), ' ', e.kind + (+e.http_code ? ' (' + e.http_code + ')' : ''), ' · ', pl(e.cnt, 'Mal', 'Mal'), ' · zuletzt ', hm(e.last_at)); }))) : null);
+      var nutz = card('Nutzer', [
+        row('Neue Anmeldungen', U.new24, function () { admTab('Nutzer'); }),
+        row('Aktiv in 24 Std.', U.active24, null),
+        row('Löschwünsche', U.exit_req24, function () { admTab('Nutzer'); }, U.exit_req24 ? 'warn' : ''),
+        row('Endgültig gelöscht', U.exits24, null),
+        row('Warten auf Freischaltung', U.waiting, function () { admTab('Nutzer'); }, U.waiting ? 'warn' : ''),
+        row('Nutzer insgesamt', U.total, null)
+      ], (U.new_list || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Neu dabei:'), h('ul', { class: 'brmini' }, U.new_list.map(function (x) { return h('li', null, lnk(x.name, function () { admTab('Nutzer'); }), ' · ', fmt(x.created_at), x.approved_at ? '' : ' · wartet'); }))) : null);
+      var kont = card('Kontakt und Systemmeldungen', [
+        row('Neue Nachrichten von Nutzern', C.new24, function () { toSup(null); }),
+        row('Von Personen', C.senders24, null),
+        row('Ungelesen insgesamt', C.unread, function () { toSup(null); }, C.unread ? 'warn' : ''),
+        row('Systemmeldungen in 24 Std.', (C.notices24 || []).length, function () { toSup('sys'); }),
+        row('Ungelesene Systemmeldungen', C.notices_unread, function () { toSup('sys'); })
+      ], (C.notices24 || []).length ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, C.notices24.slice(0, 4).map(function (n) { return h('li', null, lnk(String(n.body).slice(0, 90) + (String(n.body).length > 90 ? ' …' : ''), function () { toSup('sys'); }), ' · ', hm(n.created_at)); }))) : null);
+      var ideen = card('Ideen und Bugs', [
+        row('Neue Ideen', I.new24, function () { toFb('feature', 'cur'); }),
+        row('Neue Bugmeldungen', B.new24, function () { toFb('bug', 'cur'); }),
+        row('Warten auf Freigabe (Ideen / Bugs)', (I.waiting || 0) + ' / ' + (B.waiting || 0), (I.waiting || B.waiting) ? function () { if (I.waiting) toFb('feature', 'rel'); else toFb('bug', 'rel'); } : null, (I.waiting || B.waiting) ? 'warn' : ''),
+        row('Dringende Bugs offen', B.urgent, function () { toFb('bug', 'cur'); }, B.urgent ? 'bad' : ''),
+        row('Offen (Ideen / Bugs)', (I.open || 0) + ' / ' + (B.open || 0), null),
+        row('Kommentare in 24 Std.', F.comments24, null),
+        row('Zurückgezogen (Ideen / Bugs)', (I.withdrawn24 || 0) + ' / ' + (B.withdrawn24 || 0), null)
+      ], ((I.titles || []).length || (B.titles || []).length) ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, (I.titles || []).map(function (x) { return h('li', null, 'Idee: ', lnk(x.title, function () { toFb('feature', 'rel'); })); }).concat((B.titles || []).map(function (x) { return h('li', null, 'Bug: ', lnk(x.title, function () { toFb('bug', 'rel'); })); })))) : null);
+      var ents = {}; (K.entries24 || []).forEach(function (x) { ents[x.type] = +x.n; });
+      var total = 0; Object.keys(ents).forEach(function (k) { total += ents[k]; });
+      var inh = card('Neue Einträge in den Listen', Object.keys(TL).map(function (k) { return row(TL[k], ents[k] || 0, null); }).concat([row('Zusammen', total, null, 'sum'), row('Offene Wunschbilder', K.wishes_open, function () { admTab('Nutzer'); })]),
+        (K.top || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Am häufigsten neu hinzugefügt:'), h('ul', { class: 'brmini' }, K.top.map(function (x) { return h('li', null, h('b', null, x.name), ' (', TL[x.type] || x.type, ') · ', pl(x.n, 'Nutzer', 'Nutzer')); }))) : null);
+      var mails = {}, mt = 0; ((M.sent24) || []).forEach(function (x) { mails[x.kind] = +x.n; mt += +x.n; });
+      var mail = card('Benachrichtigungen per Mail', Object.keys(ML).map(function (k) { return row(ML[k], mails[k] || 0, null); }).concat([row('Zusammen', mt, null, 'sum')]));
+      var sic = card('Sicherheit', [
+        row('Fehlgeschlagene Anmeldungen', S2.failed24, null, S2.failed24 > 20 ? 'warn' : ''),
+        row('Davon verschiedene Adressen', S2.ips24, null, S2.ips24 > 10 ? 'warn' : ''),
+        row('Registrierungsversuche', S2.register24, null),
+        row('Wiederherstellungsversuche', S2.recover24, null),
+        row('Neu gesperrte E-Mail-Adressen', S2.blocked, function () { admTab('Nutzer'); }),
+        row('Admin-Aktionen im Protokoll', (S2.admin_log || []).length, function () { admTab('Sicherheit'); })
+      ], (S2.admin_log || []).length ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, S2.admin_log.slice(0, 5).map(function (l) { return h('li', null, hm(l.created_at), ' · ', ACT[l.action] || l.action, l.target ? ' · ' + l.target : ''); }))) : null);
+      out.append(h('p', { class: 'hint brstamp' }, 'Stand ' + String(r.now || '').slice(8, 10) + '.' + String(r.now || '').slice(5, 7) + '. ' + hm(r.now) + ' Uhr · Zeitraum: die letzten 24 Stunden · Namen sind die Benutzernamen, E-Mail-Adressen erscheinen hier nie.'), attBox, h('div', { class: 'brgrid' }, zust, nutz, kont, ideen, inh, mail, sic));
+    }
+    function load() { out.textContent = ''; out.append(h('p', { class: 'state pulse' }, 'Lade …')); api('/api/admin.php?a=briefing').then(draw); }
+    box.append(h('div', { class: 'brtop' }, h('p', { class: 'hint', style: 'margin:0' }, 'Die wichtigsten Zahlen der letzten 24 Stunden auf einen Blick.'), h('button', { class: 'btn ghost small', type: 'button', onclick: load }, 'Aktualisieren')), out);
+    box.load = load; return box;
+  }
   function admin() {
     var admBadge = null;
+    var brBox = briefingBox();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Admin')), amz = h('div', { class: 'cfgpanel' }), msg = h('span', { class: 'msg', style: 'margin:0' });
     var tag = h('input', { type: 'text', maxlength: '64', placeholder: 'deinname-21', spellcheck: 'false', autocapitalize: 'off', value: S.site.tag || '' }), dom = h('select', null, ['amazon.de', 'amazon.fr', 'amazon.it', 'amazon.es', 'amazon.co.uk', 'amazon.com'].map(function (d) { return h('option', { value: d }, d); })); dom.value = S.site.domain || 'amazon.de';
     amz.append(h('label', { class: 'field' }, h('span', null, 'Amazon-Partner-ID (gilt für alle Nutzer)'), tag), 
@@ -1975,7 +2062,7 @@
         }, function () { state.className = 'warnbox'; state.textContent = 'Die Vorschau konnte nicht geladen werden.'; });
       };
     })();
-    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Registrierung'), apBox, anBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Rechte der Nutzergruppen'), permBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Eintrag prüfen'), ecBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Aktualisierung der Einträge'), cs[0], cs[1], h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Infomails'), mailBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Wartende Konten (falls die manuelle Freischaltung an ist) siehst du hier zuerst. Beim Löschen verschwinden Konto und Liste.'));
+    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Briefing'), devMark(brBox, 'briefing'), h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Registrierung'), apBox, anBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Rechte der Nutzergruppen'), permBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Eintrag prüfen'), ecBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Aktualisierung der Einträge'), cs[0], cs[1], h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Infomails'), mailBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Wartende Konten (falls die manuelle Freischaltung an ist) siehst du hier zuerst. Beim Löschen verschwinden Konto und Liste.'));
     var box = h('div', { class: 'adm' }), ulast = null, usearch = h('input', { type: 'search', maxlength: '40', placeholder: 'Suchen nach Nummer oder Benutzername', 'aria-label': 'Nutzer suchen', style: 'width:100%;max-width:360px;margin:8px 0', oninput: function () { paint(); } });
     p.append(usearch, box); mainEl.append(p);
     function users() { api('/api/admin.php?a=users').then(function (r) { ulast = r; S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; if (admBadge) { admBadge.textContent = S.pend + ' neu'; admBadge.hidden = !S.pend; } nav(); pendPaint(r.users); apLoad(); paint(); }); }
@@ -2116,8 +2203,8 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
-      var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
+      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Inhalte', ['Bilder der Anmeldeseite', 'Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Briefing', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       admBadge = h('span', { class: 'admbadge', hidden: true });
       var btns = TABS.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_admtab', cur); } catch (_) {} show(); } }, t[0]); if (t[0] === 'Nutzer') b.append(' ', admBadge); bar.append(b); return b; });
@@ -2125,6 +2212,7 @@
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Inhalte'; });
         if (cur === 'Infomails' && mailLoad) mailLoad();
+        if (cur === 'Briefing' && !brBox.done) { brBox.done = true; brBox.load(); }
       }
       var tl = TABS.filter(function (t) { return t[0] === 'Tools'; })[0][1].map(function (tt) { return cards.filter(function (c) { return c.querySelector('h3').textContent === tt; })[0]; }).filter(Boolean); // Tools: Karten in dieser Reihenfolge
       tl.forEach(function (c) { c.parentNode.appendChild(c); });
