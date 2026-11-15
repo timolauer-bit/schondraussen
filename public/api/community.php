@@ -70,13 +70,13 @@ if ($a === 'overview') {
             WHERE $cons GROUP BY d.user_id, d.subject_id, ep.season
             HAVING COUNT(*) * 2 >= (SELECT COUNT(*) FROM episodes e2 WHERE e2.subject_id=d.subject_id AND e2.season=ep.season)
         ) $outer", [$u['id']]);
-    // Musik: mindestens 5 Alben
-    // Bücher: jedes gelesene Buch (oder Band) zählt einen Punkt für die Autor:in bzw. Reihe
-    $out['seen']['author'] = q_all($pdo, "$sel SELECT DISTINCT d.user_id, d.subject_id, d.item_key FROM user_done d
+    // Musik: mindestens 5 Alben oder 20 % des Katalogs (das Kleinere, mindestens 1), damit auch kleine Diskografien zählen
+    // Bücher: pro Nutzer und Autor:in bzw. Reihe ein Punkt (mindestens ein gelesenes Buch); bei Gleichstand entscheidet die Zahl der gelesenen Bücher
+    $out['seen']['author'] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM (SELECT d.user_id, d.subject_id, COUNT(DISTINCT d.item_key) AS bk FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='author'
             JOIN works w ON w.subject_id=d.subject_id AND $wk $join
-            WHERE $cons
-        ) $outer", [$u['id']]);
+            WHERE $cons GROUP BY d.user_id, d.subject_id
+        ) r JOIN subjects s ON s.id=r.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? GROUP BY s.id, s.name ORDER BY c DESC, SUM(r.bk) DESC, s.name LIMIT 50", [$u['id']]);
     // Filme: jeder Film steht einzeln, ein Punkt je Nutzer, der ihn als gesehen markiert hat
     $out['seen']['film'] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film' AND d.item_key = CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(sb.name)), '|', 0)), 1, 16)) $join
@@ -86,7 +86,7 @@ if ($a === 'overview') {
         $out['seen'][$t] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type=?
             JOIN works w ON w.subject_id=d.subject_id AND $wk $join
-            WHERE $cons GROUP BY d.user_id, d.subject_id HAVING COUNT(DISTINCT d.item_key) >= $min
+            WHERE $cons GROUP BY d.user_id, d.subject_id HAVING COUNT(DISTINCT d.item_key) >= LEAST($min, GREATEST(1, CEIL(0.2 * (SELECT COUNT(*) FROM works w2 WHERE w2.subject_id=d.subject_id))))
         ) $outer", [$t, $u['id']]);
     }
     // Podcasts: mindestens 5 Folgen oder 20 % bewusst als gehört markiert (das automatische Abhaken beim Hinzufügen zählt nicht)

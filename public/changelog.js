@@ -2,6 +2,7 @@ window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
     'B|Menü: Die rote Zahl am Schalter „Live/Dev“ wird nicht mehr vom Rahmen des Schalters abgeschnitten und hat keinen weißen Rand mehr, wie bei der Version.',
+    'F|Community: Bei „Meistgelesen Bücher“ zählt jetzt jede Person einmal pro Autor:in oder Reihe, bei Gleichstand entscheidet die Zahl der gelesenen Bücher. Bei „Meistgehört Musik“ reichen für kleine Diskografien 20 % des Katalogs, statt immer 5 Alben.',
     'U|Menü: Der Streifen unter dem aktiven Punkt „Kalender“ (und „News“) liegt wie bei den Kategorien nur unter dem Text, nicht unter dem Symbol.',
     'U|Filme: Der Knopf der Suche heißt wie bei den anderen Kategorien „Suchen“. Der Titel wird danach mit einem Klick übernommen, weil es für Filme noch keine Datenquelle gibt.',
     'U|Einstellungen: Das Farbschema „System“ heißt jetzt „Auto“ und zeigt per Tooltip, dass es der Hell-Dunkel-Einstellung des Geräts folgt.',
