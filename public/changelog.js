@@ -1,6 +1,13 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'F|Neu hinzufügen: Schon beim Tippen (ab 2 Buchstaben) erscheinen Treffer aus den Einträgen, die es auf der Seite schon gibt. Gibt es keinen passenden, sucht Enter wie bisher im Netz.',
+    'F|Serien: Neben „Staffel als gesehen markieren“ gibt es „Alles als gesehen markieren“. Bei Musik, Podcasts und Büchern steht neben „Nur Neues für mich“ der Knopf „Alles gehört“ bzw. „Alles gelesen“ (ein zweiter Klick setzt zurück).',
+    'F|Ideen und Bugs: „Idee melden“ und „Bug melden“ sind jetzt ein Reiter rechts neben „Freischaltungen“ mit aufklappbarem Formular. Die beiden Karten auf der Kontakt-Seite entfallen.',
+    'U|Ideen und Bugs: Zurückgestellte Beiträge haben einen eigenen Reiter „Zurückgestellt“ links von „Freischaltungen“ und erscheinen nicht mehr unter „Aktuell“.',
+    'U|Einstellungen: Der Reiter „Optik/Optionen“ heißt jetzt „Farbschemata“. Die Auswahl der Kategorien und die Nerdoption stehen in einem eigenen Kasten „Oberflächenanpassungen“ unter „Themes“.',
+    'A|Admin: Neuer erster Reiter „Briefing“ mit der Lage der letzten 24 Stunden. Neue Nutzergruppe „Moderatoren“ mit einstellbaren Admin-Rechten.',
+    'A|Kontakt: Die Auswahl „Nutzer anschreiben …“ steht oben über allen Unterhaltungen statt darunter.',
     'B|Auswahlfelder (zum Beispiel „Nutzer anschreiben …“): Beim Anklicken erscheint kein Rahmen mit seltsamen Ecken mehr, das Feld wird stattdessen sauber umrandet.',
     'U|Ideen und Bugs: In den Hinweisen beim Melden steht jetzt „Das Team schaut sich … an“ statt „Der Admin“.',
     'B|Einstellungen → Profil: Chrome hielt das Feld „Geburtsjahr“ für ein Passwortfeld. Name, Geburtsdatum und Geburtsjahr sind jetzt eindeutig als solche gekennzeichnet.',

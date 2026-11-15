@@ -157,9 +157,10 @@
   function alphaBadge() { return h('span', { class: 'alphabadge', title: 'Alpha: Diese Funktion ist noch in Entwicklung und nur für Alphatester sichtbar' }, 'Alpha'); }
   function alphaWrap(key, el) { if ((FEATURES[key] || 'live') !== 'alpha') return el; var w = h('div', { class: 'alphabox' }, alphaBadge()); w.append(el); return w; }
   function isAdm() { return !!D.admin && !S.preview; }
+  function hasAdm() { return !!(D.admin || (D.admsec || []).length) && !S.preview; } // Admin-Symbol: Admins und Moderatoren mit mindestens einem Bereich
   function setPreview(on) { S.preview = !!on; var pb = $('previewbar'); if (pb) pb.hidden = !on; S.view = on ? 'cal' : 'adm'; S.cat = S.view; S.sel = null; S.menuFor = null; say(''); nav(); render(); window.scrollTo(0, 0); }
   var po = $('previewOff'); if (po) po.addEventListener('click', function () { setPreview(false); });
-  function go(view, cat) { S.view = view; S.cat = cat || view; S.sel = null; S.confirm = null; S.menuFor = null; S.filter = ''; S.adding = false; S.sugg = null; say(''); render(); window.scrollTo(0, 0); }
+  function go(view, cat) { if (view === 'adm' && S.view !== 'adm') { try { sessionStorage.setItem('sd_admtab', 'Briefing'); } catch (_) {} } S.view = view; S.cat = cat || view; S.sel = null; S.confirm = null; S.menuFor = null; S.filter = ''; S.adding = false; S.sugg = null; say(''); render(); window.scrollTo(0, 0); }
   // Versionswahl (Live, Dev, Design-Varianten): kleines Menü am Schalter, setzt nur das Cookie
   function devMenu(anchor) {
     var old = document.getElementById('devmenu'); if (old) { old.remove(); return; }
@@ -190,7 +191,7 @@
     if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
     if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
     if ((D.admin || D.devsw) && !S.preview) { var dsLabel = D.design ? ((D.designs || []).filter(function (x) { return x.slug === D.design; })[0] || {}).name || 'Design' : (D.dev ? 'Dev' : 'Live'); var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', 'aria-haspopup': 'menu', title: 'Du siehst: ' + dsLabel + '. Klicken, um die Version zu wechseln (Live, Entwicklung, Design-Varianten).', onclick: function () { devMenu(dsw); } }, h('span', { class: 'devlbl' }, dsLabel)); var dn = (D.devnotes || []).filter(function (x) { return typeof x === 'string' && x; }); if (dn.length) { dsw.append(h('span', { class: 'devbadge', 'aria-hidden': 'true' }, String(dn.length))); dsw.title += '\n\nUnterschiede der Entwicklungsversion zur Live-Version (' + dn.length + '):\n• ' + dn.join('\n• '); dsw.setAttribute('aria-label', dsLabel + ', ' + dn.length + ' Unterschiede zur Live-Version'); } var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
-    if (isAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
+    if (hasAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
     navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
     function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' offen: Freischaltungen und Neues' }, n > 99 ? '99+' : String(n))); return b; }
     if (feat('feat')) navRest.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
@@ -317,7 +318,7 @@
     var t = TYPES[S.cat], es = entriesOf(S.cat);
     var layout = h('div', { class: 'layout has-rail' }), rail = h('aside', { class: 'rail', id: 'rail', 'data-cat': S.cat, style: '--cc:' + CATCOL[S.cat] }), main = h('section', { class: 'main', id: 'content' });
     rail.append(h('section', null, h('p', { class: 'label' }, 'Neu hinzufügen'),
-      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen')),
+      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph, oninput: localSugg }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen')),
       h('p', { class: 'msg', id: 'msg', role: 'status' }), h('div', { id: 'sugg' })));
     rail.append(h('section', null, h('p', { class: 'label', id: 'listlbl' }, t.plural + ' · ' + es.length + ' / ' + MAXN),
       h('div', { class: 'srchrow' }, h('label', { class: 'field srch' }, h('input', { id: 'srch', type: 'search', maxlength: '80', 'aria-label': 'Einträge durchsuchen', placeholder: 'In der Liste filtern', value: S.filter, oninput: function () { S.filter = this.value; rows(); } })),
@@ -504,10 +505,13 @@
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
     var dv = DONEV[e.type] || DONEV.artist, done = doneSetOf(r), hideDone = false, rows = [], cnt = h('span', { class: 'cnt' }), flt = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false' }, 'Nur Neues für mich'), wfill = h('i'), wbar = h('span', { class: 'wbar' }, wfill), grid = e.type === 'podcast' ? card : h('div', { class: 'wgrid' });
-    function updAll() { var n = r.works.filter(function (w) { return done[w.k]; }).length; wfill.style.width = (r.works.length ? Math.round(100 * n / r.works.length) : 0) + '%'; cnt.textContent = n + ' von ' + r.works.length + ' ' + t.work + ' ' + dv[0];
+    function updAll() { allLbl(); var n = r.works.filter(function (w) { return done[w.k]; }).length; wfill.style.width = (r.works.length ? Math.round(100 * n / r.works.length) : 0) + '%'; cnt.textContent = n + ' von ' + r.works.length + ' ' + t.work + ' ' + dv[0];
       rows.forEach(function (x) { var on = !!done[x.w.k]; x.pill.className = 'pill' + (on ? ' on' : ''); x.pill.setAttribute('aria-pressed', on ? 'true' : 'false'); x.pill.textContent = on ? dv[0].charAt(0).toUpperCase() + dv[0].slice(1) : dv[1]; x.row.hidden = hideDone && on; }); }
+    var allB = h('button', { class: 'pill', type: 'button', title: 'Markiert alle aufgelisteten Einträge auf einmal. Nur für dich sichtbar.' });
+    function allLbl() { var n = r.works.filter(function (w) { return done[w.k]; }).length; allB.textContent = r.works.length && n === r.works.length ? 'Alles zurücksetzen' : 'Alles ' + dv[0]; }
+    allB.addEventListener('click', function () { var keys = r.works.map(function (w) { return w.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); updAll(); }); });
     flt.addEventListener('click', function () { hideDone = !hideDone; flt.className = 'pill' + (hideDone ? ' on' : ''); flt.setAttribute('aria-pressed', hideDone ? 'true' : 'false'); updAll(); });
-    if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt), wbar);
+    if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt, allB), wbar);
     r.works.forEach(function (w) {
       var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), pill), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
       pill.addEventListener('click', function () { var on = !done[w.k]; setDone(e, [w.k], on, function () { if (on) done[w.k] = 1; else delete done[w.k]; updAll(); }); });
@@ -595,13 +599,13 @@
   function doneSetOf(r) { var o = {}; (r.done || []).forEach(function (k) { o[k] = 1; }); return o; }
   function renderEpisodes(e, eps, done, progCb) {
     done = done || {};
-    var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null;
+    var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null, gbtns = [], updFns = [];
     box.append(h('h3', { class: 'sec' }, 'Staffeln und Folgen'));
     box.append(h('p', { class: 'note' }, 'Folgen und Sendetermine von ', h('a', { href: e.tvmaze ? 'https://www.tvmaze.com/shows/' + e.tvmaze : 'https://www.tvmaze.com', target: '_blank', rel: 'noopener noreferrer' }, 'TVmaze'),
       e.fetched_at ? ', Stand ' + LONG.format(new Date(e.fetched_at.replace(' ', 'T'))) : '', e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
     eps.forEach(function (x) { (by[x.season] = by[x.season] || []).push(x); });
     var nums = Object.keys(by).map(Number).sort(function (a, b) { return a - b; }), liveSeason = null;
-    function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); }
+    function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); gbtns.forEach(function (b) { b.textContent = n === eps.length ? 'Alles zurücksetzen' : 'Alles als gesehen markieren'; }); }
     function pick(sn) { sel = sn; nums.forEach(function (n) { var on = n === sn; tiles[n].classList.toggle('on', on); tiles[n].setAttribute('aria-selected', on ? 'true' : 'false'); panels[n].hidden = !on; }); }
     nums.forEach(function (sn) {
       var l = by[sn], fut = 0; l.forEach(function (x) { var p = x.airdate ? parseDate(x.airdate) : null; if (p && p.prec !== 'none' && p.end >= now) fut++; });
@@ -636,8 +640,11 @@
         det.append(h('div', { class: 'work ep' }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', { class: 'epcell' }, ttl, h('div', { class: 'sub' }, when), sbox), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
       });
       allBtn.addEventListener('click', function () { var keys = cks.map(function (c) { return c.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); upd(); }); });
+      var gBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Markiert alle Folgen aller Staffeln dieser Serie auf einmal' }); gbtns.push(gBtn);
+      gBtn.addEventListener('click', function () { var keys = eps.map(function (x) { return x.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); updFns.forEach(function (f) { f(); }); }); });
+      updFns.push(upd);
       upd();
-      det.insertBefore(h('div', { class: 'season-foot' }, allBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)), det.firstChild);
+      det.insertBefore(h('div', { class: 'season-foot' }, allBtn, ' ', gBtn, ' ', amazonLink(e, e.name + ' Staffel ' + sn)), det.firstChild);
       box.append(det);
     });
     box.insertBefore(strip, panels[nums[0]]);
@@ -657,8 +664,19 @@
     });
   }
   /* Hinzufügen mit Suche */
+  var locT = 0, locSeq = 0;
+  function localSugg() { // Sofort beim Tippen: Treffer aus den schon vorhandenen Einträgen der Seite; Enter sucht wie bisher im Netz
+    var v = this.value.trim(), cat = S.cat; clearTimeout(locT); var my = ++locSeq;
+    if (v.length < 2) { if (S.sugg && S.sugg.local) { S.sugg = null; drawSugg(); } return; }
+    locT = setTimeout(function () {
+      api('/api/data.php?a=suggest_local&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) {
+        if (my !== locSeq || cat !== S.cat) return; var q = $('q'); if (!q || q.value.trim() !== v) return;
+        S.sugg = { local: true, q: v, list: (r && r.results) || [] }; drawSugg();
+      });
+    }, 150);
+  }
   function addSubmit(ev) {
-    ev.preventDefault(); var v = $('q').value.trim(); if (!v) { say('Gib erst einen Namen ein.', true); return; }
+    ev.preventDefault(); locSeq++; clearTimeout(locT); var v = $('q').value.trim(); if (!v) { say('Gib erst einen Namen ein.', true); return; }
     if (S.cat === 'film') { S.sugg = { q: v, list: [], manual: true }; drawSugg(); say(''); return; } // Filme: noch keine Datenquelle, der Titel wird so übernommen
     S.sugg = { loading: true }; drawSugg(); say('');
     api('/api/data.php?a=search&type=' + S.cat + '&q=' + encodeURIComponent(v)).then(function (r) { S.sugg = { q: v, list: r.results || [] }; drawSugg(); });
@@ -672,6 +690,13 @@
   function drawSugg() {
     var box = $('sugg'); if (!box) return; box.textContent = ''; var s = S.sugg; if (!s) return;
     if (s.loading) { box.append(h('p', { class: 'hint pulse' }, 'Suche …')); return; }
+    if (s.local) {
+      box.append(h('p', { class: 'hint' }, s.list.length ? 'Schon auf der Seite vorhanden. Passt keiner, drücke Enter, dann wird im Netz gesucht.' : 'Noch nicht auf der Seite vorhanden. Drücke Enter, um im Netz zu suchen.'));
+      if (s.list.length) { var ll = h('div', { class: 'suggest' });
+        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
+        box.append(ll); }
+      return;
+    }
     box.append(h('p', { class: 'hint' }, s.manual ? 'Für Filme gibt es noch keine Suche. Der Titel wird so übernommen, wie du ihn eingegeben hast.' : s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
     var list = h('div', { class: 'suggest' });
     s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
@@ -848,8 +873,9 @@
     if (D.hidecats) { var hcMsg = h('span', { class: 'msg', style: 'margin:0' }), hcRow = h('div', { style: 'display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px' });
       ORDER.forEach(function (t) { var ck = h('input', { type: 'checkbox', checked: !isHid(t), onchange: function () { var hide = []; ORDER.forEach(function (x) { if ((x === t ? !ck.checked : isHid(x))) hide.push(x); }); api('/api/data.php?a=hidecats', { cats: hide }).then(function (r) { if (!r.ok) { ck.checked = !ck.checked; hcMsg.className = 'msg err'; hcMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } D.hide = hide; hcMsg.className = 'msg'; hcMsg.textContent = 'Gespeichert.'; load(function () { nav(); }); }); } }); hcRow.append(h('label', { style: 'display:flex;gap:6px;align-items:center' }, ck, TYPES[t].plural)); });
       hcBox = h('div', { style: 'margin-top:14px' }, h('p', { class: 'label' }, 'Kategorien anzeigen'), h('p', { class: 'hint', style: 'margin:0' }, 'Nicht angezeigte Kategorien verschwinden aus Menü, Kalender und Übersicht. Deine Einträge bleiben erhalten; Benachrichtigungen kommen weiterhin. (Test, nur für Admins)'), hcRow, hcMsg); }
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Oberfläche'), skins, hcBox,
-      h('div', { style: 'margin-top:14px' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg)));
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Farbschema'), skins));
+    var uiBox = h('div', { class: 'wide2' }, hcBox,
+      h('div', { style: hcBox ? 'margin-top:14px' : '' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg));
     var tm = h('span', { class: 'msg', style: 'margin:0' }), cb = h('input', { type: 'checkbox', id: 'ntf', onchange: function () { S.notify = this.checked; api('/api/data.php?a=notify', { on: this.checked }); opts.style.opacity = this.checked ? '1' : '.5'; } }); cb.checked = !!S.notify;
     var sv = h('span', { class: 'msg', style: 'margin:0' });
     function saveN() { api('/api/data.php?a=notifyset', { 'new': S.n['new'], day: S.n.day, week: S.n.week, mode: S.n.mode, weekday: S.n.weekday, bell_default: S.n.bell_default }).then(function (r) { sv.className = 'msg' + (r.ok ? '' : ' err'); sv.textContent = r.ok ? 'Gespeichert.' : (r.msg || r.error || 'Speichern nicht möglich.'); setTimeout(function () { sv.textContent = ''; }, 2500); }); }
@@ -1092,9 +1118,9 @@
       box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Konto löschen'), h('p', { class: 'hint' }, 'Du kannst dein Konto samt aller Einträge jederzeit löschen lassen.'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { dbox.hidden = !dbox.hidden; if (!dbox.hidden) pw.focus(); } }, 'Konto löschen …'), dbox));
     }
     var K = [].slice.call(box.children), st = h('div', { class: 'setstack' });
-    // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Oberfläche, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin)
+    // Reihenfolge der Bausteine oben: 0 Angemeldet, 1 Benutzername, 2 Wiederherstellungscode, 3 Farbschema, 4 Benachrichtigungen, 5 Import, 6 Kalender-Abo, 7 Zwei-Faktor, 8 Privatsphäre, 9 Community-Zustimmung, 10 Was der Admin sieht, 11 Meine Daten, 12 Konto löschen (nicht für Admin); uiBox = Oberflächenanpassungen (nicht für Admin)
     var optikC = null;
-    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), (optikC = setCard('Optik/Optionen', [K[3]], 'solo')), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
+    st.append(setCard('Meine Daten', [K[9], K[11]], 'solo'), setCard('Benutzername', [K[0], K[1]], 'solo'), setCard('E-Mail und Wiederherstellung', [emailBox(), K[2]], 'solo'), setCard('Profilkarte', [profileBox()], 'solo'), (optikC = setCard('Farbschemata', [K[3]], 'solo')), setCard('Kalender-Abo', [K[6]], 'solo'), setCard('E-Mail-Benachrichtigungen', [K[4]], 'solo'), setCard('Import', [K[5]], 'solo'), setCard('Zwei-Faktor-Anmeldung', [K[7]], 'solo'));
     if (K[12]) K[12].classList.add('dangerzone');
     if ((D.pubdesigns || []).length) (function () { // Themes (experimentell): Standard und öffentliche Gestaltungsvarianten
       var cur = D.theme || '', tm = h('p', { class: 'msg', role: 'status' }), row = h('div', { class: 'skins', role: 'group', 'aria-label': 'Theme wählen' });
@@ -1104,10 +1130,12 @@
       var tc = (setCard('Themes', [h('div', { class: 'wide2' }, h('p', { class: 'hint', style: 'margin-top:0' }, 'Experimentell: Die Themes sind noch in Arbeit, manche Seiten können dabei etwas anders aussehen oder noch nicht ganz stimmig sein. Deine Farbwahl oben gilt auch für das Theme. Du kannst jederzeit zurück zu „Standard“ wechseln.'), row, tm)], 'solo'));
       if (optikC) optikC.after(tc); else st.append(tc);
     })();
+    var uiC = devMark(setCard('Oberflächenanpassungen', [uiBox], 'solo'), 'uianp'), thC = [].slice.call(st.children).filter(function (c) { return c.querySelector('h3').textContent === 'Themes'; })[0];
+    if (thC) thC.after(uiC); else if (optikC) optikC.after(uiC); else st.append(uiC);
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Optik/Optionen', ['Optik/Optionen', 'Themes', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var T = [['Profil', ['Meine Daten', 'Profilkarte']], ['Farbschemata', ['Farbschemata', 'Themes', 'Oberflächenanpassungen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['Benutzername', 'E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });
@@ -1399,7 +1427,7 @@
       '<p>Schondraussen.de hilft dir dabei, ganz ohne viel Schnickschnack: Du legst fest, wem du folgst, und die Seite informiert dich über Neuigkeiten, per Mail und im Kalender. So behältst du den Überblick und bestimmst selbst, was dich wirklich erreicht.</p>' +
       '<p>Auf der Suche nach neuem „Stoff“ hilft dir die Community: Dort siehst du, was andere Nutzer:innen gerade hinzufügen und was bei ihnen beliebt ist, und kannst Einträge mit einem Klick übernehmen. Dazu kannst du dir zu Musiker:innen, Autor:innen und Serien ähnliche Vorschläge anzeigen lassen.</p>' +
       (D.approval ? '<p class="muted">Neue Konten werden vom Admin freigeschaltet.</p>' : '') + '</div>' +
-      '<section class="infosec"><h3>Feedback</h3><p>Die Seite ist neu und wächst weiter. Die Daten kommen aus den Quellen unten und können Lücken haben; manchmal tauchen auch fremdsprachige Ergebnisse auf. Fehlt dir etwas oder stimmt eine Angabe nicht, schreib mir über „Kontakt“ oder reiche eine Idee oder Bugmeldung ein.</p></section>' +
+      '<section class="infosec"><h3>Feedback</h3><p>Die Seite ist neu und wächst weiter. Die Daten kommen aus den Quellen unten und können Lücken haben; manchmal tauchen auch fremdsprachige Ergebnisse auf. Fehlt dir etwas oder stimmt eine Angabe nicht, schreib mir über „Kontakt“ oder melde eine Idee oder einen Bug auf den Seiten „Ideen“ und „Bugs“.</p></section>' +
       '<section class="infosec"><h3>Wann werden Einträge erneuert?</h3><p>Automatisch alle 12 Stunden. Jeder Titel wird dabei nur einmal für alle Nutzer abgefragt und zwischengespeichert. Neuerscheinungen tauchen dann ohne eigenes Zutun auf. Beim Hinzufügen eines Eintrags und über „Aktualisieren“ werden die Daten sofort geladen. Das Datum steht als „Stand“ am Eintrag.</p><p class="muted" id="lastrun"></p><p class="muted"><a href="https://stats.uptimerobot.com/hWI2Kjc0jq" target="_blank" rel="noopener">Systemstatus ansehen</a> (zeigt, ob die Seite erreichbar ist)</p></section>' +
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Bücher</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
@@ -1603,9 +1631,8 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.')); var lastG = null;
+      threads.textContent = ''; if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.')); var lastG = null;
       S.sup.threads.forEach(function (t) { var g = t.id === 'team' ? 'Team' : (admin ? 'Nutzer' : (t.id === 'me' ? 'Administrator' : 'Direkt')); if (g !== lastG) { threads.append(h('p', { class: 'thgrp' }, g)); lastG = g; } threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
-      if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick);
     }
     function pull() {
       var go2 = function () {
@@ -1694,17 +1721,14 @@
     }
     var chatCard = setCard(admin ? 'Unterhaltung' : 'Unterhaltung mit dem Administrator', [log]), composerCard = setCard(admin ? 'Antworten' : 'Neue Nachricht', [pollBox, form, admin ? mailRow : null, draftBox, attNote, msg], 'composer');
     var pollBtn = h('button', { class: 'btn ghost', type: 'button', hidden: true, onclick: drawPollForm }, 'Abstimmung'); form.insertBefore(pollBtn, form.querySelector('button[type=submit]'));
-    /* Idee und Bug melden: eigene Karten über dem Chat, das Formular klappt darunter auf */
-    var RK = { feature: ['Idee melden', 'Vorschlag für die Seite', 'Dir fehlt etwas oder du hast einen Vorschlag? Nach der Freigabe können alle dafür abstimmen.', ICONS.bulb, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Idee abschicken'], bug: ['Bug melden', 'Etwas funktioniert nicht', 'Etwas funktioniert nicht richtig? Beschreibe kurz, wo es passiert und was du gemacht hast.', ICONS.bug, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bug abschicken'] };
-    var rep = { kind: null, drafts: [] }, repCards = h('div', { class: 'repcards' + (staff ? ' slim' : '') }), repSlot = h('div', { class: 'repslot' });
-    function dropRepDrafts() { rep.drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); rep.drafts = []; }
-    function closeReport(drop) { if (drop) dropRepDrafts(); rep.drafts = []; rep.kind = null; repSlot.textContent = ''; drawRepCards(); }
-    function drawRepCards() {
-      repCards.textContent = '';
-      ['feature', 'bug'].forEach(function (k) { var r = RK[k]; repCards.append(h('button', { class: 'repcard', type: 'button', 'aria-expanded': String(rep.kind === k), onclick: function () { if (rep.kind === k) { closeReport(true); return; } if (rep.kind) dropRepDrafts(); openReport(k); } }, h('span', { class: 'repico' }, ico(r[3])), h('b', null, r[0]), h('small', null, staff ? r[1] : r[2]))); });
-    }
-    function openReport(kind) {
-      var r = RK[kind]; rep.kind = kind; rep.drafts = []; repSlot.textContent = '';
+    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+  }
+  /* Idee und Bug melden: Formular, das auf den Seiten Ideen und Bugs aufklappt */
+  var RK = { feature: ['Idee melden', 'Vorschlag für die Seite', 'Dir fehlt etwas oder du hast einen Vorschlag? Nach der Freigabe können alle dafür abstimmen.', ICONS.bulb, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Idee abschicken'], bug: ['Bug melden', 'Etwas funktioniert nicht', 'Etwas funktioniert nicht richtig? Beschreibe kurz, wo es passiert und was du gemacht hast.', ICONS.bug, 'Kurzbeschreibung (erscheint als Titel in der Liste)', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Bug abschicken'] };
+  function reportForm(kind, slot, onClose, onSent) {
+    var r = RK[kind], rep = { drafts: [], closed: false };
+    function closeReport(drop) { if (drop) rep.drafts.forEach(function (d) { api('/api/image.php?a=remove', { id: d.id }); }); rep.drafts = []; rep.closed = true; slot.textContent = ''; if (onClose) onClose(); }
+    slot.textContent = '';
       var catSel = h('select', { class: 'repcat', 'aria-label': 'Kategorie' }, h('option', { value: '' }, kind === 'bug' ? 'Kategorie: Wo tritt der Fehler auf? (optional)' : 'Kategorie: Worum geht es? (optional)'), FBCATS[kind].map(function (c) { return h('option', { value: c[0] }, c[1]); })), ti = h('input', { type: 'text', maxlength: '120', class: 'fbtitle', 'aria-label': 'Kurzbeschreibung', placeholder: r[4], autocomplete: 'off' }), tx = h('textarea', { rows: '4', maxlength: '1000', 'aria-label': 'Details', placeholder: r[5] }), rmsg = h('p', { class: 'msg', role: 'status' }), dbox = h('div', { class: 'drafts' }), note = h('p', { class: 'hint picnote' });
       var fi = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,text/plain,.txt,.log,.md,.csv,.json', multiple: true, hidden: true });
       function drawRD() { dbox.textContent = ''; rep.drafts.forEach(function (d) { dbox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Anhang entfernen', onclick: function () { rep.drafts = rep.drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawRD(); } }, '×'))); }); note.textContent = 'Anhänge: ' + rep.drafts.length + ' von 3. Erlaubt sind Bilder (JPG, PNG, WebP) und Textdateien (.txt, .log, .md, .csv, .json, bis 200 KB). Zeige bitte keine fremden Personen oder privaten Daten.'; }
@@ -1712,7 +1736,7 @@
         [].slice.call(files).forEach(function (f) {
           if (rep.drafts.length >= 3) { rmsg.className = 'msg err'; rmsg.textContent = 'Höchstens 3 Anhänge.'; return; }
           var isTxt = !/^image\//.test(f.type) && (/^text\//.test(f.type) || /\.(txt|log|md|csv|json)$/i.test(f.name)); rmsg.className = 'msg'; rmsg.textContent = isTxt ? 'Datei wird hochgeladen …' : 'Bild wird hochgeladen …';
-          (isTxt ? uploadText(f, 'feedback') : uploadImage(f, 'feedback')).then(function (d) { if (rep.kind !== kind) { api('/api/image.php?a=remove', { id: d.id }); return; } rep.drafts.push(d); rmsg.textContent = ''; drawRD(); }).catch(function (e) { rmsg.className = 'msg err'; rmsg.textContent = e.message; });
+          (isTxt ? uploadText(f, 'feedback') : uploadImage(f, 'feedback')).then(function (d) { if (rep.closed) { api('/api/image.php?a=remove', { id: d.id }); return; } rep.drafts.push(d); rmsg.textContent = ''; drawRD(); }).catch(function (e) { rmsg.className = 'msg err'; rmsg.textContent = e.message; });
         });
       }
       fi.addEventListener('change', function () { addRF(fi.files); fi.value = ''; });
@@ -1723,40 +1747,43 @@
         var ids = rep.drafts.map(function (d) { return d.id; }); sending = true;
         api('/api/feedback.php?a=add', { kind: kind, category: catSel.value, title: t, text: tx.value.trim(), images: ids }).then(function (z) {
           sending = false;
-          if (z && z.ok) { closeReport(false); popup(kind === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kind === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kind === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald das Team sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald das Team sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); }
+          if (z && z.ok) { closeReport(false); if (onSent) onSent(); popup(kind === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kind === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kind === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald das Team sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald das Team sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); }
           else { rmsg.className = 'msg err'; rmsg.textContent = (z && z.error) || 'Senden nicht möglich.'; }
         });
       }
       drawRD();
-      repSlot.append(setCard(r[0], [h('p', { class: 'hint' }, kind === 'feature' ? 'Das Team schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.' : 'Das Team schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.'),
+      slot.append(setCard(r[0], [h('p', { class: 'hint' }, kind === 'feature' ? 'Das Team schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.' : 'Das Team schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.'),
         h('form', { class: 'repform', autocomplete: 'off', onsubmit: submit }, catSel, ti, tx, fi, h('div', { class: 'reprow' }, h('button', { class: 'btn ghost', type: 'button', onclick: function () { fi.click(); } }, 'Anhängen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { closeReport(true); } }, 'Abbrechen'), h('button', { class: 'btn', type: 'submit' }, r[6]))), dbox, note, rmsg], 'composer'));
-      drawRepCards(); ti.focus();
-    }
-    drawRepCards();
-    grid.append(threads, h('div', { class: 'chat' }, chatCard, composerCard)); p.append(repCards, repSlot, grid); devMark(p, 'kontakt'); mainEl.append(p); pull(); supTimer = setInterval(pull, 15000);
+      ti.focus();
+    return { close: closeReport };
   }
   var FBCATS = { bug: [['calendar', 'Kalender'], ['lists', 'Listen und Einträge'], ['search', 'Suche und Hinzufügen'], ['community', 'Community'], ['news', 'News'], ['contact', 'Kontakt und Chat'], ['account', 'Konto und Anmeldung'], ['email', 'E-Mails'], ['ui', 'Menü und Darstellung'], ['data', 'Falsche oder fehlende Daten'], ['other', 'Sonstiges']], feature: [['feature', 'Neues Feature'], ['improve', 'Verbesserung einer Funktion'], ['source', 'Neue Kategorie oder Datenquelle'], ['design', 'Aussehen und Design'], ['mail', 'E-Mails und Benachrichtigungen'], ['community', 'Community'], ['calendar', 'Kalender'], ['mobile', 'Handy und Bedienung'], ['content', 'Inhalte und Daten'], ['other', 'Sonstiges']] };
   function catLabel(kind, key) { var l = (FBCATS[kind] || []).filter(function (c) { return c[0] === key; })[0]; return l ? l[1] : ''; }
   function feedbackView(kind) {
     if (!S.preview && (D.admin || D.alpha)) fbPoll();
     var bug = kind === 'bug', staff = !S.preview && !!(D.admin || D.alpha), p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, bug ? 'Bugs' : 'Ideen'),
-      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du unter „Kontakt“ mit „Bug melden“.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du unter „Kontakt“ mit „Idee melden“.'))),
+      h('p', { class: 'hint' }, staff ? (bug ? 'Meldungen von Nutzern. Neue Meldungen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle. Mit den Knöpfen legst du fest, wie dringend sie sind.' : 'Ideen von allen Nutzern. Neue Ideen warten im Reiter „Freischaltungen“, bis du sie freigibst; freigegebene sehen alle und können dafür abstimmen.') : (bug ? 'Bekannte Fehler und ihr Stand. Neue Fehler meldest du mit dem Knopf „Bug melden“ oben rechts.' : 'Ideen von allen Nutzern, sortiert nach Stimmen. Mit dem Daumen stimmst du für eine Idee, ein zweiter Klick nimmt die Stimme zurück. Neue Ideen schreibst du mit dem Knopf „Idee melden“ oben rechts.'))),
       box = h('div', { class: 'fblist' }); p.append(box); mainEl.append(alphaWrap(bug ? 'bugs' : 'feat', p)); box.append(h('p', { class: 'state pulse' }, 'Lade …'));
     var PHASE = { brainstorm: 'Im Brainstorming', progress: 'In Bearbeitung', postponed: 'Zurückgestellt' };
   var PRIO = { urgent: ['Dringend', 'urgent'], normal: ['Normal', 'normal'], low: ['Unwichtig', 'low'] };
     function when(t) { try { return LONG.format(new Date(String(t).replace(' ', 'T'))); } catch (_) { return ''; } }
     S.fbTab = S.fbTab || {}; var tabKey = bug ? 'bug' : 'feature', lastR = null, seen = null, firstLoad = true, tabSeen = {};
-    function grp(x) { return !x.released_at ? 'rel' : (x.done_at ? 'done' : 'cur'); }
+    function grp(x) { return !x.released_at ? 'rel' : (x.done_at ? 'done' : (x.phase === 'postponed' ? 'post' : 'cur')); }
     function isNew(x) { if (!staff || !seen) return false; var g = grp(x), t = g === 'cur' ? x.released_at : (g === 'done' ? x.done_at : null); return !!t && String(t) > String(seen); }
-    var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen'], ['rel', 'Freischaltungen']], tbtn = {};
+    var TABS = [['cur', 'Aktuell'], ['done', 'Erledigt/Zurückgezogen'], ['post', 'Zurückgestellt'], ['rel', 'Freischaltungen']], tbtn = {};
     if (!TABS.some(function (t) { return t[0] === S.fbTab[tabKey]; })) S.fbTab[tabKey] = 'cur';
     var tbar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': bug ? 'Bugs' : 'Ideen' });
     TABS.forEach(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { S.fbTab[tabKey] = t[0]; tabSeen[t[0]] = true; if (lastR) draw(lastR); } }, t[1]); tbtn[t[0]] = b; tbar.append(b); });
-    mainEl.prepend(tbar);
+    var repHost = h('div', { class: 'repslot' }), repForm = null, repBtn = h('button', { class: 'admtab addrep', type: 'button', 'aria-expanded': 'false', onclick: function () {
+      if (repForm) { repForm.close(true); return; }
+      repBtn.setAttribute('aria-expanded', 'true'); repBtn.classList.add('open');
+      repForm = reportForm(kind, repHost, function () { repForm = null; repBtn.setAttribute('aria-expanded', 'false'); repBtn.classList.remove('open'); }, function () { S.fbTab[tabKey] = 'rel'; reload(); });
+    } }, '＋ ' + (bug ? 'Bug melden' : 'Idee melden'));
+    tbar.append(repBtn); mainEl.prepend(tbar); tbar.after(repHost);
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
-      var cnt = { cur: 0, done: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
+      var cnt = { cur: 0, done: 0, post: 0, rel: 0 }, newN = { cur: 0, done: 0 }; l.forEach(function (x) { cnt[grp(x)]++; if (isNew(x)) newN[grp(x)]++; });
       TABS.forEach(function (t) { var on = S.fbTab[tabKey] === t[0], b = tbtn[t[0]]; b.className = 'admtab' + (on ? ' on' : ''); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.textContent = t[1] + (cnt[t[0]] ? ' (' + cnt[t[0]] + ')' : ''); var nn = t[0] === 'rel' ? (staff ? cnt.rel : 0) : (tabSeen[t[0]] ? 0 : newN[t[0]]); if (on && t[0] !== 'rel') tabSeen[t[0]] = true; if (nn && !(on && t[0] !== 'rel')) b.append(h('span', { class: 'badge', 'aria-label': nn + (t[0] === 'rel' ? ' offen: Freischaltungen und Neues' : ' neu seit deinem letzten Besuch') }, String(nn))); });
       var shown = l.filter(function (x) { return grp(x) === S.fbTab[tabKey]; });
       S.fbMine = S.fbMine || {}; var totAll = shown.length, mineAll = shown.filter(function (x) { return !!+x.mine; }).length; if (S.fbMine[tabKey] && !mineAll) S.fbMine[tabKey] = false; var mineOn = !!S.fbMine[tabKey]; if (mineOn) shown = shown.filter(function (x) { return !!+x.mine; });
@@ -1769,7 +1796,7 @@
         if (mineAll) chips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(mineOn), title: 'Nur die Beiträge anzeigen, die du selbst eingereicht hast', onclick: function () { S.fbMine[tabKey] = !mineOn; draw(lastR); } }, 'Meine', h('small', null, String(mineAll)))); (FBCATS[bug ? 'bug' : 'feature'] || []).forEach(function (c) { if (cc[c[0]]) chip(c[0], c[1], cc[c[0]]); });
         box.append(chips); if (cur) shown = shown.filter(function (x) { return x.category === cur; });
       }
-      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'rel' ? (staff ? 'Nichts wartet auf Freischaltung.' : 'Keiner deiner Beiträge wartet auf Freischaltung. Neue Beiträge erscheinen hier, bis das Team sie freigibt.') : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib den ersten unter „Kontakt“.'))); return; }
+      if (!shown.length) { box.append(h('p', { class: 'hint' }, S.fbTab[tabKey] === 'done' ? 'Noch nichts erledigt oder zurückgezogen.' : S.fbTab[tabKey] === 'post' ? (bug ? 'Keine Bugs zurückgestellt.' : 'Keine Ideen zurückgestellt.') : S.fbTab[tabKey] === 'rel' ? (staff ? 'Nichts wartet auf Freischaltung.' : 'Keiner deiner Beiträge wartet auf Freischaltung. Neue Beiträge erscheinen hier, bis das Team sie freigibt.') : (bug ? 'Noch keine Bugmeldungen.' : 'Noch keine Ideen. Schreib die erste mit „Idee melden“.'))); return; }
       var pendHead = false;
       shown.forEach(function (x) {
         var pics = h('div', { class: 'pics' });
@@ -1882,8 +1909,97 @@
   function unreadPoll() { api('/api/chat.php?a=unread').then(function (r) { var n = +r.unread || 0; if (n !== S.unread) { S.unread = n; var k = topbar.querySelector('.support'); if (k) { var b = k.querySelector('.badge'); if (b) b.remove(); if (n && S.view !== 'sup') k.append(h('span', { class: 'badge' }, n > 99 ? '99+' : String(n))); } } }); }
 
   /* ---------- Admin ---------- */
+  /* ---------- Admin: Morning-Briefing (letzte 24 Stunden) ---------- */
+  function briefingBox() {
+    var box = h('div', { class: 'brief' }), out = h('div', null);
+    function admTab(name) { try { sessionStorage.setItem('sd_admtab', name); } catch (_) {} go('adm'); }
+    function toFb(kind, tab) { S.fbTab = S.fbTab || {}; S.fbTab[kind] = tab; go(kind); }
+    function toSup(sel) { S.sup = S.sup || { sel: null, threads: [] }; S.sup.sel = sel; go('sup'); }
+    function lnk(txt, fn) { return h('button', { class: 'namelink brlink', type: 'button', onclick: fn }, txt); }
+    function row(label, val, fn, cls) { var v = val == null ? '–' : String(val); return h('li', { class: cls || '' }, fn && val ? lnk(label, fn) : h('span', null, label), h('b', null, v)); }
+    function card(title, rows, foot) { return h('section', { class: 'brcard' }, h('h4', null, title), h('ul', { class: 'brlist' }, rows.filter(Boolean)), foot || null); }
+    function fmt(t) { return String(t || '').slice(5, 16).replace('-', '.').replace('T', ' ').replace(' ', ' · '); }
+    function hm(t) { return String(t || '').slice(11, 16); }
+    var TL = { author: 'Bücher', artist: 'Musik', film: 'Filme', series: 'Serien', podcast: 'Podcasts' }, ML = { new: 'Neu angekündigt', soon: 'Termin', day: 'Tagesmails' };
+    var ACT = { reveal_email: 'E-Mail aufgedeckt', delete: 'Konto gelöscht', approve: 'Konto freigeschaltet', revoke: 'Freischaltung entzogen', block: 'E-Mail gesperrt', unblock: 'Sperre aufgehoben', alpha: 'Alphatester geändert', renamereq: 'Namenswechsel verlangt' };
+    function draw(r) {
+      out.textContent = '';
+      if (!r || !r.ok) { out.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das Briefing konnte nicht geladen werden.')); return; }
+      var H = r.health || {}, ops = H.ops || {}, U = r.users || {}, C = r.contact || {}, F = r.feedback || {}, I = F.ideas || {}, B = F.bugs || {}, K = r.content || {}, S2 = r.security || {}, M = r.mail || {};
+      var att = [];
+      if (ops.cron_overdue) att.push(['Der Cron-Job meldet sich seit ' + Math.round((ops.cron_minutes || 0) / 60 * 10) / 10 + ' Stunden nicht', function () { admTab('Sicherheit'); }, 'bad']);
+      if (ops.backup_overdue || ops.backup_error) att.push(['Datenbanksicherung überfällig oder fehlgeschlagen', function () { admTab('Sicherheit'); }, 'bad']);
+      if ((H.errors || []).length) att.push([pl((H.errors || []).length, 'Schnittstelle mit Fehlern', 'Schnittstellen mit Fehlern') + ' in 24 Stunden', function () { admTab('Sicherheit'); }, 'warn']);
+      if (B.urgent) att.push([pl(B.urgent, 'dringender Bug offen', 'dringende Bugs offen'), function () { toFb('bug', 'cur'); }, 'bad']);
+      if (U.waiting) att.push([pl(U.waiting, 'Konto wartet', 'Konten warten') + ' auf Freischaltung', function () { admTab('Nutzer'); }, 'warn']);
+      if (U.rename) att.push([pl(U.rename, 'Konto muss', 'Konten müssen') + ' den Namen ändern', function () { admTab('Nutzer'); }, 'info']);
+      if (C.unread) att.push([pl(C.unread, 'ungelesene Nachricht', 'ungelesene Nachrichten') + ' im Kontakt', function () { toSup(null); }, 'warn']);
+      if (C.notices_unread) att.push([pl(C.notices_unread, 'ungelesene Systemmeldung', 'ungelesene Systemmeldungen'), function () { toSup('sys'); }, 'info']);
+      if (I.waiting) att.push([pl(I.waiting, 'Idee wartet', 'Ideen warten') + ' auf Freigabe', function () { toFb('feature', 'rel'); }, 'warn']);
+      if (B.waiting) att.push([pl(B.waiting, 'Bugmeldung wartet', 'Bugmeldungen warten') + ' auf Freigabe', function () { toFb('bug', 'rel'); }, 'warn']);
+      if (K.wishes_open) att.push([pl(K.wishes_open, 'Wunschbild offen', 'Wunschbilder offen'), function () { admTab('Nutzer'); }, 'info']);
+      if (U.exit_pending) att.push([pl(U.exit_pending, 'Konto steht', 'Konten stehen') + ' zur Löschung an', function () { admTab('Nutzer'); }, 'info']);
+      var attBox = h('section', { class: 'brattn' }, h('h4', null, 'Braucht deine Aufmerksamkeit'));
+      if (!att.length) attBox.append(h('p', { class: 'hint', style: 'margin:0' }, 'Alles ruhig. Nichts wartet auf dich.'));
+      else attBox.append(h('ul', { class: 'brattl' }, att.map(function (a) { return h('li', { class: a[2] }, h('i', { 'aria-hidden': 'true' }), lnk(a[0], a[1])); })));
+      var lr = (H.last_run || [])[0];
+      var zust = card('Zustand der Seite', [
+        row('Letzter Cron-Lauf', ops.cron_minutes == null ? 'unbekannt' : 'vor ' + (ops.cron_minutes < 120 ? ops.cron_minutes + ' Min.' : Math.round(ops.cron_minutes / 60) + ' Std.'), null, ops.cron_overdue ? 'bad' : ''),
+        row('Cron-Läufe in 24 Std.', H.runs24, null),
+        row('Fehlgeschlagene Abrufe', H.fails24, function () { admTab('Sicherheit'); }, H.fails24 ? 'warn' : ''),
+        row('Vorzeitig beendete Läufe', H.early24, null, H.early24 ? 'warn' : ''),
+        row('Einträge älter als 12 Std.', H.stale, function () { admTab('Sicherheit'); }),
+        row('Datenbanksicherung', ops.backup_minutes == null ? 'keine' : 'vor ' + (ops.backup_minutes < 120 ? ops.backup_minutes + ' Min.' : Math.round(ops.backup_minutes / 60) + ' Std.'), null, (ops.backup_overdue || ops.backup_error) ? 'bad' : '')
+      ], (H.errors || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Schnittstellen mit Fehlern:'), h('ul', { class: 'brmini' }, H.errors.slice(0, 5).map(function (e) { return h('li', null, h('b', null, e.source), ' ', e.kind + (+e.http_code ? ' (' + e.http_code + ')' : ''), ' · ', pl(e.cnt, 'Mal', 'Mal'), ' · zuletzt ', hm(e.last_at)); }))) : null);
+      var nutz = card('Nutzer', [
+        row('Neue Anmeldungen', U.new24, function () { admTab('Nutzer'); }),
+        row('Aktiv in 24 Std.', U.active24, null),
+        row('Löschwünsche', U.exit_req24, function () { admTab('Nutzer'); }, U.exit_req24 ? 'warn' : ''),
+        row('Endgültig gelöscht', U.exits24, null),
+        row('Warten auf Freischaltung', U.waiting, function () { admTab('Nutzer'); }, U.waiting ? 'warn' : ''),
+        row('Nutzer insgesamt', U.total, null)
+      ], (U.new_list || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Neu dabei:'), h('ul', { class: 'brmini' }, U.new_list.map(function (x) { return h('li', null, lnk(x.name, function () { admTab('Nutzer'); }), ' · ', fmt(x.created_at), x.approved_at ? '' : ' · wartet'); }))) : null);
+      var kont = card('Kontakt und Systemmeldungen', [
+        row('Neue Nachrichten von Nutzern', C.new24, function () { toSup(null); }),
+        row('Von Personen', C.senders24, null),
+        row('Ungelesen insgesamt', C.unread, function () { toSup(null); }, C.unread ? 'warn' : ''),
+        row('Systemmeldungen in 24 Std.', (C.notices24 || []).length, function () { toSup('sys'); }),
+        row('Ungelesene Systemmeldungen', C.notices_unread, function () { toSup('sys'); })
+      ], (C.notices24 || []).length ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, C.notices24.slice(0, 4).map(function (n) { return h('li', null, lnk(String(n.body).slice(0, 90) + (String(n.body).length > 90 ? ' …' : ''), function () { toSup('sys'); }), ' · ', hm(n.created_at)); }))) : null);
+      var ideen = card('Ideen und Bugs', [
+        row('Neue Ideen', I.new24, function () { toFb('feature', 'cur'); }),
+        row('Neue Bugmeldungen', B.new24, function () { toFb('bug', 'cur'); }),
+        row('Warten auf Freigabe (Ideen / Bugs)', (I.waiting || 0) + ' / ' + (B.waiting || 0), (I.waiting || B.waiting) ? function () { if (I.waiting) toFb('feature', 'rel'); else toFb('bug', 'rel'); } : null, (I.waiting || B.waiting) ? 'warn' : ''),
+        row('Dringende Bugs offen', B.urgent, function () { toFb('bug', 'cur'); }, B.urgent ? 'bad' : ''),
+        row('Offen (Ideen / Bugs)', (I.open || 0) + ' / ' + (B.open || 0), null),
+        row('Kommentare in 24 Std.', F.comments24, null),
+        row('Zurückgezogen (Ideen / Bugs)', (I.withdrawn24 || 0) + ' / ' + (B.withdrawn24 || 0), null)
+      ], ((I.titles || []).length || (B.titles || []).length) ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, (I.titles || []).map(function (x) { return h('li', null, 'Idee: ', lnk(x.title, function () { toFb('feature', 'rel'); })); }).concat((B.titles || []).map(function (x) { return h('li', null, 'Bug: ', lnk(x.title, function () { toFb('bug', 'rel'); })); })))) : null);
+      var ents = {}; (K.entries24 || []).forEach(function (x) { ents[x.type] = +x.n; });
+      var total = 0; Object.keys(ents).forEach(function (k) { total += ents[k]; });
+      var inh = card('Neue Einträge in den Listen', Object.keys(TL).map(function (k) { return row(TL[k], ents[k] || 0, null); }).concat([row('Zusammen', total, null, 'sum'), row('Offene Wunschbilder', K.wishes_open, function () { admTab('Nutzer'); })]),
+        (K.top || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Am häufigsten neu hinzugefügt:'), h('ul', { class: 'brmini' }, K.top.map(function (x) { return h('li', null, h('b', null, x.name), ' (', TL[x.type] || x.type, ') · ', pl(x.n, 'Nutzer', 'Nutzer')); }))) : null);
+      var mails = {}, mt = 0; ((M.sent24) || []).forEach(function (x) { mails[x.kind] = +x.n; mt += +x.n; });
+      var mail = card('Benachrichtigungen per Mail', Object.keys(ML).map(function (k) { return row(ML[k], mails[k] || 0, null); }).concat([row('Zusammen', mt, null, 'sum')]));
+      var sic = card('Sicherheit', [
+        row('Fehlgeschlagene Anmeldungen', S2.failed24, null, S2.failed24 > 20 ? 'warn' : ''),
+        row('Davon verschiedene Adressen', S2.ips24, null, S2.ips24 > 10 ? 'warn' : ''),
+        row('Registrierungsversuche', S2.register24, null),
+        row('Wiederherstellungsversuche', S2.recover24, null),
+        row('Neu gesperrte E-Mail-Adressen', S2.blocked, function () { admTab('Nutzer'); }),
+        row('Admin-Aktionen im Protokoll', (S2.admin_log || []).length, function () { admTab('Sicherheit'); })
+      ], (S2.admin_log || []).length ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, S2.admin_log.slice(0, 5).map(function (l) { return h('li', null, hm(l.created_at), ' · ', ACT[l.action] || l.action, l.target ? ' · ' + l.target : ''); }))) : null);
+      var cardsAll = [r.health ? zust : null, nutz, kont, ideen, inh, mail, r.security ? sic : null].filter(Boolean);
+      out.append(h('p', { class: 'hint brstamp' }, 'Stand ' + String(r.now || '').slice(8, 10) + '.' + String(r.now || '').slice(5, 7) + '. ' + hm(r.now) + ' Uhr · Zeitraum: die letzten 24 Stunden · Namen sind die Benutzernamen, E-Mail-Adressen erscheinen hier nie.'), attBox, h('div', { class: 'brgrid' }, cardsAll));
+    }
+    function load() { out.textContent = ''; out.append(h('p', { class: 'state pulse' }, 'Lade …')); api('/api/admin.php?a=briefing').then(draw); }
+    box.append(h('div', { class: 'brtop' }, h('p', { class: 'hint', style: 'margin:0' }, 'Die wichtigsten Zahlen der letzten 24 Stunden auf einen Blick.'), h('button', { class: 'btn ghost small', type: 'button', onclick: load }, 'Aktualisieren')), out);
+    box.load = load; return box;
+  }
   function admin() {
     var admBadge = null;
+    function CAN(k) { return !!D.admin || (D.admsec || []).indexOf(k) > -1; }
+    var brBox = briefingBox();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Admin')), amz = h('div', { class: 'cfgpanel' }), msg = h('span', { class: 'msg', style: 'margin:0' });
     var tag = h('input', { type: 'text', maxlength: '64', placeholder: 'deinname-21', spellcheck: 'false', autocapitalize: 'off', value: S.site.tag || '' }), dom = h('select', null, ['amazon.de', 'amazon.fr', 'amazon.it', 'amazon.es', 'amazon.co.uk', 'amazon.com'].map(function (d) { return h('option', { value: d }, d); })); dom.value = S.site.domain || 'amazon.de';
     amz.append(h('label', { class: 'field' }, h('span', null, 'Amazon-Partner-ID (gilt für alle Nutzer)'), tag), 
@@ -1956,22 +2072,22 @@
     var anCb = h('input', { type: 'checkbox' }), anMsg = h('span', { class: 'msg', style: 'margin:0' });
     api('/api/admin.php?a=anon_get').then(function (r) { anCb.checked = !!r.enabled; });
     anCb.addEventListener('change', function () { anMsg.className = 'msg'; anMsg.textContent = '…'; api('/api/admin.php?a=anon_set', { on: anCb.checked }).then(function (r) { if (!r.ok) { anCb.checked = !anCb.checked; anMsg.className = 'msg err'; anMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } anMsg.textContent = anCb.checked ? 'Gespeichert: Registrierung ohne E-Mail-Adresse ist möglich.' : 'Gespeichert: Neue Konten brauchen eine E-Mail-Adresse. Bestehende Konten ohne Adresse funktionieren weiter.'; }); });
-    var permBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Hier legst du fest, was Nutzer und Alphatester dürfen. Admins dürfen immer alles. Alphatester haben mindestens die Rechte der Nutzer. Änderungen gelten sofort, die Nutzer sehen sie nach dem nächsten Laden der Seite.')), permMsg = h('p', { class: 'msg', role: 'status' });
+    var permBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Hier legst du fest, was Nutzer, Alphatester und Moderatoren dürfen. Admins dürfen immer alles. Jede Stufe hat mindestens die Rechte der darunter: Alphatester die der Nutzer, Moderatoren die der Alphatester. Moderatoren ernennst du in der Nutzerverwaltung. Änderungen gelten sofort, die Nutzer sehen sie nach dem nächsten Laden der Seite.')), permMsg = h('p', { class: 'msg', role: 'status' });
     function permPaint(rows) {
-      var FIX = [['Kalender, Listen, Einträge hinzufügen und Benachrichtigungen', 1, 1, 1], ['Community und ähnliche Vorschläge', 1, 1, 1], ['Ideen und Bugs einreichen (über den Kontakt), freigegebene Beiträge lesen, abstimmen, eigene zurückziehen', 1, 1, 1], ['Admin-Bereich: Nutzerverwaltung, Registrierung, Statistik, Systemnachrichten, Bilder, Amazon-ID, Protokoll, Diagnose, Alphatester ernennen', 0, 0, 1]];
-      var tb = h('table', { class: 'permtbl' }), hd = h('tr', null, h('th', null, 'Recht'), h('th', null, 'Nutzer'), h('th', null, 'Alphatester'), h('th', null, 'Admin'));
+      var FIX = [['Kalender, Listen, Einträge hinzufügen und Benachrichtigungen', 1, 1, 1, 1], ['Community und ähnliche Vorschläge', 1, 1, 1, 1], ['Ideen und Bugs einreichen (Knopf auf den Seiten Ideen und Bugs), freigegebene Beiträge lesen, abstimmen, eigene zurückziehen', 1, 1, 1, 1], ['Nur Admin: Registrierung und Freischaltung einstellen, Rechte der Nutzergruppen, Amazon-Partner-ID, Bilder der Anmeldeseite, Einladungen, Infomails und Testmail, Sicherheit (Deployment, Protokoll, Aktualisierung der Einträge), Alphatester und Moderatoren ernennen', 0, 0, 0, 1]];
+      var tb = h('table', { class: 'permtbl' }), hd = h('tr', null, h('th', null, 'Recht'), h('th', null, 'Nutzer'), h('th', null, 'Alphatester'), h('th', null, 'Moderator'), h('th', null, 'Admin'));
       tb.append(h('thead', null, hd)); var body = h('tbody');
       function mark(on) { return h('span', { class: 'permfix ' + (on ? 'on' : 'off'), 'aria-label': on ? 'Ja' : 'Nein' }, on ? '✓' : '–'); }
       var lastG = '';
-      function grp(t) { body.append(h('tr', { class: 'permgrp' }, h('td', { colspan: '4' }, t))); }
+      function grp(t) { body.append(h('tr', { class: 'permgrp' }, h('td', { colspan: '5' }, t))); }
       rows.forEach(function (r) {
-        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : r.key === 'devmode' ? 'Entwicklung' : (/^cat_/.test(r.key) || r.key === 'podcast') ? 'Kategorien: wer sieht sie?' : 'Einstellungen'; if (G !== lastG) { grp(G); lastG = G; }
-        function cb(g) { var ck = h('input', { type: 'checkbox', checked: !!r[g], disabled: g === 'alpha' && !!r.user, 'aria-label': r.label + ' – ' + (g === 'user' ? 'Nutzer' : 'Alphatester') });
+        var G = /^fb_/.test(r.key) ? 'Ideen und Bugs' : /^adm_/.test(r.key) ? 'Admin-Bereich (für Moderatoren)' : r.key === 'devmode' ? 'Entwicklung' : (/^cat_/.test(r.key) || r.key === 'podcast') ? 'Kategorien: wer sieht sie?' : 'Einstellungen'; if (G !== lastG) { grp(G); lastG = G; }
+        function cb(g) { var ck = h('input', { type: 'checkbox', checked: !!r[g], disabled: (g === 'alpha' && !!r.user) || (g === 'mod' && !!r.alpha), 'aria-label': r.label + ' – ' + (g === 'user' ? 'Nutzer' : g === 'alpha' ? 'Alphatester' : 'Moderator') });
           ck.addEventListener('change', function () { permMsg.className = 'msg'; permMsg.textContent = '…'; api('/api/admin.php?a=perms_set', { key: r.key, group: g, on: ck.checked }).then(function (x) { if (!x.ok) { permMsg.className = 'msg err'; permMsg.textContent = x.error || 'Das hat nicht geklappt.'; } else { permMsg.textContent = 'Gespeichert.'; } permLoad(); }); }); return ck; }
-        body.append(h('tr', null, h('td', null, h('div', null, r.label, r.state === 'soon' ? h('span', { class: 'permsoon' }, ' (noch ohne Funktion)') : null), h('div', { class: 'permhint' }, r.hint)), h('td', null, cb('user')), h('td', null, cb('alpha')), h('td', null, mark(true))));
+        body.append(h('tr', null, h('td', null, h('div', null, r.label, r.state === 'soon' ? h('span', { class: 'permsoon' }, ' (noch ohne Funktion)') : null), h('div', { class: 'permhint' }, r.hint)), h('td', null, cb('user')), h('td', null, cb('alpha')), h('td', null, cb('mod')), h('td', null, mark(true))));
       });
       grp('Für alle bzw. nur Admin (fest)');
-      FIX.forEach(function (f) { body.append(h('tr', { class: 'permfixrow' }, h('td', null, f[0]), h('td', null, mark(f[1])), h('td', null, mark(f[2])), h('td', null, mark(f[3])))); });
+      FIX.forEach(function (f) { body.append(h('tr', { class: 'permfixrow' }, h('td', null, f[0]), h('td', null, mark(f[1])), h('td', null, mark(f[2])), h('td', null, mark(f[3])), h('td', null, mark(f[4])))); });
       tb.append(body); permBox.querySelectorAll('.permwrap').forEach(function (n) { n.remove(); }); permBox.append(h('div', { class: 'permwrap' }, tb));
     }
     function permLoad() { api('/api/admin.php?a=perms_get').then(function (r) { if (r.rows) permPaint(r.rows); }); }
@@ -2012,7 +2128,7 @@
         }, function () { state.className = 'warnbox'; state.textContent = 'Die Vorschau konnte nicht geladen werden.'; });
       };
     })();
-    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Registrierung'), apBox, anBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Rechte der Nutzergruppen'), permBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Eintrag prüfen'), ecBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Aktualisierung der Einträge'), cs[0], cs[1], h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Infomails'), mailBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Wartende Konten (falls die manuelle Freischaltung an ist) siehst du hier zuerst. Beim Löschen verschwinden Konto und Liste.'));
+    p.append(amz, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Briefing'), devMark(brBox, 'briefing'), h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Bilder der Anmeldeseite'), gal, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Registrierung'), apBox, anBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Rechte der Nutzergruppen'), permBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Einladen'), invBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Systemnachrichten'), nwBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Eintrag prüfen'), ecBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Aktualisierung der Einträge'), cs[0], cs[1], h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Infomails'), mailBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Testmail'), tmBox, h('h3', { class: 'sec', style: 'font:700 18px var(--font-display);margin:22px 0 2px' }, 'Nutzerverwaltung'), h('p', { class: 'hint' }, 'Wartende Konten (falls die manuelle Freischaltung an ist) siehst du hier zuerst. Beim Löschen verschwinden Konto und Liste.'));
     var box = h('div', { class: 'adm' }), ulast = null, usearch = h('input', { type: 'search', maxlength: '40', placeholder: 'Suchen nach Nummer oder Benutzername', 'aria-label': 'Nutzer suchen', style: 'width:100%;max-width:360px;margin:8px 0', oninput: function () { paint(); } });
     p.append(usearch, box); mainEl.append(p);
     function users() { api('/api/admin.php?a=users').then(function (r) { ulast = r; S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; if (admBadge) { admBadge.textContent = S.pend + ' neu'; admBadge.hidden = !S.pend; } nav(); pendPaint(r.users); apLoad(); paint(); }); }
@@ -2024,9 +2140,9 @@
           var ok = x.role === 'admin' || x.approved_at, me = x.id == r.me;
           var hm = h('span', { class: 'hiddenmail' }), rev = h('button', { class: 'btn ghost small', type: 'button', title: 'E-Mail-Adresse aufdecken (wird protokolliert)', onclick: function () { var bt = this; if (!confirm('Adresse von ' + (x.username || 'Nr. ' + x.id) + ' wirklich anzeigen? Das wird protokolliert und sollte nur im Ausnahmefall (Missbrauch, Rechtsanfragen) nötig sein.')) return; api('/api/admin.php?a=reveal', { id: x.id }).then(function (r) { if (r.ok) { hm.textContent = ' · ' + r.email; hm.className = ''; bt.remove(); logLoad(); } else alert(r.error); }); } }, 'E-Mail anzeigen');
           box.append(h('div', { class: 'arow' }, h('div', null, h('div', { class: 'nm2' + (x.delete_requested_at ? ' gonename' : '') }, 'Nr. ' + x.id + ' · ', x.username ? h('span', { class: 'unm', title: (x.name_hist && x.name_hist.length) ? 'Letzte Namensänderungen:\n' + x.name_hist.map(function (q) { return new Date(String(q.at).replace(' ', 'T')).toLocaleDateString('de-DE') + ': ' + (q.from ? q.from + ' → ' : 'festgelegt: ') + q.to; }).join('\n') : 'Keine Namensänderung erfasst' }, x.username) : null, '' + (x.delete_requested_at ? (+x.admin_deleted ? ' · gelöscht, endgültig nach 7 Tagen' : ' · Löschung beantragt') : '') + (x.email ? ' · ' : ''), x.email ? x.email : (+x.no_email ? null : hm), +x.name_change_required ? h('span', { class: 'tier', style: 'background:#c0392b;color:#fff' }, 'Neuer Name verlangt') : null, x.role === 'admin' ? h('span', { class: 'tier' }, 'Admin') : null, +x.alpha ? h('span', { class: 'tier alpha' }, 'Alphatester') : null), h('div', { class: 'meta2' }, (ok ? 'freigeschaltet' : 'wartet auf Freischaltung') + (x.email_verified_at || +x.no_email ? '' : ' · E-Mail nicht bestätigt') + ' · ' + pl(x.entries, 'Eintrag', 'Einträge') + ' · zuletzt ' + (x.seen_label || (x.last_seen_at || '–').slice(0, 16)) + ' · seit ' + (x.created_at || '').slice(0, 10))),
-            me || x.role === 'admin' ? h('div') : h('div', { class: 'acts' }, x.email || +x.no_email ? null : rev, h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!+x.name_change_required), title: +x.name_change_required ? 'Aufforderung zurücknehmen' : 'Nutzer muss einen neuen Benutzernamen wählen, bevor er die Seite wieder nutzen kann', onclick: function () { var on = !+x.name_change_required; if (on && !confirm('Soll ' + (x.username || 'Nr. ' + x.id) + ' einen neuen Benutzernamen wählen müssen? Bis dahin kann der Nutzer die Seite nicht nutzen.')) return; api('/api/admin.php?a=renamereq', { id: x.id, on: on }).then(function (r) { if (r.ok) users(); else alert(r.error); }); } }, 'Namensänderung'),
-              h('button', { class: 'btn ghost small', type: 'button', title: (+x.alpha ? 'Alphatester: Alpha entziehen. ' : 'Kein Alphatester: zum Alphatester machen. ') + 'Alphatester sehen Funktionen, die noch in Entwicklung sind', 'aria-label': (+x.alpha ? 'Alphatester, aktiv' : 'Alphatester, nicht aktiv'), onclick: function () { api('/api/admin.php?a=alpha', { id: x.id, on: !+x.alpha }).then(function (r) { if (r.ok) users(); else alert(r.error); }); } }, h('span', { class: +x.alpha ? 'tick yes' : 'tick no', 'aria-hidden': 'true' }, +x.alpha ? '✓' : '✗'), ' Alphatester'), ok ? h('button', { class: 'btn ghost small', type: 'button', onclick: function () { act('revoke', x.id); } }, 'Sperren') : h('button', { class: 'btn small', type: 'button', onclick: function () { act('approve', x.id); } }, 'Freischalten'),
-              h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (!confirm('Konto samt Liste wirklich löschen?')) return; var blk = confirm('Soll diese E-Mail-Adresse auch für neue Konten gesperrt werden?\n\nOK = sperren, Abbrechen = nur löschen.'); api('/api/admin.php?a=delete', { id: x.id, block: blk }).then(function (r) { if (r.ok) { users(); blocked(); } else alert(r.error); }); } }, 'Löschen'))));
+            me || x.role === 'admin' ? h('div') : h('div', { class: 'acts' }, (x.email || +x.no_email || !CAN('adm_users_danger')) ? null : rev, h('button', { class: 'btn ghost small', type: 'button', 'aria-pressed': String(!!+x.name_change_required), title: +x.name_change_required ? 'Aufforderung zurücknehmen' : 'Nutzer muss einen neuen Benutzernamen wählen, bevor er die Seite wieder nutzen kann', onclick: function () { var on = !+x.name_change_required; if (on && !confirm('Soll ' + (x.username || 'Nr. ' + x.id) + ' einen neuen Benutzernamen wählen müssen? Bis dahin kann der Nutzer die Seite nicht nutzen.')) return; api('/api/admin.php?a=renamereq', { id: x.id, on: on }).then(function (r) { if (r.ok) users(); else alert(r.error); }); } }, 'Namensänderung'),
+              D.admin ? h('button', { class: 'btn ghost small', type: 'button', title: (+x.alpha ? 'Alphatester: Alpha entziehen. ' : 'Kein Alphatester: zum Alphatester machen. ') + 'Alphatester sehen Funktionen, die noch in Entwicklung sind', 'aria-label': (+x.alpha ? 'Alphatester, aktiv' : 'Alphatester, nicht aktiv'), onclick: function () { api('/api/admin.php?a=alpha', { id: x.id, on: !+x.alpha }).then(function (r) { if (r.ok) users(); else alert(r.error); }); } }, h('span', { class: +x.alpha ? 'tick yes' : 'tick no', 'aria-hidden': 'true' }, +x.alpha ? '✓' : '✗'), ' Alphatester') : null, D.admin ? h('button', { class: 'btn ghost small', type: 'button', title: (+x.moderator ? 'Moderator: Moderatorrechte entziehen. ' : 'Kein Moderator: zum Moderator machen. ') + 'Moderatoren dürfen die in „Rechte der Nutzergruppen“ freigegebenen Teile des Admin-Bereichs nutzen', 'aria-label': (+x.moderator ? 'Moderator, aktiv' : 'Moderator, nicht aktiv'), onclick: function () { api('/api/admin.php?a=moderator', { id: x.id, on: !+x.moderator }).then(function (r) { if (r.ok) users(); else alert(r.error); }); } }, h('span', { class: +x.moderator ? 'tick yes' : 'tick no', 'aria-hidden': 'true' }, +x.moderator ? '✓' : '✗'), ' Moderator') : null, ok ? (CAN('adm_users_danger') ? h('button', { class: 'btn ghost small', type: 'button', onclick: function () { act('revoke', x.id); } }, 'Sperren') : null) : h('button', { class: 'btn small', type: 'button', onclick: function () { act('approve', x.id); } }, 'Freischalten'),
+              !CAN('adm_users_danger') ? null : h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (!confirm('Konto samt Liste wirklich löschen?')) return; var blk = confirm('Soll diese E-Mail-Adresse auch für neue Konten gesperrt werden?\n\nOK = sperren, Abbrechen = nur löschen.'); api('/api/admin.php?a=delete', { id: x.id, block: blk }).then(function (r) { if (r.ok) { users(); blocked(); } else alert(r.error); }); } }, 'Löschen'))));
         });
     }
     function act(a, id) { api('/api/admin.php?a=' + a, { id: id }).then(function (r) { if (r.ok) users(); else alert(r.error); }); }
@@ -2153,15 +2269,22 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
-      var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Nutzer', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
+      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var OWN = { 'Briefing': 'adm_briefing', 'Nutzerverwaltung': 'adm_users', 'Wunschbilder': 'adm_users', 'Gesperrte E-Mail-Adressen': 'adm_users_danger', 'Statistik': 'adm_stats', 'Systemnachrichten': 'adm_news', 'News': 'adm_news', 'Eintrag prüfen': 'adm_tools' };
+      if (!D.admin) { // Moderatoren: nur die in der Rechtetabelle freigegebenen Kästen und Reiter
+        TABS = TABS.map(function (t) { return [t[0], t[1].filter(function (n) { return OWN[n] && CAN(OWN[n]); })]; }).filter(function (t) { return t[1].length; });
+        [].slice.call(p.querySelectorAll('.setstack>.setcard')).forEach(function (c) { var tt = c.querySelector('h3').textContent; if (!(OWN[tt] && CAN(OWN[tt]))) c.remove(); });
+      }
+      var cards = [].slice.call(p.querySelectorAll('.setstack>.setcard')), cur = 'Briefing', bar = h('div', { class: 'admtabs admnav', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
+      if (!TABS.some(function (t) { return t[0] === cur; })) cur = TABS[0][0];
       admBadge = h('span', { class: 'admbadge', hidden: true });
       var btns = TABS.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_admtab', cur); } catch (_) {} show(); } }, t[0]); if (t[0] === 'Nutzer') b.append(' ', admBadge); bar.append(b); return b; });
       function show() {
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Seitenadministration'; });
         if (cur === 'Infomails' && mailLoad) mailLoad();
+        if (cur === 'Briefing' && !brBox.done) { brBox.done = true; brBox.load(); }
       }
       var tl = TABS.filter(function (t) { return t[0] === 'Tools'; })[0][1].map(function (tt) { return cards.filter(function (c) { return c.querySelector('h3').textContent === tt; })[0]; }).filter(Boolean); // Tools: Karten in dieser Reihenfolge
       tl.forEach(function (c) { c.parentNode.appendChild(c); });
@@ -2230,7 +2353,7 @@
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
-      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!D.admin, feat: true, bug: true, news: !!(D.dev && D.news) };
+      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!(D.admin || (D.admsec || []).length), feat: true, bug: true, news: !!(D.dev && D.news) };
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
