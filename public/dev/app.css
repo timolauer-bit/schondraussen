@@ -853,4 +853,5 @@ hr.newshr{margin-inline:auto}
 .repform select.repcat{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit}
 .fbcat{display:inline-block;margin-left:8px;padding:1px 9px;border:1px solid var(--line);border-radius:99px;font:500 12px var(--font-body);color:var(--muted);vertical-align:middle;white-space:nowrap}
 
-.bub.sys{background:color-mix(in srgb,var(--accent-soft) 45%,var(--bg,#fff));border:1px dashed var(--line)}.bub.sys .syslbl{display:block;font-weight:700;font-size:12px;margin-bottom:2px;color:var(--muted)}
+.bub.sys{--lift:45%;background:color-mix(in srgb,var(--accent-soft),#fff var(--lift));border:1px dashed var(--line)}.bub.sys .syslbl{display:block;font-weight:700;font-size:12px;margin-bottom:2px}
+:root[data-skin=dark] .bub.sys,:root[data-skin=cinema] .bub.sys{--lift:14%}@media(prefers-color-scheme:dark){:root:not([data-skin]) .bub.sys{--lift:14%}}
