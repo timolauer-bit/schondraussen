@@ -131,6 +131,12 @@ function perm_defs(): array {
         'podcast' => ['Kategorie Podcasts', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [$pl, $pl], 'live'],
         'news' => ['Seite „News“ ansehen', 'Neuigkeiten zur Seite und zu Inhalten lesen (derzeit nur in der Entwicklungsversion sichtbar)', [1, 1], 'live'],
         'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen (Test)', [0, 0], 'live'],
+        'adm_briefing' => ['Admin-Bereich: Briefing', 'Lage der letzten 24 Stunden (Nutzer, Kontakt, Ideen und Bugs, neue Einträge, Mails); ohne die Bereiche Zustand der Seite und Sicherheit', [0, 0, 1], 'live'],
+        'adm_users' => ['Admin-Bereich: Nutzer betreuen', 'Nutzerliste sehen, Konten freischalten, Namenswechsel verlangen, Wunschbilder bearbeiten', [0, 0, 1], 'live'],
+        'adm_users_danger' => ['Admin-Bereich: Konten sperren und löschen', 'Freischaltung entziehen, Konten löschen, E-Mail-Adressen sperren oder aufdecken', [0, 0, 0], 'live'],
+        'adm_stats' => ['Admin-Bereich: Statistik', 'Nutzer- und Anmeldezahlen, Löschungen und Abmeldegründe (nur Zahlen)', [0, 0, 1], 'live'],
+        'adm_news' => ['Admin-Bereich: News und Systemnachrichten', 'News verfassen und Systemnachrichten an alle Nutzer schreiben', [0, 0, 1], 'live'],
+        'adm_tools' => ['Admin-Bereich: Eintrag prüfen', 'Diagnose, wie ein Eintrag gespeichert ist und wem er auf der Liste steht', [0, 0, 0], 'live'],
         'devmode' => ['Entwicklerversion nutzen', 'Schalter „Live/Dev“ neben dem Benutzernamen: neue Funktionen testen, bevor sie für alle freigegeben werden', [0, 1], 'live'],
     ];
 }
@@ -139,20 +145,29 @@ function perm_stored(): array {
     if ($st === null) { $st = []; try { $q = db()->prepare("SELECT v FROM site_settings WHERE k='perms'"); $q->execute(); $j = json_decode((string) $q->fetchColumn(), true); if (is_array($j)) $st = $j; } catch (Throwable $e) {} }
     return $st;
 }
-/** Wirksame Werte je Recht: ['user' => bool, 'alpha' => bool]. Alphatester haben mindestens die Rechte der Nutzer. */
+/** Wirksame Werte je Recht: user, alpha (Alphatester), mod (Moderatoren). Jede höhere Stufe hat mindestens die Rechte der niedrigeren. Admins dürfen immer alles. */
 function perm_values(): array {
     $st = perm_stored(); $o = [];
     foreach (perm_defs() as $k => $d) {
         $u = isset($st[$k]['user']) ? (bool) $st[$k]['user'] : (bool) $d[2][0];
         $a = isset($st[$k]['alpha']) ? (bool) $st[$k]['alpha'] : (bool) $d[2][1];
-        $o[$k] = ['user' => $u, 'alpha' => $a || $u];
+        $m = isset($st[$k]['mod']) ? (bool) $st[$k]['mod'] : (bool) ($d[2][2] ?? $d[2][1]);
+        $a = $a || $u; $m = $m || $a;
+        $o[$k] = ['user' => $u, 'alpha' => $a, 'mod' => $m];
     }
     return $o;
 }
+function is_mod(?array $u): bool { return $u && ($u['role'] ?? '') !== 'admin' && !empty($u['moderator']); }
 function perm(?array $u, string $k): bool {
     if (!$u) return false;
     if (($u['role'] ?? '') === 'admin') return true;
-    $v = perm_values(); return !empty($v[$k][!empty($u['alpha']) ? 'alpha' : 'user']);
+    $v = perm_values(); return !empty($v[$k][is_mod($u) ? 'mod' : (!empty($u['alpha']) ? 'alpha' : 'user')]);
+}
+/** Bereiche der Admin-Oberfläche, die dieses Konto nutzen darf (Moderatoren nach Rechtetabelle, Admins alle). */
+function adm_sections(?array $u): array {
+    if (!$u) return [];
+    $keys = ['adm_briefing', 'adm_users', 'adm_users_danger', 'adm_stats', 'adm_news', 'adm_tools'];
+    return ($u['role'] ?? '') === 'admin' ? $keys : array_values(array_filter($keys, fn($k) => is_mod($u) && perm($u, $k)));
 }
 /** Kurze Liste der Bereiche, in denen die Entwicklungsversion von der Live-Version abweicht (public/dev/changes.json, Texte wie „Serien → Seite einer einzelnen Serie“). */
 /** Design-Varianten zum Testen: public/designs/index.json + je Variante ein Ordner designs/<kennung>/ mit app.js und app.css. */

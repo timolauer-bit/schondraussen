@@ -5,8 +5,15 @@ require_once __DIR__ . '/../lib/mail.php';
 require_once __DIR__ . '/../lib/invite.php';
 if (!function_exists('valid_email')) { function valid_email(string $e): bool { return strlen($e) <= 190 && filter_var($e, FILTER_VALIDATE_EMAIL); } }
 $u = current_user();
-if (!$u || $u['role'] !== 'admin') json_out(['error' => 'Nicht erlaubt.'], 403);
+$isAdm = $u && $u['role'] === 'admin';
+if (!$u || (!$isAdm && !is_mod($u))) json_out(['error' => 'Nicht erlaubt.'], 403);
 $pdo = db(); $a = $_GET['a'] ?? ''; $b = body();
+if (!$isAdm) { // Moderatoren: nur die Aktionen, die in der Rechtetabelle freigegeben sind; alles andere ist Admin-Sache
+    $need = ['briefing' => 'adm_briefing', 'users' => 'adm_users', 'approve' => 'adm_users', 'renamereq' => 'adm_users', 'wishes' => 'adm_users', 'wish_upload' => 'adm_users', 'wish_decline' => 'adm_users',
+        'revoke' => 'adm_users_danger', 'delete' => 'adm_users_danger', 'block' => 'adm_users_danger', 'unblock' => 'adm_users_danger', 'blocked' => 'adm_users_danger', 'reveal' => 'adm_users_danger',
+        'stats' => 'adm_stats', 'news_list' => 'adm_news', 'news_create' => 'adm_news', 'news_delete' => 'adm_news', 'entry_check' => 'adm_tools'];
+    if (!isset($need[$a]) || !perm($u, $need[$a])) json_out(['error' => 'Dafür fehlt dir das Recht.'], 403);
+}
 if ($a === 'gh_status') { // Live-Anzeige der letzten GitHub-Actions-Läufe (Deploy)
     $tok = trim((string) cfg('github_token', '')); $repo = trim((string) cfg('github_repo', 'timolauer-bit/schondraussen'));
     if ($tok === '' || !preg_match('~^[\w.-]+/[\w.-]+$~', $repo)) json_out(['configured' => false]);
@@ -63,11 +70,11 @@ if ($a === 'users') {
     $cols = 'u.id,u.email,u.username,u.name_change_required,u.role,u.created_at,u.last_seen_at,u.email_verified_at,u.approved_at,u.delete_requested_at';
     $sql = " FROM users u ORDER BY (u.approved_at IS NULL AND u.role<>'admin') DESC, u.created_at DESC";
     $ent = ',(SELECT COUNT(*) FROM user_entries e WHERE e.user_id=u.id) AS entries';
-    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha,u.hide_email,u.hide_activity,u.admin_deleted' . $ent . $sql)->fetchAll(); }
-    catch (Throwable $e) {
+    try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha,u.moderator,u.hide_email,u.hide_activity,u.admin_deleted' . $ent . $sql)->fetchAll(); }
+    catch (Throwable $e0) { try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha,u.hide_email,u.hide_activity,u.admin_deleted' . $ent . $sql)->fetchAll(); } catch (Throwable $e) {
         try { $r = $pdo->query('SELECT ' . $cols . ',u.alpha' . $ent . $sql)->fetchAll(); }
         catch (Throwable $e2) { $r = $pdo->query('SELECT ' . str_replace('u.username,u.name_change_required,', '', $cols) . $ent . $sql)->fetchAll(); }
-    }
+    } }
     foreach ($r as &$x) {
         $x['no_email'] = $x['email'] === null || $x['email'] === '' ? 1 : 0;
         if ($x['role'] !== 'admin') { $x['email'] = null; $x['email_hidden'] = $x['no_email'] ? 0 : 1; } // Adressen sind für den Admin grundsätzlich ausgeblendet (Aufdecken nur einzeln und protokolliert)
@@ -200,6 +207,7 @@ if ($a === 'briefing') { // Morning-Briefing: Lage der Seite in den letzten 24 S
         'admin_log' => $qa("SELECT l.created_at, l.action, IFNULL(NULLIF(TRIM(t.username),''), IF(l.target_id IS NULL, '', CONCAT('User-', l.target_id))) AS target FROM admin_log l LEFT JOIN users t ON t.id=l.target_id WHERE l.created_at > NOW() - INTERVAL 24 HOUR ORDER BY l.id DESC LIMIT 10"),
         'blocked' => $q1('SELECT COUNT(*) FROM blocked_emails WHERE created_at > NOW() - INTERVAL 24 HOUR'),
     ];
+    if (!$isAdm) { $o['health'] = null; $o['security'] = null; } // Zustand der Seite und Sicherheit nur für Admins
     json_out($o);
 }
 if ($a === 'stats') { // Überblick ohne einzelne Konten: nur Zahlen
@@ -230,15 +238,16 @@ if ($a === 'stats') { // Überblick ohne einzelne Konten: nur Zahlen
 }
 if ($a === 'perms_get') {
     $v = perm_values(); $o = [];
-    foreach (perm_defs() as $k => $d) $o[] = ['key' => $k, 'label' => $d[0], 'hint' => $d[1], 'state' => $d[3], 'user' => $v[$k]['user'], 'alpha' => $v[$k]['alpha']];
+    foreach (perm_defs() as $k => $d) $o[] = ['key' => $k, 'label' => $d[0], 'hint' => $d[1], 'state' => $d[3], 'user' => $v[$k]['user'], 'alpha' => $v[$k]['alpha'], 'mod' => $v[$k]['mod']];
     json_out(['rows' => $o]);
 }
 if ($a === 'perms_set' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $k = (string) ($b['key'] ?? ''); $g = (string) ($b['group'] ?? '');
-    if (!isset(perm_defs()[$k]) || !in_array($g, ['user', 'alpha'], true)) json_out(['error' => 'Unbekanntes Recht.'], 422);
+    if (!isset(perm_defs()[$k]) || !in_array($g, ['user', 'alpha', 'mod'], true)) json_out(['error' => 'Unbekanntes Recht.'], 422);
     $st = perm_stored(); $cur = perm_values()[$k];
-    $row = ['user' => $cur['user'] ? 1 : 0, 'alpha' => $cur['alpha'] ? 1 : 0]; $row[$g] = !empty($b['on']) ? 1 : 0;
+    $row = ['user' => $cur['user'] ? 1 : 0, 'alpha' => $cur['alpha'] ? 1 : 0, 'mod' => $cur['mod'] ? 1 : 0]; $row[$g] = !empty($b['on']) ? 1 : 0;
     if ($row['user']) $row['alpha'] = 1; // Alphatester haben mindestens die Rechte der Nutzer
+    if ($row['alpha']) $row['mod'] = 1; // Moderatoren mindestens die der Alphatester
     $st[$k] = $row;
     $pdo->prepare('INSERT INTO site_settings (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)')->execute(['perms', json_encode($st)]);
     json_out(['ok' => true]);
@@ -365,6 +374,11 @@ if ($id === (int) $u['id']) json_out(['error' => 'Das eigene Konto kann hier nic
 if ($a === 'alpha') {
     try { $pdo->prepare("UPDATE users SET alpha=? WHERE id=? AND role<>'admin'")->execute([!empty($b['on']) ? 1 : 0, $id]); }
     catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
+if ($a === 'moderator') { // Moderator ernennen oder entziehen (nur Admin)
+    try { $pdo->prepare("UPDATE users SET moderator=? WHERE id=? AND role<>'admin'")->execute([!empty($b['on']) ? 1 : 0, $id]); }
+    catch (Throwable $e) { json_out(['error' => 'Datenbank noch nicht aktualisiert (Migration 075 einspielen).'], 500); }
     json_out(['ok' => true]);
 }
 if ($a === 'renamereq') {
