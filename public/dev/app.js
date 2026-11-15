@@ -1472,13 +1472,76 @@
     });
     d.append(effortSection());
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
-    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
+    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); tabs.push(['faq', 'FAQ']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
     function showTab(k) {
-      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'about' ? aboutPage() : d);
+      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'faq' ? faqPage() : k === 'about' ? aboutPage() : d);
       btns.forEach(function (b) { var on = b.k === k; b.el.className = 'admtab' + (on ? ' on' : ''); b.el.setAttribute('aria-selected', on ? 'true' : 'false'); });
     }
     tabs.forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); btns.push({ k: x[0], el: b }); bar.append(b); });
     mainEl.append(bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
+  }
+
+  /* ---------- FAQ (Info-Reiter) und FAQ-Verwaltung (Admin) ---------- */
+  function faqText(t) { // Absätze, Links (http/https) werden anklickbar
+    var box = h('div', { class: 'faqans' });
+    String(t || '').split(/\n+/).forEach(function (ln) {
+      if (!ln.trim()) return; var p = h('p', null), re = /https?:\/\/[^\s<>"']+/g, last = 0, m;
+      while ((m = re.exec(ln))) { var u = m[0].replace(/[.,;:!?)]+$/, ''); p.append(document.createTextNode(ln.slice(last, m.index)), h('a', { href: u, target: '_blank', rel: 'noopener noreferrer' }, u)); last = m.index + u.length; re.lastIndex = last; }
+      p.append(document.createTextNode(ln.slice(last))); box.append(p);
+    });
+    return box;
+  }
+  function faqPage() {
+    var P = devMark(h('section', { class: 'panel infopanel faqpanel' }, h('h2', { class: 'sec' }, 'FAQ')), 'faq'), list = h('div', null, h('p', { class: 'hint pulse' }, 'Lade …'));
+    var srch = h('input', { type: 'search', maxlength: '80', placeholder: 'In den Fragen suchen', 'aria-label': 'FAQ durchsuchen', style: 'max-width:420px' });
+    P.append(h('p', { class: 'hint' }, 'Antworten auf häufige Fragen. Fehlt dir etwas? Schreib uns über „Kontakt“ oder melde eine Idee.'), h('p', null, srch), list);
+    var topics = [];
+    function draw() {
+      var q = srch.value.trim().toLowerCase(), any = false; list.textContent = '';
+      topics.forEach(function (t) {
+        var its = t.items.filter(function (i) { return !q || (i.question + ' ' + i.answer).toLowerCase().indexOf(q) >= 0; });
+        if (!its.length) return; any = true;
+        var sec = h('section', { class: 'infosec faqsec' }, h('h3', null, t.title));
+        its.forEach(function (i) { var d = h('details', { class: 'faqitem' }, h('summary', null, i.question), faqText(i.answer)); if (q) d.open = true; sec.append(d); });
+        list.append(sec);
+      });
+      if (!any) list.append(h('p', { class: 'hint' }, topics.length ? 'Nichts gefunden. Versuche ein anderes Wort oder frage uns über „Kontakt“.' : 'Noch keine Einträge.'));
+    }
+    srch.addEventListener('input', draw);
+    api('/api/faq.php?a=list').then(function (r) { if (!r || r.error) { list.textContent = ''; list.append(h('p', { class: 'hint' }, (r && r.error) || 'Die FAQ ist gerade nicht verfügbar.')); return; } topics = r.topics || []; draw(); });
+    return P;
+  }
+  function faqAdmin() {
+    var box = devMark(h('div', { class: 'wide2 faqadm' }, h('p', { class: 'hint pulse' }, 'Lade …')), 'faqadm'), msg = h('p', { class: 'msg', role: 'status' }), topics = [], openForm = null;
+    function say(t, bad) { msg.className = 'msg' + (bad ? ' err' : ''); msg.textContent = t || ''; }
+    function call(act, data) { return api('/api/faq.php?a=' + act, data).then(function (r) { if (!r || !r.ok) { say((r && r.error) || 'Das hat nicht geklappt.', true); return r; } say(''); return load().then(function () { return r; }); }); }
+    function mv(kind, id, dir) { return h('span', { class: 'faqmv' }, h('button', { class: 'btn ghost small', type: 'button', title: 'Nach oben', 'aria-label': 'Nach oben', onclick: function () { call('move', { kind: kind, id: id, dir: -1 }); } }, '▲'), h('button', { class: 'btn ghost small', type: 'button', title: 'Nach unten', 'aria-label': 'Nach unten', onclick: function () { call('move', { kind: kind, id: id, dir: 1 }); } }, '▼')); }
+    function itemForm(item, tid) {
+      var sel = h('select', { 'aria-label': 'Themenbereich' }, topics.map(function (t) { return h('option', { value: String(t.id) }, t.title); })); sel.value = String(tid);
+      var qi = h('input', { type: 'text', maxlength: '240', value: item ? item.question : '', 'aria-label': 'Frage' }), an = h('textarea', { rows: '7', maxlength: '8000', 'aria-label': 'Antwort', style: 'width:100%;box-sizing:border-box' }, item ? item.answer : '');
+      return h('div', { class: 'faqform' }, h('label', { class: 'field' }, h('span', null, 'Themenbereich'), sel), h('label', { class: 'field' }, h('span', null, 'Frage'), qi), h('label', { class: 'field' }, h('span', null, 'Antwort (Absätze mit Leerzeile, Links einfach einfügen)'), an),
+        h('p', { style: 'display:flex;gap:8px;margin:8px 0 0' }, h('button', { class: 'btn small', type: 'button', onclick: function () { openForm = null; call('item_save', { id: item ? item.id : 0, topic_id: +sel.value, question: qi.value, answer: an.value }); } }, 'Speichern'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { openForm = null; draw(); } }, 'Abbrechen')));
+    }
+    function draw() {
+      box.textContent = ''; var add = h('input', { type: 'text', maxlength: '120', placeholder: 'Neuer Themenbereich', 'aria-label': 'Name des neuen Themenbereichs' });
+      box.append(h('p', { class: 'hint' }, 'Änderungen sind sofort für alle sichtbar, ohne Markierung. Reihenfolge mit den Pfeilen ändern; über „Bearbeiten“ kannst du einen Beitrag auch in einen anderen Themenbereich verschieben.'),
+        h('div', { class: 'inline' }, add, h('button', { class: 'btn small', type: 'button', onclick: function () { call('topic_save', { title: add.value }); } }, 'Themenbereich anlegen')), msg);
+      topics.forEach(function (t) {
+        var ti = h('input', { type: 'text', maxlength: '120', value: t.title, 'aria-label': 'Name des Themenbereichs' }), card = h('div', { class: 'faqtopic' });
+        card.append(h('div', { class: 'faqthead' }, ti, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { call('topic_save', { id: t.id, title: ti.value }); } }, 'Umbenennen'), mv('topic', t.id),
+          h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Den Themenbereich „' + t.title + '“ mit ' + t.items.length + ' Beitrag/Beiträgen löschen?')) call('topic_delete', { id: t.id }); } }, 'Löschen')));
+        t.items.forEach(function (i) {
+          var row = h('div', { class: 'faqitemrow' }, h('span', { class: 'faqq' }, i.question), h('span', { class: 'faqacts' }, mv('item', i.id),
+            h('button', { class: 'btn ghost small', type: 'button', onclick: function () { openForm = 'e' + i.id; draw(); } }, 'Bearbeiten'),
+            h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Den Beitrag „' + i.question + '“ löschen?')) call('item_delete', { id: i.id }); } }, 'Löschen')));
+          card.append(row); if (openForm === 'e' + i.id) card.append(itemForm(i, t.id));
+        });
+        if (openForm === 'n' + t.id) card.append(itemForm(null, t.id)); else card.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { openForm = 'n' + t.id; draw(); } }, '＋ Beitrag')));
+        box.append(card);
+      });
+    }
+    function load() { return api('/api/faq.php?a=list').then(function (r) { if (!r || r.error) { box.textContent = ''; box.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; } topics = r.topics || []; draw(); }); }
+    load(); return box;
   }
   /* ---------- Über mich (Info-Reiter, für alle) ---------- */
   var ABOUT_PUBLIC = true;
@@ -2248,6 +2311,7 @@
       load();
     })();
     p.append(h('h3', { class: 'sec' }, 'News'), newsAdm);
+    if (D.admin) p.append(h('h3', { class: 'sec' }, 'FAQ'), faqAdmin());
 
     var tickGh = function () {}, ghBox = h('div', { class: 'wide2 ghbox' }, h('p', { class: 'state pulse' }, 'Lade …'));
     (function () {
@@ -2276,7 +2340,7 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['FAQ', ['FAQ']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
       var OWN = { 'Briefing': 'adm_briefing', 'Nutzerverwaltung': 'adm_users', 'Wunschbilder': 'adm_users', 'Gesperrte E-Mail-Adressen': 'adm_users_danger', 'Statistik': 'adm_stats', 'Systemnachrichten': 'adm_news', 'News': 'adm_news', 'Eintrag prüfen': 'adm_tools' };
       if (!D.admin) { // Moderatoren: nur die in der Rechtetabelle freigegebenen Kästen und Reiter
         TABS = TABS.map(function (t) { return [t[0], t[1].filter(function (n) { return OWN[n] && CAN(OWN[n]); })]; }).filter(function (t) { return t[1].length; });

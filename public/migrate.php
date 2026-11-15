@@ -7,6 +7,10 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+ '079_faq' => [
+  "CREATE TABLE IF NOT EXISTS faq_topics (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(120) NOT NULL, pos INT NOT NULL DEFAULT 0) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+  "CREATE TABLE IF NOT EXISTS faq_items (id INT AUTO_INCREMENT PRIMARY KEY, topic_id INT NOT NULL, question VARCHAR(240) NOT NULL, answer TEXT NOT NULL, pos INT NOT NULL DEFAULT 0, KEY (topic_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+ ],
  '078_ical_cats' => [
   "ALTER TABLE users ADD COLUMN ical_cats VARCHAR(60) NULL",
  ],
@@ -429,5 +433,53 @@ if (!$q->fetch()) {
     }
     $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute(['016_site_images_seed']);
     echo "eingespielt: 016_site_images_seed\n";
+}
+
+// FAQ: erste Fragen und Antworten einmalig anlegen (danach im Admin-Bereich unter „FAQ“ bearbeiten)
+$q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute(['079_faq_seed']);
+if (!$q->fetch()) {
+    try {
+        $F = [
+         'Los geht’s' => [
+          ['Was ist Schondraussen.de?', "Eine Seite, die dir sagt, wann es Neues von deinen Lieblings-Autor:innen, Musiker:innen, Serien, Filmen und Podcasts gibt. Du legst fest, wem du folgst, und die Seite zeigt Termine im Kalender und informiert dich per Mail.\nSie ist kostenlos und werbefrei."],
+          ['Brauche ich eine E-Mail-Adresse?', "Nein. Du kannst dich nur mit Benutzername und Passwort anmelden. Ohne E-Mail bekommst du aber keine Benachrichtigungs-Mails, und beim Passwort-Zurücksetzen hilft dir nur dein Wiederherstellungscode. Notiere ihn dir gut: Er wird nur einmal angezeigt.\nDie E-Mail-Adresse kannst du jederzeit unter Einstellungen → Daten nachtragen."],
+          ['Wie füge ich etwas hinzu?', "Wähle oben eine Kategorie, tippe in „Neu hinzufügen“ einen Namen ein und drücke Enter oder „Suchen“. Wähle dann den passenden Treffer aus.\nSchon beim Tippen siehst du Treffer, die es auf der Seite schon gibt. Passt keiner, sucht Enter im Netz."],
+          ['Ich finde meinen Titel nicht. Was kann ich tun?', "Probiere eine andere Schreibweise oder den Originaltitel, bei Serien zum Beispiel den englischen Namen. Bei Büchern kannst du auch nach dem Buchtitel oder der Reihe suchen. Mit „trotzdem so hinzufügen“ legst du den Eintrag so an, wie du ihn eingegeben hast. Bei bereits angelegten Serien hilft im Menü des Eintrags „Treffer ändern“."],
+          ['Woher kommen die Daten?', "Bücher von Open Library, Musik von MusicBrainz, Serien von TVmaze und Podcasts über Apple. Für Filme wird die Datenquelle noch angebunden. Die Angaben können Lücken haben. Alle Quellen findest du auf der Info-Seite."],
+         ],
+         'Kalender und Benachrichtigungen' => [
+          ['Wie funktioniert die Glocke?', "Mails bekommst du nur zu Einträgen, bei denen die Glocke an ist. Sie sitzt im Kopf jedes Eintrags. Unter Einstellungen → Optik/Optionen kannst du festlegen, ob neue Einträge standardmäßig eine Glocke bekommen."],
+          ['Wann bekomme ich Mails und wie stelle ich sie ein?', "Unter Einstellungen → Optik/Optionen → E-Mail-Benachrichtigungen. Dort wählst du, ob du morgens bei Neuem informiert wirst, am Erscheinungstag und/oder mit einer Wochenübersicht, und ob als Sammelmail oder sofort. Mit „Vorschau-Mail an mich senden“ siehst du, wie eine Mail aussieht."],
+          ['Wie abonniere ich den Kalender auf dem Handy?', "Unter Einstellungen → Optik/Optionen → Kalender-Abo erzeugst du einen privaten Link und öffnest ihn in deiner Kalender-App (Google, Apple, Outlook, Thunderbird). Der Kalender aktualisiert sich dann selbst, in der Regel nach einigen Stunden.\nGib den Link nicht weiter: Wer ihn kennt, sieht deine Termine."],
+          ['Kann ich im Kalender-Abo nur bestimmte Kategorien anzeigen?', "Ja. Unter Kalender-Abo wählst du die Kategorien, die im Abo erscheinen sollen. Die Auswahl gilt nur für das Abo."],
+          ['Wie blende ich Kategorien aus, die ich nicht nutze?', "Unter Einstellungen → Optik/Optionen → Oberflächenanpassungen. Ausgeblendete Kategorien verschwinden aus Menü, Kalender und Mails. Deine Einträge bleiben gespeichert, und in der Community siehst du weiterhin alle Kategorien."],
+          ['Wie oft werden die Termine aktualisiert?', "Automatisch alle 12 Stunden. Termine ohne genaues Datum erscheinen nicht im Kalender-Abo."],
+         ],
+         'Listen und Einträge' => [
+          ['Wie markiere ich etwas als gesehen, gehört oder gelesen?', "Bei Serien gibt es „Staffel als gesehen markieren“ und „Alles als gesehen markieren“. Bei Musik, Podcasts und Büchern gibt es „Alles gehört“ bzw. „Alles gelesen“. Ein zweiter Klick setzt zurück."],
+          ['Kann ich eine Liste importieren?', "Ja, unter Einstellungen → Daten → Import. Eingelesen werden unter anderem IMDb-Exporte (CSV). Filme und Serien landen dabei automatisch in der passenden Liste."],
+          ['Wie viele Einträge passen in eine Liste?', "Pro Liste (Bücher, Musik, Filme, Serien) bis zu 1.000 Einträge."],
+          ['Kann ich meine Daten exportieren?', "Ja, unter Einstellungen → Profil → Meine Daten als JSON (alle Daten) oder als CSV (nur die Liste)."],
+         ],
+         'Community' => [
+          ['Was sehen andere von mir?', "Nur, was du freigibst: Wenn du der Nutzung deiner Einträge für die Community zustimmst, sehen andere deinen Benutzernamen und deine Listen und können Einträge übernehmen. Die Einstellung findest du unter Einstellungen → Profil. Ohne Zustimmung bleiben deine Details verborgen."],
+         ],
+         'Konto und Datenschutz' => [
+          ['Ich habe mein Passwort vergessen.', "Auf der Anmeldeseite unter „Passwort vergessen“. Dort kannst du dein Passwort mit deinem Wiederherstellungscode zurücksetzen, oder per Mail, wenn du eine E-Mail-Adresse hinterlegt hast."],
+          ['Kann ich meinen Benutzernamen ändern?', "Ja, unter Einstellungen → Profil → Benutzername, alle 30 Tage. Direkt nach dem Ändern kannst du einen Tippfehler kurz noch einmal korrigieren."],
+          ['Wie lösche ich mein Konto?', "Unter Einstellungen → Datenschutz → Konto löschen. Deine Daten bleiben noch eine Woche gespeichert, falls du es dir anders überlegst. Danach werden sie endgültig gelöscht."],
+          ['Was sieht der Admin von mir?', "Deinen Benutzernamen, deine Mitgliedsnummer und die Zahl deiner Einträge. Was genau, kannst du unter Einstellungen → Datenschutz nachlesen. Mehr dazu steht in der Datenschutzerklärung."],
+         ],
+         'Ideen, Fehler und Kontakt' => [
+          ['Wie melde ich eine Idee oder einen Fehler?', "Unter „Ideen“ bzw. „Bugs“ gibt es oben rechts den Reiter „Idee melden“ bzw. „Bug melden“. Das Team schaut sich deine Meldung an, und nach der Freigabe erscheint sie in der Liste. Unter „Freischaltungen“ siehst du deine eigenen Beiträge, die noch warten."],
+          ['Wie erreiche ich den Betreiber direkt?', "Über die Seite „Kontakt“: Dort kannst du eine Nachricht schreiben."],
+         ],
+        ];
+        $pdo->exec('DELETE FROM faq_items'); $pdo->exec('DELETE FROM faq_topics');
+        $ti = $pdo->prepare('INSERT INTO faq_topics (title,pos) VALUES (?,?)'); $ii = $pdo->prepare('INSERT INTO faq_items (topic_id,question,answer,pos) VALUES (?,?,?,?)'); $tp = 0;
+        foreach ($F as $title => $items) { $ti->execute([$title, ++$tp]); $tid = (int) $pdo->lastInsertId(); foreach ($items as $k => $it) $ii->execute([$tid, $it[0], $it[1], $k + 1]); }
+        $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute(['079_faq_seed']);
+        echo "eingespielt: 079_faq_seed\n";
+    } catch (Throwable $e) { echo "Fehler bei 079_faq_seed: " . $e->getMessage() . "\n"; }
 }
 echo "Fertig.\n";
