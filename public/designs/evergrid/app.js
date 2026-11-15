@@ -782,7 +782,7 @@
     }
     draw(); return wrap;
   }
-  (function () { try { var qq = new URLSearchParams(location.search), mo = qq.get('mailok'); if (mo === '1' || mo === '0') { history.replaceState(null, '', location.pathname); setTimeout(function () { toast(mo === '1' ? 'Deine neue E-Mail-Adresse ist bestätigt.' : 'Der Bestätigungslink ist abgelaufen oder ungültig.'); }, 600); } } catch (_) {} })();
+  (function () { try { var qq = new URLSearchParams(location.search), mo = qq.get('mailok'), vf = qq.get('verified'), k = mo !== null ? mo : vf; if (k === '1' || k === '0') { history.replaceState(null, '', location.pathname); setTimeout(function () { toast(k === '1' ? (mo !== null ? 'Deine neue E-Mail-Adresse ist bestätigt.' : 'Deine E-Mail-Adresse ist bestätigt.') : 'Der Bestätigungslink ist abgelaufen oder ungültig.'); }, 600); } } catch (_) {} })();
   function settings() {
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Einstellungen'));
     var box = h('div', { class: 'cfgpanel' });

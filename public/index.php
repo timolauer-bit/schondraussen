@@ -56,6 +56,7 @@ button.ghost{margin:0;background:none;color:var(--ink);border:1px solid var(--li
 .d{display:inline-block;min-width:92px;color:var(--muted);font-size:13px}.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:1px 9px;font-size:12px;color:var(--muted);margin:0 4px 4px 0}
 h3{margin:18px 0 6px;font-size:15px}
 .pitch{margin:22px 0 6px}.pitch h2{font-size:20px;margin:0 0 6px}.pitch ul{padding-left:20px;margin:8px 0}.pitch li{margin:4px 0}.pitch .fine{color:var(--muted);font-size:14px}
+.okbox{background:#e6f4ea;border:1px solid #2e7d32;color:#14401a;border-radius:10px;padding:12px 14px;font-size:15px;margin-bottom:14px}@media(prefers-color-scheme:dark){.okbox{background:#16301b;border-color:#4caf50;color:#d6f2da}}
 .note{background:var(--bg);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}.row2{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.row2 button{margin:0}button.danger{color:#b62520;border-color:#b62520}
 main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 .land-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.7fr) minmax(0,.9fr);gap:20px;align-items:start;margin-top:20px}
@@ -220,8 +221,9 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   if (tok) show('f-reset');
   var inviteTok = q.get('invite') || '';
   if (inviteTok && !tok) { show('f-register'); say('Du wurdest eingeladen. Lege hier dein Konto an, es wird sofort freigeschaltet.'); }
-  if (q.get('verified') === '1') say('Deine Adresse ist bestätigt. Du kannst dich jetzt anmelden.');
-  if (q.get('mailok') === '1') say('Deine neue E-Mail-Adresse ist bestätigt. Du kannst dich jetzt damit anmelden.');
+  (function () { var ok = q.get('verified') === '1' ? ['E-Mail-Adresse bestätigt', 'Danke, deine Adresse ist bestätigt. Du kannst dich jetzt anmelden.'] : q.get('mailok') === '1' ? ['Neue E-Mail-Adresse bestätigt', 'Deine neue Adresse ist bestätigt. Du kannst dich jetzt damit anmelden.'] : null, host = document.querySelector('.land-login') || document.querySelector('.card'); if (!ok || !host) return;
+    var bx = document.createElement('div'); bx.className = 'okbox'; bx.setAttribute('role', 'status'); var bb = document.createElement('b'); bb.textContent = '✓ ' + ok[0]; bx.append(bb, document.createElement('br'), document.createTextNode(ok[1])); host.prepend(bx);
+    if (history.replaceState) history.replaceState(null, '', location.pathname); })();
   if (q.get('mailok') === '0') say('Der Bestätigungslink ist abgelaufen, ungültig oder die Adresse schon vergeben.', true);
   if (q.get('verified') === '0') say('Der Bestätigungslink ist abgelaufen oder ungültig.', true);
 
