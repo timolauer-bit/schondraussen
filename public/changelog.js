@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'B|Podcasts: Das Infofeld mit der Kurzfassung einer Folge erscheint wieder direkt am i-Knopf statt am linken Bildrand.',
     'O|Listen: Pro Liste (Bücher, Musik, Filme, Serien) passen jetzt bis zu 1.000 Einträge statt 100.',
     'U|Community: In der Ansicht einer Person werden die Listen in Seiten zu je 50 Einträgen gezeigt, mit „Zurück“ und „Weiter“.',
     'F|Listen importieren: IMDb-Exporte (CSV) werden erkannt. Filme und Serien landen automatisch in der richtigen Liste, Folgen und Spiele werden übersprungen.',

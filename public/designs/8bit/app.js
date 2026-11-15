@@ -128,7 +128,7 @@
     function show(on) { shown = on; box.hidden = !on; ib.setAttribute('aria-expanded', on ? 'true' : 'false'); }
     ib.addEventListener('click', function () { show(!shown); });
     if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
-    ttl.append(' ', ib); return h('div', null, ttl, box);
+    ttl.append(' ', ib); return h('div', { class: 'epcell' }, ttl, box);
   }
   function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon'); }
   function popup(title, text) { // Bestätigung als Fenster, schließt mit OK, Esc oder Klick daneben
