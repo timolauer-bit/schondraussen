@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 14, d: '15.11.2026', t: [
+    'O|Einstellungen: Deine eigene E-Mail-Adresse ist ausgeblendet und erscheint erst nach einem Klick auf „E-Mail-Adresse anzeigen“. Praktisch für Screenshots.',
     'B|Einstellungen → Daten: Das Feld „Neue E-Mail-Adresse“ wird vom Browser nicht mehr automatisch mit dem Benutzernamen gefüllt.',
     'U|Ideen und Bugs: Unter „Alle“ gibt es den neuen Filter „Meine“. Damit siehst du nur die Beiträge, die du selbst eingereicht hast.',
     'U|Ideen und Bugs: Auch normale Nutzer sehen jetzt den Reiter „Freischaltungen“. Dort stehen ihre eigenen Beiträge, die noch auf die Freigabe warten.',

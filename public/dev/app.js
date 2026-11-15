@@ -53,6 +53,11 @@
   var $ = function (id) { return document.getElementById(id); };
   var topbar = $('topbar'), mainEl = root, supTimer = null;
 
+  function hiddenMail(addr) {
+    var s = h('span', { class: 'hidmail' });
+    var b = h('button', { class: 'btn ghost small', type: 'button', title: 'Adresse nur auf Wunsch zeigen (zum Beispiel bei Screenshots)', onclick: function () { s.textContent = addr; } }, 'E-Mail-Adresse anzeigen');
+    s.append(b); return s;
+  }
   function h(tag, attrs) {
     var el = document.createElement(tag), k, v;
     attrs = attrs || {};
@@ -799,7 +804,7 @@
     function draw() {
       wrap.textContent = ''; wrap.append(h('p', { class: 'label' }, 'E-Mail-Adresse'));
       var ne = h('input', { type: 'email', maxlength: '190', placeholder: 'Neue E-Mail-Adresse', 'aria-label': 'Neue E-Mail-Adresse', autocomplete: 'off', name: 'neue-adresse', readonly: 'readonly', onfocus: function () { this.removeAttribute('readonly'); }, style: 'flex:1;min-width:200px' }), npw = h('input', { type: 'password', maxlength: '72', placeholder: 'Dein Passwort', 'aria-label': 'Passwort zur Bestätigung', autocomplete: 'current-password', style: 'flex:1;min-width:160px' }), m1 = h('p', { class: 'msg', role: 'status' });
-      wrap.append(h('p', { class: 'hint' }, D.email ? 'Deine Adresse: ' + D.email + '. Eine neue Adresse gilt erst, wenn du den Link in der Bestätigungsmail anklickst. Bis dahin bleibt die alte aktiv.' : 'Dein Konto hat keine E-Mail-Adresse. Du kannst eine hinzufügen, zum Beispiel für Benachrichtigungen und zum Zurücksetzen des Passworts per Mail.'),
+      wrap.append(h('p', { class: 'hint' }, D.email ? ['Deine Adresse: ', hiddenMail(D.email), '. Eine neue Adresse gilt erst, wenn du den Link in der Bestätigungsmail anklickst. Bis dahin bleibt die alte aktiv.'] : 'Dein Konto hat keine E-Mail-Adresse. Du kannst eine hinzufügen, zum Beispiel für Benachrichtigungen und zum Zurücksetzen des Passworts per Mail.'),
         h('form', { class: 'inline', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); m1.className = 'msg'; m1.textContent = '…';
           api('/api/auth.php?a=email_change', { email: ne.value, password: npw.value }).then(function (r) { if (r.ok) { npw.value = ''; ne.value = ''; m1.textContent = r.message; } else { m1.className = 'msg err'; m1.textContent = r.error || 'Das hat nicht geklappt.'; } }); } },
           ne, npw, h('button', { class: 'btn', type: 'submit' }, D.email ? 'Adresse ändern' : 'Adresse hinzufügen')), m1);
@@ -825,7 +830,7 @@
   function settings() {
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Einstellungen'));
     var box = h('div', { class: 'cfgpanel' });
-    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Angemeldet als'), h('p', { style: 'margin:0' }, (D.email || (D.username ? D.username + ' (ohne E-Mail-Adresse)' : 'ohne E-Mail-Adresse')) + ' · Nr. ' + D.id + (isAdm() ? ' · Admin' : '') + (!D.admin && D.alpha ? ' · Alphatester' : ''))));
+    box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Angemeldet als'), h('p', { style: 'margin:0' }, D.email ? [D.username ? D.username + ' · ' : '', hiddenMail(D.email)] : (D.username ? D.username + ' (ohne E-Mail-Adresse)' : 'ohne E-Mail-Adresse'), ' · Nr. ' + D.id + (isAdm() ? ' · Admin' : '') + (!D.admin && D.alpha ? ' · Alphatester' : ''))));
     var un = h('input', { type: 'text', value: D.username || '', maxlength: '20', 'aria-label': 'Benutzername', autocomplete: 'off' }), unMsg = h('p', { class: 'msg', role: 'status' }), unLeft = unFree() ? 0 : (+D.uname_left || 0);
     if (unLeft) un.disabled = true;
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Benutzername'),
