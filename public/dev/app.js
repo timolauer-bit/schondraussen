@@ -1610,9 +1610,8 @@
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && (admin || kindSel === 'chat')) { ev.preventDefault(); send(); } });
     function fmtChat(t) { try { var d = new Date(t.replace(' ', 'T')), now = new Date(), hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === now.toDateString() ? hm : LONG.format(d).slice(0, 6) + ' ' + hm; } catch (_) { return ''; } }
     function drawThreads() {
-      threads.textContent = ''; if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.')); var lastG = null;
+      threads.textContent = ''; if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick); if (!S.sup.threads.length) threads.append(h('p', { class: 'hint' }, 'Noch keine Nachrichten.')); var lastG = null;
       S.sup.threads.forEach(function (t) { var g = t.id === 'team' ? 'Team' : (admin ? 'Nutzer' : (t.id === 'me' ? 'Administrator' : 'Direkt')); if (g !== lastG) { threads.append(h('p', { class: 'thgrp' }, g)); lastG = g; } threads.append(h('button', { class: 'thr', type: 'button', 'aria-current': String(S.sup.sel == t.id), onclick: function () { S.sup.sel = t.id; drawThreads(); pull(); } }, h('span', { class: 't1' }, h('span', null, t.username || ('Mitglied Nr. ' + t.id)), +t.unread > 0 ? h('span', { class: 'badge' }, String(t.unread)) : null), h('span', { class: 't2' }, (+t.last_admin ? 'Du: ' : '') + (t.last_body || '')))); });
-      if (admin) threads.append(pick); else if (staff && dmPeers.length) threads.append(dmPick);
     }
     function pull() {
       var go2 = function () {
