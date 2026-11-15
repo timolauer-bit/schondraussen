@@ -21,10 +21,10 @@ function link_mail(PDO $pdo, int $uid, string $email, string $kind): void {
     $base = rtrim(cfg('base_url', 'https://schondraussen.de'), '/');
     if ($kind === 'verify') {
         send_mail($email, 'Bitte bestätige deine E-Mail-Adresse',
-            "Willkommen bei Schondraussen.de!\n\nBitte bestätige deine Adresse mit diesem Link (24 Stunden gültig):\n$base/api/auth.php?a=verify&t=$t\n\nWenn du dich nicht angemeldet hast, kannst du diese Mail ignorieren.\n");
+            "Willkommen bei Schondraussen.de!\n\nBitte bestätige deine Adresse mit einem Klick (der Link ist 24 Stunden gültig):\n\n[[E-Mail-Adresse bestätigen|$base/api/auth.php?a=verify&t=$t]]\n\nWenn du dich nicht angemeldet hast, kannst du diese Mail ignorieren.\n");
     } else {
         send_mail($email, 'Passwort zurücksetzen',
-            "Du hast ein neues Passwort angefordert. Der Link ist eine Stunde gültig:\n$base/?reset=$t\n\nWenn du das nicht warst, kannst du diese Mail ignorieren.\n");
+            "Du hast ein neues Passwort angefordert. Der Link ist eine Stunde gültig:\n\n[[Neues Passwort festlegen|$base/?reset=$t]]\n\nWenn du das nicht warst, kannst du diese Mail ignorieren.\n");
     }
 }
 
@@ -129,7 +129,7 @@ try {
                 $pdo->prepare("INSERT INTO email_tokens (user_id,kind,token_hash,payload,expires_at) VALUES (?,'newmail',?,?,NOW() + INTERVAL 24 HOUR)")->execute([$cu['id'], $h, $new]);
             } catch (Throwable $e) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
             $base = rtrim(cfg('base_url', 'https://schondraussen.de'), '/');
-            send_mail($new, 'Bitte bestätige deine neue E-Mail-Adresse', "Du möchtest bei Schondraussen.de diese Adresse für dein Konto verwenden. Bestätige sie mit diesem Link (24 Stunden gültig):\n$base/api/auth.php?a=emailconfirm&t=$t\n\nWenn du das nicht warst, kannst du diese Mail ignorieren, dann ändert sich nichts.\n");
+            send_mail($new, 'Bitte bestätige deine neue E-Mail-Adresse', "Du möchtest bei Schondraussen.de diese Adresse für dein Konto verwenden. Bestätige sie mit einem Klick (der Link ist 24 Stunden gültig):\n\n[[Neue E-Mail-Adresse bestätigen|$base/api/auth.php?a=emailconfirm&t=$t]]\n\nWenn du das nicht warst, kannst du diese Mail ignorieren, dann ändert sich nichts.\n");
             if (!empty($row['email'])) { try { send_mail($row['email'], 'Änderung deiner E-Mail-Adresse beantragt', "Für dein Konto bei Schondraussen.de wurde eine neue E-Mail-Adresse beantragt. Solange sie nicht bestätigt ist, bleibt diese Adresse aktiv.\n\nWar das nicht deine Absicht, ändere bitte dein Passwort.\n"); } catch (Throwable $e) {} }
         }
         json_out(['ok' => true, 'message' => 'Wir haben einen Bestätigungslink an die neue Adresse geschickt, sofern sie nutzbar ist. Bis du ihn anklickst, bleibt die bisherige Adresse aktiv.']);

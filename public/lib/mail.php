@@ -17,6 +17,7 @@ function mail_html(string $text): string {
             $t = $m[1]; $src = ''; if (preg_match('/^(.*) \(([^()]+)\)$/u', $t, $q)) { $t = $q[1]; $src = $q[2]; }
             $o[] = '<div style="margin:2px 0 0 14px;font-size:14px">Presse: ' . $link($u[1], $t) . ($src !== '' ? ' <span style="color:#777">(' . $e($src) . ')</span>' : '') . '</div>'; $i++; continue;
         }
+        if (preg_match('~^\[\[(.+)\|(https?://\S+)\]\]$~u', $l, $m)) { $o[] = '<div style="margin:16px 0"><a href="' . $e($m[2]) . '" style="display:inline-block;background:#a23f1c;color:#fff;text-decoration:none;font-weight:600;padding:11px 20px;border-radius:8px">' . $e($m[1]) . '</a></div>'; continue; }
         if ($l === '--') { $o[] = '<hr style="border:0;border-top:1px solid #ddd;margin:22px 0 8px">'; continue; }
         if (preg_match('~^Keine Mails mehr: (https?://\S+)$~', $l, $m)) { $o[] = '<div style="margin:8px 0 0;font-size:13px;color:#555">Keine Mails mehr: ' . $link($m[1], 'abmelden') . '</div>'; continue; }
         if (preg_match('/^[A-ZÄÖÜ][A-ZÄÖÜ \-]{3,}$/u', $l)) { $o[] = '<h3 style="margin:20px 0 4px;font-size:13px;letter-spacing:.06em;color:#a23f1c">' . $e($l) . '</h3>'; continue; }
@@ -43,7 +44,8 @@ function send_mail(string $to, string $subject, string $text, array $extra = [])
     $headers[] = 'Content-Type: multipart/alternative; boundary="' . $b . '"';
     $hasReply = false; foreach ($extra as $h) { $headers[] = $h; if (stripos($h, 'Reply-To:') === 0) $hasReply = true; }
     if (!$hasReply) $headers[] = 'Reply-To: ' . $from;
+    $plain = preg_replace('~^\[\[(.+)\|(https?://\S+)\]\]$~mu', '$2', $text);
     $part = fn($type, $body) => "--$b\r\nContent-Type: $type; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($body));
-    $body = $part('text/plain', $text) . $part('text/html', mail_html($text)) . "--$b--\r\n";
+    $body = $part('text/plain', $plain) . $part('text/html', mail_html($text)) . "--$b--\r\n";
     return mail($to, $enc($subject), $body, implode("\r\n", $headers), '-f' . $from);
 }
