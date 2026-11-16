@@ -2050,14 +2050,14 @@
         row('Endgültig gelöscht', U.exits24, null),
         row('Warten auf Freischaltung', U.waiting, function () { admTab('Nutzer'); }, U.waiting ? 'warn' : ''),
         row('Nutzer insgesamt', U.total, null)
-      ], (U.new_list || []).length ? h('div', { class: 'brsub' }, h('p', { class: 'hint' }, 'Neu dabei:'), h('ul', { class: 'brmini' }, U.new_list.map(function (x) { return h('li', null, lnk(x.name, function () { admTab('Nutzer'); }), ' · ', fmt(x.created_at), x.approved_at ? '' : ' · wartet'); }))) : null);
+      ]);
       var kont = card('Kontakt und Systemmeldungen', [
         row('Neue Nachrichten von Nutzern', C.new24, function () { toSup(null); }),
         row('Von Personen', C.senders24, null),
         row('Ungelesen insgesamt', C.unread, function () { toSup(null); }, C.unread ? 'warn' : ''),
         row('Systemmeldungen in 24 Std.', (C.notices24 || []).length, function () { toSup('sys'); }),
         row('Ungelesene Systemmeldungen', C.notices_unread, function () { toSup('sys'); })
-      ], (C.notices24 || []).length ? h('div', { class: 'brsub' }, h('ul', { class: 'brmini' }, C.notices24.slice(0, 4).map(function (n) { return h('li', null, lnk(String(n.body).slice(0, 90) + (String(n.body).length > 90 ? ' …' : ''), function () { toSup('sys'); }), ' · ', hm(n.created_at)); }))) : null);
+      ]);
       var ideen = card('Ideen und Bugs', [
         row('Neue Ideen', I.new24, function () { toFb('feature', 'cur'); }),
         row('Neue Bugmeldungen', B.new24, function () { toFb('bug', 'cur'); }),
