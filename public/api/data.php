@@ -26,6 +26,11 @@ if ($a === 'calinfo') {
     $cats = null; try { $c = $pdo->prepare('SELECT ical_cats FROM users WHERE id=?'); $c->execute([$u['id']]); $v = $c->fetchColumn(); if ($v) $cats = array_values(array_filter(explode(',', (string) $v))); } catch (Throwable $e) {}
     json_out(['url' => $tok ? $base . '/kalender/' . $tok . '.ics' : null, 'cats' => $cats]);
 }
+if ($a === 'calhide' && $_SERVER['REQUEST_METHOD'] === 'POST') { // im Kalender abgewählte Kategorien (Filterknöpfe unter der Monatsübersicht), im Konto gespeichert
+    $in = array_values(array_intersect(['author', 'artist', 'film', 'series', 'podcast'], (array) (body()['hide'] ?? [])));
+    try { $pdo->prepare('UPDATE users SET cal_hide=? WHERE id=?')->execute([$in ? implode(',', $in) : null, $u['id']]); } catch (Throwable $e) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true]);
+}
 if ($a === 'calcats' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Kategorien des Kalender-Abos (unabhängig vom Ausblenden in der Oberfläche); leer/alle = alle
     $allow = allowed_cats($u); $in = array_values(array_intersect($allow, (array) (body()['cats'] ?? [])));
     if (!$in) json_out(['error' => 'Mindestens eine Kategorie muss ausgewählt bleiben.'], 422);
