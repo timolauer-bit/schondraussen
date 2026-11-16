@@ -77,11 +77,23 @@ if ($a === 'overview') {
             JOIN works w ON w.subject_id=d.subject_id AND $wk $join
             WHERE $cons GROUP BY d.user_id, d.subject_id
         ) r JOIN subjects s ON s.id=r.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? GROUP BY s.id, s.name ORDER BY c DESC, SUM(r.bk) DESC, s.name LIMIT 50", [$u['id']]);
-    // Filme: jeder Film steht einzeln, ein Punkt je Nutzer, der ihn als gesehen markiert hat
-    $out['seen']['film'] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
+    // Filme: jeder Film steht einzeln (Kennung = TMDB-Nummer), ein Punkt je Nutzer, der ihn irgendwo als gesehen markiert hat, ob im Einzeleintrag, in einer Filmreihe oder bei der Regie.
+    // Ältere Markierungen (Schlüssel aus Titel und Jahr) zählen weiter, bis der Eintrag das nächste Mal geöffnet wurde.
+    $out['seen']['film'] = q_all($pdo, "SELECT 0 AS id, MIN(r.title) AS name, COUNT(*) AS c, 0 AS mine FROM (
+            SELECT d.user_id, CONCAT('t', w.ext_id) AS fid, w.title AS title FROM user_done d
+            JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film'
+            JOIN works w ON w.ext_id IS NOT NULL AND w.ext_id = SUBSTRING(d.item_key, 2) $join
+            WHERE $cons AND d.item_key LIKE 't%'
+          UNION
+            SELECT d.user_id, CONCAT('t', w.ext_id), w.title FROM user_done d
+            JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film'
+            JOIN works w ON w.subject_id=d.subject_id AND w.ext_id IS NOT NULL AND $wk $join
+            WHERE $cons
+          UNION
+            SELECT d.user_id, IFNULL(CONCAT('t', (SELECT MIN(wb.ext_id) FROM works wb WHERE wb.subject_id=sb.id AND wb.ext_id IS NOT NULL)), CONCAT('s', sb.id)), sb.name FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film' AND d.item_key = CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(sb.name)), '|', 0)), 1, 16)) $join
             WHERE $cons
-        ) $outer", [$u['id']]);
+        ) r GROUP BY r.fid ORDER BY c DESC, name LIMIT 50");
     foreach (['artist' => 5] as $t => $min) {
         $out['seen'][$t] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type=?
