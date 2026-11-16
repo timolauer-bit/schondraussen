@@ -185,7 +185,7 @@
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     var navTop = null;
-    if (D.dev && D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), devMark(btn('news', 'News', 0, ' newsnav'), 'news')); } // Handy: eigene Zeile
+    if (D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
     else navMain.append(btn('cal', 'Kalender', 0));
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
@@ -217,7 +217,7 @@
     saveView();
     if (v === 'cal') mainEl.append(renderCalendar());
     else if (v === 'list') listView();
-    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug'); else if (v === 'news' && D.dev && D.news) newsView();
+    else if (v === 'set') settings(); else if (v === 'info') info(); else if (v === 'log') logView(); else if (v === 'sup') support(); else if (v === 'adm') admin(); else if (v === 'comm' && commOn()) community(); else if (v === 'feat' && feat('feat')) feedbackView('feature'); else if (v === 'bug') feedbackView('bug'); else if (v === 'news' && D.news) newsView();
   }
 
   /* ---------- Kalender ---------- */
@@ -1384,8 +1384,20 @@
       body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)), h('p', { class: 'hint' }, d.locked ? 'Platzhalter-Beispiel.' : pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
       var pkAny = CT.some(function (t) { return ((d.picks || {})[t] || []).length; });
       if (pkAny) {
-        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen'));
-        pk.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, CT.reduce(function (acc, t) { ((d.picks || {})[t] || []).forEach(function (r) { acc.push(h('tr', null, h('td', { class: 'ty' }, TYPES[t] ? TYPES[t].label : ''), h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r)))); }); return acc; }, [])))));
+        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div'), pkChips = h('div');
+        var pkTot = 0; CT.forEach(function (t) { pkTot += ((d.picks || {})[t] || []).length; });
+        if (!C.pkf || CT.indexOf(C.pkf) < 0 || !((d.picks || {})[C.pkf] || []).length) C.pkf = CT.filter(function (t) { return ((d.picks || {})[t] || []).length; })[0] || CT[0];
+        pkChips.className = 'admtabs infotabs'; pkChips.setAttribute('role', 'tablist'); pkChips.setAttribute('aria-label', 'Empfehlungen nach Kategorie');
+        function pkDraw() {
+          pkChips.textContent = '';
+          CT.forEach(function (t) { var n = ((d.picks || {})[t] || []).length, on = C.pkf === t; pkChips.append(h('button', { class: 'admtab' + (on ? ' on' : ''), type: 'button', role: 'tab', 'aria-selected': String(on), onclick: function () { C.pkf = t; pkDraw(); } }, TYPES[t].plural + (n ? ' (' + n + ')' : ''))); });
+          pkBody.textContent = '';
+          var rowsP = CT.reduce(function (acc, t) { if (C.pkf !== t) return acc; ((d.picks || {})[t] || []).forEach(function (r) {
+            var nm = (!d.locked && +r.mine) ? h('button', { class: 'namelink', type: 'button', title: 'Seite öffnen: ' + r.name, onclick: function () { S.view = 'list'; S.cat = t; S.sel = String(r.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, r.name) : h('span', { title: d.locked ? '' : 'Mit „+“ in deine Liste übernehmen, dann kannst du die Seite öffnen' }, r.name);
+            acc.push(h('tr', null, h('td', { class: 'nm' }, nm), h('td', { class: 'ad' }, adoptBtn(r)))); }); return acc; }, []);
+          if (!rowsP.length) pkBody.append(h('p', { class: 'hint' }, 'Keine Empfehlungen in dieser Kategorie.')); else pkBody.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rowsP))));
+        }
+        pkDraw(); pk.append(pkChips, pkBody);
         body.append(pk);
       }
       var last = h('section', { class: 'commbox commlast' + (d.locked ? ' locked' : '') }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
@@ -1602,7 +1614,7 @@
     return [sec('Seitennews', x.site_title, x.site_text, x.site_sources), sec('News zu Inhalten', x.content_title, x.content_text, x.content_sources)].filter(Boolean);
   }
   function newsView() {
-    var p = devMark(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.')), 'news');
+    var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'News'), h('p', { class: 'hint' }, 'Neuigkeiten zur Seite und zu Büchern, Musik, Filmen, Serien und Podcasts. Pro Tag eine Meldung.'));
     var box = h('div', null, h('p', { class: 'state pulse' }, 'Lade …')); p.append(box); mainEl.append(p);
     api('/api/news.php?a=list').then(function (r) {
       box.textContent = '';
@@ -2418,7 +2430,7 @@
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
-      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!(D.admin || (D.admsec || []).length), feat: true, bug: true, news: !!(D.dev && D.news) };
+      var okv = { comm: commOn(), cal: 1, list: 1, set: 1, info: 1, log: 1, sup: 1, adm: !!(D.admin || (D.admsec || []).length), feat: true, bug: true, news: !!(D.news) };
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}

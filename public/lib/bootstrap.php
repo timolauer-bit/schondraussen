@@ -131,7 +131,7 @@ function perm_defs(): array {
         'cat_film' => ['Kategorie Filme', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
         'cat_series' => ['Kategorie Serien', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [1, 1], 'live'],
         'podcast' => ['Kategorie Podcasts', 'Suchen, hinzufügen, in Menü, Kalender und Community sehen. Aus: Kategorie verschwindet für die Gruppe, Einträge bleiben gespeichert', [$pl, $pl], 'live'],
-        'news' => ['Seite „News“ ansehen', 'Neuigkeiten zur Seite und zu Inhalten lesen (derzeit nur in der Entwicklungsversion sichtbar)', [1, 1], 'live'],
+        'news' => ['Seite „News“ ansehen', 'Neuigkeiten zur Seite und zu Inhalten lesen', [1, 1], 'live'],
         'hidecats' => ['Kategorien ausblenden', 'Option in den Einstellungen: nicht benötigte Kategorien im Menü, Kalender und in der Übersicht ausblenden (Einträge bleiben gespeichert)', [1, 1], 'live'],
         'adm_briefing' => ['Admin-Bereich: Briefing', 'Lage der letzten 24 Stunden (Nutzer, Kontakt, Ideen und Bugs, neue Einträge, Mails); ohne die Bereiche Zustand der Seite und Sicherheit', [0, 0, 1], 'live'],
         'adm_users' => ['Admin-Bereich: Nutzerverwaltung und Wunschbilder', 'Nutzerliste sehen, Konten freischalten, Namenswechsel verlangen, Wunschbilder bearbeiten', [0, 0, 1], 'live'],
