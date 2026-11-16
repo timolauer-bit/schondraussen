@@ -70,7 +70,16 @@
   function api(url, data) {
     var o = { credentials: 'same-origin' };
     if (data !== undefined) { o.method = 'POST'; o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(data || {}); }
-    return fetch(url, o).then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); });
+    return fetch(url, o).then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); }).then(function (j) { if (j && j.maintenance) setTimeout(maintView, 0); return j; });
+  }
+  // Während eines Deployments antwortet jede Schnittstelle mit „maintenance“: dann zeigt die Seite überall denselben Hinweiskasten und lädt neu, sobald sie wieder da ist
+  var maintOn = false;
+  function maintView() {
+    if (maintOn || !mainEl) return; maintOn = true;
+    var h2 = mainEl.querySelector('h2'), title = h2 ? h2.textContent : 'Kleine Pause';
+    mainEl.textContent = '';
+    mainEl.append(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, title), h('p', { class: 'warnbox', role: 'status' }, 'Die Seite wird gerade aktualisiert. Bitte versuche es in ein paar Minuten noch einmal. Sobald sie wieder da ist, lädt sie sich von selbst neu.')));
+    var t = setInterval(function () { fetch('/api/data.php?a=list', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) { if (j && !j.maintenance) { clearInterval(t); location.reload(); } }).catch(function () {}); }, 20000);
   }
 
   /* ---------- Datum ---------- */
