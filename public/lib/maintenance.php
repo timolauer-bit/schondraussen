@@ -6,7 +6,7 @@ const MAINTENANCE_MAX_AGE = 600;
 function maintenance_pages(): array {
     return [
         'v1' => <<<'NOWDOC'
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kurz Wartung – Schondraussen.de</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kleine Pause – Schondraussen.de</title>
 <style>
 :root{--bg:#f2f2f0;--surface:#fff;--ink:#11171d;--muted:#58616a;--line:#d6d6d1;--accent:#d84a1b}
 @media(prefers-color-scheme:dark){:root{--bg:#101419;--surface:#171d23;--ink:#e8ecee;--muted:#9aa3ac;--line:#2e353e}}
@@ -27,10 +27,10 @@ function maintenance_pages(): array {
 @keyframes pop{0%{opacity:0;transform:translateX(-50%) scale(.8)}4%,28%{opacity:1;transform:translateX(-50%) scale(1)}33%,100%{opacity:0;transform:translateX(-50%) scale(.8)}}
 </style></head><body><main class="card"><div class="pic"><img alt="Matz und Lucy schauen aus einem Karton" src="/about/katzen-karton.webp">
 <div class="bub b1">Pssst … wir bauen gerade um.</div><div class="bub b2">Nicht reinschauen!</div><div class="bub b3">Gleich sind wir fertig.</div></div>
-<div class="body"><h1>Kurz Wartung</h1><p>Matz und Lucy packen gerade ein Update aus. Die Seite ist gleich wieder da.</p><div class="bar"><i></i></div><p class="fine">Diese Seite lädt sich automatisch neu.</p></div></main><script>setTimeout(function(){location.reload()},20000)</script></body></html>
+<div class="body"><h1>Kleine Pause</h1><p>Matz und Lucy packen gerade ein Update aus. Die Seite ist gleich wieder da.</p><div class="bar"><i></i></div><p class="fine">Diese Seite lädt sich automatisch neu.</p></div></main><script>setTimeout(function(){location.reload()},20000)</script></body></html>
 NOWDOC,
         'v2' => <<<'NOWDOC'
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kurz Wartung – Schondraussen.de</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kleine Pause – Schondraussen.de</title>
 <style>
 :root{--bg:#f2f2f0;--surface:#fff;--ink:#11171d;--muted:#58616a;--line:#d6d6d1;--accent:#d84a1b}
 @media(prefers-color-scheme:dark){:root{--bg:#101419;--surface:#171d23;--ink:#e8ecee;--muted:#9aa3ac;--line:#2e353e}}
@@ -51,7 +51,7 @@ NOWDOC,
 @keyframes fill{0%{width:0}85%,92%{width:100%}100%{width:0}}
 </style></head><body><main class="card"><div class="pic"><img alt="Matz und Lucy sitzen vor dem Monitor" src="/about/katzen-monitor.webp">
 <div class="scr"><div class="l1">&gt; Update wird eingespielt …</div><div class="l2">&gt; Katzen prüfen die Qualität</div><div class="l3">&gt; Kabel wird nicht angeknabbert</div><div class="l4">&gt; fast fertig …</div><div class="pb"><i></i></div></div></div>
-<div class="body"><h1>Kurz Wartung</h1><p>Matz und Lucy sichern gerade die Qualität. Die Seite ist gleich wieder da.</p><p class="fine">Diese Seite lädt sich automatisch neu.</p></div></main><script>setTimeout(function(){location.reload()},20000)</script></body></html>
+<div class="body"><h1>Kleine Pause</h1><p>Matz und Lucy sichern gerade die Qualität. Die Seite ist gleich wieder da.</p><p class="fine">Diese Seite lädt sich automatisch neu.</p></div></main><script>setTimeout(function(){location.reload()},20000)</script></body></html>
 NOWDOC,
         's2' => <<<'NOWDOC'
 <!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wartungsarbeiten – Schondraussen.de</title>
