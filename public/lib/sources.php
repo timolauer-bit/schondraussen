@@ -75,12 +75,20 @@ function tmdb_get(string $path, array $q = []): ?array {
     }
     return http_json((string) cfg('tmdb_base', 'https://api.themoviedb.org/3') . $path . '?' . http_build_query($q), 12, $hdr);
 }
-function tmdb_search(string $q): array { // Trefferliste für „Neu hinzufügen“
+function tmdb_search(string $q, bool $people = true): array { // Trefferliste für „Neu hinzufügen“: Filme, danach Regisseur:innen
     $r = tmdb_get('/search/movie', ['query' => $q, 'include_adult' => 'false']); $out = [];
-    foreach (array_slice((array) ($r['results'] ?? []), 0, 8) as $x) {
+    foreach (array_slice((array) ($r['results'] ?? []), 0, $people ? 6 : 8) as $x) {
         if (empty($x['id']) || empty($x['title'])) continue;
         $y = substr((string) ($x['release_date'] ?? ''), 0, 4); $o = (string) ($x['original_title'] ?? '');
         $out[] = ['name' => (string) $x['title'], 'hint' => implode(' · ', array_filter([$y, ($o !== '' && $o !== $x['title']) ? 'Original: ' . $o : ''])), 'ext' => ['tmdb' => (int) $x['id']]];
+    }
+    if ($people && ($pr = tmdb_get('/search/person', ['query' => $q, 'include_adult' => 'false']))) {
+        $n = 0;
+        foreach ((array) ($pr['results'] ?? []) as $x) {
+            if (empty($x['id']) || empty($x['name']) || ($x['known_for_department'] ?? '') !== 'Directing' || $n >= 3) continue;
+            $kf = array_values(array_filter(array_map(fn($k) => (string) ($k['title'] ?? $k['name'] ?? ''), array_slice((array) ($x['known_for'] ?? []), 0, 3))));
+            $out[] = ['name' => (string) $x['name'], 'hint' => 'Regie' . ($kf ? ' · bekannt für ' . implode(', ', $kf) : ''), 'ext' => ['tmdb_person' => (int) $x['id']]]; $n++;
+        }
     }
     return $out;
 }
@@ -96,40 +104,108 @@ function tmdb_dates(array $m, string $today): array { // kommende deutsche Termi
     if (!$out && ($gd = (string) ($m['release_date'] ?? '')) !== '' && $gd >= $today) $out[] = [$gd, 'Starttermin'];
     return $out;
 }
-function film_refresh(PDO $pdo, array $sub): array {
-    if (!tmdb_enabled()) { $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sub['id']]); return ['ok' => false, 'msg' => 'Für Filme ist die Datenquelle noch nicht angebunden.']; }
-    $sid = (int) $sub['id']; $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
-    $id = (int) ($ext['tmdb'] ?? 0);
-    if (!$id) { $hit = tmdb_search($sub['name']); if (!$hit) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.']; $id = (int) $hit[0]['ext']['tmdb']; }
-    $m = tmdb_get("/movie/$id", ['append_to_response' => 'release_dates']);
-    if (!$m || empty($m['id'])) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.'];
-    $sum = clean_text((string) ($m['overview'] ?? ''), 600);
-    if ($sum === '') { $en = tmdb_get("/movie/$id", ['language' => 'en-US']); $t = clean_text((string) ($en['overview'] ?? ''), 600); if ($t !== '') $sum = translate_de($t, 'EN') ?? $t; }
-    $genres = array_values(array_filter(array_map(fn($g) => (string) ($g['name'] ?? ''), (array) ($m['genres'] ?? []))));
-    $today = date('Y-m-d'); $rel = [];
-    foreach (tmdb_dates($m, $today) as $x) $rel[$x[0] . $x[1] . $id] = [(string) $m['title'], $x[0], $x[1]];
-    ksort($rel);
-    $works = [[(string) $m['title'], (int) substr((string) ($m['release_date'] ?? ''), 0, 4) ?: null, 'Film', !empty($m['runtime']) ? (int) $m['runtime'] . ' Min.' : null]];
-    $col = $m['belongs_to_collection']['id'] ?? null;
-    if ($col && ($cj = tmdb_get('/collection/' . (int) $col)) && !empty($cj['parts'])) { // Teile der Filmreihe
-        $works = []; $parts = (array) $cj['parts']; usort($parts, fn($a, $b) => strcmp((string) ($a['release_date'] ?? '9999'), (string) ($b['release_date'] ?? '9999')));
-        foreach (array_slice($parts, 0, 40) as $x) if (!empty($x['title'])) $works[] = [(string) $x['title'], (int) substr((string) ($x['release_date'] ?? ''), 0, 4) ?: null, 'Film', null];
-        $n = 0; // noch nicht erschienene Teile der Reihe: deren Termine ebenfalls zeigen (höchstens 4 Abfragen)
-        foreach ($parts as $x) if (!empty($x['id']) && !empty($x['title']) && (string) ($x['release_date'] ?? '') >= $today && $n++ < 4 && (int) $x['id'] !== $id && ($pm = tmdb_get('/movie/' . (int) $x['id'], ['append_to_response' => 'release_dates'])))
-            foreach (tmdb_dates($pm, $today) as $d) $rel[$d[0] . $d[1] . (int) $x['id']] = [(string) $x['title'], $d[0], $d[1]];
-    }
-    $ext['tmdb'] = $id;
+
+function film_store(PDO $pdo, int $sid, array $ext, string $sum, array $genres, array $works, array $rel): array {
+    // $works: [Titel, Jahr, Art, Notiz, TMDB-Nummer]; $rel: [Titel, Datum, Art]
     $pdo->beginTransaction();
     try {
-        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')->execute([json_encode($ext), $sum, json_encode($genres, JSON_UNESCAPED_UNICODE), count($works), $sid]);
+        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), $sum, json_encode($genres, JSON_UNESCAPED_UNICODE), count($works), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]); $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
-        $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)'); foreach ($works as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3]]);
+        try { $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note,ext_id) VALUES (?,?,?,?,?,?)'); $hasExt = true; } catch (Throwable $e) { $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)'); $hasExt = false; }
+        foreach ($works as $x) { try { $hasExt ? $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3], $x[4] ?? null]) : $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3]]); } catch (Throwable $e) { if (!$hasExt) throw $e; $hasExt = false; $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)'); $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3]]); } }
         $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)'); foreach (array_slice(array_values($rel), 0, 20) as $x) $r->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
         $pdo->commit();
-    } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
     return ['ok' => true, 'msg' => count($works) . (count($works) === 1 ? ' Film' : ' Filme') . ', ' . count($rel) . ' kommende Termine'];
 }
-
+function film_summary(string $path, array $d, string $field): string { // deutscher Text, sonst englischer per DeepL
+    $t = clean_text((string) ($d[$field] ?? ''), 600); if ($t !== '') return $t;
+    $en = tmdb_get($path, ['language' => 'en-US']); $t = clean_text((string) ($en[$field] ?? ''), 600);
+    return $t !== '' ? (translate_de($t, 'EN') ?? $t) : '';
+}
+function film_future(array $parts, int $skip, string $today, array &$rel, int $max = 5): void { // Termine noch nicht erschienener Filme (je Film eine Abfrage)
+    $n = 0;
+    foreach ($parts as $x) {
+        if (empty($x['id']) || empty($x['title']) || (int) $x['id'] === $skip || (string) ($x['release_date'] ?? '') < $today || $n++ >= $max) continue;
+        $pm = tmdb_get('/movie/' . (int) $x['id'], ['append_to_response' => 'release_dates']);
+        $dt = $pm ? tmdb_dates($pm, $today) : (($x['release_date'] ?? '') !== '' ? [[(string) $x['release_date'], 'Starttermin']] : []);
+        foreach ($dt as $d) $rel[$d[0] . $d[1] . (int) $x['id']] = [(string) $x['title'], $d[0], $d[1]];
+    }
+}
+function film_refresh(PDO $pdo, array $sub): array {
+    if (!tmdb_enabled()) { $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sub['id']]); return ['ok' => false, 'msg' => 'Für Filme ist die Datenquelle noch nicht angebunden.']; }
+    $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    if (!empty($ext['tmdb_person'])) return film_refresh_person($pdo, $sub, $ext);
+    if (!empty($ext['tmdb_col'])) return film_refresh_collection($pdo, $sub, $ext);
+    return film_refresh_movie($pdo, $sub, $ext);
+}
+function film_refresh_movie(PDO $pdo, array $sub, array $ext): array {
+    $sid = (int) $sub['id']; $id = (int) ($ext['tmdb'] ?? 0);
+    if (!$id) { $hit = tmdb_search($sub['name'], false); if (!$hit) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.']; $id = (int) $hit[0]['ext']['tmdb']; }
+    $m = tmdb_get("/movie/$id", ['append_to_response' => 'release_dates,credits']);
+    if (!$m || empty($m['id'])) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.'];
+    $ext['tmdb'] = $id;
+    if (!empty($m['belongs_to_collection']['id'])) { // Teil einer Filmreihe: alle Einträge der Nutzer wandern in den Reiheneintrag
+        $cid = (int) $m['belongs_to_collection']['id'];
+        $newId = film_merge_collection($pdo, $sub, $id, $cid, (string) ($m['belongs_to_collection']['name'] ?? ''));
+        if ($newId) {
+            $q = $pdo->prepare('SELECT * FROM subjects WHERE id=?'); $q->execute([$newId]); $col = $q->fetch();
+            if ($col) { $res = film_refresh($pdo, $col); $res['moved'] = $newId; return $res; }
+        }
+    }
+    $sum = film_summary("/movie/$id", $m, 'overview');
+    $genres = array_values(array_filter(array_map(fn($g) => (string) ($g['name'] ?? ''), (array) ($m['genres'] ?? []))));
+    $dirs = []; foreach ((array) ($m['credits']['crew'] ?? []) as $c) if (($c['job'] ?? '') === 'Director' && !empty($c['id']) && count($dirs) < 3 && !in_array((int) $c['id'], array_column($dirs, 'id'), true)) $dirs[] = ['id' => (int) $c['id'], 'name' => (string) $c['name']];
+    $ext['dir'] = $dirs;
+    $today = date('Y-m-d'); $rel = [];
+    foreach (tmdb_dates($m, $today) as $x) $rel[$x[0] . $x[1]] = [(string) $m['title'], $x[0], $x[1]];
+    ksort($rel);
+    $works = [[(string) $m['title'], (int) substr((string) ($m['release_date'] ?? ''), 0, 4) ?: null, 'Film', !empty($m['runtime']) ? (int) $m['runtime'] . ' Min.' : null, (string) $id]];
+    return film_store($pdo, $sid, $ext, $sum, $genres, $works, $rel);
+}
+function film_refresh_collection(PDO $pdo, array $sub, array $ext): array {
+    $cid = (int) $ext['tmdb_col']; $c = tmdb_get("/collection/$cid");
+    if (!$c || empty($c['parts'])) return ['ok' => false, 'msg' => 'Die Filmreihe wurde bei TMDB nicht gefunden.'];
+    $parts = (array) $c['parts']; usort($parts, fn($a, $b) => strcmp((string) ($a['release_date'] ?? '9999'), (string) ($b['release_date'] ?? '9999')));
+    $works = []; foreach (array_slice($parts, 0, 40) as $x) if (!empty($x['title'])) $works[] = [(string) $x['title'], (int) substr((string) ($x['release_date'] ?? ''), 0, 4) ?: null, 'Film', null, (string) ($x['id'] ?? '')];
+    $rel = []; film_future($parts, 0, date('Y-m-d'), $rel); ksort($rel);
+    return film_store($pdo, (int) $sub['id'], $ext, film_summary("/collection/$cid", $c, 'overview'), [], $works, $rel);
+}
+function film_refresh_person(PDO $pdo, array $sub, array $ext): array {
+    $pid = (int) $ext['tmdb_person']; $p = tmdb_get("/person/$pid", ['append_to_response' => 'movie_credits']);
+    if (!$p || empty($p['id'])) return ['ok' => false, 'msg' => 'Die Person wurde bei TMDB nicht gefunden.'];
+    $films = []; foreach ((array) ($p['movie_credits']['crew'] ?? []) as $x) if (($x['job'] ?? '') === 'Director' && !empty($x['id']) && !empty($x['title']) && (string) ($x['release_date'] ?? '') !== '') $films[(int) $x['id']] = $x;
+    $films = array_values($films); usort($films, fn($a, $b) => strcmp((string) $b['release_date'], (string) $a['release_date']));
+    $works = []; foreach (array_slice($films, 0, 80) as $x) $works[] = [(string) $x['title'], (int) substr((string) $x['release_date'], 0, 4) ?: null, 'Film', null, (string) $x['id']];
+    $rel = []; film_future(array_reverse($films), 0, date('Y-m-d'), $rel); ksort($rel);
+    $bio = film_summary("/person/$pid", $p, 'biography');
+    return film_store($pdo, (int) $sub['id'], $ext, $bio, [], $works, $rel);
+}
+function film_merge_collection(PDO $pdo, array $single, int $tmdbId, int $cid, string $cname): int {
+    // Legt den Reiheneintrag an (falls es ihn noch nicht gibt) und verschiebt Listeneinträge und Gesehen-Markierungen der Nutzer dorthin; der Einzeleintrag entfällt.
+    try {
+        $q = $pdo->prepare('SELECT id FROM subjects WHERE type=? AND (external_ids LIKE ? OR external_ids LIKE ?) LIMIT 1'); $q->execute(['film', '%"tmdb_col":' . $cid . '}%', '%"tmdb_col":' . $cid . ',%']); $col = (int) $q->fetchColumn();
+        if (!$col) {
+            $cj = tmdb_get("/collection/$cid"); $name = trim((string) ($cj['name'] ?? $cname)); if ($name === '') return 0;
+            $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute(['film', mb_substr($name, 0, 190), json_encode(['tmdb_col' => $cid])]); $col = (int) $pdo->lastInsertId();
+            $c2 = $pdo->prepare('SELECT external_ids FROM subjects WHERE id=?'); $c2->execute([$col]); $o = json_decode((string) $c2->fetchColumn(), true) ?: [];
+            if (empty($o['tmdb_col'])) { $o['tmdb_col'] = $cid; $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($o), $col]); }
+        }
+        $sidn = (int) $single['id']; if ($col === $sidn) return 0;
+        $legacy = 'w' . substr(md5(mb_strtolower(trim((string) $single['name'])) . '|0'), 0, 16); $tkey = 't' . $tmdbId;
+        $pdo->beginTransaction();
+        $users = $pdo->prepare('SELECT user_id FROM user_entries WHERE subject_id=?'); $users->execute([$sidn]);
+        foreach ($users->fetchAll(PDO::FETCH_COLUMN) as $uid) {
+            $has = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $has->execute([$uid, $col]);
+            if (!$has->fetchColumn()) $pdo->prepare('UPDATE user_entries SET subject_id=? WHERE user_id=? AND subject_id=?')->execute([$col, $uid, $sidn]);
+            $dn = $pdo->prepare('SELECT 1 FROM user_done WHERE user_id=? AND subject_id=? AND item_key IN (?,?)'); $dn->execute([$uid, $sidn, $legacy, $tkey]);
+            if ($dn->fetchColumn()) $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)')->execute([$uid, $col, $tkey]);
+        }
+        $pdo->prepare('DELETE FROM subjects WHERE id=?')->execute([$sidn]); // Rest (Werke, Termine, Markierungen) wird mitgelöscht
+        $pdo->commit();
+        return $col;
+    } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); return 0; }
+}
 // Aktualisiert einen Titel in der Datenbank. Gibt ['ok'=>bool,'msg'=>string] zurück.
 function refresh_subject(PDO $pdo, int $sid): array {
     $r = refresh_subject_run($pdo, $sid);

@@ -296,7 +296,7 @@ if ($a === 'suggest_local') { // Treffer aus den bereits vorhandenen Einträgen 
     $out = [];
     foreach ($st->fetchAll() as $r) {
         $ext = json_decode((string) $r['external_ids'], true); if (!is_array($ext)) $ext = [];
-        $out[] = ['name' => $r['name'], 'hint' => !empty($ext['gbs']) ? 'Reihe' : '', 'ext' => $ext, 'mine' => (int) $r['mine'] > 0];
+        $out[] = ['name' => $r['name'], 'hint' => !empty($ext['gbs']) || !empty($ext['tmdb_col']) ? 'Reihe' : (!empty($ext['tmdb_person']) ? 'Regie' : ''), 'ext' => $ext, 'mine' => (int) $r['mine'] > 0];
     }
     json_out(['results' => $out]);
 }
@@ -307,7 +307,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
     if ((int) $n->fetchColumn() >= ENTRY_LIMIT) json_out(['error' => 'Du hast die Grenze von ' . number_format(ENTRY_LIMIT, 0, ',', '.') . ' Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
-    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'tmdb' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'tmdb' => 'int', 'tmdb_col' => 'int', 'tmdb_person' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
     $sid = (int) $pdo->lastInsertId();
@@ -463,13 +463,13 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $t = $f->fetchColumn();
     $hasData = (int) $pdo->query('SELECT (SELECT COUNT(*) FROM works WHERE subject_id=' . (int) $id . ') + (SELECT COUNT(*) FROM releases WHERE subject_id=' . (int) $id . ')')->fetchColumn() > 0;
     if ($t && $hasData && time() - strtotime($t) < 600) json_out(['ok' => true, 'wait' => true, 'msg' => 'Dieser Eintrag wurde gerade erst aktualisiert.']);
-    $res = refresh_subject($pdo, $id);
-    $res['wait'] = (int) $pdo->query('SELECT (SELECT COUNT(*) FROM works WHERE subject_id=' . (int) $id . ') + (SELECT COUNT(*) FROM releases WHERE subject_id=' . (int) $id . ')')->fetchColumn() > 0;
+    $res = refresh_subject($pdo, $id); $wid = !empty($res['moved']) ? (int) $res['moved'] : $id;
+    $res['wait'] = (int) $pdo->query('SELECT (SELECT COUNT(*) FROM works WHERE subject_id=' . $wid . ') + (SELECT COUNT(*) FROM releases WHERE subject_id=' . $wid . ')')->fetchColumn() > 0;
     json_out($res);
 }
 if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $ext = [];
-    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'tmdb' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'tmdb' => 'int', 'tmdb_col' => 'int', 'tmdb_person' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     if (!$ext) json_out(['ok' => false, 'msg' => 'Kein Treffer gewählt.']);
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
@@ -487,12 +487,20 @@ if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 function done_key_work($title, $year): string { return 'w' . substr(md5(mb_strtolower(trim((string) $title)) . '|' . (int) $year), 0, 16); }
 function done_key_ep($season, $number): string { return 'e' . (int) $season . 'x' . (int) $number; }
 if ($a === 'done' && $_SERVER['REQUEST_METHOD'] === 'POST') { // gesehen / gelesen / gehört
-    $b = body(); $sid = (int) ($b['id'] ?? 0); $keys = array_values(array_unique(array_filter((array) ($b['keys'] ?? []), fn($k) => is_string($k) && preg_match('/^(w[0-9a-f]{16}|e\d{1,3}x\d{1,4})$/', $k))));
+    $b = body(); $sid = (int) ($b['id'] ?? 0); $keys = array_values(array_unique(array_filter((array) ($b['keys'] ?? []), fn($k) => is_string($k) && preg_match('/^(w[0-9a-f]{16}|e\d{1,3}x\d{1,4}|t\d{1,9})$/', $k))));
     if (!$sid || !$keys || count($keys) > 5000) json_out(['error' => 'Ungültige Angabe.'], 422);
     $own = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $own->execute([$u['id'], $sid]); if (!$own->fetch()) json_out(['error' => 'Der Eintrag steht nicht auf deiner Liste.'], 404);
     try {
         if (!empty($b['on'])) { $q = $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)'); foreach ($keys as $k) $q->execute([$u['id'], $sid, $k]); }
-        else { $q = $pdo->prepare('DELETE FROM user_done WHERE user_id=? AND subject_id=? AND item_key=?'); foreach ($keys as $k) $q->execute([$u['id'], $sid, $k]); }
+        else {
+            $q = $pdo->prepare('DELETE FROM user_done WHERE user_id=? AND subject_id=? AND item_key=?'); foreach ($keys as $k) $q->execute([$u['id'], $sid, $k]);
+            $tk = array_values(array_filter($keys, fn($k) => $k[0] === 't'));
+            if ($tk) { // Filmmarkierung gilt überall: auch in Reihen- und Regie-Einträgen und unter dem alten Schlüssel entfernen
+                $qa = $pdo->prepare('DELETE FROM user_done WHERE user_id=? AND item_key=?'); foreach ($tk as $k) $qa->execute([$u['id'], $k]);
+                try { $lw = $pdo->prepare('SELECT s2.name, w.title, w.year, w.subject_id FROM works w JOIN subjects s2 ON s2.id=w.subject_id WHERE w.ext_id=?'); $ql = $pdo->prepare('DELETE FROM user_done WHERE user_id=? AND item_key IN (?,?)');
+                    foreach ($tk as $k) { $lw->execute([substr($k, 1)]); foreach ($lw->fetchAll() as $x) $ql->execute([$u['id'], done_key_work($x['title'], $x['year']), done_key_work($x['name'], 0)]); } } catch (Throwable $t2) {}
+            }
+        }
     } catch (Throwable $t) { json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true]);
 }
@@ -521,15 +529,30 @@ if ($a === 'entry') {
     $e = $s->fetch(); if ($e && !in_array($e['type'], $TYPES, true)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
-    if ($e['type'] === 'film') $e['selfkey'] = done_key_work($e['name'], 0); // Film selbst als gesehen markieren
+    $e['kind'] = ''; $e['dirs'] = [];
+    if ($e['type'] === 'film') { // Film, Filmreihe oder Regie-Eintrag
+        $e['kind'] = !empty($x['tmdb_person']) ? 'person' : (!empty($x['tmdb_col']) ? 'col' : 'movie');
+        foreach ((array) ($x['dir'] ?? []) as $dd) if (!empty($dd['id']) && !empty($dd['name'])) $e['dirs'][] = ['id' => (int) $dd['id'], 'name' => (string) $dd['name']];
+        if ($e['kind'] === 'movie') $e['selfkey'] = !empty($x['tmdb']) ? 't' . (int) $x['tmdb'] : done_key_work($e['name'], 0); // Film selbst als gesehen markieren
+    }
     $eps = [];
     if ($e['type'] === 'series') { try { try { $q = $pdo->prepare("SELECT season,number,title,airdate,(summary IS NOT NULL AND summary<>'') AS has_sum FROM episodes WHERE subject_id=? ORDER BY season, number"); $q->execute([$id]); } catch (Throwable $t2) { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); } $eps = $q->fetchAll(); } catch (Throwable $t) {} }
-    try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
-    catch (Throwable $t3) { $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); } // vor Migration 063
+    try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum,ext_id FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
+    catch (Throwable $t4) { try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
+    catch (Throwable $t3) { $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); } } // vor Migration 063/080
     $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
-    $works = $w->fetchAll(); foreach ($works as &$x) $x['k'] = done_key_work($x['title'], $x['year']); unset($x);
+    $works = $w->fetchAll(); foreach ($works as &$x) { $x['lk'] = done_key_work($x['title'], $x['year']); $x['k'] = !empty($x['ext_id']) ? 't' . (int) $x['ext_id'] : $x['lk']; unset($x['ext_id']); } unset($x);
     foreach ($eps as &$x) $x['k'] = done_key_ep($x['season'], $x['number']); unset($x);
     $done = []; try { $q = $pdo->prepare('SELECT item_key FROM user_done WHERE user_id=? AND subject_id=?'); $q->execute([$u['id'], $id]); $done = $q->fetchAll(PDO::FETCH_COLUMN); } catch (Throwable $t) {}
+    if ($e['type'] === 'film') { // Gesehen gilt für denselben Film überall (Einzeleintrag, Reihe, Regie); alte Markierungen werden übernommen
+        $tk = []; foreach ($works as $x) if ($x['k'][0] === 't') $tk[$x['k']] = $x['lk'];
+        if (!empty($e['selfkey']) && $e['selfkey'][0] === 't') $tk[$e['selfkey']] = done_key_work($e['name'], 0);
+        if ($tk) {
+            try { $in = implode(',', array_fill(0, count($tk), '?')); $q = $pdo->prepare("SELECT DISTINCT item_key FROM user_done WHERE user_id=? AND item_key IN ($in)"); $q->execute(array_merge([$u['id']], array_keys($tk))); $done = array_merge($done, $q->fetchAll(PDO::FETCH_COLUMN)); } catch (Throwable $t) {}
+            foreach ($tk as $k => $old) if (in_array($old, $done, true)) $done[] = $k;
+            $done = array_values(array_unique($done));
+        }
+    }
     json_out(['entry' => $e, 'works' => $works, 'releases' => $r->fetchAll(), 'episodes' => $eps, 'done' => $done]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);
