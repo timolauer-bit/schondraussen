@@ -412,6 +412,8 @@
     return wrap;
   }
   function on_(b) { return b ? ICONS.bell : ICONS.bellOff; }
+  // Serienstatus von TVmaze für den Kasten „Nächste Folge“, wenn kein Termin bekannt ist. TVmaze unterscheidet nicht zwischen abgeschlossen und abgesetzt.
+  var SERST = { 'Ended': ['beendet', 'Die Serie ist abgeschlossen oder wurde eingestellt. Es kommen keine neuen Folgen.'], 'To Be Determined': ['unklar', 'Ob es eine weitere Staffel gibt, ist noch offen.'], 'Running': ['offen', 'Die Serie läuft weiter, ein neuer Termin ist noch nicht bekannt.'], 'In Development': ['in Planung', 'Die Serie ist angekündigt, Termine folgen.'] };
   function nextBox(e, r, up, t) {
     var now = today0(), nxt = null, node = h('aside', { class: 'nextbox' });
     up.slice().sort(function (a, b) { return a.p.sort - b.p.sort; }).forEach(function (it) { if (!nxt && it.p.prec !== 'none' && it.p.end >= now) nxt = it; });
@@ -424,12 +426,13 @@
       else big = p.prec === 'day' ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : p.prec === 'month' ? MSHORT.format(p.start).replace('.', '') + ' ' + p.y : String(p.y);
       var when = p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? 'Monat bekannt' : 'Jahr bekannt';
       node.append(h('b', { class: 'nbig' }, big), h('div', { class: 'nline' }, nxt.u.title), h('div', { class: 'nsub' }, when));
-    } else node.append(h('b', { class: 'nbig none' }, e.type === 'podcast' ? 'nichts neu' : 'offen'), h('div', { class: 'nsub' }, e.type === 'podcast' ? 'Keine Folge in den letzten 14 Tagen.' : 'Noch nichts angekündigt.'));
+    } else if (e.type === 'series' && SERST[e.tv_status]) { var ss = SERST[e.tv_status]; node.append(devMark(h('b', { class: 'nbig none' + (e.tv_status === 'Ended' ? ' ended' : '') }, ss[0]), 'serstat'), h('div', { class: 'nsub' }, ss[1])); }
+    else node.append(h('b', { class: 'nbig none' }, e.type === 'podcast' ? 'nichts neu' : 'offen'), h('div', { class: 'nsub' }, e.type === 'podcast' ? 'Keine Folge in den letzten 14 Tagen.' : 'Noch nichts angekündigt.'));
     var st = h('div', { class: 'nstats' }), prog = null, a1 = null, a2 = null;
     if (e.type === 'series') {
       var eps = r.episodes || [], seas = {}; eps.forEach(function (x) { seas[x.season] = 1; });
       st.append(h('span', null, h('b', null, Object.keys(seas).length), ' ' + (Object.keys(seas).length === 1 ? 'Staffel' : 'Staffeln')), h('span', null, h('b', null, eps.length), ' ' + (eps.length === 1 ? 'Folge' : 'Folgen')));
-      var gs = h('span', null); node.append(st, h('div', { class: 'nstats' }, gs));
+      var gs = h('span', null), sst = nxt && TVS[e.tv_status] ? devMark(h('span', null, 'Serie ', h('b', null, TVS[e.tv_status])), 'serstat') : null; node.append(st, h('div', { class: 'nstats' }, gs, sst));
       prog = function (n, tot) { gs.textContent = ''; gs.append(h('b', null, n), ' von ' + tot + ' gesehen'); };
       var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
     } else {
