@@ -152,8 +152,13 @@
   function say(t, err) { S.msg = t || ''; S.msgErr = !!err; var m = $('msg'); if (m) { m.textContent = S.msg; m.className = 'msg' + (err ? ' err' : ''); } }
 
   /* ---------- Kopf und Leiste ---------- */
-  function logBadge() { var s; try { s = parseInt(localStorage.getItem('sd-seen'), 10); } catch (_) {} if (isNaN(s)) return 0; if (s > LOGTOTAL) { markSeen(); return 0; } return LOGTOTAL - s; }
-  function markSeen() { try { localStorage.setItem('sd-seen', String(LOGTOTAL)); } catch (_) {} }
+  // Gelesene Changelog-Einträge werden einzeln (als kurze Prüfsumme des Textes) im Browser gemerkt, damit auch Einträge zählen, die mitten in eine Version eingefügt werden
+  function logKey(x) { var h2 = 0; for (var i = 0; i < x.length; i++) h2 = (h2 * 31 + x.charCodeAt(i)) | 0; return (h2 >>> 0).toString(36); }
+  function logAll() { var o = []; CL.forEach(function (c) { if (!c.base) c.t.forEach(function (x) { o.push(x); }); }); return o; }
+  function logSeenSet() { var o = null; try { var j = localStorage.getItem('sd-seen2'); if (j) { o = {}; JSON.parse(j).forEach(function (k) { o[k] = 1; }); } } catch (_) { o = null; } return o; }
+  function logUnseen() { var set = logSeenSet(); if (!set) { var old = null; try { old = localStorage.getItem('sd-seen'); } catch (_) {} if (old !== null) markSeen(); return []; } return logAll().filter(function (x) { return !set[logKey(x)]; }); }
+  function logBadge() { return logUnseen().length; }
+  function markSeen() { try { localStorage.setItem('sd-seen2', JSON.stringify(logAll().map(logKey))); localStorage.setItem('sd-seen', String(LOGTOTAL)); } catch (_) {} }
   function renderVer() {
     var v = $('ver'); if (!v) return; var n = logBadge();
     v.textContent = 'Version ' + LATEST; if (n && D.nerd) v.append(h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)));
@@ -1658,13 +1663,13 @@
     return P;
   }
   function logView() {
-    var staffLog = !!D.nerd && !S.preview, nNew = staffLog ? logBadge() : 0;
+    var staffLog = !!D.nerd && !S.preview, unseen = {}; if (staffLog) logUnseen().forEach(function (x) { unseen[x] = 1; });
     markSeen(); renderVer();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Versionsverlauf'), h('p', { class: 'hint' }, 'Was sich in welcher Version geändert hat.'));
     var CATS = [['F', 'Neue Funktionen'], ['O', 'Optionen'], ['U', 'Oberfläche'], ['B', 'Bugfixes'], ['A', 'Admin'], ['D', 'Datenschutz und Sicherheit'], ['T', 'Technik']];
     if (staffLog) { // Neue Einträge seit dem letzten Besuch: die neuesten stehen in der Liste jeweils oben
-      var flat = []; CL.forEach(function (c) { if (c.base) return; c.t.forEach(function (x) { var m = /^([FOUBADT])\|/.exec(x); flat.push({ v: c.v, k: m ? m[1] : 'F', t: m ? x.slice(2) : x }); }); });
-      var fresh = flat.slice(0, nNew), catName = {}; CATS.forEach(function (k) { catName[k[0]] = k[1]; });
+      var flat = []; CL.forEach(function (c) { if (c.base) return; c.t.forEach(function (x) { if (!unseen[x]) return; var m = /^([FOUBADT])\|/.exec(x); flat.push({ v: c.v, k: m ? m[1] : 'F', t: m ? x.slice(2) : x }); }); });
+      var fresh = flat, catName = {}; CATS.forEach(function (k) { catName[k[0]] = k[1]; });
       p.append(h('div', { class: 'lognew' }, h('h3', null, 'Änderungen seit deinem letzten Besuch dieser Seite'),
         fresh.length ? h('ul', null, fresh.map(function (x) { return h('li', null, h('b', null, catName[x.k] + ' (Version ' + x.v + '): '), x.t); })) : h('p', { class: 'hint', style: 'margin:0' }, 'Keine neuen Änderungen seit deinem letzten Besuch.')));
     }

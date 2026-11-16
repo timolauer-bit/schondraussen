@@ -17,6 +17,7 @@ window.CHANGELOG = [
     'B|Listen: Fehlerhafte Einträge aus einem früheren Import (ganze Zeilen einer Exportdatei als Name) sind entfernt. Hinzufügen und Import lehnen solche Zeilen und Links als Namen jetzt ab.',
     'A|Admin: Fehlermeldungen im Protokoll der Admin-Zugriffe, bei gesperrten Adressen und Wunschbildern erscheinen als Hinweiskasten wie in den anderen Abschnitten.',
     'U|Wartung: Läuft gerade ein Update, zeigt jede Seite denselben Hinweiskasten und lädt sich von selbst neu, sobald die Seite wieder da ist.',
+    'B|Versionsverlauf: „Änderungen seit deinem letzten Besuch“ und die rote Zahl zählen jetzt jeden Eintrag einzeln. Vorher wurde bei nachträglich eingefügten Einträgen immer wieder der oberste angezeigt.',
     'F|Serien: Der Kasten „Nächste Folge“ zeigt den Serienstatus. Ohne neuen Termin steht dort „beendet“, „unklar“ (Fortsetzung offen), „offen“ (läuft weiter) oder „in Planung“ mit kurzer Erklärung, mit Termin unten klein „Serie läuft“.',
     'O|Kalender: Die unter der Monatsübersicht abgewählten Kategorien werden in deinem Konto gespeichert und gelten auf allen Geräten.',
     'U|Favoriten: Sind schon 5 gewählt, erscheint statt eines Fensters kurz eine kleine Pille unter dem Stern („Schon 5 Favoriten bei Filmen“), die von selbst verschwindet.',
