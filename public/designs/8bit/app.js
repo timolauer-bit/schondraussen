@@ -339,13 +339,15 @@
   function canonG(type, g) { var rs = GRULES[type]; if (rs) for (var i = 0; i < rs.length; i++) if (rs[i][1].test(g)) return rs[i][0]; return g; }
   function gensOf(e) { var o = [], seen = {}; (e.genres || []).forEach(function (g) { var c = canonG(e.type, g); if (!seen[c]) { seen[c] = 1; o.push(c); } }); return o; }
   function genresOf(cat) { var c = {}; entriesOf(cat).forEach(function (e) { gensOf(e).forEach(function (g) { c[g] = (c[g] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b, 'de'); }).slice(0, 30).map(function (g) { return [g, c[g]]; }); }
+  var KINDS = { author: [['', 'Alle'], ['author', 'Autor:innen'], ['series', 'Reihen']], film: [['', 'Alle'], ['movie', 'Einzelfilme'], ['col', 'Filmreihen'], ['person', 'Regie']] };
+  function kindOf(e) { return e.type === 'film' ? (+e.is_person ? 'person' : +e.is_col ? 'col' : 'movie') : (+e.is_series === 1 ? 'series' : 'author'); }
   function filt() {
-    var cur = S.sort[S.cat] || 'alpha', g = S.genre[S.cat] || '', kd = S.cat === 'author' ? (S.kind.author || '') : '', n = (cur !== 'alpha' ? 1 : 0) + (g ? 1 : 0) + (kd ? 1 : 0), pop = $('filtPop'); pop.textContent = '';
+    var cur = S.sort[S.cat] || 'alpha', g = S.genre[S.cat] || '', kd = KINDS[S.cat] ? (S.kind[S.cat] || '') : '', n = (cur !== 'alpha' ? 1 : 0) + (g ? 1 : 0) + (kd ? 1 : 0), pop = $('filtPop'); pop.textContent = '';
     pop.append(h('p', { class: 'label' }, 'Sortieren nach'));
     SORTS.forEach(function (o) { pop.append(h('button', { class: 'fopt', type: 'button', 'aria-pressed': String(cur === o[0]), onclick: function () { S.sort[S.cat] = o[0]; filt(); rows(); } }, o[1])); });
-    if (S.cat === 'author') {
+    if (KINDS[S.cat]) {
       pop.append(h('p', { class: 'label', style: 'margin-top:14px' }, 'Art'));
-      [['', 'Alle'], ['author', 'Autor:innen'], ['series', 'Reihen']].forEach(function (o) { pop.append(h('button', { class: 'fopt', type: 'button', 'aria-pressed': String(kd === o[0]), onclick: function () { S.kind.author = o[0]; filt(); rows(); } }, o[1])); });
+      KINDS[S.cat].forEach(function (o) { pop.append(h('button', { class: 'fopt', type: 'button', 'aria-pressed': String(kd === o[0]), onclick: function () { S.kind[S.cat] = o[0]; filt(); rows(); } }, o[1])); });
     }
     var gl = genresOf(S.cat);
     { pop.append(h('p', { class: 'label', style: 'margin-top:14px' }, 'Genre'));
@@ -354,16 +356,16 @@
     var b = $('fbadge'); b.hidden = !n; b.textContent = String(n);
     var ch = $('fchips'); ch.textContent = '';
     if (cur !== 'alpha') ch.append(h('button', { class: 'fchip', type: 'button', title: 'Sortierung zurücksetzen', onclick: function () { S.sort[S.cat] = 'alpha'; filt(); rows(); } }, SORTS.filter(function (o) { return o[0] === cur; })[0][1] + ' ×'));
-    if (kd) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Filter zurücksetzen', onclick: function () { S.kind.author = ''; filt(); rows(); } }, (kd === 'series' ? 'Reihen' : 'Autor:innen') + ' ×'));
+    if (kd) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Filter zurücksetzen', onclick: function () { S.kind[S.cat] = ''; filt(); rows(); } }, KINDS[S.cat].filter(function (o) { return o[0] === kd; })[0][1] + ' ×'));
     if (g) ch.append(h('button', { class: 'fchip', type: 'button', title: 'Genre-Filter zurücksetzen', onclick: function () { S.genre[S.cat] = ''; filt(); rows(); } }, g + ' ×'));
   }
-  function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? (+e.singles === +e.works ? pl(e.works, 'Veröffentlichung', 'Veröffentlichungen') : pl(e.works, 'Album', 'Alben')) : e.type === 'podcast' ? pl(e.works, 'Folge', 'Folgen') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
+  function worksLine(e) { var t = TYPES[e.type]; return !e.fetched_at ? 'noch nicht geladen' : e.works ? (e.type === 'series' ? pl(e.works, 'Staffel', 'Staffeln') : e.type === 'author' ? pl(e.works, 'Buch', 'Bücher') : e.type === 'artist' ? (+e.singles === +e.works ? pl(e.works, 'Veröffentlichung', 'Veröffentlichungen') : pl(e.works, 'Album', 'Alben')) : e.type === 'podcast' ? pl(e.works, 'Folge', 'Folgen') : e.type === 'film' ? (+e.is_col ? 'Reihe, ' : +e.is_person ? 'Regie, ' : '') + pl(e.works, 'Film', 'Filme') : pl(e.works, 'Werk', 'Werke')) : 'keine Daten'; }
   function rows() {
     var box = $('list'); box.textContent = '';
     var es = sortedEntries(S.cat), t = TYPES[S.cat], gq = S.genre[S.cat] || '', fq = (S.filter || '').trim().toLowerCase();
     if (!es.length) { box.append(h('p', { class: 'hint' }, 'Noch keine ' + t.plural + ' auf der Liste.')); return; }
-    var kq = S.cat === 'author' ? (S.kind.author || '') : '';
-    if (kq) es = es.filter(function (e) { return kq === 'series' ? +e.is_series === 1 : +e.is_series !== 1; });
+    var kq = KINDS[S.cat] ? (S.kind[S.cat] || '') : '';
+    if (kq) es = es.filter(function (e) { return kindOf(e) === kq; });
     if (gq) es = es.filter(function (e) { return gensOf(e).indexOf(gq) >= 0; });
     if (fq) es = es.filter(function (e) { return e.name.toLowerCase().indexOf(fq) >= 0; });
     if (!es.length) { box.append(h('p', { class: 'hint' }, fq ? 'Keine Treffer für „' + S.filter.trim() + '“.' : (kq && !gq ? 'Keine Einträge in dieser Auswahl.' : 'Keine Einträge im Genre „' + gq + '“.'))); return; }
@@ -472,11 +474,22 @@
     if (S.relink === e.id) card.append(relinkBox(cur, e));
     else if (e.fetched_at && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
     if (!e.fetched_at) { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
-    if (e.type === 'film' && e.selfkey) {
+    if (e.type === 'film' && e.selfkey && (!e.kind || e.kind === 'movie')) {
       var fdone = doneSetOf(r), fb = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false', title: 'Nur für dich: Markiere, ob du den Film schon gesehen hast. Andere sehen das nicht.' });
       var fupd = function () { var on = !!fdone[e.selfkey]; fb.className = 'pill' + (on ? ' on' : ''); fb.setAttribute('aria-pressed', on ? 'true' : 'false'); fb.textContent = on ? 'Gesehen' : 'Noch nicht gesehen'; };
       fb.addEventListener('click', function () { var on = !fdone[e.selfkey]; setDone(e, [e.selfkey], on, function () { if (on) fdone[e.selfkey] = 1; else delete fdone[e.selfkey]; fupd(); }); });
       fupd(); card.append(h('p', null, fb));
+    }
+    if (e.type === 'film' && (e.dirs || []).length) {
+      var dl = h('p', { class: 'hint' }, 'Regie: ');
+      e.dirs.forEach(function (d, i) {
+        var have = S.entries.some(function (x) { return x.type === 'film' && +x.is_person && x.name === d.name; });
+        dl.append(i ? ', ' : '', d.name);
+        if (!have) { var ab = h('button', { class: 'pill', type: 'button', style: 'margin-left:6px', title: 'Regie als eigenen Eintrag anlegen: alle Filme und kommende Termine von ' + d.name }, 'Eintrag anlegen');
+          ab.addEventListener('click', function () { ab.disabled = true; api('/api/data.php?a=add', { type: 'film', name: d.name, ext: { tmdb_person: d.id } }).then(function (x) { if (x.ok) { toast(d.name + ' steht jetzt unter Filme.'); load(function () { ab.remove(); }); } else { ab.disabled = false; toast(x.error || 'Das hat nicht geklappt.'); } }); });
+          dl.append(ab); }
+      });
+      card.append(dl);
     }
     var sumNode = null;
     if (e.summary) {
@@ -493,7 +506,7 @@
     card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
     var progCb = nb.prog;
     if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
-    if (e.type === 'film' && r.works.length <= 1) return card; // einzelner Film: Gesehen-Knopf oben genügt
+    if (e.type === 'film' && (!e.kind || e.kind === 'movie') && r.works.length <= 1) return card; // einzelner Film: Gesehen-Knopf oben genügt
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     if (e.type !== 'series') { // bei Serien steht das schon in der Staffelübersicht und im Kasten rechts oben
     card.append(h('h3', { class: 'sec' }, e.type === 'podcast' ? 'Neue Folgen (letzte 14 Tage)' : 'Kommende Veröffentlichungen'));
@@ -502,7 +515,7 @@
     }
     if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes, doneSetOf(r), progCb)); card.append(renderSimilar(e)); return card; }
     if (e.type === 'series' && e.fetched_at && !S.epTried[e.id]) { S.epTried[e.id] = 1; refresh(cur, true); }
-    card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : e.type === 'film' ? 'Filme der Reihe' : 'Bekannte Werke'));
+    card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : e.type === 'film' ? (e.kind === 'person' ? 'Filme als Regisseur:in' : 'Filme der Reihe') : 'Bekannte Werke'));
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
     var dv = DONEV[e.type] || DONEV.artist, done = doneSetOf(r), hideDone = false, rows = [], cnt = h('span', { class: 'cnt' }), flt = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false' }, 'Nur Neues für mich'), wfill = h('i'), wbar = h('span', { class: 'wbar' }, wfill), grid = e.type === 'podcast' ? card : h('div', { class: 'wgrid' });
@@ -557,7 +570,7 @@
         body.append(suggestList(e.type, r), h('p', { class: 'hint' }, 'Die Vorschläge kommen aus ' + ({ artist: 'ListenBrainz', series: 'TVmaze-Daten (gleiche Genres, nach Beliebtheit)', author: 'Open Library (gleiche Themen)' }[e.type] || 'freien Datenquellen') + ' und können Lücken haben.'));
       });
     }
-    if (e.type === 'film') { body.append(h('p', { class: 'hint' }, 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.')); return sec; }
+    if (e.type === 'film') { body.append(h('p', { class: 'hint' }, 'Vorschläge ähnlicher Filme gibt es noch nicht.')); return sec; }
     body.append(h('p', { class: 'hint' }, 'Lass dir zeigen, was dir noch gefallen könnte.'), h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { ask(false); } }, 'Vorschläge laden')));
     return sec;
   }
@@ -565,7 +578,7 @@
     if (cat === 'podcast') return h('div');
     var t = TYPES[cat], sec = h('section', { class: 'similar' }), chips = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Genre wählen' }), out = h('div', null), cur = null;
     sec.append(h('h3', { class: 'sec' }, 'Beliebte ' + t.who + ' entdecken'));
-    if (!POP[cat]) { sec.append(h('p', { class: 'hint' }, 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.')); return sec; }
+    if (!POP[cat]) { sec.append(h('p', { class: 'hint' }, 'Vorschläge ähnlicher Filme gibt es noch nicht.')); return sec; }
     sec.append(h('p', { class: 'hint' }, 'Wähle ein Genre und bekomme bis zu 10 typische Vorschläge, die du mit einem Klick auf deine Liste setzt.'), chips, out);
     function draw() { chips.textContent = ''; POP[cat].forEach(function (g) { chips.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(cur === g[1]), onclick: function () { cur = g[1]; draw(); go2(g); } }, g[0])); }); }
     function go2(g) {
@@ -661,6 +674,7 @@
     var b = $('rfr'); if (b) { b.disabled = true; b.lastChild.textContent = 'Lädt …'; }
     api('/api/data.php?a=refresh&id=' + cur.id, {}).then(function (x) {
       if (!auto) toast((x.ok ? (x.msg || 'Aktualisiert.') : (x.msg || x.error || 'Das hat nicht geklappt.')) + (x.wait ? ' Eine weitere Aktualisierung dieses Eintrags ist erst nach 10 Minuten möglich.' : ''));
+      if (x.moved) S.sel = String(x.moved); // der Einzelfilm ist jetzt in der Filmreihe aufgegangen
       if (x.ok) load(function () { S.ready = true; if (S.view === 'list') { nav(); if ($('list')) { filt(); rows(); content(); } } }); else { var st = $('st'); if (st) { st.classList.remove('pulse'); st.textContent = x.msg || x.error || 'Das hat nicht geklappt.'; } if (b) { b.disabled = false; b.lastChild.textContent = 'Aktualisieren'; } load(function () { nav(); }); }
     });
   }
@@ -1439,7 +1453,7 @@
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Bücher</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
       '<div class="infocat"><h4>Musik</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
-      '<div class="infocat"><h4>Filme</h4><p>Titel, Beschreibungen, Filmreihen und die Starttermine in Deutschland kommen von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.</p></div>' +
+      '<div class="infocat"><h4>Filme</h4><p>Titel, Beschreibungen, Filmreihen, Regisseur:innen mit ihren Filmen und die Starttermine in Deutschland kommen von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen. Manga und Comics findest du unter Bücher, soweit Open Library und Google Books sie führen.</p></div>' +
       (!S.site.tag ? '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks zu Amazon, ohne Partner-ID. Für den Betreiber entstehen daraus keine Einnahmen.</p></div>' : '<div class="infocat"><h4 class="withtip">Amazon-Links <span class="tip" tabindex="0" role="button" aria-label="Wie lange gilt ein Klick auf einen Amazon-Link?"><i>?</i><span class="tipbox" role="tooltip"><b>Wie lange gilt ein Klick?</b> Nach Amazons Regeln 24 Stunden. Kaufst du in dieser Zeit etwas bei Amazon, zählt es für die Seite, auch ein ganz anderes Produkt. Legst du innerhalb der 24 Stunden etwas in den Warenkorb, kann es länger zählen (bis zu etwa 90 Tage). Für dich ändert sich der Preis nie.</span></span></h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div>') + '</section>';
     api('/api/data.php?a=lastrun').then(function (r) {
