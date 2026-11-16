@@ -67,7 +67,12 @@ function tmdb_enabled(): bool { return (string) cfg('tmdb_token', '') !== '' || 
 function tmdb_get(string $path, array $q = []): ?array {
     if (!tmdb_enabled()) return null;
     $q += ['language' => 'de-DE']; $hdr = [];
-    if ((string) cfg('tmdb_token', '') !== '') $hdr[] = 'Authorization: Bearer ' . cfg('tmdb_token'); else $q['api_key'] = (string) cfg('tmdb_key');
+    // Der lange Lesezugriffs-Token (beginnt mit „eyJ“) geht als Bearer-Header, der kurze v3-Schlüssel als Parameter; egal, in welches der beiden Felder er eingetragen wurde.
+    foreach ([cfg('tmdb_token', ''), cfg('tmdb_key', '')] as $v) {
+        $v = trim((string) $v); if ($v === '') continue;
+        if (strncmp($v, 'eyJ', 3) === 0 || strlen($v) > 60) { $hdr[] = 'Authorization: Bearer ' . $v; break; }
+        $q['api_key'] = $v;
+    }
     return http_json((string) cfg('tmdb_base', 'https://api.themoviedb.org/3') . $path . '?' . http_build_query($q), 12, $hdr);
 }
 function tmdb_search(string $q): array { // Trefferliste für „Neu hinzufügen“
