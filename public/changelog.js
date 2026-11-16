@@ -14,6 +14,8 @@ window.CHANGELOG = [
     'B|Community: Bei „Meistgesehen“ für Filme steht jetzt der Haken, wenn du den Film schon hast (auch über die Filmreihe), und das Plus legt die passende Reihe an.',
     'A|Admin: Die Systemnachricht bei jedem neuen Konto ohne E-Mail-Adresse entfällt, die Warnung bei Erreichen des Limits bleibt.',
     'A|Admin: Im Briefing entfallen die Liste „Neu dabei“ und die letzten Systemmeldungen unter den Kästen; die Zahlen bleiben. Vergessene Dev-Rahmen (Briefing, Kontakt, Oberflächenanpassungen) sind entfernt.',
+    'B|Listen: Fehlerhafte Einträge aus einem früheren Import (ganze Zeilen einer Exportdatei als Name) sind entfernt. Hinzufügen und Import lehnen solche Zeilen und Links als Namen jetzt ab.',
+    'A|Admin: Fehlermeldungen im Protokoll der Admin-Zugriffe, bei gesperrten Adressen und Wunschbildern erscheinen als Hinweiskasten wie in den anderen Abschnitten.',
     'F|Serien: Der Kasten „Nächste Folge“ zeigt den Serienstatus. Ohne neuen Termin steht dort „beendet“, „unklar“ (Fortsetzung offen), „offen“ (läuft weiter) oder „in Planung“ mit kurzer Erklärung, mit Termin unten klein „Serie läuft“.',
     'O|Kalender: Die unter der Monatsübersicht abgewählten Kategorien werden in deinem Konto gespeichert und gelten auf allen Geräten.',
     'U|Favoriten: Sind schon 5 gewählt, erscheint statt eines Fensters kurz eine kleine Pille unter dem Stern („Schon 5 Favoriten bei Filmen“), die von selbst verschwindet.',
