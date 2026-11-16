@@ -7,6 +7,11 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+  '083_orphan_numeric_subjects' => [ // Reste der entfernten Einträge von stefanh: Filme und Musik, deren Name nur aus Ziffern besteht und die auf keiner Liste mehr stehen
+  "DELETE ep FROM episodes ep JOIN subjects s ON s.id=ep.subject_id WHERE s.type IN ('film','artist') AND s.name REGEXP '^[0-9[:space:][:punct:]]+$' AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)",
+  "DELETE ws FROM work_seen ws JOIN subjects s ON s.id=ws.subject_id WHERE s.type IN ('film','artist') AND s.name REGEXP '^[0-9[:space:][:punct:]]+$' AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)",
+  "DELETE s FROM subjects s WHERE s.type IN ('film','artist') AND s.name REGEXP '^[0-9[:space:][:punct:]]+$' AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)"
+ ],
   '082_user_fav_work' => [
   "CREATE TABLE user_fav_work (user_id INT UNSIGNED NOT NULL, subject_id INT UNSIGNED NOT NULL, item_key VARCHAR(40) NOT NULL, title VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, subject_id, item_key), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
  ],
