@@ -2248,7 +2248,7 @@
     function logLoad() {
       api('/api/admin.php?a=adminlog').then(function (r) {
         lgBox.textContent = ''; var l = r.log || [];
-        if (!l.length) { lgBox.append(h('p', { class: 'hint' }, r.error || 'Noch keine Einträge.')); return; }
+        if (!l.length) { lgBox.append((r.error ? h('p', { class: 'warnbox' }, r.error) : h('p', { class: 'hint' }, 'Noch keine Einträge.'))); return; }
         l.forEach(function (x) { lgBox.append(h('div', { class: 'arow' }, h('div', null, h('div', { class: 'nm2' }, (x.admin_name || x.admin_email || 'Admin') + ' hat die E-Mail-Adresse von ' + (x.target_name ? x.target_name + ' (Nr. ' + x.target_id + ')' : 'Nr. ' + x.target_id + ' (Konto gelöscht)') + ' aufgedeckt'), h('div', { class: 'meta2' }, (function (t) { try { return new Date(String(t).replace(' ', 'T')).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }); } catch (_) { return String(t); } })(x.created_at))))); });
       });
     }
@@ -2285,7 +2285,7 @@
     function wishes() {
       api('/api/admin.php?a=wishes').then(function (r) {
         wsBox.textContent = ''; var l = r.wishes || [];
-        if (!l.length) wsBox.append(h('p', { class: 'hint' }, r.error || 'Keine Wünsche offen.'));
+        if (!l.length) wsBox.append((r.error ? h('p', { class: 'warnbox' }, r.error) : h('p', { class: 'hint' }, 'Keine Wünsche offen.')));
         l.forEach(function (x) {
           var row = h('div', { class: 'wishrow' }, h('div', { class: 'nm2' }, (x.username || 'Nutzer ' + x.uid) + ' · ' + String(x.created_at || '').slice(0, 10)), h('div', null, x.wish));
           if (x.status !== 'open') { row.append(h('div', { class: 'meta2' }, x.status === 'ready' ? 'Bilder bereitgestellt (' + x.n + ')' : 'Abgelehnt')); wsBox.append(row); return; }
@@ -2388,7 +2388,7 @@
     function blocked() {
       api('/api/admin.php?a=blocked').then(function (r) {
         bl.textContent = ''; var l = r.blocked || [];
-        if (!l.length) bl.append(h('p', { class: 'hint' }, r.error || 'Keine Adresse gesperrt.'));
+        if (!l.length) bl.append((r.error ? h('p', { class: 'warnbox' }, r.error) : h('p', { class: 'hint' }, 'Keine Adresse gesperrt.')));
         l.forEach(function (x) { bl.append(h('div', { class: 'arow' }, h('div', null, h('div', { class: 'nm2' }, x.masked || x.email), h('div', { class: 'meta2' }, 'gesperrt seit ' + String(x.created_at || '').slice(0, 10))), h('div', { class: 'acts' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=unblock', { key: x.key }).then(function () { blocked(); }); } }, 'Freigeben')))); });
       });
     }
