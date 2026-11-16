@@ -219,6 +219,10 @@ function film_merge_collection(PDO $pdo, array $single, int $tmdbId, int $cid, s
         return $col;
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); return 0; }
 }
+// Notizbücher, Kalender, Malbücher und ähnliche Artikel, die Händler unter Autorennamen einstellen (z. B. „SoftTouch Notebook“): keine Bücher des Autors
+function is_merch_title(string $t): bool {
+    return (bool) preg_match('/\\b(notebooks?|notizbuch|notizbücher|notizheft|sketchbook|skizzenbuch|composition book|lined pages|blank pages|blanko|dot grid|punktraster|softtouch|soft[ -]touch|wide ruled|college ruled|colou?ring book|malbuch|ausmalbuch|password book|address book|adressbuch|guest book|gästebuch|(kalender|calendar|planner|planer)\\s*\\d{4}|\\d{4}\\s*(wand)?(kalender|calendar|planner|planer))\\b/iu', $t);
+}
 // Aktualisiert einen Titel in der Datenbank. Gibt ['ok'=>bool,'msg'=>string] zurück.
 function refresh_subject(PDO $pdo, int $sid): array {
     $r = refresh_subject_run($pdo, $sid);
@@ -673,6 +677,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     }
     if (!$works && !$rel) return ['ok' => false, 'msg' => 'Keine deutschen Bände gefunden (' . $ldInfo . '; Google Books lieferte ' . $nItems . ' Treffer, davon ' . $nLang . ' in anderer Sprache und ' . $nTitle . ' ohne den Reihentitel im Namen; Sprachen: ' . ($langs ? implode(', ', array_map(fn($k, $n) => $k . ' ' . $n, array_keys($langs), $langs)) : 'keine') . '; Beispiele: ' . ($sample ? implode(', ', $sample) : 'keine') . '). Versuche einen anderen oder genaueren Titel.'];
     if (!$got && !$works && !$rel) return ['ok' => false, 'msg' => 'Weder DNB noch Google Books erreichbar (' . $ldInfo . '; ' . $lastErr . ').'];
+    $works = array_values(array_filter($works, fn($x) => !is_merch_title((string) $x[0]))); $rel = array_values(array_filter($rel, fn($x) => !is_merch_title((string) $x[0])));
     $num = function ($t) { return preg_match('/Band\s+(\d+)/', $t, $m) || preg_match('/(\d+)\s*$/', $t, $m) ? (int) $m[1] : 0; };
     usort($works, fn($a, $b) => $num($b[0]) <=> $num($a[0]) ?: strcmp($a[0], $b[0]));
     $pdo->beginTransaction();
@@ -771,6 +776,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     $ext['works_src'] = 'Open Library'; $ext['works_info'] = (string) ($dn[2] ?? '');
     if (count($dn[0] ?? []) + count($dn[1] ?? []) >= 3) { $works = $dn[0]; $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; }
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
+    $works = array_values(array_filter($works, fn($x) => !is_merch_title((string) $x[0]))); $rel = array_values(array_filter($rel, fn($x) => !is_merch_title((string) $x[0])));
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
     // Neu bei der Quelle aufgetauchte Bücher (letzte 4 Wochen) wie Ankündigungen behandeln; beim ersten Abruf wird nur der Bestand gemerkt.
     if ($ext['works_src'] === 'DNB' && empty($ext['dnb_seeded'])) { // Quellenwechsel: Bestand neu merken, damit nichts davon als „neu hinzugefügt“ erscheint
