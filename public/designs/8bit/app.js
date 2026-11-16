@@ -506,7 +506,7 @@
     card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
     var progCb = nb.prog;
     if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
-    if (e.type === 'film' && (!e.kind || e.kind === 'movie') && r.works.length <= 1) return card; // einzelner Film: Gesehen-Knopf oben genügt
+    if (e.type === 'film' && (!e.kind || e.kind === 'movie') && r.works.length <= 1) { card.append(renderSimilar(e)); return card; } // einzelner Film: Gesehen-Knopf oben genügt
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     if (e.type !== 'series') { // bei Serien steht das schon in der Staffelübersicht und im Kasten rechts oben
     card.append(h('h3', { class: 'sec' }, e.type === 'podcast' ? 'Neue Folgen (letzte 14 Tage)' : 'Kommende Veröffentlichungen'));
@@ -539,6 +539,7 @@
   /* ---------- Vorschläge: ähnliche Einträge und beliebte Einträge je Genre ---------- */
   var POP = {
     artist: [['Rock', 'rock'], ['Metal', 'metal'], ['Thrash Metal', 'thrash metal'], ['Hard Rock', 'hard rock'], ['Punk', 'punk'], ['Pop', 'pop'], ['Hip-Hop', 'hip hop'], ['Elektronik', 'electronic'], ['Jazz', 'jazz'], ['Klassik', 'classical'], ['Folk', 'folk'], ['Blues', 'blues'], ['Reggae', 'reggae'], ['Country', 'country'], ['Indie', 'indie'], ['Soul', 'soul'], ['Schlager', 'schlager']],
+    film: [['Action', '28'], ['Abenteuer', '12'], ['Animation', '16'], ['Komödie', '35'], ['Krimi', '80'], ['Dokumentarfilm', '99'], ['Drama', '18'], ['Familie', '10751'], ['Fantasy', '14'], ['Historie', '36'], ['Horror', '27'], ['Musik', '10402'], ['Mystery', '9648'], ['Liebesfilm', '10749'], ['Science-Fiction', '878'], ['Thriller', '53'], ['Krieg', '10752'], ['Western', '37']],
     series: [['Drama', 'Drama'], ['Komödie', 'Comedy'], ['Science-Fiction', 'Science-Fiction'], ['Fantasy', 'Fantasy'], ['Krimi', 'Crime'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Action', 'Action'], ['Abenteuer', 'Adventure'], ['Mystery', 'Mystery'], ['Romanze', 'Romance'], ['Anime', 'Anime'], ['Familie', 'Family'], ['Western', 'Western'], ['Krieg', 'War'], ['Geschichte', 'History']],
     author: [['Fantasy', 'Fantasy'], ['Science-Fiction', 'Science fiction'], ['Krimi', 'Mystery and detective stories'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Liebesroman', 'Romance'], ['Historischer Roman', 'Historical fiction'], ['Biografie', 'Biography'], ['Jugendbuch', 'Young adult fiction'], ['Humor', 'Humor'], ['Abenteuer', 'Adventure']]
   };
@@ -567,10 +568,10 @@
       api('/api/suggest.php?a=similar&id=' + e.id + (fresh ? '&fresh=1' : '')).then(function (r) {
         body.textContent = '';
         if (r.error) { body.append(h('p', { class: 'warnbox' }, r.error)); return; }
-        body.append(suggestList(e.type, r), h('p', { class: 'hint' }, 'Die Vorschläge kommen aus ' + ({ artist: 'ListenBrainz', series: 'TVmaze-Daten (gleiche Genres, nach Beliebtheit)', author: 'Open Library (gleiche Themen)' }[e.type] || 'freien Datenquellen') + ' und können Lücken haben.'));
+        body.append(suggestList(e.type, r), h('p', { class: 'hint' }, 'Die Vorschläge kommen aus ' + ({ artist: 'ListenBrainz', series: 'TVmaze-Daten (gleiche Genres, nach Beliebtheit)', author: 'Open Library (gleiche Themen)', film: 'TMDB (Empfehlungen zu diesem Film)' }[e.type] || 'freien Datenquellen') + ' und können Lücken haben.'));
       });
     }
-    if (e.type === 'film') { body.append(h('p', { class: 'hint' }, 'Vorschläge ähnlicher Filme gibt es noch nicht.')); return sec; }
+    if (e.type === 'film' && e.kind === 'person') return h('div');
     body.append(h('p', { class: 'hint' }, 'Lass dir zeigen, was dir noch gefallen könnte.'), h('p', null, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { ask(false); } }, 'Vorschläge laden')));
     return sec;
   }
@@ -578,7 +579,6 @@
     if (cat === 'podcast') return h('div');
     var t = TYPES[cat], sec = h('section', { class: 'similar' }), chips = h('div', { class: 'gchips pick', role: 'group', 'aria-label': 'Genre wählen' }), out = h('div', null), cur = null;
     sec.append(h('h3', { class: 'sec' }, 'Beliebte ' + t.who + ' entdecken'));
-    if (!POP[cat]) { sec.append(h('p', { class: 'hint' }, 'Vorschläge ähnlicher Filme gibt es noch nicht.')); return sec; }
     sec.append(h('p', { class: 'hint' }, 'Wähle ein Genre und bekomme bis zu 10 typische Vorschläge, die du mit einem Klick auf deine Liste setzt.'), chips, out);
     function draw() { chips.textContent = ''; POP[cat].forEach(function (g) { chips.append(h('button', { class: 'gchip pickbtn', type: 'button', 'aria-pressed': String(cur === g[1]), onclick: function () { cur = g[1]; draw(); go2(g); } }, g[0])); }); }
     function go2(g) {
