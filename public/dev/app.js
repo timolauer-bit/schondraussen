@@ -448,7 +448,7 @@
     var bellBtn = h('button', { class: 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'), type: 'button', title: bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus', 'aria-pressed': String(bellOn), 'aria-label': bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus',
       onclick: function () { bellOn = !bellOn; if (le) le.bell = bellOn ? 1 : 0; api('/api/data.php?a=bell&id=' + e.id, { on: bellOn }); bellBtn.className = 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'); bellBtn.title = bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus'; bellBtn.setAttribute('aria-pressed', String(bellOn)); bellBtn.setAttribute('aria-label', bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus'); bellBtn.textContent = ''; bellBtn.append(ico(on_(bellOn))); rows(); } }, ico(on_(bellOn)));
     var favOn = !!(le && +le.fav === 1);
-    var favBtn = devMark(h('button', { class: 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'), type: 'button', 'aria-pressed': String(favOn), title: favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)', 'aria-label': favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren',
+    var favBtn = h('button', { class: 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'), type: 'button', 'aria-pressed': String(favOn), title: favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)', 'aria-label': favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren',
       onclick: function () {
         var want = !favOn; favBtn.disabled = true;
         api('/api/data.php?a=fav&id=' + e.id, { on: want }).then(function (x) {
@@ -458,7 +458,7 @@
           favBtn.className = 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'); favBtn.setAttribute('aria-pressed', String(favOn)); favBtn.setAttribute('aria-label', favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren');
           favBtn.title = favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)';
         });
-      } }, ico(ICONS.star)), 'fav');
+      } }, ico(ICONS.star));
     var menu = h('div', { class: 'menu', role: 'menu', hidden: true }), moreBtn, wrap;
     function closeMenu() { menu.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', outside, true); document.removeEventListener('keydown', esc); }
     function outside(ev) { if (!wrap.contains(ev.target)) closeMenu(); }
