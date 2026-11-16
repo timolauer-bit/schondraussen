@@ -296,7 +296,7 @@
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
-    wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz und Open Library und werden alle 12 Stunden erneuert.'));
+    wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
     S.calHide = S.calHide || {};
@@ -395,7 +395,7 @@
       : cat === 'film' ? [['Filme', es.length], ['Filme und Teile der Reihen', works], ['Kommende Starts', ups]]
       : [['Serien', es.length], ['Staffeln', works, null, 'Summe der Staffeln aller Serien in deiner Liste (Quelle: TVmaze).'], ['Folgen gesamt', eps, epsKnown ? 'Folgenzahl bei ' + epsKnown + ' von ' + es.length : 'noch keine Angaben', 'Alle bekannten Folgen. Bei Serien, die noch nicht geladen sind, fehlt die Angabe.'], ['Kommende Termine', ups]];
     wrap.append(h('h2', { class: 'sec' }, 'Übersicht ' + t.plural));
-    if (cat === 'film') wrap.append(h('p', { class: 'warnbox' }, h('b', null, 'Hinweis: '), 'Die Datenquelle für Filme ist hier noch nicht angebunden. Du kannst Filme schon auf deine Liste setzen, Werke und Kinotermine erscheinen aber erst, wenn die Anbindung aktiviert ist.'));
+    if (cat === 'film' && es.length && es.every(function (x) { return !x.fetched_at; })) wrap.append(h('p', { class: 'warnbox' }, h('b', null, 'Hinweis: '), 'Die Datenquelle für Filme ist hier noch nicht angebunden. Du kannst Filme schon auf deine Liste setzen, Werke und Kinotermine erscheinen aber erst, wenn die Anbindung aktiviert ist.'));
     if (cat === 'author') wrap.append(h('p', { class: 'warnbox' }, h('b', null, 'Hinweis: '), 'Die frei verfügbaren Buch-Schnittstellen liefern nur wenige zukünftige Bücher. Meist kommen Bücher erst nach dem Erscheinen dazu. Darum stehen bei den Terminen auch Bücher, die in den letzten 4 Wochen neu bei der Quelle hinzugekommen sind („neu hinzugefügt“).'));
     wrap.append(h('div', { class: 'ovtiles' }, tiles.map(function (x) { return h('div', { class: 'ovtile' + (x[3] ? ' hastip' : ''), title: x[3] || null, tabindex: x[3] ? '0' : null }, h('div', { class: 'ovnum' }, fmtN(x[1])), h('div', { class: 'ovlbl' }, x[0]), x[2] ? h('div', { class: 'ovnote tipd', title: 'Für die übrigen Einträge liefert die Datenquelle keine Gesamtzahl, sie fehlen in dieser Summe. Die Zahl oben ist deshalb eine Untergrenze.' }, x[2]) : null); })));
     items.sort(function (a, b) { return a.p.sort - b.p.sort || String(a.u.title).localeCompare(String(b.u.title), 'de'); });
@@ -451,7 +451,7 @@
     function fillMenu() {
       menu.textContent = '';
       menu.append(h('button', { class: 'mi', id: 'rfr', type: 'button', role: 'menuitem', onclick: function () { closeMenu(); refresh(cur); } }, ico(ICONS.refresh), 'Aktualisieren'));
-      if (e.type !== 'film') menu.append(h('button', { class: 'mi', type: 'button', role: 'menuitem', onclick: function () { closeMenu(); S.relink = e.id; content(); } }, 'Treffer ändern'));
+      menu.append(h('button', { class: 'mi', type: 'button', role: 'menuitem', onclick: function () { closeMenu(); S.relink = e.id; content(); } }, 'Treffer ändern'));
       menu.append(h('button', { class: 'mi warn', type: 'button', role: 'menuitem', onclick: function () {
         menu.textContent = '';
         menu.append(h('p', { class: 'mq' }, 'Wirklich aus deiner Liste entfernen?'),
@@ -470,9 +470,8 @@
     var gch = gensOf(e).length ? h('div', { class: 'gchips' }, gensOf(e).map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));
     if (S.relink === e.id) card.append(relinkBox(cur, e));
-    else if (e.fetched_at && e.type !== 'film' && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
-    if (!e.fetched_at && e.type !== 'film') { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
-    if (e.type === 'film') card.append(h('p', { class: 'state' }, 'Für Filme wird die Datenquelle noch angebunden. Der Eintrag steht schon auf deiner Liste.'));
+    else if (e.fetched_at && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
+    if (!e.fetched_at) { card.append(h('p', { class: 'state pulse', id: 'st' }, 'Daten werden geladen …')); refresh(cur, true); return card; }
     if (e.type === 'film' && e.selfkey) {
       var fdone = doneSetOf(r), fb = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false', title: 'Nur für dich: Markiere, ob du den Film schon gesehen hast. Andere sehen das nicht.' });
       var fupd = function () { var on = !!fdone[e.selfkey]; fb.className = 'pill' + (on ? ' on' : ''); fb.setAttribute('aria-pressed', on ? 'true' : 'false'); fb.textContent = on ? 'Gesehen' : 'Noch nicht gesehen'; };
@@ -493,6 +492,8 @@
     var nb = nextBox(e, r, up, t);
     card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
     var progCb = nb.prog;
+    if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
+    if (e.type === 'film' && r.works.length <= 1) return card; // einzelner Film: Gesehen-Knopf oben genügt
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     if (e.type !== 'series') { // bei Serien steht das schon in der Staffelübersicht und im Kasten rechts oben
     card.append(h('h3', { class: 'sec' }, e.type === 'podcast' ? 'Neue Folgen (letzte 14 Tage)' : 'Kommende Veröffentlichungen'));
@@ -501,7 +502,7 @@
     }
     if (e.type === 'series' && (r.episodes || []).length) { card.append(renderEpisodes(e, r.episodes, doneSetOf(r), progCb)); card.append(renderSimilar(e)); return card; }
     if (e.type === 'series' && e.fetched_at && !S.epTried[e.id]) { S.epTried[e.id] = 1; refresh(cur, true); }
-    card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : 'Bekannte Werke'));
+    card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : e.type === 'film' ? 'Filme der Reihe' : 'Bekannte Werke'));
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
     var dv = DONEV[e.type] || DONEV.artist, done = doneSetOf(r), hideDone = false, rows = [], cnt = h('span', { class: 'cnt' }), flt = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false' }, 'Nur Neues für mich'), wfill = h('i'), wbar = h('span', { class: 'wbar' }, wfill), grid = e.type === 'podcast' ? card : h('div', { class: 'wgrid' });
@@ -677,9 +678,8 @@
   }
   function addSubmit(ev) {
     ev.preventDefault(); locSeq++; clearTimeout(locT); var v = $('q').value.trim(); if (!v) { say('Gib erst einen Namen ein.', true); return; }
-    if (S.cat === 'film') { S.sugg = { q: v, list: [], manual: true }; drawSugg(); say(''); return; } // Filme: noch keine Datenquelle, der Titel wird so übernommen
     S.sugg = { loading: true }; drawSugg(); say('');
-    api('/api/data.php?a=search&type=' + S.cat + '&q=' + encodeURIComponent(v)).then(function (r) { S.sugg = { q: v, list: r.results || [] }; drawSugg(); });
+    api('/api/data.php?a=search&type=' + S.cat + '&q=' + encodeURIComponent(v)).then(function (r) { S.sugg = { q: v, list: r.results || [], manual: !!r.manual }; drawSugg(); });
   }
   function addNow(name, ext) {
     api('/api/data.php?a=add', { type: S.cat, name: name, ext: ext || {} }).then(function (r) {
@@ -1171,7 +1171,7 @@
         if (r.api_errors === null) cronBox.append(h('p', { class: 'warnbox' }, 'Für das Fehlerprotokoll der Datenquellen fehlt noch die Migration 045 (migrate.php einmal aufrufen).'));
         else if (r.api_errors) {
           cronBox.append(h('h4', null, 'Schnittstellen (Fehler der letzten 7 Tage)'));
-          var SRC = ['MusicBrainz', 'ListenBrainz', 'TVmaze', 'Open Library', 'Google Books', 'Deutsche Nationalbibliothek', 'lobid.org', 'Wikipedia', 'Wikidata', 'DeepL', 'Google News', 'Apple Podcasts'], by = {};
+          var SRC = ['MusicBrainz', 'ListenBrainz', 'TMDB', 'TVmaze', 'Open Library', 'Google Books', 'Deutsche Nationalbibliothek', 'lobid.org', 'Wikipedia', 'Wikidata', 'DeepL', 'Google News', 'Apple Podcasts'], by = {};
           r.api_errors.forEach(function (x) { (by[x.source] = by[x.source] || []).push(x); if (SRC.indexOf(x.source) < 0) SRC.push(x.source); });
           var ae = h('ul', { class: 'cronruns' });
           SRC.forEach(function (n) {
@@ -1372,7 +1372,7 @@
         h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, cell(x)); })); }))));
     }
     sec('Kurzüberblick', h('p', null, 'Schondraussen.de ist ein kostenloser Medien-Tracker: Nutzer legen Autor:innen, Musiker:innen, Filme und Serien auf eine Liste und werden per Mail und Kalender über Neuerscheinungen informiert. Die Seite ist am 08.11.2026 offiziell gestartet.'),
-      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt; Einnahmen nur über Amazon-Partnerlinks)', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Podcasts werden schrittweise freigegeben, Filme warten auf die Freigabe der Datenquelle (TMDB)']));
+      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt, privat und ohne Einnahmen' + (S.site.tag ? ' außer über Amazon-Partnerlinks' : '') + ')', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Podcasts werden schrittweise freigegeben, Filme kommen von TMDB']));
     sec('Funktionen für Nutzer', ul([
       'Konto mit E-Mail-Bestätigung oder, wenn der Admin es erlaubt, ganz ohne E-Mail-Adresse (Anmeldung mit Benutzername und Wiederherstellungscode); frei wählbarer Benutzername, optionale Zwei-Faktor-Anmeldung; Konto jederzeit löschbar (endgültig nach 7 Tagen)',
       'Vier Listen (Bücher, Musik, Filme, Serien, je bis zu 1.000 Einträge) mit Werkübersicht, Beschreibung (deutsch, übersetzt) und Markierung als gesehen, gelesen oder gehört',
@@ -1396,6 +1396,7 @@
       ['Versionsverlauf', 'Eine Sammelversion je Kalendertag, Kategorien F, O, U, B, A, D, T']]));
     sec('Externe Datenquellen und Schnittstellen', h('p', null, 'Alle Abfragen laufen serverseitig und nur für Titel, die Nutzer wirklich anlegen. An die Dienste gehen nie E-Mail-Adressen oder Kontodaten.'),
       tbl(['Quelle', 'Wofür', 'Schlüssel', 'Auflagen und Hinweise'], [
+        [{ t: 'TMDB', href: 'https://www.themoviedb.org' }, 'Filme: Titel, Beschreibung, Kino- und Digitalstart in Deutschland, Filmreihen', 'Zugangsschlüssel', 'Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'],
         [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
         [{ t: 'MusicBrainz', href: 'https://musicbrainz.org' }, 'Musik: Künstler:innen, Alben, Termine', 'keiner', 'höchstens eine Anfrage pro Sekunde, daher gebremste Abfrage'],
         ['ListenBrainz', 'Musik: Vorschläge ähnlicher Künstler:innen', 'keiner', '–'],
@@ -1407,8 +1408,7 @@
         ['Wikipedia und Wikidata', 'Kurzvorstellung von Bands und Autor:innen', 'keiner', 'deutsch bevorzugt, sonst englisch und übersetzt'],
         [{ t: 'DeepL', href: 'https://www.deepl.com' }, 'Übersetzung englischer Beschreibungen ins Deutsche', 'API-Schlüssel (Free-Tarif)', 'nur öffentliche Texte, Ergebnis wird gespeichert (je Text eine Übersetzung)'],
         ['Google News (RSS-Suche)', 'aktuelle Schlagzeilen in den Benachrichtigungsmails (höchstens 7 Tage alt)', 'keiner', 'nur Name des Eintrags und Titel des Werks gehen an Google'],
-        ['TMDB', 'Filme (geplant)', 'API-Schlüssel', 'offen: private oder kommerzielle Nutzung; erst danach wird die Anbindung gebaut'],
-        ['Amazon-Partnerprogramm', 'Kauflinks mit Partner-ID', 'Partner-ID', 'Kennzeichnung als Werbung im Footer, im Impressum und im Datenschutz']]));
+        ['Amazon (Suchlinks)', 'Kauflinks', S.site.tag ? 'Partner-ID' : 'keiner', S.site.tag ? 'Kennzeichnung als Werbung im Footer, im Impressum und im Datenschutz' : 'zurzeit ohne Partner-ID, also keine Einnahmen']]));
     sec('Dienste und Konten', tbl(['Dienst', 'Zweck'], [
       ['ALL-INKL (Hoster)', 'Webspace, Datenbank, Mailserver, Cron-Job, Fehler- und Zugriffslogs (7 Tage)'],
       ['GitHub (privates Repository, Actions)', 'Quellcode und automatische Bereitstellung bei jedem Push'],
@@ -1419,7 +1419,7 @@
       ['Amazon-Partnerprogramm', 'Partner-ID für die Kauflinks']]),
       h('p', { class: 'hint' }, 'Schlüssel und Passwörter sind nur auf dem Server hinterlegt und hier bewusst nicht genannt.'));
     sec('Datenschutz, Sicherheit und Rechtliches', ul([
-      'Impressum und Datenschutzerklärung (Stand 15.11.2026) sind online; sie nennen alle Quellen, DeepL, die Google-News-Schlagzeilen, Amazon-Partnerlinks, Aufbewahrungsfristen und die Rechte der Nutzer',
+      'Impressum und Datenschutzerklärung (Stand 15.11.2026) sind online; sie nennen alle Quellen, DeepL, die Google-News-Schlagzeilen, Amazon-Links, Aufbewahrungsfristen und die Rechte der Nutzer',
       'Es gibt nur technisch nötige Cookies (Sitzung, gewählte Version und Theme), keine Werbe- oder Analyse-Dienste, und die Seite lädt nur von der eigenen Domain (keine externen Schriften, Skripte oder CDNs)',
       'E-Mail-Adressen sieht der Admin in der Nutzerverwaltung nicht; ein Aufdecken im Ausnahmefall wird protokolliert',
       'Passwörter nur als Hash; optionale Zwei-Faktor-Anmeldung; Anmeldeversuche und Kontaktformular sind mengenbegrenzt',
@@ -1439,9 +1439,9 @@
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Bücher</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
       '<div class="infocat"><h4>Musik</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
-      '<div class="infocat"><h4>Filme</h4><p>Die Datenquelle wird noch angebunden, vorgesehen ist <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Einträge kannst du schon anlegen.</p></div>' +
+      '<div class="infocat"><h4>Filme</h4><p>Titel, Beschreibungen, Filmreihen und die Starttermine in Deutschland kommen von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen. Manga und Comics findest du unter Bücher, soweit Open Library und Google Books sie führen.</p></div>' +
-      '<div class="infocat"><h4 class="withtip">Amazon-Links <span class="tip" tabindex="0" role="button" aria-label="Wie lange gilt ein Klick auf einen Amazon-Link?"><i>?</i><span class="tipbox" role="tooltip"><b>Wie lange gilt ein Klick?</b> Nach Amazons Regeln 24 Stunden. Kaufst du in dieser Zeit etwas bei Amazon, zählt es für die Seite, auch ein ganz anderes Produkt. Legst du innerhalb der 24 Stunden etwas in den Warenkorb, kann es länger zählen (bis zu etwa 90 Tage). Für dich ändert sich der Preis nie.</span></span></h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div></section>';
+      (!S.site.tag ? '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks zu Amazon, ohne Partner-ID. Für den Betreiber entstehen daraus keine Einnahmen.</p></div>' : '<div class="infocat"><h4 class="withtip">Amazon-Links <span class="tip" tabindex="0" role="button" aria-label="Wie lange gilt ein Klick auf einen Amazon-Link?"><i>?</i><span class="tipbox" role="tooltip"><b>Wie lange gilt ein Klick?</b> Nach Amazons Regeln 24 Stunden. Kaufst du in dieser Zeit etwas bei Amazon, zählt es für die Seite, auch ein ganz anderes Produkt. Legst du innerhalb der 24 Stunden etwas in den Warenkorb, kann es länger zählen (bis zu etwa 90 Tage). Für dich ändert sich der Preis nie.</span></span></h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div>') + '</section>';
     api('/api/data.php?a=lastrun').then(function (r) {
       var el = d.querySelector('#lastrun'); if (!el || r.minutes == null) return; var m = +r.minutes, t;
       if (m < 60) t = 'vor weniger als einer Stunde'; else if (m < 180) t = 'vor etwa ' + Math.round(m / 60) + ' Stunden'; else if (m < 1440) t = 'vor ' + Math.round(m / 60) + ' Stunden'; else t = 'vor über einem Tag';
@@ -1496,7 +1496,7 @@
         fig('/about/katzen-karton.webp', 'Zwei Katzen schauen aus einem Pappkarton', 'Matz und Lucy bei der Büroinspektion im Karton'),
         fig('/about/katzen-monitor.webp', 'Zwei Katzen sitzen vor einem Monitor', 'Matz und Lucy bei der Qualitätssicherung am Monitor'))));
     if (KOFI_URL) P.append(h('section', { class: 'infosec' }, h('h3', null, 'Die Seite unterstützen'),
-      h('p', null, 'Schondraussen.de ist kostenlos und bleibt werbefrei. Die einzige geplante Einnahmequelle sind die Amazon-Partnerlinks. Wenn dir die Seite gefällt und du mir freiwillig etwas zukommen lassen möchtest, geht das hier:'),
+      h('p', null, 'Schondraussen.de ist kostenlos und bleibt werbefrei. ' + (S.site.tag ? 'Die einzige geplante Einnahmequelle sind die Amazon-Partnerlinks. ' : '') + 'Wenn dir die Seite gefällt und du mir freiwillig etwas zukommen lassen möchtest, geht das hier:'),
       h('p', null, h('a', { class: 'btn small', href: KOFI_URL, target: '_blank', rel: 'noopener noreferrer' }, 'Auf Ko-fi unterstützen'))));
     return P;
   }

@@ -22,7 +22,7 @@ Die Seite ist ganz neu, deshalb ist dein Feedback Gold wert. Unter „Kontakt“
 
 Datenschutz und Geld
 Du brauchst nur eine E-Mail-Adresse und einen frei gewählten Benutzernamen, kein Klarname. Du kannst dein Konto jederzeit selbst löschen.
-Die Amazon-Links bei den Einträgen sind Partnerlinks: Wenn du darüber etwas bestellst, bekomme ich eine kleine Provision, für dich ändert sich der Preis nicht. Außer den Amazon-Links und eventuell freiwilligen Spenden soll es keine Einnahmen geben, und Werbung wird es nicht geben.
+Die Seite ist ein privates Projekt ohne Werbung. Die Links zu Amazon bei den Einträgen sind einfache Suchlinks ohne Provision. Wenn dir die Seite gefällt, kannst du freiwillig etwas spenden, ein Muss ist das nicht.
 
 Danke fürs Ausprobieren!
 TXT;

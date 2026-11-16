@@ -1372,7 +1372,7 @@
         h('tbody', null, rows.map(function (r) { return h('tr', null, r.map(function (x, i) { return h('td', i === 0 ? { class: 'k' } : null, cell(x)); })); }))));
     }
     sec('Kurzüberblick', h('p', null, 'Schondraussen.de ist ein kostenloser Medien-Tracker: Nutzer legen Autor:innen, Musiker:innen, Filme und Serien auf eine Liste und werden per Mail und Kalender über Neuerscheinungen informiert. Die Seite ist am 08.11.2026 offiziell gestartet.'),
-      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt; Einnahmen nur über Amazon-Partnerlinks)', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Podcasts werden schrittweise freigegeben, Filme warten auf die Freigabe der Datenquelle (TMDB)']));
+      ul(['Betreiber: Timo Lauer, Trier (Einzelprojekt, privat und ohne Einnahmen' + (S.site.tag ? ' außer über Amazon-Partnerlinks' : '') + ')', 'Technik in einem Satz: PHP und MySQL auf ALL-INKL, Code in einem privaten GitHub-Repository, automatische Bereitstellung bei jedem Push', 'Stand der Kategorien: Bücher, Musik und Serien sind angebunden, Podcasts werden schrittweise freigegeben, Filme kommen von TMDB']));
     sec('Funktionen für Nutzer', ul([
       'Konto mit E-Mail-Bestätigung oder, wenn der Admin es erlaubt, ganz ohne E-Mail-Adresse (Anmeldung mit Benutzername und Wiederherstellungscode); frei wählbarer Benutzername, optionale Zwei-Faktor-Anmeldung; Konto jederzeit löschbar (endgültig nach 7 Tagen)',
       'Vier Listen (Bücher, Musik, Filme, Serien, je bis zu 1.000 Einträge) mit Werkübersicht, Beschreibung (deutsch, übersetzt) und Markierung als gesehen, gelesen oder gehört',
@@ -1408,8 +1408,7 @@
         ['Wikipedia und Wikidata', 'Kurzvorstellung von Bands und Autor:innen', 'keiner', 'deutsch bevorzugt, sonst englisch und übersetzt'],
         [{ t: 'DeepL', href: 'https://www.deepl.com' }, 'Übersetzung englischer Beschreibungen ins Deutsche', 'API-Schlüssel (Free-Tarif)', 'nur öffentliche Texte, Ergebnis wird gespeichert (je Text eine Übersetzung)'],
         ['Google News (RSS-Suche)', 'aktuelle Schlagzeilen in den Benachrichtigungsmails (höchstens 7 Tage alt)', 'keiner', 'nur Name des Eintrags und Titel des Werks gehen an Google'],
-        ['TMDB', 'Filme (geplant)', 'API-Schlüssel', 'offen: private oder kommerzielle Nutzung; erst danach wird die Anbindung gebaut'],
-        ['Amazon-Partnerprogramm', 'Kauflinks mit Partner-ID', 'Partner-ID', 'Kennzeichnung als Werbung im Footer, im Impressum und im Datenschutz']]));
+        ['Amazon (Suchlinks)', 'Kauflinks', S.site.tag ? 'Partner-ID' : 'keiner', S.site.tag ? 'Kennzeichnung als Werbung im Footer, im Impressum und im Datenschutz' : 'zurzeit ohne Partner-ID, also keine Einnahmen']]));
     sec('Dienste und Konten', tbl(['Dienst', 'Zweck'], [
       ['ALL-INKL (Hoster)', 'Webspace, Datenbank, Mailserver, Cron-Job, Fehler- und Zugriffslogs (7 Tage)'],
       ['GitHub (privates Repository, Actions)', 'Quellcode und automatische Bereitstellung bei jedem Push'],
@@ -1420,7 +1419,7 @@
       ['Amazon-Partnerprogramm', 'Partner-ID für die Kauflinks']]),
       h('p', { class: 'hint' }, 'Schlüssel und Passwörter sind nur auf dem Server hinterlegt und hier bewusst nicht genannt.'));
     sec('Datenschutz, Sicherheit und Rechtliches', ul([
-      'Impressum und Datenschutzerklärung (Stand 15.11.2026) sind online; sie nennen alle Quellen, DeepL, die Google-News-Schlagzeilen, Amazon-Partnerlinks, Aufbewahrungsfristen und die Rechte der Nutzer',
+      'Impressum und Datenschutzerklärung (Stand 15.11.2026) sind online; sie nennen alle Quellen, DeepL, die Google-News-Schlagzeilen, Amazon-Links, Aufbewahrungsfristen und die Rechte der Nutzer',
       'Es gibt nur technisch nötige Cookies (Sitzung, gewählte Version und Theme), keine Werbe- oder Analyse-Dienste, und die Seite lädt nur von der eigenen Domain (keine externen Schriften, Skripte oder CDNs)',
       'E-Mail-Adressen sieht der Admin in der Nutzerverwaltung nicht; ein Aufdecken im Ausnahmefall wird protokolliert',
       'Passwörter nur als Hash; optionale Zwei-Faktor-Anmeldung; Anmeldeversuche und Kontaktformular sind mengenbegrenzt',
@@ -1442,7 +1441,7 @@
       '<div class="infocat"><h4>Musik</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
       '<div class="infocat"><h4>Filme</h4><p>Titel, Beschreibungen, Filmreihen und die Starttermine in Deutschland kommen von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen. Manga und Comics findest du unter Bücher, soweit Open Library und Google Books sie führen.</p></div>' +
-      '<div class="infocat"><h4 class="withtip">Amazon-Links <span class="tip" tabindex="0" role="button" aria-label="Wie lange gilt ein Klick auf einen Amazon-Link?"><i>?</i><span class="tipbox" role="tooltip"><b>Wie lange gilt ein Klick?</b> Nach Amazons Regeln 24 Stunden. Kaufst du in dieser Zeit etwas bei Amazon, zählt es für die Seite, auch ein ganz anderes Produkt. Legst du innerhalb der 24 Stunden etwas in den Warenkorb, kann es länger zählen (bis zu etwa 90 Tage). Für dich ändert sich der Preis nie.</span></span></h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div></section>';
+      (!S.site.tag ? '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks zu Amazon, ohne Partner-ID. Für den Betreiber entstehen daraus keine Einnahmen.</p></div>' : '<div class="infocat"><h4 class="withtip">Amazon-Links <span class="tip" tabindex="0" role="button" aria-label="Wie lange gilt ein Klick auf einen Amazon-Link?"><i>?</i><span class="tipbox" role="tooltip"><b>Wie lange gilt ein Klick?</b> Nach Amazons Regeln 24 Stunden. Kaufst du in dieser Zeit etwas bei Amazon, zählt es für die Seite, auch ein ganz anderes Produkt. Legst du innerhalb der 24 Stunden etwas in den Warenkorb, kann es länger zählen (bis zu etwa 90 Tage). Für dich ändert sich der Preis nie.</span></span></h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div>') + '</section>';
     api('/api/data.php?a=lastrun').then(function (r) {
       var el = d.querySelector('#lastrun'); if (!el || r.minutes == null) return; var m = +r.minutes, t;
       if (m < 60) t = 'vor weniger als einer Stunde'; else if (m < 180) t = 'vor etwa ' + Math.round(m / 60) + ' Stunden'; else if (m < 1440) t = 'vor ' + Math.round(m / 60) + ' Stunden'; else t = 'vor über einem Tag';
@@ -1560,7 +1559,7 @@
         fig('/about/katzen-karton.webp', 'Zwei Katzen schauen aus einem Pappkarton', 'Matz und Lucy bei der Büroinspektion im Karton'),
         fig('/about/katzen-monitor.webp', 'Zwei Katzen sitzen vor einem Monitor', 'Matz und Lucy bei der Qualitätssicherung am Monitor'))));
     if (KOFI_URL) P.append(h('section', { class: 'infosec' }, h('h3', null, 'Die Seite unterstützen'),
-      h('p', null, 'Schondraussen.de ist kostenlos und bleibt werbefrei. Die einzige geplante Einnahmequelle sind die Amazon-Partnerlinks. Wenn dir die Seite gefällt und du mir freiwillig etwas zukommen lassen möchtest, geht das hier:'),
+      h('p', null, 'Schondraussen.de ist kostenlos und bleibt werbefrei. ' + (S.site.tag ? 'Die einzige geplante Einnahmequelle sind die Amazon-Partnerlinks. ' : '') + 'Wenn dir die Seite gefällt und du mir freiwillig etwas zukommen lassen möchtest, geht das hier:'),
       h('p', null, h('a', { class: 'btn small', href: KOFI_URL, target: '_blank', rel: 'noopener noreferrer' }, 'Auf Ko-fi unterstützen'))));
     return P;
   }

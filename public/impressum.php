@@ -8,8 +8,8 @@
 <p>E-Mail: <a href="mailto:admin@schondraussen.de">admin@schondraussen.de</a><br>Kontaktformular: <a href="/kontakt.php">schondraussen.de/kontakt.php</a> (ohne Konto nutzbar)</p>
 <h3>Verantwortlich für den Inhalt nach § 18 Abs. 2 Medienstaatsvertrag (MStV)</h3>
 <p>Timo Lauer, Anschrift wie oben</p>
-<h3>Amazon-Partnerprogramm</h3>
-<p>Schondraussen.de nimmt am Partnerprogramm von Amazon EU teil. Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links zu Amazon sind Werbelinks; für dich entstehen dadurch keine Mehrkosten.</p>
+<?php if (amz_active()): ?><h3>Amazon-Partnerprogramm</h3>
+<p>Schondraussen.de nimmt am Partnerprogramm von Amazon EU teil. Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links zu Amazon sind Werbelinks; für dich entstehen dadurch keine Mehrkosten.</p><?php endif; ?>
 <h3>Hinweis zu Daten und Inhalten</h3>
 <p>Angaben zu Neuerscheinungen stammen aus öffentlichen Datenquellen und können unvollständig, verspätet oder fehlerhaft sein. Eine Gewähr für Richtigkeit und Vollständigkeit wird nicht übernommen.</p>
 <h3>Verbraucherstreitbeilegung</h3>

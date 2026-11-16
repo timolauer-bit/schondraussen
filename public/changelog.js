@@ -1,5 +1,12 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 15, d: '16.11.2026', t: [
+    'F|Filme: Neu hinzufügen sucht jetzt bei TMDB (mit Jahr und Originaltitel). Zu jedem Film gibt es Beschreibung, Genres, Kinostart und Digitalstart in Deutschland sowie die Teile einer Filmreihe. Die Daten werden regelmäßig aktualisiert.',
+    'F|Filme: „Treffer ändern“ gibt es jetzt auch bei Filmen, falls der falsche Film gefunden wurde.',
+    'U|Info: TMDB steht bei den Quellen, dazu der vorgeschriebene Hinweis, dass die Seite die TMDB-API nutzt, aber nicht von TMDB zertifiziert ist.',
+    'O|Amazon: Die Seite verdient vorerst nichts mehr an Amazon-Links. Die Links zu Amazon bleiben als einfache Suchlinks, Hinweise auf Partnerlinks und Werbung erscheinen nur noch, wenn wieder eine Partner-ID hinterlegt ist.',
+    'D|Datenschutzerklärung: TMDB ist bei den Anbietern außerhalb der EU genannt, der Abschnitt zu Amazon passt sich an, ob Partnerlinks aktiv sind.',
+  ] },
   { v: 14, d: '15.11.2026', t: [
     'F|Kalender-Abo: Du kannst wählen, welche Kategorien im Abo erscheinen (zum Beispiel nur Serien auf dem Handy). Die Auswahl gilt nur für das Abo und ist unabhängig vom Ausblenden in den Oberflächenanpassungen.',
     'O|Oberflächenanpassungen: Ausgeblendete Kategorien kommen auch nicht mehr in die Benachrichtigungs-Mails und deren Vorschau.',

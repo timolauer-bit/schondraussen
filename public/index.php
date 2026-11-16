@@ -74,8 +74,8 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <div class="warnbox previewbar" id="previewbar" hidden><b>Vorschau:</b> Du siehst die Seite gerade so, wie ein normaler Nutzer sie sieht. Deine Einträge und Einstellungen sind dieselben, nur die Admin-Funktionen fehlen. <button class="btn small" id="previewOff" type="button">Zur Admin-Ansicht zurück</button></div>
   <div id="appview"></div>
   <footer>
-    <p>Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links mit Partner-ID sind Werbelinks; für dich ändert sich der Preis nicht.</p>
-    <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Musik) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Bücher). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Termine bitte vor dem Kauf prüfen.</p>
+<?php if (amz_active()): ?>    <p>Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Links mit Partner-ID sind Werbelinks; für dich ändert sich der Preis nicht.</p>
+<?php endif; ?>    <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Musik) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Bücher). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Filmdaten von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a> (dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert). Termine bitte vor dem Kauf prüfen.</p>
     <p><a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>

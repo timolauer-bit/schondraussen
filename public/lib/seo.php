@@ -5,6 +5,10 @@ function seo_cfg(): array {
     if (!isset($GLOBALS['CFG'])) $GLOBALS['CFG'] = is_file(__DIR__ . '/../config.php') ? require __DIR__ . '/../config.php' : [];
     return $GLOBALS['CFG'];
 }
+// Gibt es eine Amazon-Partner-ID? Nur dann erscheinen Hinweise auf Partnerlinks/Werbung.
+function amz_active(): bool {
+    try { if (!function_exists('db')) require_once __DIR__ . '/bootstrap.php'; $q = db()->prepare('SELECT v FROM site_settings WHERE k=?'); $q->execute(['tag']); return trim((string) $q->fetchColumn()) !== ''; } catch (Throwable $e) { return false; }
+}
 function seo_public(): bool { return !empty(seo_cfg()['seo_public']); }
 function seo_base(): string { return rtrim(seo_cfg()['base_url'] ?? 'https://schondraussen.de', '/'); }
 
