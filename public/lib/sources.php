@@ -221,7 +221,7 @@ function film_merge_collection(PDO $pdo, array $single, int $tmdbId, int $cid, s
 }
 // Notizbücher, Kalender, Malbücher und ähnliche Artikel, die Händler unter Autorennamen einstellen (z. B. „SoftTouch Notebook“): keine Bücher des Autors
 function is_merch_title(string $t): bool {
-    return (bool) preg_match('/\\b(notebooks?|notizbuch|notizbücher|notizheft|sketchbook|skizzenbuch|composition book|lined pages|blank pages|blanko|dot grid|punktraster|softtouch|soft[ -]touch|wide ruled|college ruled|colou?ring book|malbuch|ausmalbuch|password book|address book|adressbuch|guest book|gästebuch|(kalender|calendar|planner|planer)\\s*\\d{4}|\\d{4}\\s*(wand)?(kalender|calendar|planner|planer))\\b/iu', $t);
+    return (bool) preg_match('/\\b(notebooks?|notizbuch|notizbücher|notizheft|sketchbook|skizzenbuch|composition book|lined pages|blank pages|blanko|dot grid|punktraster|softtouch|soft[ -]touch|greenline|green[ -]?journal|\\w+journal|(paar|familien|wochen|tages|monats|jahres|termin|haushalts|essens)planer|wide ruled|college ruled|colou?ring book|malbuch|ausmalbuch|password book|address book|adressbuch|guest book|gästebuch|(kalender|calendar|planner|planer)\\s*\\d{4}|\\d{4}\\s*(wand)?(kalender|calendar|planner|planer))\\b/iu', $t);
 }
 // Aktualisiert einen Titel in der Datenbank. Gibt ['ok'=>bool,'msg'=>string] zurück.
 function refresh_subject(PDO $pdo, int $sid): array {
