@@ -134,7 +134,8 @@ if ($a === 'user') {
         foreach ($TYPES as $t) { mt_srand(crc32($sd . $t)); $c = mt_rand(3, 9); for ($k = 0; $k < $c; $k++) { $n++; $lists[$t][] = ['id' => -$n, 'name' => fake_words($sd . $t . $k, 6, 20), 'type' => $t, 'mine' => 0]; } }
         for ($k = 0; $k < 8; $k++) { $t = $TYPES[$k % max(1, count($TYPES))]; $last[] = ['id' => -100 - $k, 'name' => fake_words($sd . 'l' . $k, 6, 20), 'type' => $t, 'added_at' => '', 'mine' => 0]; }
         $favs = []; foreach (['artist', 'film', 'series', 'author'] as $t) { mt_srand(crc32($sd . 'f' . $t)); $favs[$t] = [fake_words($sd . $t . '1', 5, 9), fake_words($sd . $t . '2', 5, 9)]; }
-        json_out(['locked' => true, 'user' => ['id' => $id, 'name' => fake_words($sd . 'name', 5, 11)], 'card' => ['name' => fake_words($sd . 'dn', 5, 9), 'age' => fake_text('00 Jahre', $sd), 'avatar' => '', 'favs' => $favs, 'no' => 0], 'lists' => $lists, 'last' => $last]);
+        $picks = array_fill_keys($TYPES, []); foreach ($TYPES as $t) { mt_srand(crc32($sd . 'pk' . $t)); for ($k = 0, $c = mt_rand(1, 3); $k < $c; $k++) $picks[$t][] = ['id' => -200 - $k, 'name' => fake_words($sd . 'pk' . $t . $k, 6, 20), 'type' => $t, 'mine' => 0]; }
+        json_out(['locked' => true, 'user' => ['id' => $id, 'name' => fake_words($sd . 'name', 5, 11)], 'card' => ['name' => fake_words($sd . 'dn', 5, 9), 'age' => fake_text('00 Jahre', $sd), 'avatar' => '', 'favs' => $favs, 'no' => 0], 'lists' => $lists, 'last' => $last, 'picks' => $picks]);
     }
     $cu = consenting_user($pdo, $id, $CONSENT, $UOK);
     if (!$cu) json_out(['error' => 'Diese Person teilt ihre Liste nicht.'], 404);
@@ -151,7 +152,12 @@ if ($a === 'user') {
             $card = ['name' => (string) ($c['display_name'] ?? ''), 'age' => $age, 'avatar' => (string) ($c['avatar'] ?? ''), 'favs' => json_decode((string) ($c['fav_genres'] ?? ''), true) ?: new stdClass(), 'no' => (int) $c['id']];
         }
     } catch (Throwable $t) {}
-    json_out(['user' => ['id' => (int) $cu['id'], 'name' => $cu['username']], 'card' => $card, 'lists' => $lists, 'last' => $last]);
+    $picks = array_fill_keys($TYPES, []);
+    try { // persönliche Empfehlungen (Sterne), höchstens 5 je Kategorie
+        $pq = $pdo->prepare("SELECT s.id, s.name, s.type, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.user_id=? AND e.fav=1 AND e.is_sample=0 GROUP BY s.id, s.name, s.type ORDER BY s.name"); $pq->execute([$u['id'], $id]);
+        foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($picks[$r['type']]) && count($picks[$r['type']]) < 5) $picks[$r['type']][] = ['id' => (int) $r['id'], 'name' => $r['name'], 'type' => $r['type'], 'mine' => (int) $r['mine']];
+    } catch (Throwable $t) {}
+    json_out(['user' => ['id' => (int) $cu['id'], 'name' => $cu['username']], 'card' => $card, 'lists' => $lists, 'last' => $last, 'picks' => $picks]);
 }
 
 if ($a === 'adopt' && $_SERVER['REQUEST_METHOD'] === 'POST') {

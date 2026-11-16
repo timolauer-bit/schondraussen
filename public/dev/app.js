@@ -36,6 +36,7 @@
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     clip: '<svg viewBox="0 0 24 24"><path d="M21 11.5 12.6 20a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>',
     thumb: '<svg viewBox="0 0 24 24"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm0 0 4-8a2 2 0 0 1 2 2v4h5.2a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 16.9 20H7"/></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
     bell: '<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
     bellOff: '<svg viewBox="0 0 24 24"><path d="M13.7 21a1.94 1.94 0 0 1-3.4 0M17 17H3s3-2 3-9a6 6 0 0 1 .3-1.9M8.7 3.3A6 6 0 0 1 18 8c0 2.5.4 4.4.9 5.7M2 2l20 20"/></svg>',
     gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
@@ -446,6 +447,18 @@
     var bellOn = !le || +le.bell !== 0;
     var bellBtn = h('button', { class: 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'), type: 'button', title: bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus', 'aria-pressed': String(bellOn), 'aria-label': bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus',
       onclick: function () { bellOn = !bellOn; if (le) le.bell = bellOn ? 1 : 0; api('/api/data.php?a=bell&id=' + e.id, { on: bellOn }); bellBtn.className = 'btn ghost small bellbtn ' + (bellOn ? 'on' : 'off'); bellBtn.title = bellOn ? 'Benachrichtigungen für diesen Eintrag sind an' : 'Benachrichtigungen für diesen Eintrag sind aus'; bellBtn.setAttribute('aria-pressed', String(bellOn)); bellBtn.setAttribute('aria-label', bellOn ? 'Benachrichtigungen an' : 'Benachrichtigungen aus'); bellBtn.textContent = ''; bellBtn.append(ico(on_(bellOn))); rows(); } }, ico(on_(bellOn)));
+    var favOn = !!(le && +le.fav === 1);
+    var favBtn = devMark(h('button', { class: 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'), type: 'button', 'aria-pressed': String(favOn), title: favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)', 'aria-label': favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren',
+      onclick: function () {
+        var want = !favOn; favBtn.disabled = true;
+        api('/api/data.php?a=fav&id=' + e.id, { on: want }).then(function (x) {
+          favBtn.disabled = false;
+          if (!x || !x.ok) { popup(x && x.limit ? 'Nur 5 Favoriten je Kategorie' : 'Nicht gespeichert', (x && x.error) || 'Das hat nicht geklappt.'); return; }
+          favOn = want; if (le) le.fav = want ? 1 : 0;
+          favBtn.className = 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'); favBtn.setAttribute('aria-pressed', String(favOn)); favBtn.setAttribute('aria-label', favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren');
+          favBtn.title = favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)';
+        });
+      } }, ico(ICONS.star)), 'fav');
     var menu = h('div', { class: 'menu', role: 'menu', hidden: true }), moreBtn, wrap;
     function closeMenu() { menu.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', outside, true); document.removeEventListener('keydown', esc); }
     function outside(ev) { if (!wrap.contains(ev.target)) closeMenu(); }
@@ -467,7 +480,7 @@
       setTimeout(function () { document.addEventListener('click', outside, true); document.addEventListener('keydown', esc); }, 0);
     } }, '…');
     wrap = h('div', { class: 'menuwrap' }, moreBtn, menu);
-    var actions = h('div', { class: 'actions' }, bellBtn, wrap);
+    var actions = h('div', { class: 'actions' }, bellBtn, favBtn, wrap);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp tipd', title: 'Zeitpunkt der letzten Aktualisierung aus der Datenquelle. Die Angaben werden automatisch alle 12 Stunden erneuert; „Aktualisieren“ lädt sie sofort neu.' }, stamp) : null);
     var gch = gensOf(e).length ? h('div', { class: 'gchips' }, gensOf(e).map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));
@@ -1352,6 +1365,12 @@
       }
       var d = C.ud, tot = 0; CT.forEach(function (t) { tot += (d.lists[t] || []).length; });
       body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)), h('p', { class: 'hint' }, d.locked ? 'Platzhalter-Beispiel.' : pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
+      var pkAny = CT.some(function (t) { return ((d.picks || {})[t] || []).length; });
+      if (pkAny) {
+        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen'));
+        pk.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, CT.reduce(function (acc, t) { ((d.picks || {})[t] || []).forEach(function (r) { acc.push(h('tr', null, h('td', { class: 'ty' }, TYPES[t] ? TYPES[t].label : ''), h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r)))); }); return acc; }, [])))));
+        body.append(pk);
+      }
       var last = h('section', { class: 'commbox commlast' + (d.locked ? ' locked' : '') }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
       if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));
       else last.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, d.last.map(function (r) {

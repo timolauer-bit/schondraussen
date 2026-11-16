@@ -475,6 +475,19 @@ if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
     json_out(refresh_subject($pdo, $id));
 }
+if ($a === 'fav' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Favorit (Stern): höchstens 5 je Kategorie, erscheinen in der Community als persönliche Empfehlungen
+    $on = !empty(body()['on']) ? 1 : 0;
+    try {
+        $t = $pdo->prepare('SELECT s.type, e.fav FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.subject_id=?'); $t->execute([$u['id'], $id]); $row = $t->fetch();
+        if (!$row) json_out(['ok' => false, 'error' => 'Der Eintrag steht nicht auf deiner Liste.'], 404);
+        if ($on && !(int) $row['fav']) {
+            $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=? AND e.fav=1'); $c->execute([$u['id'], $row['type']]);
+            if ((int) $c->fetchColumn() >= 5) json_out(['ok' => false, 'limit' => true, 'error' => 'Du kannst pro Kategorie nur 5 Favoriten wählen. Nimm bei einem anderen Eintrag den Stern heraus, dann ist wieder ein Platz frei.']);
+        }
+        $pdo->prepare('UPDATE user_entries SET fav=? WHERE user_id=? AND subject_id=?')->execute([$on, $u['id'], $id]);
+    } catch (Throwable $t2) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true, 'on' => $on]);
+}
 if ($a === 'bell' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $on = !empty(body()['on']) ? 1 : 0;
     $pdo->prepare('UPDATE user_entries SET bell=? WHERE user_id=? AND subject_id=?')->execute([$on, $u['id'], $id]);
