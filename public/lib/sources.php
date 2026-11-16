@@ -169,6 +169,13 @@ function film_refresh_collection(PDO $pdo, array $sub, array $ext): array {
     $parts = (array) $c['parts']; usort($parts, fn($a, $b) => strcmp((string) ($a['release_date'] ?? '9999'), (string) ($b['release_date'] ?? '9999')));
     $works = []; foreach (array_slice($parts, 0, 40) as $x) if (!empty($x['title'])) $works[] = [(string) $x['title'], (int) substr((string) ($x['release_date'] ?? ''), 0, 4) ?: null, 'Film', null, (string) ($x['id'] ?? '')];
     $rel = []; film_future($parts, 0, date('Y-m-d'), $rel); ksort($rel);
+    $cnt = []; // Regie der Reihe: wer bei den ersten Teilen Regie geführt hat, am häufigsten zuerst
+    foreach (array_slice($parts, 0, 4) as $x) {
+        if (empty($x['id']) || !($cr = tmdb_get('/movie/' . (int) $x['id'] . '/credits'))) continue;
+        foreach ((array) ($cr['crew'] ?? []) as $m) if (($m['job'] ?? '') === 'Director' && !empty($m['id']) && !empty($m['name'])) { $k = (int) $m['id']; $cnt[$k] = ['id' => $k, 'name' => (string) $m['name'], 'n' => ($cnt[$k]['n'] ?? 0) + 1]; }
+    }
+    usort($cnt, fn($a, $b) => $b['n'] <=> $a['n']);
+    $ext['dir'] = array_map(fn($d) => ['id' => $d['id'], 'name' => $d['name']], array_slice($cnt, 0, 3));
     return film_store($pdo, (int) $sub['id'], $ext, film_summary("/collection/$cid", $c, 'overview'), [], $works, $rel);
 }
 function film_refresh_person(PDO $pdo, array $sub, array $ext): array {
