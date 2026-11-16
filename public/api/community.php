@@ -80,17 +80,17 @@ if ($a === 'overview') {
     // Filme: jeder Film steht einzeln (Kennung = TMDB-Nummer), ein Punkt je Nutzer, der ihn irgendwo als gesehen markiert hat, ob im Einzeleintrag, in einer Filmreihe oder bei der Regie.
     // Ältere Markierungen (Schlüssel aus Titel und Jahr) zählen weiter, bis der Eintrag das nächste Mal geöffnet wurde.
     $out['seen']['film'] = q_all($pdo, "SELECT 0 AS id, MIN(r.title) AS name, COUNT(*) AS c, 0 AS mine FROM (
-            SELECT d.user_id, CONCAT('t', w.ext_id) AS fid, w.title AS title FROM user_done d
+            SELECT d.user_id, CONVERT(CONCAT('t', w.ext_id) USING utf8mb4) COLLATE utf8mb4_general_ci AS fid, CONVERT(w.title USING utf8mb4) COLLATE utf8mb4_general_ci AS title FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film'
-            JOIN works w ON w.ext_id IS NOT NULL AND w.ext_id = SUBSTRING(d.item_key, 2) $join
+            JOIN works w ON w.ext_id IS NOT NULL AND CONVERT(w.ext_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(SUBSTRING(d.item_key, 2) USING utf8mb4) COLLATE utf8mb4_general_ci $join
             WHERE $cons AND d.item_key LIKE 't%'
           UNION
-            SELECT d.user_id, CONCAT('t', w.ext_id), w.title FROM user_done d
+            SELECT d.user_id, CONVERT(CONCAT('t', w.ext_id) USING utf8mb4) COLLATE utf8mb4_general_ci, CONVERT(w.title USING utf8mb4) COLLATE utf8mb4_general_ci FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film'
             JOIN works w ON w.subject_id=d.subject_id AND w.ext_id IS NOT NULL AND $wk $join
             WHERE $cons
           UNION
-            SELECT d.user_id, IFNULL(CONCAT('t', (SELECT MIN(wb.ext_id) FROM works wb WHERE wb.subject_id=sb.id AND wb.ext_id IS NOT NULL)), CONCAT('s', sb.id)), sb.name FROM user_done d
+            SELECT d.user_id, CONVERT(IFNULL(CONCAT('t', (SELECT MIN(wb.ext_id) FROM works wb WHERE wb.subject_id=sb.id AND wb.ext_id IS NOT NULL)), CONCAT('s', sb.id)) USING utf8mb4) COLLATE utf8mb4_general_ci, CONVERT(sb.name USING utf8mb4) COLLATE utf8mb4_general_ci FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film' AND d.item_key = CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(sb.name)), '|', 0)), 1, 16)) $join
             WHERE $cons
         ) r GROUP BY r.fid ORDER BY c DESC, name LIMIT 50");
