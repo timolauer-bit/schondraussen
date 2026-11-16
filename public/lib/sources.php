@@ -84,6 +84,18 @@ function tmdb_search(string $q): array { // Trefferliste für „Neu hinzufügen
     }
     return $out;
 }
+function tmdb_dates(array $m, string $today): array { // kommende deutsche Termine eines Films; ohne deutschen Termin der weltweite Starttermin
+    $kinds = [3 => 'Kinostart', 4 => 'Digital', 5 => 'Heimkino']; $out = [];
+    foreach ((array) ($m['release_dates']['results'] ?? []) as $c) {
+        if (($c['iso_3166_1'] ?? '') !== 'DE') continue;
+        foreach ((array) ($c['release_dates'] ?? []) as $d) {
+            $k = $kinds[(int) ($d['type'] ?? 0)] ?? null; $dt = substr((string) ($d['release_date'] ?? ''), 0, 10);
+            if ($k && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dt) && $dt >= $today) $out[] = [$dt, $k];
+        }
+    }
+    if (!$out && ($gd = (string) ($m['release_date'] ?? '')) !== '' && $gd >= $today) $out[] = [$gd, 'Starttermin'];
+    return $out;
+}
 function film_refresh(PDO $pdo, array $sub): array {
     if (!tmdb_enabled()) { $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sub['id']]); return ['ok' => false, 'msg' => 'Für Filme ist die Datenquelle noch nicht angebunden.']; }
     $sid = (int) $sub['id']; $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
@@ -95,21 +107,16 @@ function film_refresh(PDO $pdo, array $sub): array {
     if ($sum === '') { $en = tmdb_get("/movie/$id", ['language' => 'en-US']); $t = clean_text((string) ($en['overview'] ?? ''), 600); if ($t !== '') $sum = translate_de($t, 'EN') ?? $t; }
     $genres = array_values(array_filter(array_map(fn($g) => (string) ($g['name'] ?? ''), (array) ($m['genres'] ?? []))));
     $today = date('Y-m-d'); $rel = [];
-    $kinds = [3 => 'Kinostart', 4 => 'Digital', 5 => 'Heimkino'];
-    foreach ((array) ($m['release_dates']['results'] ?? []) as $c) {
-        if (($c['iso_3166_1'] ?? '') !== 'DE') continue;
-        foreach ((array) ($c['release_dates'] ?? []) as $d) {
-            $k = $kinds[(int) ($d['type'] ?? 0)] ?? null; $dt = substr((string) ($d['release_date'] ?? ''), 0, 10);
-            if ($k && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dt) && $dt >= $today) $rel[$dt . $k] = [(string) $m['title'], $dt, $k];
-        }
-    }
-    if (!$rel && ($gd = (string) ($m['release_date'] ?? '')) !== '' && $gd >= $today) $rel[$gd] = [(string) $m['title'], $gd, 'Starttermin']; // kein deutscher Termin bekannt: weltweiter Starttermin
+    foreach (tmdb_dates($m, $today) as $x) $rel[$x[0] . $x[1] . $id] = [(string) $m['title'], $x[0], $x[1]];
     ksort($rel);
     $works = [[(string) $m['title'], (int) substr((string) ($m['release_date'] ?? ''), 0, 4) ?: null, 'Film', !empty($m['runtime']) ? (int) $m['runtime'] . ' Min.' : null]];
     $col = $m['belongs_to_collection']['id'] ?? null;
     if ($col && ($cj = tmdb_get('/collection/' . (int) $col)) && !empty($cj['parts'])) { // Teile der Filmreihe
         $works = []; $parts = (array) $cj['parts']; usort($parts, fn($a, $b) => strcmp((string) ($a['release_date'] ?? '9999'), (string) ($b['release_date'] ?? '9999')));
         foreach (array_slice($parts, 0, 40) as $x) if (!empty($x['title'])) $works[] = [(string) $x['title'], (int) substr((string) ($x['release_date'] ?? ''), 0, 4) ?: null, 'Film', null];
+        $n = 0; // noch nicht erschienene Teile der Reihe: deren Termine ebenfalls zeigen (höchstens 4 Abfragen)
+        foreach ($parts as $x) if (!empty($x['id']) && !empty($x['title']) && (string) ($x['release_date'] ?? '') >= $today && $n++ < 4 && (int) $x['id'] !== $id && ($pm = tmdb_get('/movie/' . (int) $x['id'], ['append_to_response' => 'release_dates'])))
+            foreach (tmdb_dates($pm, $today) as $d) $rel[$d[0] . $d[1] . (int) $x['id']] = [(string) $x['title'], $d[0], $d[1]];
     }
     $ext['tmdb'] = $id;
     $pdo->beginTransaction();
