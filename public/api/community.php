@@ -157,6 +157,10 @@ if ($a === 'user') {
         $pq = $pdo->prepare("SELECT s.id, s.name, s.type, MAX(m.id IS NOT NULL) AS mine FROM user_entries e JOIN subjects s ON s.id=e.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE e.user_id=? AND e.fav=1 AND e.is_sample=0 GROUP BY s.id, s.name, s.type ORDER BY s.name"); $pq->execute([$u['id'], $id]);
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($picks[$r['type']]) && count($picks[$r['type']]) < 5) $picks[$r['type']][] = ['id' => (int) $r['id'], 'name' => $r['name'], 'type' => $r['type'], 'mine' => (int) $r['mine']];
     } catch (Throwable $t) {}
+    try { // Sterne an Einzeltiteln (Film, Album, Buch): als „Titel (Eintrag)“; zusammen höchstens 5 je Kategorie
+        $fq = $pdo->prepare("SELECT s.id, s.name, s.type, f.title, MAX(m.id IS NOT NULL) AS mine FROM user_fav_work f JOIN user_entries e ON e.user_id=f.user_id AND e.subject_id=f.subject_id JOIN subjects s ON s.id=f.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? WHERE f.user_id=? AND e.is_sample=0 GROUP BY s.id, s.name, s.type, f.title, f.created_at ORDER BY f.created_at"); $fq->execute([$u['id'], $id]);
+        foreach ($fq->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($picks[$r['type']]) && count($picks[$r['type']]) < 5) $picks[$r['type']][] = ['id' => (int) $r['id'], 'name' => $r['title'] . ' (' . $r['name'] . ')', 'type' => $r['type'], 'mine' => (int) $r['mine']];
+    } catch (Throwable $t) {}
     json_out(['user' => ['id' => (int) $cu['id'], 'name' => $cu['username']], 'card' => $card, 'lists' => $lists, 'last' => $last, 'picks' => $picks]);
 }
 

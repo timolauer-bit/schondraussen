@@ -917,3 +917,6 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .favbtn.on{color:#b8860b;border-color:#d4a017;background:color-mix(in srgb,#f5c518 30%,transparent)}
 .favbtn.on svg{fill:#f5c518;stroke:#b8860b}
 .commpicks h4{color:#b8860b}
+
+.wcard .wtr{display:inline-flex;align-items:center;gap:6px}
+.wcard .favbtn{padding:0;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center}

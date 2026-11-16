@@ -538,6 +538,7 @@
     card.append(h('h3', { class: 'sec' }, e.type === 'series' ? 'Staffeln' : e.type === 'podcast' ? 'Letzte Folgen' : e.type === 'film' ? (e.kind === 'person' ? 'Filme als Regisseur:in' : 'Filme der Reihe') : 'Bekannte Werke'));
     if (!r.works.length) card.append(h('p', { class: 'state' }, e.type === 'film' ? '' : 'Keine Werke gefunden.'));
     else if (e.type !== 'series') card.append(h('p', { class: 'hint' }, r.works.length + ' ' + t.work + (+e.total_works > r.works.length ? ' von ca. ' + e.total_works : '') + ' aufgelistet.'));
+    var favw = {}; (r.favw || []).forEach(function (k) { favw[k] = 1; });
     var dv = DONEV[e.type] || DONEV.artist, done = doneSetOf(r), hideDone = false, rows = [], cnt = h('span', { class: 'cnt' }), flt = h('button', { class: 'pill', type: 'button', 'aria-pressed': 'false' }, 'Nur Neues für mich'), wfill = h('i'), wbar = h('span', { class: 'wbar' }, wfill), grid = e.type === 'podcast' ? card : h('div', { class: 'wgrid' });
     function updAll() { allLbl(); var n = r.works.filter(function (w) { return done[w.k]; }).length; wfill.style.width = (r.works.length ? Math.round(100 * n / r.works.length) : 0) + '%'; cnt.textContent = n + ' von ' + r.works.length + ' ' + t.work + ' ' + dv[0];
       rows.forEach(function (x) { var on = !!done[x.w.k]; x.pill.className = 'pill' + (on ? ' on' : ''); x.pill.setAttribute('aria-pressed', on ? 'true' : 'false'); x.pill.textContent = on ? dv[0].charAt(0).toUpperCase() + dv[0].slice(1) : dv[1]; x.row.hidden = hideDone && on; }); }
@@ -547,7 +548,7 @@
     flt.addEventListener('click', function () { hideDone = !hideDone; flt.className = 'pill' + (hideDone ? ' on' : ''); flt.setAttribute('aria-pressed', hideDone ? 'true' : 'false'); updAll(); });
     if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt, allB), wbar);
     r.works.forEach(function (w) {
-      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), pill), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
+      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), h('div', { class: 'wtr' }, pill, wstar(e, w, favw))), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
       pill.addEventListener('click', function () { var on = !done[w.k]; setDone(e, [w.k], on, function () { if (on) done[w.k] = 1; else delete done[w.k]; updAll(); }); });
       rows.push({ w: w, pill: pill, row: row }); grid.append(row);
     });
@@ -563,6 +564,22 @@
     series: [['Drama', 'Drama'], ['Komödie', 'Comedy'], ['Science-Fiction', 'Science-Fiction'], ['Fantasy', 'Fantasy'], ['Krimi', 'Crime'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Action', 'Action'], ['Abenteuer', 'Adventure'], ['Mystery', 'Mystery'], ['Romanze', 'Romance'], ['Anime', 'Anime'], ['Familie', 'Family'], ['Western', 'Western'], ['Krieg', 'War'], ['Geschichte', 'History']],
     author: [['Fantasy', 'Fantasy'], ['Science-Fiction', 'Science fiction'], ['Krimi', 'Mystery and detective stories'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Liebesroman', 'Romance'], ['Historischer Roman', 'Historical fiction'], ['Biografie', 'Biography'], ['Jugendbuch', 'Young adult fiction'], ['Humor', 'Humor'], ['Abenteuer', 'Adventure']]
   };
+  /* Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie */
+  function wstar(e, w, set) {
+    if (['film', 'artist', 'author'].indexOf(e.type) < 0 || !w.k) return null;
+    var on = !!set[w.k], b = h('button', { type: 'button', class: 'btn ghost small favbtn ' + (on ? 'on' : 'off'), 'aria-pressed': String(on) }, ico(ICONS.star));
+    function look() { b.className = 'btn ghost small favbtn ' + (on ? 'on' : 'off'); b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', (on ? 'Favorit, anklicken zum Entfernen: ' : 'Als Favorit markieren: ') + w.title); b.title = on ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)'; }
+    look();
+    b.addEventListener('click', function () {
+      var want = !on; b.disabled = true;
+      api('/api/data.php?a=favwork&id=' + e.id, { k: w.k, on: want }).then(function (x) {
+        b.disabled = false;
+        if (!x || !x.ok) { if (x && x.limit) popup('Nur 5 Favoriten je Kategorie', x.error); else say((x && x.error) || 'Das hat nicht geklappt.', true); return; }
+        on = want; if (on) set[w.k] = 1; else delete set[w.k]; look();
+      });
+    });
+    return devMark(b, 'favwork');
+  }
   function addSuggestion(type, it, btn, done) {
     btn.disabled = true; btn.textContent = 'Wird hinzugefügt …';
     api('/api/data.php?a=add', { type: type, name: it.name, ext: it.ext || {} }).then(function (r) {

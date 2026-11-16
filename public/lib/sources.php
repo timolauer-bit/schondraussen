@@ -207,7 +207,10 @@ function film_merge_collection(PDO $pdo, array $single, int $tmdbId, int $cid, s
         $users = $pdo->prepare('SELECT user_id FROM user_entries WHERE subject_id=?'); $users->execute([$sidn]);
         foreach ($users->fetchAll(PDO::FETCH_COLUMN) as $uid) {
             $has = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=?'); $has->execute([$uid, $col]);
-            if (!$has->fetchColumn()) $pdo->prepare('UPDATE user_entries SET subject_id=? WHERE user_id=? AND subject_id=?')->execute([$col, $uid, $sidn]);
+            $wasFav = false; try { $fv = $pdo->prepare('SELECT 1 FROM user_entries WHERE user_id=? AND subject_id=? AND fav=1'); $fv->execute([$uid, $sidn]); $wasFav = (bool) $fv->fetchColumn(); } catch (Throwable $t) {}
+            $hadCol = (bool) $has->fetchColumn();
+            if (!$hadCol) $pdo->prepare('UPDATE user_entries SET subject_id=? WHERE user_id=? AND subject_id=?')->execute([$col, $uid, $sidn]);
+            if ($wasFav) { try { $pdo->prepare('INSERT IGNORE INTO user_fav_work (user_id,subject_id,item_key,title) VALUES (?,?,?,?)')->execute([$uid, $col, $tkey, mb_substr((string) $single['name'], 0, 255)]); if (!$hadCol) $pdo->prepare('UPDATE user_entries SET fav=0 WHERE user_id=? AND subject_id=?')->execute([$uid, $col]); } catch (Throwable $t) {} } // Stern am Einzelfilm wird zum Stern am Film in der Reihe
             $dn = $pdo->prepare('SELECT 1 FROM user_done WHERE user_id=? AND subject_id=? AND item_key IN (?,?)'); $dn->execute([$uid, $sidn, $legacy, $tkey]);
             if ($dn->fetchColumn()) $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key) VALUES (?,?,?)')->execute([$uid, $col, $tkey]);
         }

@@ -475,17 +475,39 @@ if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);
     json_out(refresh_subject($pdo, $id));
 }
+function fav_count(PDO $pdo, int $uid, string $type): int { // Favoriten je Kategorie: ganze Einträge und einzelne Werke (Film, Album, Buch) zusammen
+    $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=? AND e.fav=1'); $c->execute([$uid, $type]); $n = (int) $c->fetchColumn();
+    try { $c = $pdo->prepare('SELECT COUNT(*) FROM user_fav_work f JOIN subjects s ON s.id=f.subject_id JOIN user_entries e ON e.subject_id=f.subject_id AND e.user_id=f.user_id WHERE f.user_id=? AND s.type=?'); $c->execute([$uid, $type]); $n += (int) $c->fetchColumn(); } catch (Throwable $t) {}
+    return $n;
+}
 if ($a === 'fav' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Favorit (Stern): höchstens 5 je Kategorie, erscheinen in der Community als persönliche Empfehlungen
     $on = !empty(body()['on']) ? 1 : 0;
     try {
         $t = $pdo->prepare('SELECT s.type, e.fav FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.subject_id=?'); $t->execute([$u['id'], $id]); $row = $t->fetch();
         if (!$row) json_out(['ok' => false, 'error' => 'Der Eintrag steht nicht auf deiner Liste.'], 404);
         if ($on && !(int) $row['fav']) {
-            $c = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=? AND e.fav=1'); $c->execute([$u['id'], $row['type']]);
-            if ((int) $c->fetchColumn() >= 5) json_out(['ok' => false, 'limit' => true, 'error' => 'Du kannst pro Kategorie nur 5 Favoriten wählen. Nimm bei einem anderen Eintrag den Stern heraus, dann ist wieder ein Platz frei.']);
+            if (fav_count($pdo, (int) $u['id'], $row['type']) >= 5) json_out(['ok' => false, 'limit' => true, 'error' => 'Du kannst pro Kategorie nur 5 Favoriten wählen. Nimm bei einem anderen Eintrag den Stern heraus, dann ist wieder ein Platz frei.']);
         }
         $pdo->prepare('UPDATE user_entries SET fav=? WHERE user_id=? AND subject_id=?')->execute([$on, $u['id'], $id]);
     } catch (Throwable $t2) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
+    json_out(['ok' => true, 'on' => $on]);
+}
+if ($a === 'favwork' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie
+    $b = body(); $on = !empty($b['on']) ? 1 : 0; $k = preg_replace('/[^A-Za-z0-9]/', '', (string) ($b['k'] ?? ''));
+    try {
+        $t = $pdo->prepare('SELECT s.type FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND e.subject_id=?'); $t->execute([$u['id'], $id]); $type = $t->fetchColumn();
+        if (!$type) json_out(['ok' => false, 'error' => 'Der Eintrag steht nicht auf deiner Liste.'], 404);
+        if (!in_array($type, ['film', 'artist', 'author'], true) || $k === '') json_out(['ok' => false, 'error' => 'Hier ist kein Stern möglich.'], 400);
+        $title = null;
+        try { $w = $pdo->prepare('SELECT title,year,ext_id FROM works WHERE subject_id=?'); $w->execute([$id]); } catch (Throwable $t2) { $w = $pdo->prepare('SELECT title,year FROM works WHERE subject_id=?'); $w->execute([$id]); }
+        foreach ($w->fetchAll() as $x) { $lk = done_key_work($x['title'], $x['year']); $wk = !empty($x['ext_id']) ? 't' . (int) $x['ext_id'] : $lk; if ($wk === $k) { $title = (string) $x['title']; break; } }
+        if ($title === null) json_out(['ok' => false, 'error' => 'Dieser Titel gehört nicht zu dem Eintrag.'], 404);
+        $h = $pdo->prepare('SELECT 1 FROM user_fav_work WHERE user_id=? AND subject_id=? AND item_key=?'); $h->execute([$u['id'], $id, $k]); $has = (bool) $h->fetchColumn();
+        if ($on && !$has) {
+            if (fav_count($pdo, (int) $u['id'], $type) >= 5) json_out(['ok' => false, 'limit' => true, 'error' => 'Du kannst pro Kategorie nur 5 Favoriten wählen. Nimm bei einem anderen Titel oder Eintrag den Stern heraus, dann ist wieder ein Platz frei.']);
+            $pdo->prepare('INSERT IGNORE INTO user_fav_work (user_id,subject_id,item_key,title) VALUES (?,?,?,?)')->execute([$u['id'], $id, $k, mb_substr($title, 0, 255)]);
+        } elseif (!$on) $pdo->prepare('DELETE FROM user_fav_work WHERE user_id=? AND subject_id=? AND item_key=?')->execute([$u['id'], $id, $k]);
+    } catch (Throwable $t3) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true, 'on' => $on]);
 }
 if ($a === 'bell' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -495,6 +517,7 @@ if ($a === 'bell' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 if ($a === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND subject_id=?')->execute([$u['id'], $id]);
+    try { $pdo->prepare('DELETE FROM user_fav_work WHERE user_id=? AND subject_id=?')->execute([$u['id'], $id]); } catch (Throwable $t) {}
     json_out(['ok' => true]);
 }
 function done_key_work($title, $year): string { return 'w' . substr(md5(mb_strtolower(trim((string) $title)) . '|' . (int) $year), 0, 16); }
@@ -567,6 +590,7 @@ if ($a === 'entry') {
             $done = array_values(array_unique($done));
         }
     }
-    json_out(['entry' => $e, 'works' => $works, 'releases' => $r->fetchAll(), 'episodes' => $eps, 'done' => $done]);
+    $favw = []; try { $q = $pdo->prepare('SELECT item_key FROM user_fav_work WHERE user_id=? AND subject_id=?'); $q->execute([$u['id'], $id]); $favw = $q->fetchAll(PDO::FETCH_COLUMN); } catch (Throwable $t) {}
+    json_out(['entry' => $e, 'works' => $works, 'releases' => $r->fetchAll(), 'episodes' => $eps, 'done' => $done, 'favw' => $favw]);
 }
 json_out(['error' => 'Unbekannte Aktion'], 400);
