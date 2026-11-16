@@ -1429,7 +1429,7 @@
         if (C.pgFocus === pgk) { C.pgFocus = null; setTimeout(function () { try { bx.scrollIntoView({ block: 'start' }); } catch (_) {} }, 0); }
         if (!rows.length) bx.append(h('p', { class: 'hint' }, 'Leer.'));
         else bx.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rows.map(function (r) { return h('tr', null, h('td', { class: 'nm' }, r.name), h('td', { class: 'ad' }, adoptBtn(r))); })))));
-        if (pages > 1) { var pgn = function (dl) { return function () { C.pg[pgk] = pgi + dl; C.pgFocus = pgk; drawUser(); }; }; bx.append(h('div', { class: 'commpg' }, h('button', { class: 'btn ghost small', type: 'button', disabled: pgi === 0, onclick: pgn(-1) }, '‹ Zurück'), h('span', { class: 'hint', style: 'margin:0' }, 'Seite ' + (pgi + 1) + ' von ' + pages + ' (' + (pgi * PS + 1) + ' bis ' + Math.min(allRows.length, (pgi + 1) * PS) + ')'), h('button', { class: 'btn ghost small', type: 'button', disabled: pgi >= pages - 1, onclick: pgn(1) }, 'Weiter ›'))); }
+        if (pages > 1) { var pgn = function (dl) { return function () { C.pg[pgk] = pgi + dl; C.pgFocus = pgk; drawUser(); }; }; bx.append(devMark(h('div', { class: 'commpg' }, h('button', { class: 'btn ghost small pgbtn', type: 'button', disabled: pgi === 0, onclick: pgn(-1), title: 'Vorherige Seite', 'aria-label': 'Vorherige Seite' }, '◀'), h('span', { class: 'hint', style: 'margin:0' }, 'Seite ' + (pgi + 1) + ' von ' + pages), h('button', { class: 'btn ghost small pgbtn', type: 'button', disabled: pgi >= pages - 1, onclick: pgn(1), title: 'Nächste Seite', 'aria-label': 'Nächste Seite' }, '▶')), 'commpg')); }
         g.append(bx);
       });
       body.append(g);
