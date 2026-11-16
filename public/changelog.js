@@ -6,7 +6,7 @@ window.CHANGELOG = [
     'F|Filme: Gehören Filme zu einer Reihe (zum Beispiel Dune), werden sie automatisch zu einem Eintrag „Filmreihe“ zusammengefasst. Deine Gesehen-Markierungen bleiben erhalten, kommende Teile erscheinen mit ihrem Starttermin.',
     'F|Filme: Regisseur:innen kannst du jetzt suchen und als eigenen Eintrag anlegen, mit allen Filmen und kommenden Terminen. Bei jedem Film steht die Regie mit dem Knopf „Eintrag anlegen“.',
     'F|Filme: „Gesehen“ gilt für denselben Film überall, im Einzeleintrag, in der Filmreihe und bei der Regie. Markierst du ihn an einer Stelle, ist er überall markiert.',
-    'F|Filme: „Ähnliche Filme“ bei Einzelfilmen und Filmreihen sowie „Beliebte Filme entdecken“ nach Genre, die Vorschläge kommen von TMDB und lassen sich mit einem Klick auf die Liste setzen.
+    'F|Filme: „Ähnliche Filme“ bei Einzelfilmen und Filmreihen sowie „Beliebte Filme entdecken“ nach Genre, die Vorschläge kommen von TMDB und lassen sich mit einem Klick auf die Liste setzen.',
     'U|Filmliste: Neuer Filter „Art“ (Einzelfilme, Filmreihen, Regie) im Filtermenü.',
     'U|Info: TMDB steht bei den Quellen, dazu der vorgeschriebene Hinweis, dass die Seite die TMDB-API nutzt, aber nicht von TMDB zertifiziert ist.',
     'O|Amazon: Die Seite verdient vorerst nichts mehr an Amazon-Links. Die Links zu Amazon bleiben als einfache Suchlinks, Hinweise auf Partnerlinks und Werbung erscheinen nur noch, wenn wieder eine Partner-ID hinterlegt ist.',
