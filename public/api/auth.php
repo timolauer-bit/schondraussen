@@ -97,7 +97,7 @@ try {
         if (!approval_required()) { try { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$nid]); } catch (Throwable $e) {} }
         try { $pdo->prepare('UPDATE users SET hide_email=1, hide_activity=1 WHERE id=?')->execute([$nid]); } catch (Throwable $e) {}
         note($pdo, 'anon'); note($pdo, 'anon_all');
-        admin_notice($pdo, 'anon_new', 'Neues Konto ohne E-Mail-Adresse: ' . $uname . (approval_required() ? ' (wartet auf deine Freischaltung)' : ''));
+        // Hinweis „Neues Konto ohne E-Mail-Adresse“ an den Admin ist abgeschaltet (auf Wunsch, 16.11.2026)
         json_out(['ok' => true, 'recovery_code' => $code, 'message' => approval_required() ? 'Dein Konto ist angelegt und wartet auf die Freischaltung durch den Admin.' : 'Dein Konto ist angelegt. Du kannst dich jetzt mit Benutzername und Passwort anmelden.']);
     }
 
