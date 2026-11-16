@@ -79,7 +79,7 @@ if ($a === 'overview') {
         ) r JOIN subjects s ON s.id=r.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? GROUP BY s.id, s.name ORDER BY c DESC, SUM(r.bk) DESC, s.name LIMIT 50", [$u['id']]);
     // Filme: jeder Film steht einzeln (Kennung = TMDB-Nummer), ein Punkt je Nutzer, der ihn irgendwo als gesehen markiert hat, ob im Einzeleintrag, in einer Filmreihe oder bei der Regie.
     // Ältere Markierungen (Schlüssel aus Titel und Jahr) zählen weiter, bis der Eintrag das nächste Mal geöffnet wurde.
-    $out['seen']['film'] = q_all($pdo, "SELECT 0 AS id, MIN(r.title) AS name, COUNT(*) AS c, 0 AS mine FROM (
+    $out['seen']['film'] = q_all($pdo, "SELECT 0 AS id, r.fid AS fid, MIN(r.title) AS name, COUNT(*) AS c, 0 AS mine FROM (
             SELECT d.user_id, CONVERT(CONCAT('t', w.ext_id) USING utf8mb4) COLLATE utf8mb4_general_ci AS fid, CONVERT(w.title USING utf8mb4) COLLATE utf8mb4_general_ci AS title FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film'
             JOIN works w ON w.ext_id IS NOT NULL AND CONVERT(w.ext_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(SUBSTRING(d.item_key, 2) USING utf8mb4) COLLATE utf8mb4_general_ci $join
@@ -94,6 +94,27 @@ if ($a === 'overview') {
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='film' AND d.item_key = CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(sb.name)), '|', 0)), 1, 16)) $join
             WHERE $cons
         ) r GROUP BY r.fid ORDER BY c DESC, name LIMIT 50");
+    // Zeile mit Eintrag verknüpfen: Übernehmen (+) legt die Filmreihe an (sonst den Einzelfilm, sonst die Regie); „schon in deiner Liste“ gilt, wenn du den Film in irgendeinem dieser Einträge hast
+    try {
+        $tm = []; $sj = [];
+        foreach ($out['seen']['film'] as $r) { $f = (string) ($r['fid'] ?? ''); if ($f !== '' && $f[0] === 't') $tm[] = (int) substr($f, 1); elseif ($f !== '' && $f[0] === 's') $sj[(int) substr($f, 1)] = [(int) substr($f, 1) => 'single']; }
+        $cand = []; // fid => [subject_id => Rang (1 Reihe, 2 Einzelfilm, 3 Regie)]
+        if ($tm) {
+            $in = implode(',', array_fill(0, count($tm), '?'));
+            foreach (q_all($pdo, "SELECT DISTINCT w.ext_id, s.id, s.external_ids FROM works w JOIN subjects s ON s.id=w.subject_id AND s.type='film' WHERE w.ext_id IN ($in)", $tm) as $x) { $j = json_decode((string) $x['external_ids'], true) ?: []; $cand['t' . $x['ext_id']][(int) $x['id']] = !empty($j['tmdb_col']) ? 1 : (!empty($j['tmdb_person']) ? 3 : 2); }
+            foreach ($tm as $tid) foreach (q_all($pdo, "SELECT id FROM subjects WHERE type='film' AND (external_ids LIKE ? OR external_ids LIKE ?)", ['%"tmdb":' . $tid . '}%', '%"tmdb":' . $tid . ',%']) as $x) $cand['t' . $tid][(int) $x['id']] = 2;
+        }
+        foreach ($sj as $sid => $_) $cand['s' . $sid][$sid] = 2;
+        $all = []; foreach ($cand as $m) foreach ($m as $sid => $_) $all[$sid] = 1;
+        $have = [];
+        if ($all) { $in = implode(',', array_fill(0, count($all), '?')); foreach (q_all($pdo, "SELECT subject_id FROM user_entries WHERE user_id=? AND subject_id IN ($in)", array_merge([$u['id']], array_keys($all))) as $x) $have[(int) $x['subject_id']] = 1; }
+        foreach ($out['seen']['film'] as &$r) {
+            $m = $cand[(string) ($r['fid'] ?? '')] ?? []; unset($r['fid']);
+            if (!$m) { $r['id'] = -1; continue; } // kein Eintrag mehr vorhanden: nur anzeigen
+            asort($m); $r['id'] = (int) array_key_first($m); $r['mine'] = 0;
+            foreach ($m as $sid => $_) if (isset($have[$sid])) { $r['mine'] = 1; $r['id'] = $sid; break; }
+        } unset($r);
+    } catch (Throwable $t) { foreach ($out['seen']['film'] as &$r) { unset($r['fid']); $r['id'] = -1; } unset($r); }
     foreach (['artist' => 5] as $t => $min) {
         $out['seen'][$t] = q_all($pdo, "$sel SELECT d.user_id, d.subject_id FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type=?
