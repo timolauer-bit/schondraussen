@@ -240,6 +240,7 @@ if ($a === 'search') {
     if (!in_array($type, $TYPES, true) || mb_strlen($q) < 2) json_out(['results' => []]);
     $out = [];
     if ($type === 'podcast') $out = podcast_search($q);
+    elseif ($type === 'film') { if (!tmdb_enabled()) json_out(['results' => [], 'manual' => true]); $out = tmdb_search($q); }
     elseif ($type === 'series') {
         $r = http_json('https://api.tvmaze.com/search/shows?q=' . rawurlencode($q)) ?? [];
         foreach (array_slice($r, 0, 8) as $x) { $s = $x['show'] ?? []; if (empty($s['name'])) continue;
@@ -306,7 +307,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
     if ((int) $n->fetchColumn() >= ENTRY_LIMIT) json_out(['error' => 'Du hast die Grenze von ' . number_format(ENTRY_LIMIT, 0, ',', '.') . ' Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
-    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'tmdb' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     $pdo->prepare('INSERT INTO subjects (type,name,external_ids) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$type, $name, $ext ? json_encode($ext) : null]);
     $sid = (int) $pdo->lastInsertId();
@@ -468,7 +469,7 @@ if ($a === 'refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 if ($a === 'relink' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $ext = [];
-    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
+    foreach (['tvmaze' => 'int', 'itunes' => 'int', 'tmdb' => 'int', 'mbid' => 'str', 'olid' => 'ol'] as $k => $t) if (!empty($b['ext'][$k])) $ext[$k] = $t === 'int' ? (int) $b['ext'][$k] : ($t === 'ol' ? preg_replace('/[^A-Za-z0-9]/', '', (string) $b['ext'][$k]) : preg_replace('/[^0-9a-f-]/', '', (string) $b['ext'][$k]));
     if (!empty($b['ext']['gbs']) && is_string($b['ext']['gbs'])) $ext = ['gbs' => mb_substr(trim(preg_replace('/[\x00-\x1f]+/u', ' ', $b['ext']['gbs'])), 0, 120)];
     if (!$ext) json_out(['ok' => false, 'msg' => 'Kein Treffer gewählt.']);
     $pdo->prepare('UPDATE subjects SET external_ids=?, fetched_at=NULL WHERE id=?')->execute([json_encode($ext), $id]);

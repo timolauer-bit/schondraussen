@@ -9,7 +9,8 @@ return [
     ],
     'base_url' => 'https://schondraussen.de',
     'seo_public' => false, // true = Suchmaschinen dürfen die Seite aufnehmen (Start); false = noindex
-    'tmdb_key' => '',
+    'tmdb_token' => '', // TMDB: API-Lesezugriffstoken (bevorzugt)
+    'tmdb_key' => '',   // oder alternativ der API-Schlüssel (v3)
     'github_token' => '', // optional: GitHub-Token (fine-grained, nur dieses Repo, Berechtigung „Actions: Read-only“) für die Deploy-Anzeige im Admin → Sicherheit
     'github_repo' => 'timolauer-bit/schondraussen',
     'deepl_key' => '', // optional: DeepL-API-Free-Schlüssel (endet auf :fx) für die Übersetzung englischer Beschreibungen

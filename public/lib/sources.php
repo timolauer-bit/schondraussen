@@ -2,7 +2,7 @@
 // Datenquellen. Bisher angebunden: TVmaze (Serien). Weitere folgen (MusicBrainz, Open Library, TMDB).
 // Fehlerprotokoll der Datenquellen: nur Komplettfehler (nicht erreichbar, Limit/Kontingent, Zugang abgelehnt, Dienst-Fehler), keine Einzelfälle wie „nicht gefunden“.
 function api_note(string $url, $code, $raw, string $cerr = ''): void {
-    $code = (int) $code; $kind = null;
+    $code = (int) $code; $kind = null; $url = preg_replace('/(api_key=)[^&]+/i', '$1***', $url);
     if ($raw === false || $code === 0) $kind = 'nicht erreichbar';
     elseif (in_array($code, [402, 429, 456], true)) $kind = 'Limit oder Kontingent erreicht';
     elseif (in_array($code, [401, 403], true)) $kind = 'Zugang abgelehnt oder gesperrt';
@@ -25,10 +25,10 @@ function api_note(string $url, $code, $raw, string $cerr = ''): void {
     } catch (Throwable $e) {}
 }
 
-function http_json(string $url, int $timeout = 12): ?array {
+function http_json(string $url, int $timeout = 12, array $hdr = []): ?array {
     $ch = curl_init($url);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+        CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $hdr)]);
     $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
     if ($r === false || $code >= 400) { api_note($url, $code, $r, $cerr); return null; }
     $j = json_decode($r, true);
@@ -62,6 +62,62 @@ function tvmaze_fetch(string $name, ?int $id = null): ?array {
     return http_json($url);
 }
 
+// TMDB (Filme). Zugang über 'tmdb_token' (API-Lesezugriffstoken, bevorzugt) oder 'tmdb_key' (API-Schlüssel v3) in config.php.
+function tmdb_enabled(): bool { return (string) cfg('tmdb_token', '') !== '' || (string) cfg('tmdb_key', '') !== ''; }
+function tmdb_get(string $path, array $q = []): ?array {
+    if (!tmdb_enabled()) return null;
+    $q += ['language' => 'de-DE']; $hdr = [];
+    if ((string) cfg('tmdb_token', '') !== '') $hdr[] = 'Authorization: Bearer ' . cfg('tmdb_token'); else $q['api_key'] = (string) cfg('tmdb_key');
+    return http_json((string) cfg('tmdb_base', 'https://api.themoviedb.org/3') . $path . '?' . http_build_query($q), 12, $hdr);
+}
+function tmdb_search(string $q): array { // Trefferliste für „Neu hinzufügen“
+    $r = tmdb_get('/search/movie', ['query' => $q, 'include_adult' => 'false']); $out = [];
+    foreach (array_slice((array) ($r['results'] ?? []), 0, 8) as $x) {
+        if (empty($x['id']) || empty($x['title'])) continue;
+        $y = substr((string) ($x['release_date'] ?? ''), 0, 4); $o = (string) ($x['original_title'] ?? '');
+        $out[] = ['name' => (string) $x['title'], 'hint' => implode(' · ', array_filter([$y, ($o !== '' && $o !== $x['title']) ? 'Original: ' . $o : ''])), 'ext' => ['tmdb' => (int) $x['id']]];
+    }
+    return $out;
+}
+function film_refresh(PDO $pdo, array $sub): array {
+    if (!tmdb_enabled()) { $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sub['id']]); return ['ok' => false, 'msg' => 'Für Filme ist die Datenquelle noch nicht angebunden.']; }
+    $sid = (int) $sub['id']; $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    $id = (int) ($ext['tmdb'] ?? 0);
+    if (!$id) { $hit = tmdb_search($sub['name']); if (!$hit) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.']; $id = (int) $hit[0]['ext']['tmdb']; }
+    $m = tmdb_get("/movie/$id", ['append_to_response' => 'release_dates']);
+    if (!$m || empty($m['id'])) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.'];
+    $sum = clean_text((string) ($m['overview'] ?? ''), 600);
+    if ($sum === '') { $en = tmdb_get("/movie/$id", ['language' => 'en-US']); $t = clean_text((string) ($en['overview'] ?? ''), 600); if ($t !== '') $sum = translate_de($t, 'EN') ?? $t; }
+    $genres = array_values(array_filter(array_map(fn($g) => (string) ($g['name'] ?? ''), (array) ($m['genres'] ?? []))));
+    $today = date('Y-m-d'); $rel = [];
+    $kinds = [3 => 'Kinostart', 4 => 'Digital', 5 => 'Heimkino'];
+    foreach ((array) ($m['release_dates']['results'] ?? []) as $c) {
+        if (($c['iso_3166_1'] ?? '') !== 'DE') continue;
+        foreach ((array) ($c['release_dates'] ?? []) as $d) {
+            $k = $kinds[(int) ($d['type'] ?? 0)] ?? null; $dt = substr((string) ($d['release_date'] ?? ''), 0, 10);
+            if ($k && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dt) && $dt >= $today) $rel[$dt . $k] = [(string) $m['title'], $dt, $k];
+        }
+    }
+    if (!$rel && ($gd = (string) ($m['release_date'] ?? '')) !== '' && $gd >= $today) $rel[$gd] = [(string) $m['title'], $gd, 'Starttermin']; // kein deutscher Termin bekannt: weltweiter Starttermin
+    ksort($rel);
+    $works = [[(string) $m['title'], (int) substr((string) ($m['release_date'] ?? ''), 0, 4) ?: null, 'Film', !empty($m['runtime']) ? (int) $m['runtime'] . ' Min.' : null]];
+    $col = $m['belongs_to_collection']['id'] ?? null;
+    if ($col && ($cj = tmdb_get('/collection/' . (int) $col)) && !empty($cj['parts'])) { // Teile der Filmreihe
+        $works = []; $parts = (array) $cj['parts']; usort($parts, fn($a, $b) => strcmp((string) ($a['release_date'] ?? '9999'), (string) ($b['release_date'] ?? '9999')));
+        foreach (array_slice($parts, 0, 40) as $x) if (!empty($x['title'])) $works[] = [(string) $x['title'], (int) substr((string) ($x['release_date'] ?? ''), 0, 4) ?: null, 'Film', null];
+    }
+    $ext['tmdb'] = $id;
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')->execute([json_encode($ext), $sum, json_encode($genres, JSON_UNESCAPED_UNICODE), count($works), $sid]);
+        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]); $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)'); foreach ($works as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3]]);
+        $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)'); foreach (array_slice(array_values($rel), 0, 20) as $x) $r->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
+        $pdo->commit();
+    } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
+    return ['ok' => true, 'msg' => count($works) . (count($works) === 1 ? ' Film' : ' Filme') . ', ' . count($rel) . ' kommende Termine'];
+}
+
 // Aktualisiert einen Titel in der Datenbank. Gibt ['ok'=>bool,'msg'=>string] zurück.
 function refresh_subject(PDO $pdo, int $sid): array {
     $r = refresh_subject_run($pdo, $sid);
@@ -83,6 +139,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     if ($sub['type'] === 'artist') return musicbrainz_refresh($pdo, $sub);
     if ($sub['type'] === 'author') return openlibrary_refresh($pdo, $sub);
     if ($sub['type'] === 'podcast') return podcast_refresh($pdo, $sub);
+    if ($sub['type'] === 'film') return film_refresh($pdo, $sub);
     if ($sub['type'] !== 'series') {
         $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]);
         return ['ok' => false, 'msg' => 'Für diese Kategorie ist die Datenquelle noch nicht angebunden.'];
@@ -408,7 +465,7 @@ function dnb_series(string $title): array {
 
 function lobid_fetch(string $q, int $from, string $sort = ''): ?array {
     $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . ($sort !== '' ? '&sort=' . $sort : '') . '&q=' . rawurlencode($q);
-    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $hdr)]);
     $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
     if ($raw === false || $code >= 400) api_note($url, $code, $raw, $cerr);
     $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;
