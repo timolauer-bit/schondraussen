@@ -290,7 +290,7 @@
     }
     var cnt = {}; items.forEach(function (it) { cnt[it.e.type] = (cnt[it.e.type] || 0) + 1; });
     var leg = h('div', { class: 'legend legfilt', role: 'group', 'aria-label': 'Kategorien filtern' }, ORDER.filter(function (k) { return !isHid(k); }).map(function (k) {
-      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
+      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; try { localStorage.setItem('sd-calhide', JSON.stringify(S.calHide)); } catch (_) {} b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
       return b;
     }));
     return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg);
@@ -300,7 +300,7 @@
     wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
-    S.calHide = S.calHide || {};
+    if (!S.calHide) { S.calHide = {}; try { var ch = JSON.parse(localStorage.getItem('sd-calhide') || '{}'); if (ch && typeof ch === 'object') Object.keys(ch).forEach(function (k) { if (ch[k] && TYPES[k]) S.calHide[k] = true; }); } catch (_) {} } // gemerkt im Browser
     var tbl = h('div', { class: 'caltbl' });
     function drawTbl() {
       var vis = items.filter(function (it) { return !S.calHide[it.e.type]; }); tbl.textContent = '';
