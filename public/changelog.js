@@ -16,6 +16,7 @@ window.CHANGELOG = [
     'F|Serien: Der Kasten „Nächste Folge“ zeigt den Serienstatus. Ohne neuen Termin steht dort „beendet“, „unklar“ (Fortsetzung offen), „offen“ (läuft weiter) oder „in Planung“ mit kurzer Erklärung, mit Termin unten klein „Serie läuft“.',
     'U|Favoriten: Sind schon 5 gewählt, erscheint statt eines Fensters kurz eine kleine Pille unter dem Stern („Schon 5 Favoriten bei Filmen“), die von selbst verschwindet.',
     'U|Community: Der Kasten „Persönliche Empfehlungen“ hat immer die Höhe für 5 Einträge und Abstand nach unten; die Hinweiszeile über der Profilkarte entfällt.',
+    'U|Community: In den Listen auf der persönlichen Seite sitzt das Blättern jetzt unten am Kasten, mit kleinen Pfeilknöpfen und „Seite 1 von 5“ dazwischen.',
     'F|Filme: Neuer Abschnitt „Wo läuft der Film?“ mit Streaming, Leihen und Kaufen in Deutschland. Die Angaben stammen von JustWatch (über TMDB) und stehen mit dieser Quellenangabe da.',
     'U|Filmliste: Neuer Filter „Art“ (Einzelfilme, Filmreihen, Regie) im Filtermenü.',
     'U|Info: TMDB steht bei den Quellen, dazu der vorgeschriebene Hinweis, dass die Seite die TMDB-API nutzt, aber nicht von TMDB zertifiziert ist.',
