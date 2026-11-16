@@ -1396,10 +1396,10 @@
         return;
       }
       var d = C.ud, tot = 0; CT.forEach(function (t) { tot += (d.lists[t] || []).length; });
-      body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)), h('p', { class: 'hint' }, d.locked ? 'Platzhalter-Beispiel.' : pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
+      body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)));
       var pkAny = CT.some(function (t) { return ((d.picks || {})[t] || []).length; });
       if (pkAny) {
-        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div'), pkChips = h('div');
+        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div', { class: 'pkbody' }), pkChips = h('div');
         var pkTot = 0; CT.forEach(function (t) { pkTot += ((d.picks || {})[t] || []).length; });
         if (!C.pkf || CT.indexOf(C.pkf) < 0 || !((d.picks || {})[C.pkf] || []).length) C.pkf = CT.filter(function (t) { return ((d.picks || {})[t] || []).length; })[0] || CT[0];
         pkChips.className = 'admtabs infotabs'; pkChips.setAttribute('role', 'tablist'); pkChips.setAttribute('aria-label', 'Empfehlungen nach Kategorie');
@@ -1413,7 +1413,7 @@
           if (!rowsP.length) pkBody.append(h('p', { class: 'hint' }, 'Keine Empfehlungen in dieser Kategorie.')); else pkBody.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rowsP))));
         }
         pkDraw(); pk.append(pkChips, pkBody);
-        body.append(pk);
+        body.append(devMark(pk, 'picks'));
       }
       var last = h('section', { class: 'commbox commlast' + (d.locked ? ' locked' : '') }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
       if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));

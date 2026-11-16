@@ -929,3 +929,9 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 @media (prefers-reduced-motion:reduce){.favtip{animation:none}}
 
 .nextbox .nbig.ended{color:var(--muted)}
+
+/* Persönliche Empfehlungen: immer Platz für 5 Zeilen, Abstand nach unten */
+.commpicks{margin-bottom:22px}
+.commpicks .commtbl tr{height:40px}
+.commpicks .pkbody{min-height:213px}
+.commpicks .admtabs{margin-bottom:6px}
