@@ -1384,19 +1384,18 @@
       body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)), h('p', { class: 'hint' }, d.locked ? 'Platzhalter-Beispiel.' : pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
       var pkAny = CT.some(function (t) { return ((d.picks || {})[t] || []).length; });
       if (pkAny) {
-        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div'), pkChips = h('div', { class: 'catfilt', role: 'group', 'aria-label': 'Empfehlungen nach Kategorie filtern' });
-        C.pkf = C.pkf || ''; if (C.pkf && !((d.picks || {})[C.pkf] || []).length) C.pkf = '';
+        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div'), pkChips = h('div');
         var pkTot = 0; CT.forEach(function (t) { pkTot += ((d.picks || {})[t] || []).length; });
+        if (!C.pkf || CT.indexOf(C.pkf) < 0 || !((d.picks || {})[C.pkf] || []).length) C.pkf = CT.filter(function (t) { return ((d.picks || {})[t] || []).length; })[0] || CT[0];
+        pkChips.className = 'admtabs infotabs'; pkChips.setAttribute('role', 'tablist'); pkChips.setAttribute('aria-label', 'Empfehlungen nach Kategorie');
         function pkDraw() {
           pkChips.textContent = '';
-          function chip(key, label, n) { pkChips.append(h('button', { class: 'cchip', type: 'button', 'aria-pressed': String(C.pkf === key), onclick: function () { C.pkf = key; pkDraw(); } }, label, h('small', null, String(n)))); }
-          chip('', 'Alle', pkTot);
-          CT.forEach(function (t) { var n = ((d.picks || {})[t] || []).length; if (n) chip(t, TYPES[t].plural, n); });
+          CT.forEach(function (t) { var n = ((d.picks || {})[t] || []).length, on = C.pkf === t; pkChips.append(h('button', { class: 'admtab' + (on ? ' on' : ''), type: 'button', role: 'tab', 'aria-selected': String(on), onclick: function () { C.pkf = t; pkDraw(); } }, TYPES[t].plural + (n ? ' (' + n + ')' : ''))); });
           pkBody.textContent = '';
-          var rowsP = CT.reduce(function (acc, t) { if (C.pkf && C.pkf !== t) return acc; ((d.picks || {})[t] || []).forEach(function (r) {
+          var rowsP = CT.reduce(function (acc, t) { if (C.pkf !== t) return acc; ((d.picks || {})[t] || []).forEach(function (r) {
             var nm = (!d.locked && +r.mine) ? h('button', { class: 'namelink', type: 'button', title: 'Seite öffnen: ' + r.name, onclick: function () { S.view = 'list'; S.cat = t; S.sel = String(r.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, r.name) : h('span', { title: d.locked ? '' : 'Mit „+“ in deine Liste übernehmen, dann kannst du die Seite öffnen' }, r.name);
-            acc.push(h('tr', null, h('td', { class: 'ty' }, TYPES[t] ? TYPES[t].label : ''), h('td', { class: 'nm' }, nm), h('td', { class: 'ad' }, adoptBtn(r)))); }); return acc; }, []);
-          pkBody.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rowsP))));
+            acc.push(h('tr', null, h('td', { class: 'nm' }, nm), h('td', { class: 'ad' }, adoptBtn(r)))); }); return acc; }, []);
+          if (!rowsP.length) pkBody.append(h('p', { class: 'hint' }, 'Keine Empfehlungen in dieser Kategorie.')); else pkBody.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rowsP))));
         }
         pkDraw(); pk.append(pkChips, pkBody);
         body.append(devMark(pk, 'picks'));
