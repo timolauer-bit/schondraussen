@@ -426,13 +426,13 @@
       else big = p.prec === 'day' ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : p.prec === 'month' ? MSHORT.format(p.start).replace('.', '') + ' ' + p.y : String(p.y);
       var when = p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? 'Monat bekannt' : 'Jahr bekannt';
       node.append(h('b', { class: 'nbig' }, big), h('div', { class: 'nline' }, nxt.u.title), h('div', { class: 'nsub' }, when));
-    } else if (e.type === 'series' && SERST[e.tv_status]) { var ss = SERST[e.tv_status]; node.append(devMark(h('b', { class: 'nbig none' + (e.tv_status === 'Ended' ? ' ended' : '') }, ss[0]), 'serstat'), h('div', { class: 'nsub' }, ss[1])); }
+    } else if (e.type === 'series' && SERST[e.tv_status]) { var ss = SERST[e.tv_status]; node.append(h('b', { class: 'nbig none' + (e.tv_status === 'Ended' ? ' ended' : '') }, ss[0]), h('div', { class: 'nsub' }, ss[1])); }
     else node.append(h('b', { class: 'nbig none' }, e.type === 'podcast' ? 'nichts neu' : 'offen'), h('div', { class: 'nsub' }, e.type === 'podcast' ? 'Keine Folge in den letzten 14 Tagen.' : 'Noch nichts angekündigt.'));
     var st = h('div', { class: 'nstats' }), prog = null, a1 = null, a2 = null;
     if (e.type === 'series') {
       var eps = r.episodes || [], seas = {}; eps.forEach(function (x) { seas[x.season] = 1; });
       st.append(h('span', null, h('b', null, Object.keys(seas).length), ' ' + (Object.keys(seas).length === 1 ? 'Staffel' : 'Staffeln')), h('span', null, h('b', null, eps.length), ' ' + (eps.length === 1 ? 'Folge' : 'Folgen')));
-      var gs = h('span', null), sst = nxt && TVS[e.tv_status] ? devMark(h('span', null, 'Serie ', h('b', null, TVS[e.tv_status])), 'serstat') : null; node.append(st, h('div', { class: 'nstats' }, gs, sst));
+      var gs = h('span', null), sst = nxt && TVS[e.tv_status] ? h('span', null, 'Serie ', h('b', null, TVS[e.tv_status])) : null; node.append(st, h('div', { class: 'nstats' }, gs, sst));
       prog = function (n, tot) { gs.textContent = ''; gs.append(h('b', null, n), ' von ' + tot + ' gesehen'); };
       var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
     } else {
@@ -577,7 +577,7 @@
     function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
     setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
     setTimeout(close, 3500);
-    return devMark(tip, 'favtip');
+    return tip;
   }
   /* Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie */
   function wstar(e, w, set) {
@@ -1413,7 +1413,7 @@
           if (!rowsP.length) pkBody.append(h('p', { class: 'hint' }, 'Keine Empfehlungen in dieser Kategorie.')); else pkBody.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('tbody', null, rowsP))));
         }
         pkDraw(); pk.append(pkChips, pkBody);
-        body.append(devMark(pk, 'picks'));
+        body.append(pk);
       }
       var last = h('section', { class: 'commbox commlast' + (d.locked ? ' locked' : '') }, h('h4', null, 'Letzte 20 hinzugefügte Positionen'));
       if (!d.last.length) last.append(h('p', { class: 'hint' }, 'Noch nichts.'));

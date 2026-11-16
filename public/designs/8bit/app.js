@@ -412,6 +412,8 @@
     return wrap;
   }
   function on_(b) { return b ? ICONS.bell : ICONS.bellOff; }
+  // Serienstatus von TVmaze für den Kasten „Nächste Folge“, wenn kein Termin bekannt ist. TVmaze unterscheidet nicht zwischen abgeschlossen und abgesetzt.
+  var SERST = { 'Ended': ['beendet', 'Die Serie ist abgeschlossen oder wurde eingestellt. Es kommen keine neuen Folgen.'], 'To Be Determined': ['unklar', 'Ob es eine weitere Staffel gibt, ist noch offen.'], 'Running': ['offen', 'Die Serie läuft weiter, ein neuer Termin ist noch nicht bekannt.'], 'In Development': ['in Planung', 'Die Serie ist angekündigt, Termine folgen.'] };
   function nextBox(e, r, up, t) {
     var now = today0(), nxt = null, node = h('aside', { class: 'nextbox' });
     up.slice().sort(function (a, b) { return a.p.sort - b.p.sort; }).forEach(function (it) { if (!nxt && it.p.prec !== 'none' && it.p.end >= now) nxt = it; });
@@ -424,12 +426,13 @@
       else big = p.prec === 'day' ? (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : 'in ' + diff + ' Tagen') : p.prec === 'month' ? MSHORT.format(p.start).replace('.', '') + ' ' + p.y : String(p.y);
       var when = p.prec === 'day' ? LONG.format(p.start) : p.prec === 'month' ? 'Monat bekannt' : 'Jahr bekannt';
       node.append(h('b', { class: 'nbig' }, big), h('div', { class: 'nline' }, nxt.u.title), h('div', { class: 'nsub' }, when));
-    } else node.append(h('b', { class: 'nbig none' }, e.type === 'podcast' ? 'nichts neu' : 'offen'), h('div', { class: 'nsub' }, e.type === 'podcast' ? 'Keine Folge in den letzten 14 Tagen.' : 'Noch nichts angekündigt.'));
+    } else if (e.type === 'series' && SERST[e.tv_status]) { var ss = SERST[e.tv_status]; node.append(h('b', { class: 'nbig none' + (e.tv_status === 'Ended' ? ' ended' : '') }, ss[0]), h('div', { class: 'nsub' }, ss[1])); }
+    else node.append(h('b', { class: 'nbig none' }, e.type === 'podcast' ? 'nichts neu' : 'offen'), h('div', { class: 'nsub' }, e.type === 'podcast' ? 'Keine Folge in den letzten 14 Tagen.' : 'Noch nichts angekündigt.'));
     var st = h('div', { class: 'nstats' }), prog = null, a1 = null, a2 = null;
     if (e.type === 'series') {
       var eps = r.episodes || [], seas = {}; eps.forEach(function (x) { seas[x.season] = 1; });
       st.append(h('span', null, h('b', null, Object.keys(seas).length), ' ' + (Object.keys(seas).length === 1 ? 'Staffel' : 'Staffeln')), h('span', null, h('b', null, eps.length), ' ' + (eps.length === 1 ? 'Folge' : 'Folgen')));
-      var gs = h('span', null); node.append(st, h('div', { class: 'nstats' }, gs));
+      var gs = h('span', null), sst = nxt && TVS[e.tv_status] ? h('span', null, 'Serie ', h('b', null, TVS[e.tv_status])) : null; node.append(st, h('div', { class: 'nstats' }, gs, sst));
       prog = function (n, tot) { gs.textContent = ''; gs.append(h('b', null, n), ' von ' + tot + ' gesehen'); };
       var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
     } else {
@@ -453,7 +456,7 @@
         var want = !favOn; favBtn.disabled = true;
         api('/api/data.php?a=fav&id=' + e.id, { on: want }).then(function (x) {
           favBtn.disabled = false;
-          if (!x || !x.ok) { popup(x && x.limit ? 'Nur 5 Favoriten je Kategorie' : 'Nicht gespeichert', (x && x.error) || 'Das hat nicht geklappt.'); return; }
+          if (!x || !x.ok) { if (x && x.limit) favTip(favBtn, e.type); else popup('Nicht gespeichert', (x && x.error) || 'Das hat nicht geklappt.'); return; }
           favOn = want; if (le) le.fav = want ? 1 : 0;
           favBtn.className = 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'); favBtn.setAttribute('aria-pressed', String(favOn)); favBtn.setAttribute('aria-label', favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren');
           favBtn.title = favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)';
@@ -564,6 +567,18 @@
     series: [['Drama', 'Drama'], ['Komödie', 'Comedy'], ['Science-Fiction', 'Science-Fiction'], ['Fantasy', 'Fantasy'], ['Krimi', 'Crime'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Action', 'Action'], ['Abenteuer', 'Adventure'], ['Mystery', 'Mystery'], ['Romanze', 'Romance'], ['Anime', 'Anime'], ['Familie', 'Family'], ['Western', 'Western'], ['Krieg', 'War'], ['Geschichte', 'History']],
     author: [['Fantasy', 'Fantasy'], ['Science-Fiction', 'Science fiction'], ['Krimi', 'Mystery and detective stories'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Liebesroman', 'Romance'], ['Historischer Roman', 'Historical fiction'], ['Biografie', 'Biography'], ['Jugendbuch', 'Young adult fiction'], ['Humor', 'Humor'], ['Abenteuer', 'Adventure']]
   };
+  /* Hinweis am Stern, wenn alle 5 Favoriten einer Kategorie belegt sind: kleine Pille unter dem Stern, verschwindet von selbst */
+  function favTip(btn, type) {
+    var old = document.getElementById('favtip'); if (old) old.remove();
+    var t = { author: 'Büchern', artist: 'Musik', film: 'Filmen', series: 'Serien', podcast: 'Podcasts' }[type] || 'dieser Kategorie', tip = h('div', { id: 'favtip', class: 'favtip', role: 'status' }, 'Schon 5 Favoriten bei ' + t);
+    document.body.append(tip);
+    var r = btn.getBoundingClientRect(), w = tip.offsetWidth, x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    tip.style.left = (x + window.scrollX) + 'px'; tip.style.top = (r.bottom + window.scrollY + 9) + 'px'; tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
+    setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
+    setTimeout(close, 3500);
+    return tip;
+  }
   /* Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie */
   function wstar(e, w, set) {
     if (['film', 'artist', 'author'].indexOf(e.type) < 0 || !w.k) return null;
@@ -574,7 +589,7 @@
       var want = !on; b.disabled = true;
       api('/api/data.php?a=favwork&id=' + e.id, { k: w.k, on: want }).then(function (x) {
         b.disabled = false;
-        if (!x || !x.ok) { if (x && x.limit) popup('Nur 5 Favoriten je Kategorie', x.error); else say((x && x.error) || 'Das hat nicht geklappt.', true); return; }
+        if (!x || !x.ok) { if (x && x.limit) favTip(b, e.type); else say((x && x.error) || 'Das hat nicht geklappt.', true); return; }
         on = want; if (on) set[w.k] = 1; else delete set[w.k]; look();
       });
     });
@@ -1381,10 +1396,10 @@
         return;
       }
       var d = C.ud, tot = 0; CT.forEach(function (t) { tot += (d.lists[t] || []).length; });
-      body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)), h('p', { class: 'hint' }, d.locked ? 'Platzhalter-Beispiel.' : pl(tot, 'Eintrag', 'Einträge') + ' in den Listen. Mit „+“ übernimmst du einen Eintrag in deine eigene Liste, ein Häkchen heißt, du hast ihn schon.'));
+      body.append(h('h3', { class: 'commh' + (d.locked ? ' locked' : '') }, d.user.name), d.locked ? LOCKNOTE() : '', h('div', { class: d.locked ? 'locked' : null }, idCard(d)));
       var pkAny = CT.some(function (t) { return ((d.picks || {})[t] || []).length; });
       if (pkAny) {
-        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div'), pkChips = h('div');
+        var pk = h('section', { class: 'commbox commpicks' + (d.locked ? ' locked' : '') }, h('h4', null, '★ Persönliche Empfehlungen')), pkBody = h('div', { class: 'pkbody' }), pkChips = h('div');
         var pkTot = 0; CT.forEach(function (t) { pkTot += ((d.picks || {})[t] || []).length; });
         if (!C.pkf || CT.indexOf(C.pkf) < 0 || !((d.picks || {})[C.pkf] || []).length) C.pkf = CT.filter(function (t) { return ((d.picks || {})[t] || []).length; })[0] || CT[0];
         pkChips.className = 'admtabs infotabs'; pkChips.setAttribute('role', 'tablist'); pkChips.setAttribute('aria-label', 'Empfehlungen nach Kategorie');
