@@ -905,6 +905,9 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .favbtn.on svg{fill:#f5c518;stroke:#b8860b}
 .commpicks h4{color:#b8860b}
 
+.wcard .wtr{display:inline-flex;align-items:center;gap:6px}
+.wcard .favbtn{padding:0;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center}
+
 /* ===== Design 8-Bit: Pixelschrift, harte Kanten, dicke Rahmen, Schlagschatten ohne Weichzeichnung ===== */
 @font-face{font-family:'SD Pixel';src:url('/designs/8bit/pixel.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'SD Pixel Text';src:url('/designs/8bit/text.woff2') format('woff2');font-display:swap;size-adjust:128%}

@@ -578,7 +578,7 @@
         on = want; if (on) set[w.k] = 1; else delete set[w.k]; look();
       });
     });
-    return devMark(b, 'favwork');
+    return b;
   }
   function addSuggestion(type, it, btn, done) {
     btn.disabled = true; btn.textContent = 'Wird hinzugefügt …';

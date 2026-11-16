@@ -8,6 +8,7 @@ window.CHANGELOG = [
     'F|Filme: „Gesehen“ gilt für denselben Film überall, im Einzeleintrag, in der Filmreihe und bei der Regie. Markierst du ihn an einer Stelle, ist er überall markiert.',
     'F|Filme: „Ähnliche Filme“ bei Einzelfilmen und Filmreihen sowie „Beliebte Filme entdecken“ nach Genre, die Vorschläge kommen von TMDB und lassen sich mit einem Klick auf die Liste setzen.',
     'F|Favoriten: Neben der Glocke gibt es bei jedem Eintrag einen Stern. Er ist golden, wenn der Eintrag ein Favorit ist. Pro Kategorie sind bis zu 5 Favoriten möglich, danach erscheint ein Hinweis. Deine Favoriten stehen auf deiner Community-Seite als „Persönliche Empfehlungen“, andere können sie mit „+“ übernehmen.',
+    'F|Favoriten: Auch einzelne Titel bekommen oben rechts im Kasten einen Stern: Filme in einer Filmreihe oder bei einer Regie, Alben und Bücher. Sie zählen zu den 5 Favoriten je Kategorie und erscheinen in der Community als „Titel (Eintrag)“. Bei Serien und Podcasts gibt es den Stern nur für den ganzen Eintrag.',
     'F|Filme: Neuer Abschnitt „Wo läuft der Film?“ mit Streaming, Leihen und Kaufen in Deutschland. Die Angaben stammen von JustWatch (über TMDB) und stehen mit dieser Quellenangabe da.',
     'U|Filmliste: Neuer Filter „Art“ (Einzelfilme, Filmreihen, Regie) im Filtermenü.',
     'U|Info: TMDB steht bei den Quellen, dazu der vorgeschriebene Hinweis, dass die Seite die TMDB-API nutzt, aber nicht von TMDB zertifiziert ist.',
