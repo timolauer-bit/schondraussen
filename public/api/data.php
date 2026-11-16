@@ -529,10 +529,11 @@ if ($a === 'entry') {
     $e = $s->fetch(); if ($e && !in_array($e['type'], $TYPES, true)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
-    $e['kind'] = ''; $e['dirs'] = [];
+    $e['kind'] = ''; $e['dirs'] = []; $e['watch'] = null;
     if ($e['type'] === 'film') { // Film, Filmreihe oder Regie-Eintrag
         $e['kind'] = !empty($x['tmdb_person']) ? 'person' : (!empty($x['tmdb_col']) ? 'col' : 'movie');
         foreach ((array) ($x['dir'] ?? []) as $dd) if (!empty($dd['id']) && !empty($dd['name'])) $e['dirs'][] = ['id' => (int) $dd['id'], 'name' => (string) $dd['name']];
+        if ($e['kind'] === 'movie' && isset($x['watch']) && is_array($x['watch'])) { $e['watch'] = []; foreach (['flatrate', 'rent', 'buy'] as $wk2) $e['watch'][$wk2] = array_values(array_filter(array_map('strval', (array) ($x['watch'][$wk2] ?? [])))); }
         if ($e['kind'] === 'movie') $e['selfkey'] = !empty($x['tmdb']) ? 't' . (int) $x['tmdb'] : done_key_work($e['name'], 0); // Film selbst als gesehen markieren
     }
     $eps = [];

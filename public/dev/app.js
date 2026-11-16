@@ -491,6 +491,13 @@
       });
       card.append(dl);
     }
+    if (e.type === 'film' && e.watch) { // Streaming in Deutschland (Daten von JustWatch über TMDB)
+      var wb = h('div', { class: 'watchbox' }, h('h3', { class: 'sec' }, 'Wo läuft der Film?')), any = false;
+      [['flatrate', 'Streaming'], ['rent', 'Leihen'], ['buy', 'Kaufen']].forEach(function (g) { var l = e.watch[g[0]] || []; if (l.length) { any = true; wb.append(h('p', { class: 'hint', style: 'margin:4px 0' }, h('b', null, g[1] + ': '), l.join(', '))); } });
+      if (!any) wb.append(h('p', { class: 'hint' }, 'Zurzeit ist der Film bei keinem Anbieter in Deutschland gelistet.'));
+      wb.append(h('p', { class: 'note' }, 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'));
+      card.append(wb);
+    }
     var sumNode = null;
     if (e.summary) {
       var sp = h('p', { class: 'sum' }, e.summary);
@@ -1411,6 +1418,7 @@
     sec('Externe Datenquellen und Schnittstellen', h('p', null, 'Alle Abfragen laufen serverseitig und nur für Titel, die Nutzer wirklich anlegen. An die Dienste gehen nie E-Mail-Adressen oder Kontodaten.'),
       tbl(['Quelle', 'Wofür', 'Schlüssel', 'Auflagen und Hinweise'], [
         [{ t: 'TMDB', href: 'https://www.themoviedb.org' }, 'Filme: Titel, Beschreibung, Kino- und Digitalstart in Deutschland, Filmreihen', 'Zugangsschlüssel', 'Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'],
+        [{ t: 'JustWatch', href: 'https://www.justwatch.com' }, 'Filme: wo ein Film in Deutschland gestreamt, geliehen oder gekauft werden kann (Daten kommen über TMDB)', 'keiner (über TMDB)', 'Quellenangabe „JustWatch“ ist bei jeder Anzeige Pflicht, sonst verliert die Seite den TMDB-Zugang'],
         [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
         [{ t: 'MusicBrainz', href: 'https://musicbrainz.org' }, 'Musik: Künstler:innen, Alben, Termine', 'keiner', 'höchstens eine Anfrage pro Sekunde, daher gebremste Abfrage'],
         ['ListenBrainz', 'Musik: Vorschläge ähnlicher Künstler:innen', 'keiner', '–'],
@@ -1453,7 +1461,7 @@
       '<section class="infosec"><h3>Quellen je Kategorie</h3>' +
       '<div class="infocat"><h4>Bücher</h4><p><a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> liefert die Bücher. Angekündigte Bücher kennt diese Quelle kaum, dafür kommt später eine zweite Quelle, etwa Google Books.</p></div>' +
       '<div class="infocat"><h4>Musik</h4><p><a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>, eine offene Musikdatenbank, für Alben, EPs und angekündigte Veröffentlichungen.</p></div>' +
-      '<div class="infocat"><h4>Filme</h4><p>Titel, Beschreibungen, Filmreihen, Regisseur:innen mit ihren Filmen und die Starttermine in Deutschland kommen von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.</p></div>' +
+      '<div class="infocat"><h4>Filme</h4><p>Titel, Beschreibungen, Filmreihen, Regisseur:innen mit ihren Filmen und die Starttermine in Deutschland kommen von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert. Wo ein Film läuft, zeigt die Seite mit Daten von <a href="https://www.justwatch.com" target="_blank" rel="noopener noreferrer">JustWatch</a>.</p></div>' +
       '<div class="infocat"><h4>Serien</h4><p><a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) für Staffeln und Sendetermine der Folgen. Manga und Comics findest du unter Bücher, soweit Open Library und Google Books sie führen.</p></div>' +
       (!S.site.tag ? '<div class="infocat"><h4>Amazon-Links</h4><p>Suchlinks zu Amazon, ohne Partner-ID. Für den Betreiber entstehen daraus keine Einnahmen.</p></div>' : '<div class="infocat"><h4 class="withtip">Amazon-Links <span class="tip" tabindex="0" role="button" aria-label="Wie lange gilt ein Klick auf einen Amazon-Link?"><i>?</i><span class="tipbox" role="tooltip"><b>Wie lange gilt ein Klick?</b> Nach Amazons Regeln 24 Stunden. Kaufst du in dieser Zeit etwas bei Amazon, zählt es für die Seite, auch ein ganz anderes Produkt. Legst du innerhalb der 24 Stunden etwas in den Warenkorb, kann es länger zählen (bis zu etwa 90 Tage). Für dich ändert sich der Preis nie.</span></span></h4><p>Suchlinks mit der Partner-ID des Betreibers (Programm: <a href="https://partnernet.amazon.de" target="_blank" rel="noopener noreferrer">Amazon PartnerNet</a>). Eine Provision gibt es nur bei qualifizierten Käufen.</p></div>') + '</section>';
     api('/api/data.php?a=lastrun').then(function (r) {

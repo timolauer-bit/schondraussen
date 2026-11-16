@@ -142,7 +142,7 @@ function film_refresh(PDO $pdo, array $sub): array {
 function film_refresh_movie(PDO $pdo, array $sub, array $ext): array {
     $sid = (int) $sub['id']; $id = (int) ($ext['tmdb'] ?? 0);
     if (!$id) { $hit = tmdb_search($sub['name'], false); if (!$hit) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.']; $id = (int) $hit[0]['ext']['tmdb']; }
-    $m = tmdb_get("/movie/$id", ['append_to_response' => 'release_dates,credits']);
+    $m = tmdb_get("/movie/$id", ['append_to_response' => 'release_dates,credits,watch/providers']);
     if (!$m || empty($m['id'])) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.'];
     $ext['tmdb'] = $id;
     if (!empty($m['belongs_to_collection']['id'])) { // Teil einer Filmreihe: alle Einträge der Nutzer wandern in den Reiheneintrag
@@ -157,6 +157,9 @@ function film_refresh_movie(PDO $pdo, array $sub, array $ext): array {
     $genres = array_values(array_filter(array_map(fn($g) => (string) ($g['name'] ?? ''), (array) ($m['genres'] ?? []))));
     $dirs = []; foreach ((array) ($m['credits']['crew'] ?? []) as $c) if (($c['job'] ?? '') === 'Director' && !empty($c['id']) && count($dirs) < 3 && !in_array((int) $c['id'], array_column($dirs, 'id'), true)) $dirs[] = ['id' => (int) $c['id'], 'name' => (string) $c['name']];
     $ext['dir'] = $dirs;
+    $wp = $m['watch/providers']['results']['DE'] ?? null; // Wo der Film in Deutschland läuft (Daten von JustWatch, Quellenangabe Pflicht)
+    $ext['watch'] = ['flatrate' => [], 'rent' => [], 'buy' => []];
+    foreach (array_keys($ext['watch']) as $k) foreach (array_slice((array) ($wp[$k] ?? []), 0, 12) as $p) if (!empty($p['provider_name'])) $ext['watch'][$k][] = mb_substr((string) $p['provider_name'], 0, 40);
     $today = date('Y-m-d'); $rel = [];
     foreach (tmdb_dates($m, $today) as $x) $rel[$x[0] . $x[1]] = [(string) $m['title'], $x[0], $x[1]];
     ksort($rel);
