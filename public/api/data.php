@@ -309,6 +309,7 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $b = body(); $type = $b['type'] ?? ''; $name = trim(preg_replace('/\s+/', ' ', (string) ($b['name'] ?? '')));
     if (mb_strlen($name) > 3 && preg_match('/\p{Lu}{2}/u', $name) && $name === mb_strtoupper($name) && preg_match('/\s/', $name) && preg_match('/\p{L}/u', $name) && ($type === 'author')) $name = mb_convert_case(mb_strtolower($name), MB_CASE_TITLE); // Autorenname nur in Großbuchstaben: Groß-/Kleinschreibung herstellen
     if (!in_array($type, $TYPES, true) || $name === '' || mb_strlen($name) > 190) json_out(['error' => 'Bitte einen Namen eingeben.'], 422);
+    if (empty($b['ext']) && junk_name($name)) json_out(['error' => 'Das sieht nicht wie ein Name aus (zum Beispiel eine Zeile aus einer Exportdatei oder ein Link). Bitte nur den Namen eingeben.'], 422);
     $n = $pdo->prepare('SELECT COUNT(*) FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type=?'); $n->execute([$u['id'], $type]);
     if ((int) $n->fetchColumn() >= ENTRY_LIMIT) json_out(['error' => 'Du hast die Grenze von ' . number_format(ENTRY_LIMIT, 0, ',', '.') . ' Einträgen für diese Liste erreicht. Bitte lösche zuerst einige Einträge.'], 422);
     $ext = [];
@@ -384,11 +385,14 @@ if ($a === 'mystats') { // persönliche Statistik für die Info-Seite (nur eigen
     } catch (Throwable $e) {}
     json_out($o);
 }
+function junk_name(string $t): bool { // Zeilen aus CSV-Exporten (z. B. IMDb: „1,tt0110912,2013-08-29,…“), Links und reine Nummern sind keine Namen
+    return (bool) (preg_match('~https?://|www\.|imdb\.com|\btt\d{5,}\b~i', $t) || preg_match('/^\d+\s*,/', $t) || substr_count($t, ',') >= 4 || preg_match('/^[\d\s\p{P}]+$/u', $t) && !preg_match('/^\d{1,4}$/', $t));
+}
 if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $names = []; $seen = [];
     foreach ((array) (body()['names'] ?? []) as $x) {
         $t = trim(preg_replace('/[\x00-\x1f\s]+/u', ' ', (string) $x));
-        if ($t === '' || mb_strlen($t) > 190 || isset($seen[mb_strtolower($t)])) continue;
+        if ($t === '' || mb_strlen($t) > 190 || junk_name($t) || isset($seen[mb_strtolower($t)])) continue;
         $seen[mb_strtolower($t)] = 1; $names[] = $t;
         if (count($names) >= ENTRY_LIMIT) break;
     }
@@ -418,7 +422,7 @@ if ($a === 'trakt' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Import aus ein
     foreach ($items as $it) {
         if (++$n > 600 || !is_array($it)) break;
         $t = ($it['type'] ?? '') === 'film' ? 'film' : 'series'; $nm = trim(preg_replace('/[\x00-\x1f\s]+/u', ' ', (string) ($it['name'] ?? '')));
-        if ($nm === '' || mb_strlen($nm) > 190 || isset($seen[$t . mb_strtolower($nm)])) continue; $seen[$t . mb_strtolower($nm)] = 1;
+        if ($nm === '' || mb_strlen($nm) > 190 || junk_name($nm) || isset($seen[$t . mb_strtolower($nm)])) continue; $seen[$t . mb_strtolower($nm)] = 1;
         $pdo->prepare('INSERT INTO subjects (type,name) VALUES (?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)')->execute([$t, $nm]); $sid = (int) $pdo->lastInsertId();
         $chk->execute([$u['id'], $sid]);
         if ($chk->fetch()) $res[$t]['had']++;

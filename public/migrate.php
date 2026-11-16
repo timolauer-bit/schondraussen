@@ -7,6 +7,11 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+  '085_orphan_csv_subjects' => [ // weitere Reste von stefanh: ganze CSV-Zeilen (IMDb-Export) als Name, auf keiner Liste mehr
+  "DELETE ep FROM episodes ep JOIN subjects s ON s.id=ep.subject_id WHERE (s.name REGEXP '^[0-9]+ *,' OR s.name LIKE '%imdb.com/%' OR s.name REGEXP 'https?://' OR s.name REGEXP '(^|[^a-zA-Z])tt[0-9]{5,}') AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)",
+  "DELETE ws FROM work_seen ws JOIN subjects s ON s.id=ws.subject_id WHERE (s.name REGEXP '^[0-9]+ *,' OR s.name LIKE '%imdb.com/%' OR s.name REGEXP 'https?://' OR s.name REGEXP '(^|[^a-zA-Z])tt[0-9]{5,}') AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)",
+  "DELETE s FROM subjects s WHERE (s.name REGEXP '^[0-9]+ *,' OR s.name LIKE '%imdb.com/%' OR s.name REGEXP 'https?://' OR s.name REGEXP '(^|[^a-zA-Z])tt[0-9]{5,}') AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)"
+ ],
   '084_cal_hide' => [
   "ALTER TABLE users ADD COLUMN cal_hide VARCHAR(60) NULL"
  ],
