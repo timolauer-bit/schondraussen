@@ -13,6 +13,7 @@ window.CHANGELOG = [
     'U|Community: Auf der persönlichen Seite haben die Persönlichen Empfehlungen oben eine Reiterleiste mit den Kategorien. Einträge, die du selbst hast, sind anklickbar und öffnen ihre Seite.',
     'B|Community: Bei „Meistgesehen“ für Filme steht jetzt der Haken, wenn du den Film schon hast (auch über die Filmreihe), und das Plus legt die passende Reihe an.',
     'A|Admin: Die Systemnachricht bei jedem neuen Konto ohne E-Mail-Adresse entfällt, die Warnung bei Erreichen des Limits bleibt.',
+    'A|Admin: Im Briefing entfallen die Liste „Neu dabei“ und die letzten Systemmeldungen unter den Kästen; die Zahlen bleiben. Vergessene Dev-Rahmen (Briefing, Kontakt, Oberflächenanpassungen) sind entfernt.',
     'F|Serien: Der Kasten „Nächste Folge“ zeigt den Serienstatus. Ohne neuen Termin steht dort „beendet“, „unklar“ (Fortsetzung offen), „offen“ (läuft weiter) oder „in Planung“ mit kurzer Erklärung, mit Termin unten klein „Serie läuft“.',
     'U|Favoriten: Sind schon 5 gewählt, erscheint statt eines Fensters kurz eine kleine Pille unter dem Stern („Schon 5 Favoriten bei Filmen“), die von selbst verschwindet.',
     'U|Community: Der Kasten „Persönliche Empfehlungen“ hat immer die Höhe für 5 Einträge und Abstand nach unten; die Hinweiszeile über der Profilkarte entfällt.',
