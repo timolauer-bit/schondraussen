@@ -29,3 +29,6 @@ Die Vorschau (`public/lib/mailpreview.php`) spiegelt die festen Mailtexte aus au
 
 ## Einheitliche Knöpfe
 Gleiche Aktion, gleiche Beschriftung in allen Kategorien: Suchfeld mit „Suchen“, Hinzufügen eines gefundenen Treffers mit „Hinzufügen“, Abbrechen mit „Abbrechen“. Neue Knöpfe vorher mit `grep -n "'Suchen'\|'Hinzufügen'" public/app.js` auf vorhandene Beschriftungen prüfen und nur Klassen `btn`, `btn ghost`, `btn small`, `pill` verwenden.
+
+## Pushen nur auf Freigabe (ab 16.11.2026)
+Seit es die Wartungsseite gibt, löst jeder Push einen Deploy mit Wartungsmodus aus. Änderungen werden deshalb nur lokal committet und gesammelt. Gepusht wird erst, wenn Timo es ausdrücklich freigibt („hochladen“, „pushen“).

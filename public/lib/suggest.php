@@ -98,7 +98,23 @@ function sg_similar(PDO $pdo, array $sub): array {
         }
         uasort($by, fn($a, $b) => $b['score'] <=> $a['score']);
         foreach (array_slice($by, 0, 12) as $x) $out[] = sg_item($x['a']['name'], 'Thema: ' . $x['subj'], ['olid' => $x['a']['olid']]);
-    } else return ['items' => [], 'msg' => 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.'];
+    } elseif ($sub['type'] === 'film') {
+        if (!tmdb_enabled()) return ['items' => [], 'msg' => 'Die Filmdatenbank ist gerade nicht erreichbar.'];
+        if (!empty($ext['tmdb_person'])) return ['items' => [], 'msg' => 'Für Regie-Einträge gibt es keine Vorschläge.'];
+        $skip = []; $mid = (int) ($ext['tmdb'] ?? 0);
+        if (!empty($ext['tmdb_col'])) { // Reihe: Empfehlungen zum ersten Teil, ohne die Teile der Reihe selbst
+            $c = tmdb_get('/collection/' . (int) $ext['tmdb_col']); $parts = (array) ($c['parts'] ?? []);
+            usort($parts, fn($x, $y) => strcmp((string) ($x['release_date'] ?? '9999'), (string) ($y['release_date'] ?? '9999')));
+            foreach ($parts as $x) $skip[(int) ($x['id'] ?? 0)] = 1; $mid = (int) ($parts[0]['id'] ?? 0);
+        }
+        if (!$mid) return ['items' => [], 'msg' => 'Dieser Eintrag ist noch keinem Film in der Datenbank zugeordnet. Aktualisiere ihn zuerst.'];
+        $skip[$mid] = 1; $j = tmdb_get("/movie/$mid/recommendations") ?? [];
+        foreach ((array) ($j['results'] ?? []) as $r) {
+            if (empty($r['id']) || empty($r['title']) || isset($skip[(int) $r['id']])) continue;
+            $out[] = sg_item((string) $r['title'], trim(substr((string) ($r['release_date'] ?? ''), 0, 4) . (!empty($r['vote_average']) && (int) ($r['vote_count'] ?? 0) >= 100 ? ' · ' . number_format((float) $r['vote_average'], 1, ',', '') . ' von 10' : ''), ' ·'), ['tmdb' => (int) $r['id']]);
+            if (count($out) >= 12) break;
+        }
+    } else return ['items' => [], 'msg' => 'Für diese Kategorie gibt es keine Vorschläge.'];
     return ['items' => $out, 'msg' => $out ? '' : 'Keine Vorschläge gefunden.'];
 }
 
@@ -116,6 +132,10 @@ function sg_popular(PDO $pdo, string $type, string $genre): array {
         foreach (sg_series_pool($pdo) as $s) if (in_array($genre, $s['genres'], true)) { $out[] = sg_item($s['name'], trim($s['year'] . ' · ' . implode(', ', array_slice($s['genres'], 0, 3)), ' ·'), ['tvmaze' => $s['id']]); if (++$n >= 10) break; }
     } elseif ($type === 'author') {
         foreach (array_slice(sg_ol_subject_authors($genre), 0, 10) as $a) $out[] = sg_item($a['name'], $a['top'] !== '' ? '„' . $a['top'] . '“' : '', ['olid' => $a['olid']]);
-    } else return ['items' => [], 'msg' => 'Für Filme folgt das, sobald die Filmdatenbank angebunden ist.'];
+    } elseif ($type === 'film') {
+        if (!tmdb_enabled() || !ctype_digit($genre)) return ['items' => [], 'msg' => 'Die Filmdatenbank ist gerade nicht erreichbar.'];
+        $j = tmdb_get('/discover/movie', ['with_genres' => $genre, 'sort_by' => 'vote_average.desc', 'vote_count.gte' => 3000, 'include_adult' => 'false']) ?? [];
+        foreach (array_slice((array) ($j['results'] ?? []), 0, 10) as $r) if (!empty($r['id']) && !empty($r['title'])) $out[] = sg_item((string) $r['title'], trim(substr((string) ($r['release_date'] ?? ''), 0, 4) . ' · ' . number_format((float) ($r['vote_average'] ?? 0), 1, ',', '') . ' von 10', ' ·'), ['tmdb' => (int) $r['id']]);
+    } else return ['items' => [], 'msg' => 'Für diese Kategorie gibt es keine Vorschläge.'];
     return ['items' => $out, 'msg' => $out ? '' : 'Dazu wurden keine Vorschläge gefunden.'];
 }
