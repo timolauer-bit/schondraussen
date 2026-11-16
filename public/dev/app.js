@@ -453,7 +453,7 @@
         var want = !favOn; favBtn.disabled = true;
         api('/api/data.php?a=fav&id=' + e.id, { on: want }).then(function (x) {
           favBtn.disabled = false;
-          if (!x || !x.ok) { popup(x && x.limit ? 'Nur 5 Favoriten je Kategorie' : 'Nicht gespeichert', (x && x.error) || 'Das hat nicht geklappt.'); return; }
+          if (!x || !x.ok) { if (x && x.limit) favTip(favBtn, e.type); else popup('Nicht gespeichert', (x && x.error) || 'Das hat nicht geklappt.'); return; }
           favOn = want; if (le) le.fav = want ? 1 : 0;
           favBtn.className = 'btn ghost small favbtn ' + (favOn ? 'on' : 'off'); favBtn.setAttribute('aria-pressed', String(favOn)); favBtn.setAttribute('aria-label', favOn ? 'Favorit, anklicken zum Entfernen' : 'Als Favorit markieren');
           favBtn.title = favOn ? 'Favorit: erscheint in der Community als persönliche Empfehlung' : 'Als Favorit markieren (bis zu 5 je Kategorie, erscheint in der Community als persönliche Empfehlung)';
@@ -564,6 +564,18 @@
     series: [['Drama', 'Drama'], ['Komödie', 'Comedy'], ['Science-Fiction', 'Science-Fiction'], ['Fantasy', 'Fantasy'], ['Krimi', 'Crime'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Action', 'Action'], ['Abenteuer', 'Adventure'], ['Mystery', 'Mystery'], ['Romanze', 'Romance'], ['Anime', 'Anime'], ['Familie', 'Family'], ['Western', 'Western'], ['Krieg', 'War'], ['Geschichte', 'History']],
     author: [['Fantasy', 'Fantasy'], ['Science-Fiction', 'Science fiction'], ['Krimi', 'Mystery and detective stories'], ['Thriller', 'Thriller'], ['Horror', 'Horror'], ['Liebesroman', 'Romance'], ['Historischer Roman', 'Historical fiction'], ['Biografie', 'Biography'], ['Jugendbuch', 'Young adult fiction'], ['Humor', 'Humor'], ['Abenteuer', 'Adventure']]
   };
+  /* Hinweis am Stern, wenn alle 5 Favoriten einer Kategorie belegt sind: kleine Pille unter dem Stern, verschwindet von selbst */
+  function favTip(btn, type) {
+    var old = document.getElementById('favtip'); if (old) old.remove();
+    var t = { author: 'Büchern', artist: 'Musik', film: 'Filmen', series: 'Serien', podcast: 'Podcasts' }[type] || 'dieser Kategorie', tip = h('div', { id: 'favtip', class: 'favtip', role: 'status' }, 'Schon 5 Favoriten bei ' + t);
+    document.body.append(tip);
+    var r = btn.getBoundingClientRect(), w = tip.offsetWidth, x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    tip.style.left = (x + window.scrollX) + 'px'; tip.style.top = (r.bottom + window.scrollY + 9) + 'px'; tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
+    setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
+    setTimeout(close, 3500);
+    return devMark(tip, 'favtip');
+  }
   /* Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie */
   function wstar(e, w, set) {
     if (['film', 'artist', 'author'].indexOf(e.type) < 0 || !w.k) return null;
@@ -574,7 +586,7 @@
       var want = !on; b.disabled = true;
       api('/api/data.php?a=favwork&id=' + e.id, { k: w.k, on: want }).then(function (x) {
         b.disabled = false;
-        if (!x || !x.ok) { if (x && x.limit) popup('Nur 5 Favoriten je Kategorie', x.error); else say((x && x.error) || 'Das hat nicht geklappt.', true); return; }
+        if (!x || !x.ok) { if (x && x.limit) favTip(b, e.type); else say((x && x.error) || 'Das hat nicht geklappt.', true); return; }
         on = want; if (on) set[w.k] = 1; else delete set[w.k]; look();
       });
     });
