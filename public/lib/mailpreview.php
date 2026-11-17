@@ -21,7 +21,7 @@ function mail_previews(PDO $pdo, array $u): array {
     };
     // Benachrichtigungen an Nutzer
     $add('Benachrichtigungen', 'morning', 'Morgenmail (Neuigkeiten)', 'Täglich ab 7 Uhr, wenn es etwas Neues gibt', 'Schondraussen.de: 3 Neuigkeiten',
-        $foot("Hallo,\n\nes gibt Neuigkeiten in deinen Listen.\n\nHEUTIGE VERÖFFENTLICHUNGEN\n- Beispiel-Serie – S01E01 Folgentitel\n  Kurzinfo zur Serie, höchstens 8 Zeilen aus den Datenquellen der Seite.\n  Presse: Beispielschlagzeile zur Serie (Beispielquelle)\n  https://example.org/artikel\n\nNEU ANGEKÜNDIGT\n- Beispiel-Band – Neues Album (" . $fmt(9) . ")\n- Beispiel-Autorin – Neuer Roman (" . $fmt(30) . ")\n\nAlles im Überblick: $base/\n\nDie Schlagzeilen stammen aus der Google-News-Suche, die Kurzinfos aus den Datenquellen der Seite.\n"));
+        $foot("Hallo,\n\nes gibt Neuigkeiten in deinen Listen.\n\nHEUTIGE VERÖFFENTLICHUNGEN\n- Beispiel-Serie – S01E01 Folgentitel\n  Kurzinfo zur Serie, höchstens 8 Zeilen aus den Datenquellen der Seite.\n  Presse: Beispielschlagzeile zur Serie (Beispielquelle)\n  https://example.org/artikel\n\nNEU ERSCHIENEN\n- Beispiel-Musiker – Album, das schon erschienen ist (" . fmt_date(date('Y-m-d', strtotime('-3 days'))) . ")\n\nNEU ANGEKÜNDIGT\n- Beispiel-Band – Neues Album (" . $fmt(9) . ")\n- Beispiel-Autorin – Neuer Roman (" . $fmt(30) . ")\n\nNEUE PODCAST-FOLGEN\n- Beispiel-Podcast – Folge 128: Beispieltitel (" . $fmt(0) . ")\n\nAlles im Überblick: $base/\n\nDie Schlagzeilen stammen aus der Google-News-Suche, die Kurzinfos aus den Datenquellen der Seite.\n"));
     $add('Benachrichtigungen', 'week', 'Wochenübersicht', 'Am gewählten Wochentag, wenn Termine in den nächsten 14 Tagen anstehen', 'Schondraussen.de: Deine Wochenübersicht (2 Termine)',
         $foot("Hallo,\n\nhier sind die Termine der nächsten 14 Tage aus deinen Listen:\n\n- Beispiel-Band – Neues Album (" . $fmt(3) . ")\n- Beispiel-Serie – S02E05 Folgentitel (" . $fmt(9) . ")\n\nAlles im Überblick: $base/\n"));
     $add('Benachrichtigungen', 'testmail', 'Testmail der Einstellungen („Vorschau senden“)', 'Auf Knopfdruck in den Einstellungen', 'Schondraussen.de: Vorschau deiner Benachrichtigungen', $foot(build_preview($pdo, $u)[1]));
@@ -29,11 +29,11 @@ function mail_previews(PDO $pdo, array $u): array {
         $foot("Hallo,\n\nbei deinen Einträgen gibt es Neues:\n\n- Beispiel-Künstler: neues Album „Beispieltitel“ erscheint am 20.11.2026\n- Beispiel-Autorin: neues Buch „Beispielroman“ erscheint am 03.12.2026\n\nAlle Termine siehst du im Kalender: $base/\n\nDas ist eine Testmail im Format der echten Benachrichtigungen.\n"));
     // Konto
     $add('Konto', 'verify', 'E-Mail-Adresse bestätigen', 'Nach der Registrierung', 'Bitte bestätige deine E-Mail-Adresse',
-        "Willkommen bei Schondraussen.de!\n\nBitte bestätige deine Adresse mit diesem Link (24 Stunden gültig):\n$base/api/auth.php?a=verify&t=$tok\n\nWenn du dich nicht angemeldet hast, kannst du diese Mail ignorieren.\n");
+        "Willkommen bei Schondraussen.de!\n\nBitte bestätige deine Adresse mit einem Klick (der Link ist 24 Stunden gültig):\n\n[[E-Mail-Adresse bestätigen|$base/api/auth.php?a=verify&t=$tok]]\n\nWenn du dich nicht angemeldet hast, kannst du diese Mail ignorieren.\n");
     $add('Konto', 'reset', 'Passwort zurücksetzen', 'Bei „Passwort vergessen“', 'Passwort zurücksetzen',
-        "Du hast ein neues Passwort angefordert. Der Link ist eine Stunde gültig:\n$base/?reset=$tok\n\nWenn du das nicht warst, kannst du diese Mail ignorieren.\n");
+        "Du hast ein neues Passwort angefordert. Der Link ist eine Stunde gültig:\n\n[[Neues Passwort festlegen|$base/?reset=$tok]]\n\nWenn du das nicht warst, kannst du diese Mail ignorieren.\n");
     $add('Konto', 'newmail', 'Neue E-Mail-Adresse bestätigen', 'An die neue Adresse beim Ändern', 'Bitte bestätige deine neue E-Mail-Adresse',
-        "Du möchtest bei Schondraussen.de diese Adresse für dein Konto verwenden. Bestätige sie mit diesem Link (24 Stunden gültig):\n$base/api/auth.php?a=emailconfirm&t=$tok\n\nWenn du das nicht warst, kannst du diese Mail ignorieren, dann ändert sich nichts.\n");
+        "Du möchtest bei Schondraussen.de diese Adresse für dein Konto verwenden. Bestätige sie mit einem Klick (der Link ist 24 Stunden gültig):\n\n[[Neue E-Mail-Adresse bestätigen|$base/api/auth.php?a=emailconfirm&t=$tok]]\n\nWenn du das nicht warst, kannst du diese Mail ignorieren, dann ändert sich nichts.\n");
     $add('Konto', 'mailreq', 'Hinweis: Änderung der Adresse beantragt', 'An die alte Adresse beim Ändern', 'Änderung deiner E-Mail-Adresse beantragt',
         "Für dein Konto bei Schondraussen.de wurde eine neue E-Mail-Adresse beantragt. Solange sie nicht bestätigt ist, bleibt diese Adresse aktiv.\n\nWar das nicht deine Absicht, ändere bitte dein Passwort.\n");
     $add('Konto', 'mailchanged', 'Hinweis: Adresse wurde geändert', 'An die alte Adresse nach der Bestätigung', 'Deine E-Mail-Adresse wurde geändert',
@@ -51,12 +51,14 @@ function mail_previews(PDO $pdo, array $u): array {
     $add('An den Admin', 'newuser', 'Neues Konto registriert', 'Bei jeder Registrierung', 'Neues Konto auf Schondraussen.de',
         "Es hat sich ein neuer Nutzer registriert:\n\nBenutzername: Beispielnutzer\nE-Mail: ausgeblendet (Standard bei neuen Konten; im Notfall in der Nutzerverwaltung unter „E-Mail anzeigen“)\n\nDas Konto sieht keine Inhalte, bis du es freischaltest.\n\nKonto direkt freischalten (Link nur für dich, 14 Tage gültig):\n$base/approve.php?t=$tok\n\nOder in der Nutzerverwaltung:\n$base/\n\nKeine Freischaltung nötig? Dann ignoriere diese Mail einfach.\n");
     $add('An den Admin', 'idea', 'Neue Idee', 'Wenn jemand anderes eine Idee einreicht', 'Neue Idee auf Schondraussen.de',
-        "Von Beispielnutzer:\n\nBeispieltext der Idee.\n\nZur Liste: $base/\n");
+        "Von Beispielnutzer:\n\nKategorie: Verbesserung einer Funktion\n\nKurzbeschreibung der Idee\n\nBeispieltext der Idee.\n\nZur Liste: $base/\n");
     $add('An den Admin', 'bug', 'Neue Bugmeldung', 'Wenn jemand anderes einen Fehler meldet', 'Neue Bugmeldung auf Schondraussen.de',
-        "Von Beispielnutzer:\n\nBeispieltext der Fehlermeldung.\n\nZur Liste: $base/\n");
+        "Von Beispielnutzer:\n\nKategorie: Menü und Darstellung\n\nKurzbeschreibung des Fehlers\n\nBeispieltext der Fehlermeldung.\n\nZur Liste: $base/\n");
     $add('An den Admin', 'msg', 'Neue Nachricht im Kontakt-Chat', 'Wenn ein Nutzer dir schreibt', 'Neue Nachricht auf Schondraussen.de',
         "Von Beispielnutzer:\n\nBeispielnachricht.\n\nAntworten unter Kontakt: $base/\n");
     $add('Konto', 'direct', 'Direktnachricht vom Admin', 'Wenn du einem Nutzer im Kontakt-Chat schreibst', '[Direkt vom Admin] Neue Nachricht auf Schondraussen.de',
         "Der Administrator von Schondraussen.de hat dir geschrieben:\n\nBeispielnachricht.\n\n---\nAuf diese E-Mail kannst du nicht antworten. Bitte antworte auf der Webseite unter „Kontakt“:\n$base/\n");
+    $add('An den Admin', 'watchdog', 'Warnung: Cron-Job oder Sicherung', 'Wenn der Cron-Job sich seit Stunden nicht meldet oder die Datenbanksicherung fehlt (höchstens einmal am Tag)', 'Warnung Schondraussen.de: Cron-Job meldet sich nicht',
+        "Der Cron-Job hat sich seit 6.5 Stunden nicht gemeldet. Einträge werden nicht aktualisiert und es gehen keine Benachrichtigungen raus.\nPrüfen: all-inkl KAS, Cronjobs, ob der Job aktiv ist und die Adresse mit Token stimmt.\n\nDiese Warnung kommt höchstens einmal am Tag, bis das Problem behoben ist.");
     return $L;
 }

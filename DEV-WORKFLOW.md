@@ -28,7 +28,15 @@ Zum Ausprobieren von Umgestaltungen gibt es zusätzlich Design-Varianten. Der Sc
 Die Vorschau (`public/lib/mailpreview.php`) spiegelt die festen Mailtexte aus auth.php, admin.php, chat.php, feedback.php und notify.php. Ändert sich dort ein Text, bitte in `mailpreview.php` mitändern.
 
 ## Einheitliche Knöpfe
-Gleiche Aktion, gleiche Beschriftung in allen Kategorien: Suchfeld mit „Suchen“, Hinzufügen eines gefundenen Treffers mit „Hinzufügen“, Abbrechen mit „Abbrechen“. Neue Knöpfe vorher mit `grep -n "'Suchen'\|'Hinzufügen'" public/app.js` auf vorhandene Beschriftungen prüfen und nur Klassen `btn`, `btn ghost`, `btn small`, `pill` verwenden.
+Gleiche Aktion, gleiche Beschriftung in allen Kategorien: Suchfeld mit „Suchen“, Hinzufügen eines gefundenen Treffers mit „Hinzufügen“, Abbrechen mit „Abbrechen“. Neue Knöpfe vorher mit `grep -n "'Suchen'\|'Hinzufügen'" public/app.js` auf vorhandene Beschriftungen prüfen.
+
+Erlaubte Knopfklassen (Stand 17.11.2026):
+- **Aktionen:** `btn` (Hauptaktion), `btn ghost` (Nebenaktion), Zusatz `small` für kleine Knöpfe in Listen und Karten.
+- **Warnen und Löschen:** `btn warn small` für zurückhaltende Lösch- und Warnknöpfe (z. B. „Entfernen“, „Konto löschen“). `btn danger` nur für endgültige, nicht umkehrbare Aktionen.
+- **Auswahl statt Aktion:** `pill` (Status und kleine Umschalter), `admtab` für Reiterleisten (Admin, Info, Community-Empfehlungen), `cchip`/`lchip` für Filterfelder (Kategorien, Kalender), `kindbtn` für die Art der Nachricht im Kontakt, `dmi` für Einträge im Versionsmenü.
+- **Symbolknöpfe:** `favbtn`, `bellbtn`, `pgbtn` und `attach` sind `btn ghost small` mit festem Zusatz für Größe und Farbe.
+
+Neue Klassen nur, wenn keine dieser Arten passt, und dann hier eintragen. Bei einer kompletten Neugestaltung des Designs diese Liste mit Timo durchgehen (er möchte dann daran erinnert werden).
 
 ## Pushen nur auf Freigabe (ab 16.11.2026)
-Seit es die Wartungsseite gibt, löst jeder Push einen Deploy mit Wartungsmodus aus. Änderungen werden deshalb nur lokal committet und gesammelt. Gepusht wird erst, wenn Timo es ausdrücklich freigibt („hochladen“, „pushen“).
+Jeder Push löst einen Deploy aus (seit 17.11.2026 ohne Wartungsseite; während der 3–4 Minuten können einzelne Bereiche kurz Fehler zeigen, vor allem wenn neue Dateien dazukommen). Änderungen werden deshalb nur lokal committet und gesammelt. Gepusht wird erst, wenn Timo es ausdrücklich freigibt („hochladen“, „pushen“).
