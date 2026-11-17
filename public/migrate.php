@@ -7,6 +7,9 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+  '087_custom_colors' => [ // eigenes Farbschema „Individuell“: Farben als JSON (nur #rrggbb)
+  "ALTER TABLE users ADD COLUMN custom_colors VARCHAR(400) NULL"
+ ],
   '086_settings_text_sessver_bugno' => [ // Rechte-Einstellung passte nicht in 200 Zeichen; Sitzungsversion (Passwortwechsel beendet andere Sitzungen); Bugnummern eindeutig
   "ALTER TABLE site_settings MODIFY v TEXT NULL",
   "ALTER TABLE users ADD COLUMN sess_ver INT UNSIGNED NOT NULL DEFAULT 0",

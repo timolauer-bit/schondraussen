@@ -810,6 +810,74 @@
 
   /* ---------- Einstellungen ---------- */
   function setSkin(id) { var r = document.documentElement; if (id) r.setAttribute('data-skin', id); else r.removeAttribute('data-skin'); S.skin = id; }
+
+  /* ---------- Eigenes Farbschema „Individuell“ (Dev): drei Grundfarben, der Rest wird berechnet; Feinheiten aufklappbar ---------- */
+  function hexRgb(x) { x = String(x || '').replace('#', ''); return [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2, 4), 16), parseInt(x.slice(4, 6), 16)]; }
+  function rgbHex(c) { return '#' + c.map(function (v) { v = Math.max(0, Math.min(255, Math.round(v))); return ('0' + v.toString(16)).slice(-2); }).join(''); }
+  function mixC(a, b, p) { var x = hexRgb(a), y = hexRgb(b); return rgbHex([0, 1, 2].map(function (i) { return x[i] * (1 - p) + y[i] * p; })); }
+  function lumC(x) { return hexRgb(x).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce(function (s, v, i) { return s + v * [0.2126, 0.7152, 0.0722][i]; }, 0); }
+  function crC(a, b) { var x = lumC(a), y = lumC(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function toHex(v) { v = String(v || '').trim().toLowerCase(); if (/^#?[0-9a-f]{3}$/.test(v)) { v = v.replace('#', ''); v = v[0] + v[0] + v[1] + v[1] + v[2] + v[2]; } v = v.replace('#', ''); return /^[0-9a-f]{6}$/.test(v) ? '#' + v : null; }
+  function deriveSkin(base, man, old) {
+    var bg = base.bg, ink = base.ink, acc = base.accent, dark = lumC(bg) < 0.25, o = { bg: bg, ink: ink, accent: acc, dark: dark };
+    o.surface = dark ? mixC(bg, ink, 0.07) : mixC(bg, '#ffffff', 0.65);
+    o.line = mixC(o.surface, ink, 0.2);
+    var m = mixC(ink, bg, 0.4); for (var i = 0; i < 6 && crC(m, o.surface) < 4.6; i++) m = mixC(m, ink, 0.25); o.muted = m;
+    var dk = dark ? bg : '#11171d'; o.accentInk = crC(acc, '#ffffff') >= crC(acc, dk) ? '#ffffff' : dk;
+    (man || []).forEach(function (k) { if (old && old[k]) o[k] = old[k]; }); return o;
+  }
+  function customSkinDialog() {
+    var cs = getComputedStyle(document.documentElement), cur = function (v, d) { return toHex(cs.getPropertyValue(v)) || d; };
+    var cc = D.custom_colors && D.custom_colors.bg ? D.custom_colors : null;
+    var start = cc ? { bg: cc.bg, accent: cc.accent, ink: cc.ink } : { bg: cur('--bg', '#f2f2f0'), accent: cur('--accent', '#db4d1a'), ink: cur('--ink', '#11171d') };
+    var man = cc ? (cc.manual || []).slice() : [], fine = cc ? { surface: cc.surface, line: cc.line, muted: cc.muted, accentInk: cc.accentInk } : {};
+    var base = { bg: start.bg, accent: start.accent, ink: start.ink }, cols = deriveSkin(base, man, fine);
+    var prev = document.activeElement, pv = h('div', { class: 'cspv' }), rating = h('span', { class: 'csrate' }), msg = h('p', { class: 'msg', role: 'status' });
+    function swRow(key, label, sub, big) {
+      var pick = h('input', { type: 'color', class: 'cspick' + (big ? ' big' : ''), 'aria-label': label + ': Farbkarte' }), hex = h('input', { type: 'text', class: 'cshex', maxlength: '7', spellcheck: 'false', autocomplete: 'off', 'aria-label': label + ': Farbcode' });
+      function set(v, from) { v = toHex(v); if (!v) { hex.classList.add('bad'); return; } hex.classList.remove('bad');
+        if (base.hasOwnProperty(key)) base[key] = v; else { fine[key] = v; if (man.indexOf(key) < 0) man.push(key); }
+        cols = deriveSkin(base, man, fine); draw(from); }
+      pick.addEventListener('input', function () { set(pick.value, pick); }); hex.addEventListener('input', function () { set(hex.value, hex); });
+      var row = h('div', { class: 'csrow' + (big ? ' big' : '') }, pick, h('span', { class: 'cslbl' }, h('b', null, label), h('small', null, sub)), hex);
+      row._sync = function (from) { var v = base.hasOwnProperty(key) ? base[key] : cols[key]; if (from !== pick) pick.value = v; pick.style.background = v; if (from !== hex) hex.value = v; }; return row;
+    }
+    var rows = [swRow('bg', 'Hintergrund', 'Seitenhintergrund', true), swRow('accent', 'Akzent', 'Knöpfe, Markierungen', true), swRow('ink', 'Schrift', 'Haupttext', true)];
+    var fineRows = [swRow('surface', 'Flächen', 'Kästen, Karten, Menüs'), swRow('line', 'Linien', 'Rahmen und Trenner'), swRow('muted', 'Nebenschrift', 'Hinweise, Daten'), swRow('accentInk', 'Schrift auf Akzent', 'Text in Knöpfen')];
+    var autoBtn = h('button', { class: 'btn ghost small', type: 'button', onclick: function () { man = []; fine = {}; cols = deriveSkin(base, man, fine); draw(); } }, 'Feinheiten wieder automatisch');
+    var det = h('details', { class: 'csfine' }, h('summary', null, 'Feinheiten (Flächen, Linien, Nebenschrift, Schrift auf Akzent)'), fineRows, autoBtn);
+    function draw(from) {
+      rows.concat(fineRows).forEach(function (r) { r._sync(from); });
+      ['bg', 'surface', 'ink', 'muted', 'line', 'accent', 'accentInk'].forEach(function (k) { pv.style.setProperty('--p-' + k, cols[k]); });
+      var w = Math.min(crC(cols.ink, cols.surface), crC(cols.ink, cols.bg)), m2 = crC(cols.muted, cols.surface), b2 = crC(cols.accentInk, cols.accent), lo = Math.min(w / 1.5, m2, b2);
+      rating.className = 'csrate ' + (lo >= 4.5 ? 'ok' : lo >= 3 ? 'mid' : 'bad');
+      rating.textContent = lo >= 4.5 ? '✓ Gut lesbar' : lo >= 3 ? '⚠ Eingeschränkt lesbar' : '✕ Schlecht lesbar';
+      rating.title = 'Schrift ' + w.toFixed(1) + ':1 · Nebenschrift ' + m2.toFixed(1) + ':1 · Knopftext ' + b2.toFixed(1) + ':1';
+    }
+    pv.append(h('div', { class: 'cspb' }, h('div', { class: 'csph' }, 'Schondraussen', h('span', null, '.de')), h('div', { class: 'cspn' }, h('b', null, 'Kalender'), h('span', null, 'Bücher'), h('span', null, 'Musik'), h('span', null, 'Filme')),
+      h('div', { class: 'cspc' }, h('b', null, 'Dune: Teil Drei'), h('div', { class: 'csm' }, 'Kinostart 17.12.2026 · Film'), h('span', { class: 'csb1' }, 'Hinzufügen'), h('span', { class: 'csb2' }, 'Abbrechen'))));
+    var save = h('button', { class: 'btn', type: 'button', onclick: function () {
+      save.disabled = true; var payload = { bg: cols.bg, surface: cols.surface, ink: cols.ink, muted: cols.muted, line: cols.line, accent: cols.accent, accentInk: cols.accentInk, dark: cols.dark, manual: man };
+      api('/api/data.php?a=skin', { skin: 'custom', colors: payload }).then(function (r) {
+        save.disabled = false; if (!r || !r.ok) { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Speichern hat nicht geklappt.'; return; }
+        D.custom_colors = payload; applyCustomSkin(payload); setSkin('custom'); close(); render();
+      });
+    } }, 'Speichern');
+    var box = h('div', { class: 'unmodal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'csh' }, h('div', { class: 'unbox csbox' },
+      h('h2', { id: 'csh', style: 'margin:0 0 4px;font-size:20px' }, 'Eigenes Farbschema'), h('p', { class: 'hint', style: 'margin:0 0 14px' }, 'Wähle drei Farben, den Rest passt die Seite automatisch an. Klicke ein Farbfeld für die Farbkarte oder gib den Code ein (z. B. #4fd1c5).'),
+      rows, pv, det, msg,
+      h('div', { class: 'csfoot' }, rating, h('span', { style: 'flex:1' }), h('button', { class: 'btn ghost', type: 'button', onclick: function () { base = { bg: start.bg, accent: start.accent, ink: start.ink }; man = cc ? (cc.manual || []).slice() : []; fine = cc ? { surface: cc.surface, line: cc.line, muted: cc.muted, accentInk: cc.accentInk } : {}; cols = deriveSkin(base, man, fine); draw(); } }, 'Zurücksetzen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { close(); } }, 'Abbrechen'), save)));
+    function close() { document.removeEventListener('keydown', key); box.remove(); if (prev && prev.focus) prev.focus(); }
+    function key(ev) { if (ev.key === 'Escape') { ev.preventDefault(); close(); } }
+    box.addEventListener('click', function (ev) { if (ev.target === box) close(); }); document.addEventListener('keydown', key);
+    document.body.append(box); draw(); rows[0].querySelector('.cspick').focus();
+  }
+  function applyCustomSkin(c) { // nach dem Speichern sofort anwenden (sonst erst beim nächsten Laden über index.php)
+    var st = document.getElementById('customskin'); if (!st) { st = document.createElement('style'); st.id = 'customskin'; document.head.appendChild(st); }
+    var v = '--bg:' + c.bg + ';--surface:' + c.surface + ';--ink:' + c.ink + ';--muted:' + c.muted + ';--line:' + c.line + ';--accent:' + c.accent + ';--accent-ink:' + c.accentInk + ';--accent-soft:color-mix(in srgb,' + c.accent + ' 18%,' + c.surface + ');--frame:' + c.ink + ';';
+    v += c.dark ? '--danger:#f6655a;--c-author:#f09f42;--c-artist:#31c4b0;--c-film:#9b81f8;--c-series:#f36892;--c-podcast:#5aa7f0;color-scheme:dark;' : 'color-scheme:light;';
+    st.textContent = ':root[data-skin=custom]{' + v + '}';
+  }
   // Bereiche als abgegrenzte Karten mit Überschrift
   function setCard(title, kids, cls) {
     var c = h('section', { class: 'setcard' + (cls ? ' ' + cls : '') }, h('h3', null, title));
@@ -970,6 +1038,8 @@
       h('form', { class: 'inline', autocomplete: 'off', onsubmit: function (ev) { ev.preventDefault(); rcMsg.className = 'msg'; rcMsg.textContent = '…'; rcOut.textContent = ''; api('/api/auth.php?a=recovery_new', { password: rcPw.value }).then(function (r) { if (!r.ok) { rcMsg.className = 'msg err'; rcMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } rcPw.value = ''; rcMsg.textContent = 'Neuer Code (jetzt notieren, er wird nicht noch einmal gezeigt):'; rcOut.append(h('code', { style: 'font:600 18px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;user-select:all' }, r.recovery_code)); }); } }, rcPw, h('button', { class: 'btn small', type: 'submit' }, 'Neuen Code erzeugen')), rcMsg, rcOut));
     var skins = h('div', { class: 'skins', role: 'group', 'aria-label': 'Oberfläche wählen' });
     SKINS.forEach(function (k) { skins.append(h('button', { class: 'skin', type: 'button', title: k[0] ? null : 'Folgt der Hell-Dunkel-Einstellung deines Geräts', 'aria-pressed': String((S.skin || '') === k[0]), onclick: function () { setSkin(k[0]); api('/api/data.php?a=skin', { skin: k[0] }); render(); } }, h('span', { class: 'dots' }, k[2].map(function (c) { var i = h('i'); i.style.background = c; return i; })), h('b', null, k[1]))); });
+    (function () { var cc = D.custom_colors, dots = cc && cc.bg ? [cc.bg, cc.accent, cc.ink] : null; // eigenes Farbschema „Individuell“ (Dev)
+      skins.append(devMark(h('button', { class: 'skin', type: 'button', title: 'Eigene Farben wählen', 'aria-pressed': String(S.skin === 'custom'), onclick: function () { customSkinDialog(); } }, h('span', { class: 'dots' + (dots ? '' : ' rainbow') }, (dots || ['#ff5a5f', '#ffd166', '#06d6a0']).map(function (c) { var i = h('i'); i.style.background = c; return i; })), h('b', null, 'Individuell')), 'customskin')); })();
     var nerdMsg = h('span', { class: 'msg', style: 'margin:0' }), nerdCk = h('input', { type: 'checkbox', onchange: function () { var on = this.checked; api('/api/auth.php?a=nerd', { on: on }).then(function (r) { if (r.ok) { D.nerd = on; nerdMsg.className = 'msg'; nerdMsg.textContent = 'Gespeichert.'; renderVer(); } else { nerdCk.checked = !on; nerdMsg.className = 'msg err'; nerdMsg.textContent = r.error || 'Speichern nicht möglich.'; } }); } }); nerdCk.checked = !!D.nerd;
     var hcBox = null;
     if (D.hidecats) { var hcMsg = h('span', { class: 'msg', style: 'margin:0' }), hcRow = h('div', { style: 'display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px' });
