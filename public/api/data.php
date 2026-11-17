@@ -529,6 +529,15 @@ if ($a === 'favwork' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Stern an ein
     } catch (Throwable $t3) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
     json_out(['ok' => true, 'on' => $on]);
 }
+if ($a === 'watch') { // Anbieter für einen einzelnen Film (Regie-Einträge laden sie erst beim Antippen); 24 Stunden zwischengespeichert
+    $tid = (int) ($_GET['tmdb'] ?? 0); if ($tid <= 0) json_out(['ok' => false, 'error' => 'Unbekannter Film.'], 400);
+    if (!tmdb_enabled()) json_out(['ok' => false, 'error' => 'Die Filmdaten sind gerade nicht verfügbar.']);
+    $key = sha1('watch|' . $tid);
+    try { $q = $pdo->prepare('SELECT data FROM news_cache WHERE k=? AND fetched_at > (NOW() - INTERVAL 24 HOUR)'); $q->execute([$key]); $c = $q->fetchColumn(); if ($c) json_out(['ok' => true, 'watch' => json_decode($c, true)]); } catch (Throwable $e) {}
+    $w = film_watch_get($tid); if ($w === null) json_out(['ok' => false, 'error' => 'TMDB ist gerade nicht erreichbar.']);
+    try { $pdo->prepare('REPLACE INTO news_cache (k,data) VALUES (?,?)')->execute([$key, json_encode($w, JSON_UNESCAPED_UNICODE)]); } catch (Throwable $e) {}
+    json_out(['ok' => true, 'watch' => $w]);
+}
 if ($a === 'bell' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $on = !empty(body()['on']) ? 1 : 0;
     $pdo->prepare('UPDATE user_entries SET bell=? WHERE user_id=? AND subject_id=?')->execute([$on, $u['id'], $id]);
@@ -589,6 +598,7 @@ if ($a === 'entry') {
         $e['kind'] = !empty($x['tmdb_person']) ? 'person' : (!empty($x['tmdb_col']) ? 'col' : 'movie');
         foreach ((array) ($x['dir'] ?? []) as $dd) if (!empty($dd['id']) && !empty($dd['name'])) $e['dirs'][] = ['id' => (int) $dd['id'], 'name' => (string) $dd['name']];
         if ($e['kind'] === 'movie' && isset($x['watch']) && is_array($x['watch'])) { $e['watch'] = []; foreach (['flatrate', 'rent', 'buy'] as $wk2) $e['watch'][$wk2] = array_values(array_filter(array_map('strval', (array) ($x['watch'][$wk2] ?? [])))); }
+        if ($e['kind'] === 'col' && is_array($x['wparts'] ?? null)) { $e['wparts'] = []; foreach ($x['wparts'] as $tid => $w) { $o = []; foreach (['flatrate', 'rent', 'buy'] as $wk2) $o[$wk2] = array_values(array_filter(array_map('strval', (array) ($w[$wk2] ?? [])))); $e['wparts']['t' . (int) $tid] = $o; } }
         if ($e['kind'] === 'movie') $e['selfkey'] = !empty($x['tmdb']) ? 't' . (int) $x['tmdb'] : done_key_work($e['name'], 0); // Film selbst als gesehen markieren
     }
     $eps = [];

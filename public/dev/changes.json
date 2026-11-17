@@ -1,4 +1,5 @@
 [
  "Info → neuer Reiter „FAQ“ (häufige Fragen, durchsuchbar). Admin → neuer Reiter „FAQ“ zum Bearbeiten, Anlegen, Löschen und Umsortieren von Themenbereichen und Beiträgen.",
- "Barrierefreiheit (zum Vergleich mit Live): dunklere Akzentfarbe im hellen Standard-Farbschema, kräftigere Rahmen an Eingabefeldern, deutlicher Fokusring (Tab-Taste), Badges in dunklen Farbschemata mit dunkler Schrift, Sprunglink „Zum Inhalt springen“ (erste Tab-Taste), Kalendertage per Enter/Leertaste, Startfenster nacheinander statt übereinander, Beschriftungen für Screenreader, weniger Bewegung bei entsprechender Systemeinstellung."
+ "Barrierefreiheit (zum Vergleich mit Live): dunklere Akzentfarbe im hellen Standard-Farbschema, kräftigere Rahmen an Eingabefeldern, deutlicher Fokusring (Tab-Taste), Badges in dunklen Farbschemata mit dunkler Schrift, Sprunglink „Zum Inhalt springen“ (erste Tab-Taste), Kalendertage per Enter/Leertaste, Startfenster nacheinander statt übereinander, Beschriftungen für Screenreader, weniger Bewegung bei entsprechender Systemeinstellung.",
+ "Filme: „Wo läuft der Film?“ auch bei Filmreihen (Zeile in jeder Filmkachel, nach der nächsten Aktualisierung der Reihe) und bei Regie-Einträgen (▶ in der Kachel, lädt beim Antippen)."
 ]

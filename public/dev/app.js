@@ -584,11 +584,12 @@
     flt.addEventListener('click', function () { hideDone = !hideDone; flt.className = 'pill' + (hideDone ? ' on' : ''); flt.setAttribute('aria-pressed', hideDone ? 'true' : 'false'); updAll(); });
     if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt, allB), wbar);
     r.works.forEach(function (w) {
-      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), h('div', { class: 'wtr' }, pill, wstar(e, w, favw))), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
+      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), h('div', { class: 'wtr' }, pill, wstar(e, w, favw))), wwatch(e, w), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title), wplay(e, w)));
       pill.addEventListener('click', function () { var on = !done[w.k]; setDone(e, [w.k], on, function () { if (on) done[w.k] = 1; else delete done[w.k]; updAll(); }); });
       rows.push({ w: w, pill: pill, row: row }); grid.append(row);
     });
     if (grid !== card) card.append(grid);
+    if (e.type === 'film' && (e.kind === 'col' && e.wparts || e.kind === 'person') && r.works.length) card.append(devMark(h('p', { class: 'note' }, e.kind === 'person' ? 'Mit ▶ siehst du, wo ein Film in Deutschland läuft. ' : '', 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'), 'wparts'));
     updAll();
     if (e.type !== 'podcast') card.append(renderSimilar(e));
     return card;
@@ -611,6 +612,42 @@
     setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
     setTimeout(close, 3500);
     return tip;
+  }
+
+  /* „Wo läuft der Film?“ bei Filmreihen (Zeile in der Kachel) und Regie-Einträgen (▶ lädt beim Antippen) */
+  function watchText(wt) {
+    var o = []; if ((wt.flatrate || []).length) o.push(['Streaming', wt.flatrate.join(', ')]);
+    var rb = (wt.rent || []).concat((wt.buy || []).filter(function (x) { return (wt.rent || []).indexOf(x) < 0; })); if (rb.length) o.push(['Leihen/Kaufen', rb.join(', ')]); return o;
+  }
+  function wwatch(e, w) {
+    if (e.type !== 'film' || e.kind !== 'col' || !e.wparts || !w.k) return null;
+    var wt = e.wparts[w.k]; if (!wt) return null;
+    var l = watchText(wt), d = h('div', { class: 'wwatch' });
+    if (!l.length) { d.textContent = 'Noch bei keinem Anbieter'; d.classList.add('none'); }
+    else l.forEach(function (x, i) { if (i) d.append(h('br')); d.append(h('b', null, x[0] + ': '), x[1]); });
+    return devMark(d, 'wparts');
+  }
+  function wplay(e, w) {
+    if (e.type !== 'film' || e.kind !== 'person' || !/^t\d+$/.test(w.k || '')) return null;
+    var b = h('button', { class: 'btn ghost small favbtn off wplay', type: 'button', title: 'Wo läuft „' + w.title + '“?', 'aria-label': 'Wo läuft „' + w.title + '“?' });
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+    b.addEventListener('click', function () {
+      if (b._w) { watchTip(b, b._w); return; } b.disabled = true;
+      api('/api/data.php?a=watch&tmdb=' + w.k.slice(1)).then(function (x) { b.disabled = false; if (!x || !x.ok) { watchTip(b, null, (x && x.error) || 'Das hat nicht geklappt.'); return; } b._w = x.watch; watchTip(b, x.watch); });
+    });
+    return devMark(b, 'wparts');
+  }
+  function watchTip(btn, wt, err) {
+    var old = document.getElementById('favtip'); if (old) old.remove();
+    var tip = h('div', { id: 'favtip', class: 'favtip wtip', role: 'status' });
+    if (err) tip.textContent = err;
+    else { var l = watchText(wt || {}); if (!l.length) tip.append('Zurzeit bei keinem Anbieter in Deutschland.'); l.forEach(function (x, i) { if (i) tip.append(h('br')); tip.append(h('b', null, x[0] + ': '), x[1]); }); tip.append(h('br'), h('small', null, 'Daten: JustWatch (über TMDB)')); }
+    document.body.append(tip);
+    var r = btn.getBoundingClientRect(), wd = tip.offsetWidth, x = Math.max(8, Math.min(window.innerWidth - wd - 8, r.left - 16));
+    tip.style.left = (x + window.scrollX) + 'px'; tip.style.top = (r.bottom + window.scrollY + 9) + 'px'; tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
+    setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
+    setTimeout(close, 8000);
   }
   /* Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie */
   function wstar(e, w, set) {

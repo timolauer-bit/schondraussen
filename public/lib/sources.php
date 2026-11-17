@@ -166,6 +166,13 @@ function film_refresh_movie(PDO $pdo, array $sub, array $ext): array {
     $works = [[(string) $m['title'], (int) substr((string) ($m['release_date'] ?? ''), 0, 4) ?: null, 'Film', !empty($m['runtime']) ? (int) $m['runtime'] . ' Min.' : null, (string) $id]];
     return film_store($pdo, $sid, $ext, $sum, $genres, $works, $rel);
 }
+/** Anbieter in Deutschland für einen Film (TMDB watch/providers, Daten von JustWatch): ['flatrate'=>[…],'rent'=>[…],'buy'=>[…]] oder null bei Fehler. */
+function film_watch_get(int $id): ?array {
+    $r = tmdb_get("/movie/$id/watch/providers"); if (!is_array($r)) return null;
+    $wp = $r['results']['DE'] ?? []; $o = ['flatrate' => [], 'rent' => [], 'buy' => []];
+    foreach (array_keys($o) as $k) foreach (array_slice((array) ($wp[$k] ?? []), 0, 12) as $p) if (!empty($p['provider_name'])) $o[$k][] = mb_substr((string) $p['provider_name'], 0, 40);
+    return $o;
+}
 function film_refresh_collection(PDO $pdo, array $sub, array $ext): array {
     $cid = (int) $ext['tmdb_col']; $c = tmdb_get("/collection/$cid");
     if (!$c || empty($c['parts'])) return ['ok' => false, 'msg' => 'Die Filmreihe wurde bei TMDB nicht gefunden.'];
@@ -179,6 +186,9 @@ function film_refresh_collection(PDO $pdo, array $sub, array $ext): array {
     }
     usort($cnt, fn($a, $b) => $b['n'] <=> $a['n']);
     $ext['dir'] = array_map(fn($d) => ['id' => $d['id'], 'name' => $d['name']], array_slice($cnt, 0, 3));
+    $wp = []; // Wo die einzelnen Filme der Reihe in Deutschland laufen (JustWatch über TMDB), höchstens 12 Teile
+    foreach (array_slice($parts, 0, 12) as $x) if (!empty($x['id'])) { $w = film_watch_get((int) $x['id']); if ($w !== null) $wp[(string) (int) $x['id']] = $w; }
+    $ext['wparts'] = $wp;
     return film_store($pdo, (int) $sub['id'], $ext, film_summary("/collection/$cid", $c, 'overview'), [], $works, $rel);
 }
 function film_refresh_person(PDO $pdo, array $sub, array $ext): array {
