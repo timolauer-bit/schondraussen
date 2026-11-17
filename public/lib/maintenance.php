@@ -84,7 +84,7 @@ function maintenance_gate(): void {
     if (!is_file($flag)) return;
     if (time() - (int) @filemtime($flag) > MAINTENANCE_MAX_AGE) return; // Sicherheitsnetz: nach 10 Minuten verschwindet der Wartungsmodus von selbst
     $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
-    if ($script === 'migrate.php') return;
+    if ($script === 'migrate.php' || $script === 'cron.php') return; // Cron und Migrationen laufen auch während der Wartung
     $key = (string) cfg('cron_token', ''); $ck = $key !== '' ? hash_hmac('sha256', 'wartung', $key) : '';
     if ($key !== '' && isset($_GET['wartung']) && hash_equals($key, (string) $_GET['wartung'])) { // Admin-Zugang per geheimem Link
         setcookie('sd_maint', $ck, ['expires' => time() + 7200, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);

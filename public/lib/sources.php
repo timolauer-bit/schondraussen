@@ -225,7 +225,8 @@ function is_merch_title(string $t): bool {
 }
 // Aktualisiert einen Titel in der Datenbank. Gibt ['ok'=>bool,'msg'=>string] zurück.
 function refresh_subject(PDO $pdo, int $sid): array {
-    $r = refresh_subject_run($pdo, $sid);
+    try { $r = refresh_subject_run($pdo, $sid); } // ein einzelner fehlerhafter Eintrag darf den Cron-Lauf nicht abbrechen (sonst bleibt er hängen, weil derselbe Eintrag immer zuerst drankommt)
+    catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); $r = ['ok' => false, 'msg' => 'Interner Fehler: ' . mb_substr($e->getMessage(), 0, 150) . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')']; }
     // Auch bei Misserfolg Zeitpunkt merken, damit nicht bei jedem Aufruf und jedem Cron-Lauf neu versucht wird.
     if (empty($r['ok'])) $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]);
     try { // Grund des letzten Fehlschlags merken (wird bei leeren Einträgen angezeigt), bei Erfolg entfernen
