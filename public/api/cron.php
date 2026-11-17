@@ -21,7 +21,7 @@ while (array_filter($queues)) {
         if (microtime(true) - $t0 > $BUDGET) { $stopped = true; break 2; }
         $row = array_shift($q);
         $r = refresh_subject($pdo, (int) $row['id']);
-        if ($r['ok']) { $ok++; $byType[$t]++; } else { $fail++; if (count($failed) < 15) $failed[] = $row['name'] . ': ' . mb_substr((string) ($r['msg'] ?? ''), 0, 80); }
+        if ($r['ok']) { $ok++; $byType[$t]++; } else { $fail++; if (count($failed) < 15) $failed[] = $row['name'] . ': ' . mb_substr((string) ($r['msg'] ?? ''), 0, 200); }
         usleep(400000);
     }
     unset($q);

@@ -571,7 +571,7 @@ function dnb_series(string $title): array {
 
 function lobid_fetch(string $q, int $from, string $sort = ''): ?array {
     $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . ($sort !== '' ? '&sort=' . $sort : '') . '&q=' . rawurlencode($q);
-    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $hdr)]);
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
     $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
     if ($raw === false || $code >= 400) api_note($url, $code, $raw, $cerr);
     $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;

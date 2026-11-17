@@ -2,6 +2,7 @@ window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 16, d: '17.11.2026', t: [
     'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',
+    'B|Buchreihen: Reihen, die nicht im DNB-Katalog gefunden werden, ließen sich seit gestern nicht mehr aktualisieren und haben den nächtlichen Lauf abgebrochen. Behoben.',
     'A|Deploy: Beim Hochladen gibt es keine Wartungsseite mehr, die Seite bleibt erreichbar.'
   ] },
   { v: 15, d: '16.11.2026', t: [
