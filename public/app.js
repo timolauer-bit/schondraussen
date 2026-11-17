@@ -853,13 +853,13 @@
       h('div', { class: 'cspc' }, h('b', null, 'Dune: Teil Drei'), h('div', { class: 'csm' }, 'Kinostart 17.12.2026 · Film'), h('span', { class: 'csb1' }, 'Hinzufügen'), h('span', { class: 'csb2' }, 'Abbrechen'))));
     var save = h('button', { class: 'btn', type: 'button', onclick: function () {
       save.disabled = true; var payload = { bg: cols.bg, surface: cols.surface, ink: cols.ink, muted: cols.muted, line: cols.line, accent: cols.accent, accentInk: cols.accentInk, dark: cols.dark, manual: man };
-      api('/api/data.php?a=skin', { skin: 'custom', colors: payload }).then(function (r) {
+      api('/api/data.php?a=skin', { skin: 'custom', colors: payload, theme: D.design || D.theme || 'std' }).then(function (r) {
         save.disabled = false; if (!r || !r.ok) { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Speichern hat nicht geklappt.'; return; }
         D.custom_colors = payload; applyCustomSkin(payload); setSkin('custom'); close(); render();
       });
     } }, 'Speichern');
     var box = h('div', { class: 'unmodal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'csh' }, h('div', { class: 'unbox csbox' },
-      h('h2', { id: 'csh', style: 'margin:0 0 4px;font-size:20px' }, 'Eigenes Farbschema'), h('p', { class: 'hint', style: 'margin:0 0 14px' }, 'Wähle drei Farben, den Rest passt die Seite automatisch an. Klicke ein Farbfeld für die Farbkarte oder gib den Code ein (z. B. #4fd1c5).'),
+      h('h2', { id: 'csh', style: 'margin:0 0 4px;font-size:20px' }, 'Eigenes Farbschema'), h('p', { class: 'hint', style: 'margin:0 0 14px' }, 'Wähle drei Farben, den Rest passt die Seite automatisch an. Klicke ein Farbfeld für die Farbkarte oder gib den Code ein (z. B. #4fd1c5).' + ((D.design || D.theme) ? ' Diese Farben gelten nur für das Theme „' + themeName() + '“.' : '')),
       rows, pv, det, msg,
       h('div', { class: 'csfoot' }, rating, h('span', { style: 'flex:1' }), h('button', { class: 'btn ghost', type: 'button', onclick: function () { base = { bg: start.bg, accent: start.accent, ink: start.ink }; man = cc ? (cc.manual || []).slice() : []; fine = cc ? { surface: cc.surface, line: cc.line, muted: cc.muted, accentInk: cc.accentInk } : {}; cols = deriveSkin(base, man, fine); draw(); } }, 'Zurücksetzen'), h('button', { class: 'btn ghost', type: 'button', onclick: function () { close(); } }, 'Abbrechen'), save)));
     function close() { document.removeEventListener('keydown', key); box.remove(); if (prev && prev.focus) prev.focus(); }
@@ -867,6 +867,7 @@
     box.addEventListener('click', function (ev) { if (ev.target === box) close(); }); document.addEventListener('keydown', key);
     document.body.append(box); draw(); rows[0].querySelector('.cspick').focus();
   }
+  function themeName() { var t = D.design || D.theme; var x = (D.pubdesigns || []).concat(D.designs || []).filter(function (d) { return (d.slug || d.id) === t; })[0]; return x ? (x.name || x.title || t) : t; }
   function applyCustomSkin(c) { // nach dem Speichern sofort anwenden (sonst erst beim nächsten Laden über index.php)
     var st = document.getElementById('customskin'); if (!st) { st = document.createElement('style'); st.id = 'customskin'; document.head.appendChild(st); }
     var v = '--bg:' + c.bg + ';--surface:' + c.surface + ';--ink:' + c.ink + ';--muted:' + c.muted + ';--line:' + c.line + ';--accent:' + c.accent + ';--accent-ink:' + c.accentInk + ';--accent-soft:color-mix(in srgb,' + c.accent + ' 18%,' + c.surface + ');--frame:' + c.ink + ';';

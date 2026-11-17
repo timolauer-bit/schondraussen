@@ -212,7 +212,11 @@ if ($a === 'skin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $cc = []; foreach (['bg', 'surface', 'ink', 'muted', 'line', 'accent', 'accentInk'] as $k) { $v = strtolower((string) ($bd['colors'][$k] ?? '')); if (!preg_match('/^#[0-9a-f]{6}$/', $v)) json_out(['ok' => false, 'error' => 'Bitte nur Farbcodes wie #4fd1c5 verwenden.'], 422); $cc[$k] = $v; }
         $cc['dark'] = !empty($bd['colors']['dark']) ? 1 : 0;
         $man = []; foreach ((array) ($bd['colors']['manual'] ?? []) as $m) if (in_array($m, ['surface', 'ink', 'muted', 'line', 'accentInk'], true)) $man[] = $m; $cc['manual'] = $man;
-        try { $pdo->prepare('UPDATE users SET skin=?, custom_colors=? WHERE id=?')->execute(['custom', json_encode($cc), $u['id']]); }
+        $tk = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) ($bd['theme'] ?? 'std'))) ?: 'std'; // je Theme eigene Farben
+        $all = []; try { $q = $pdo->prepare('SELECT custom_colors FROM users WHERE id=?'); $q->execute([$u['id']]); $all = json_decode((string) $q->fetchColumn(), true) ?: []; } catch (Throwable $e) {}
+        if (isset($all['bg'])) $all = ['std' => $all]; // ältere Fassung mit nur einem Farbsatz
+        $all[$tk] = $cc; if (count($all) > 12) $all = array_slice($all, -12, null, true);
+        try { $pdo->prepare('UPDATE users SET skin=?, custom_colors=? WHERE id=?')->execute(['custom', json_encode($all), $u['id']]); }
         catch (Throwable $e) { json_out(['ok' => false, 'error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500); }
         json_out(['ok' => true]);
     }

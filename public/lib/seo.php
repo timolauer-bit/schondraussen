@@ -39,9 +39,15 @@ function seo_head(string $path, string $title, ?string $desc = null, bool $index
     return $o;
 }
 
+/** Eigene Farben je Theme: gespeichert als {"std":{…},"8bit":{…}} (ältere Fassung: nur ein Satz = Standard). Fehlt der Satz für das Theme, gilt der Standard-Satz. */
+function custom_colors_for(?string $json, string $tk): ?array {
+    $c = json_decode((string) $json, true); if (!is_array($c)) return null;
+    if (isset($c['bg'])) $c = ['std' => $c];
+    $r = $c[$tk] ?? $c['std'] ?? null; return is_array($r) ? $r : null;
+}
 /** Eigenes Farbschema „Individuell“: geprüfte Farben (nur #rrggbb) als CSS für :root[data-skin=custom], sonst leer. */
-function custom_skin_css(?string $json): string {
-    $c = json_decode((string) $json, true); if (!is_array($c)) return '';
+function custom_skin_css(?string $json, string $tk = 'std'): string {
+    $c = custom_colors_for($json, $tk); if (!is_array($c)) return '';
     $map = ['bg' => '--bg', 'surface' => '--surface', 'ink' => '--ink', 'muted' => '--muted', 'line' => '--line', 'accent' => '--accent', 'accentInk' => '--accent-ink'];
     $o = '';
     foreach ($map as $k => $var) { $v = (string) ($c[$k] ?? ''); if (!preg_match('/^#[0-9a-fA-F]{6}$/', $v)) return ''; $o .= "$var:$v;"; }
