@@ -4,11 +4,13 @@ require_once __DIR__ . '/mail.php';
 
 function base_url(): string { return rtrim((string) cfg('base_url', 'https://schondraussen.de'), '/'); }
 
-function user_unsub_token(PDO $pdo, array $u): string {
+function user_unsub_token(PDO $pdo, array $u): string { // Token nur einmal anlegen, auch wenn in einem Lauf mehrere Mails an dieselbe Person gehen
+    static $cache = [];
     if (!empty($u['unsub_token'])) return $u['unsub_token'];
-    $t = bin2hex(random_bytes(20));
-    $pdo->prepare('UPDATE users SET unsub_token=? WHERE id=?')->execute([$t, $u['id']]);
-    return $t;
+    $id = (int) $u['id']; if (isset($cache[$id])) return $cache[$id];
+    $q = $pdo->prepare('SELECT unsub_token FROM users WHERE id=?'); $q->execute([$id]); $t = (string) $q->fetchColumn();
+    if ($t === '') { $pdo->prepare('UPDATE users SET unsub_token=? WHERE id=? AND (unsub_token IS NULL OR unsub_token=\'\')')->execute([bin2hex(random_bytes(20)), $id]); $q->execute([$id]); $t = (string) $q->fetchColumn(); }
+    return $cache[$id] = $t;
 }
 
 function mail_footer(string $unsub): string {
@@ -87,6 +89,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     $seenSub = $pdo->prepare('SELECT DISTINCT subject_id FROM notified WHERE user_id=?');
     $ins = $pdo->prepare('INSERT IGNORE INTO notified (user_id,subject_id,key_hash,kind) VALUES (?,?,?,?)');
     $h = fn($uid, $sid, $t, $d, $k) => sha1("$uid|$sid|$t|$d|$k");
+    $hk = fn($t) => preg_match('/^(S\d+E\d+)\b/i', (string) $t, $mm) ? strtoupper($mm[1]) : (string) $t; // Serienfolgen nur über die Folgennummer erkennen, damit eine umbenannte Folge (z. B. TBA → Titel) keine zweite Mail auslöst
     $sort = fn($a, $b) => strcmp($a[0], $b[0]);
     $bud = 0; // Zahl der Titel mit Kurzinfo je Mail (nur Neu angekündigt und Heute erscheint)
     $fmt = function (array $l) use ($pdo, &$bud) { usort($l, fn($a, $b) => strcmp($a[0], $b[0])); $o = array_map(function ($x) use ($pdo, &$bud) { $t = '- ' . $x[1]; if (isset($x[3]) && $bud > 0) { $bud--; $t .= item_info($pdo, $x[3], $x[4], $x[5] ?? null); } return $t; }, array_slice($l, 0, 40)); if (count($l) > 40) $o[] = '… und ' . (count($l) - 40) . ' weitere'; return implode("\n", $o); };
@@ -97,17 +100,20 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
         $subs->execute([$uid]);
         $new = []; $day = []; $past = []; $week = []; $mark = []; $cm = $hour >= 7;
         $hid = hidden_cats($u); // in den Einstellungen ausgeblendete Kategorien kommen auch nicht in die Mails
+        $keep = [];
         foreach ($subs->fetchAll() as $s) {
             if (in_array($s['type'], $hid, true)) continue;
+            $keep[] = (int) $s['id'];
             $sid = (int) $s['id']; $rels->execute([$sid]); $R = $rels->fetchAll();
             if (!isset($SS[$sid])) { // erstes Mal (oder Glocke neu an): bisherigen Stand merken, nichts melden
                 $ins->execute([$uid, $sid, $h($uid, $sid, '', '', 'new'), 'new']);
-                foreach ($R as $r) $ins->execute([$uid, $sid, $h($uid, $sid, $r['title'], $r['release_date'], 'new'), 'new']);
+                foreach ($R as $r) $ins->execute([$uid, $sid, $h($uid, $sid, $hk($r['title']), $r['release_date'], 'new'), 'new']);
                 continue;
             }
             foreach ($R as $r) {
                 $d = $r['release_date']; $line = $s['name'] . ' – ' . $r['title'] . ' (' . fmt_date($d) . ')';
-                $kn = $h($uid, $sid, $r['title'], $d, 'new'); $kd = $h($uid, $sid, $r['title'], $d, 'day');
+                $kn = $h($uid, $sid, $hk($r['title']), $d, 'new'); $kd = $h($uid, $sid, $hk($r['title']), $d, 'day');
+                if (isset($K[$h($uid, $sid, $r['title'], $d, 'new')])) $K[$kn] = 1; if (isset($K[$h($uid, $sid, $r['title'], $d, 'day')])) $K[$kd] = 1; // ältere Merkzeichen mit vollem Titel gelten weiter
                 if (!isset($K[$kn])) {
                     $full = strlen($d) === 10; $nrow = [$d, $line, $sid, $s['name'], $r['title'], $s['summary'], $s['type']];
                     if ($cm && $s['type'] !== 'podcast' && $full && $d === $today && ($u['n_new'] || $u['n_day'])) { // erst jetzt bekannt, erscheint aber heute: gehört zu den heutigen Veröffentlichungen
@@ -125,6 +131,8 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
                 }
             }
         }
+        // Merkstand für Einträge löschen, die nicht mehr beobachtet werden (entfernt, Glocke aus, Kategorie ausgeblendet): beim Wiedereinschalten gilt dann der neue Stand, statt alle Zwischentermine als neu zu melden
+        try { if ($keep) { $pdo->prepare('DELETE FROM notified WHERE user_id=? AND subject_id NOT IN (' . implode(',', array_fill(0, count($keep), '?')) . ')')->execute(array_merge([$uid], $keep)); } else $pdo->prepare('DELETE FROM notified WHERE user_id=?')->execute([$uid]); } catch (Throwable $e) {}
         $pod = array_values(array_filter($new, fn($x) => ($x[6] ?? '') === 'podcast')); // Podcast-Folgen stehen unter eigener Überschrift
         $new = array_values(array_filter($new, fn($x) => ($x[6] ?? '') !== 'podcast'));
         $canMorning = $hour >= 7;

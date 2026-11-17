@@ -33,6 +33,7 @@ function seo_head(string $path, string $title, ?string $desc = null, bool $index
             . '<meta property="og:title" content="' . $e($title) . '"><meta property="og:description" content="' . $e($desc) . '">'
             . '<meta property="og:url" content="' . $e($url) . '">'
             . '<meta property="og:image" content="' . $e(seo_base() . '/shots/shot1.webp') . '">'
+            . '<meta property="og:image:width" content="1228"><meta property="og:image:height" content="992"><meta property="og:image:type" content="image/webp">'
             . '<meta name="twitter:card" content="summary_large_image">';
     }
     return $o;

@@ -70,7 +70,21 @@
   function api(url, data) {
     var o = { credentials: 'same-origin' };
     if (data !== undefined) { o.method = 'POST'; o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(data || {}); }
-    return fetch(url, o).then(function (r) { return r.json().catch(function () { return { error: 'Unerwartete Antwort' }; }); }).then(function (j) { if (j && j.maintenance) setTimeout(maintView, 0); return j; });
+    return fetch(url, o).then(function (r) {
+      return r.json().catch(function () { return { error: 'Unerwartete Antwort vom Server. Bitte lade die Seite neu.' }; }).then(function (j) {
+        if (r.status === 401 && j && j.error === 'Bitte anmelden.') sessionGone();
+        return j;
+      });
+    }, function () { return { error: 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung und versuche es noch einmal.', offline: true }; }).then(function (j) { if (j && j.maintenance) setTimeout(maintView, 0); return j; });
+  }
+  // Sitzung abgelaufen (z. B. nach Passwortwechsel auf einem anderen Gerät): statt leerer Listen zur Anmeldung, einmalig neu laden
+  var sessGoneOn = false;
+  function sessionGone() {
+    if (sessGoneOn) return; sessGoneOn = true;
+    var n = 0; try { n = +(sessionStorage.getItem('sd_sessgone') || 0); } catch (_) {}
+    if (n > 2) return; try { sessionStorage.setItem('sd_sessgone', String(n + 1)); } catch (_) {}
+    if (mainEl) { mainEl.textContent = ''; mainEl.append(h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Abgemeldet'), h('p', { class: 'warnbox', role: 'status' }, 'Deine Sitzung ist abgelaufen. Du wirst gleich zur Anmeldung weitergeleitet.'))); }
+    setTimeout(function () { location.reload(); }, 1500);
   }
   // Während eines Deployments antwortet jede Schnittstelle mit „maintenance“: dann zeigt die Seite überall denselben Hinweiskasten und lädt neu, sobald sie wieder da ist
   var maintOn = false;
@@ -178,14 +192,15 @@
   function go(view, cat) { if (view === 'adm' && S.view !== 'adm') { try { sessionStorage.setItem('sd_admtab', 'Briefing'); } catch (_) {} } S.view = view; S.cat = cat || view; S.sel = null; S.confirm = null; S.menuFor = null; S.filter = ''; S.adding = false; S.sugg = null; say(''); render(); window.scrollTo(0, 0); }
   // Versionswahl (Live, Dev, Design-Varianten): kleines Menü am Schalter, setzt nur das Cookie
   function devMenu(anchor) {
-    var old = document.getElementById('devmenu'); if (old) { old.remove(); return; }
+    var old = document.getElementById('devmenu'); if (old) { if (old._close) old._close(); else old.remove(); return; }
     var opts = [{ m: 'live', t: 'Live-Version', d: 'Was alle Nutzer sehen.', on: !D.dev }, { m: 'dev', t: 'Entwicklungsversion', d: 'Neues, das noch nicht freigegeben ist.', on: D.dev && !D.design }].concat((D.designs || []).map(function (x) { return { m: 'd:' + x.slug, t: x.name, d: x.desc, on: D.design === x.slug }; }));
     var box = h('div', { id: 'devmenu', class: 'devmenu', role: 'menu' }, opts.map(function (o) {
-      return h('button', { type: 'button', role: 'menuitemradio', 'aria-checked': o.on ? 'true' : 'false', class: 'dmi' + (o.on ? ' on' : ''), onclick: function () { if (o.on) { box.remove(); return; } api('/api/data.php?a=devmode', { mode: o.m }).then(function () { location.reload(); }); } }, h('b', null, o.t), o.d ? h('small', null, o.d) : null);
+      return h('button', { type: 'button', role: 'menuitemradio', 'aria-checked': o.on ? 'true' : 'false', class: 'dmi' + (o.on ? ' on' : ''), onclick: function () { if (o.on) { box._close(); return; } api('/api/data.php?a=devmode', { mode: o.m }).then(function () { location.reload(); }); } }, h('b', null, o.t), o.d ? h('small', null, o.d) : null);
     }));
     var wb = anchor.parentNode; wb.append(box);
     function off(ev) { if (!box.contains(ev.target) && ev.target !== anchor) { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); } }
     function esc(ev) { if (ev.key === 'Escape') { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); anchor.focus(); } }
+    box._close = function () { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); }; // Listener beim Schließen immer mit entfernen
     setTimeout(function () { document.addEventListener('click', off, true); document.addEventListener('keydown', esc, true); }, 0);
   }
   function nav() {
@@ -752,17 +767,19 @@
     locT = setTimeout(function () {
       api('/api/data.php?a=suggest_local&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) {
         if (my !== locSeq || cat !== S.cat) return; var q = $('q'); if (!q || q.value.trim() !== v) return;
-        S.sugg = { local: true, q: v, list: (r && r.results) || [] }; drawSugg();
+        S.sugg = { local: true, q: v, cat: cat, list: (r && r.results) || [] }; drawSugg();
       });
     }, 150);
   }
   function addSubmit(ev) {
     ev.preventDefault(); locSeq++; clearTimeout(locT); var v = $('q').value.trim(); if (!v) { say('Gib erst einen Namen ein.', true); return; }
-    S.sugg = { loading: true }; drawSugg(); say('');
-    api('/api/data.php?a=search&type=' + S.cat + '&q=' + encodeURIComponent(v)).then(function (r) { S.sugg = { q: v, list: r.results || [], manual: !!r.manual }; drawSugg(); });
+    S.sugg = { loading: true }; drawSugg(); say(''); var cat = S.cat, my = ++srchSeq; // späte Antworten (Kategorie gewechselt, neue Suche) verwerfen
+    api('/api/data.php?a=search&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) { if (my !== srchSeq || cat !== S.cat) return; S.sugg = { q: v, cat: cat, list: r.results || [], manual: !!r.manual, err: r.error || '' }; drawSugg(); });
   }
-  function addNow(name, ext) {
-    api('/api/data.php?a=add', { type: S.cat, name: name, ext: ext || {} }).then(function (r) {
+  var srchSeq = 0;
+  function addNow(name, ext, cat) {
+    if (cat && cat !== S.cat) { say('Die Kategorie hat sich inzwischen geändert. Bitte suche noch einmal.', true); return; }
+    api('/api/data.php?a=add', { type: cat || S.cat, name: name, ext: ext || {} }).then(function (r) {
       if (!r.ok) { say(r.error || 'Das hat nicht geklappt.', true); return; }
       S.sugg = null; S.sel = String(r.id); load(function () { render(); var q = $('q'); if (q) q.value = ''; });
     });
@@ -773,16 +790,17 @@
     if (s.local) {
       box.append(h('p', { class: 'hint' }, s.list.length ? 'Schon auf der Seite vorhanden. Passt keiner, drücke Enter, dann wird im Netz gesucht.' : 'Noch nicht auf der Seite vorhanden. Drücke Enter, um im Netz zu suchen.'));
       if (s.list.length) { var ll = h('div', { class: 'suggest' });
-        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
+        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext, s.cat); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
         box.append(ll); }
       return;
     }
+    if (s.err && !s.list.length) { box.append(h('p', { class: 'warnbox' }, s.err)); return; }
     box.append(h('p', { class: 'hint' }, s.manual ? 'Für Filme gibt es noch keine Suche. Der Titel wird so übernommen, wie du ihn eingegeben hast.' : s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
     var list = h('div', { class: 'suggest' });
     s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
-      if (x.title_search) { S.sugg = { loading: true }; drawSugg(); api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { S.sugg = { q: s.q, list: r.results || [], byTitle: true }; drawSugg(); }); return; }
-      addNow(x.name, x.ext); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
-    list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
+      if (x.title_search) { S.sugg = { loading: true }; drawSugg(); var my2 = ++srchSeq; api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { if (my2 !== srchSeq || S.cat !== 'author') return; S.sugg = { q: s.q, cat: 'author', list: r.results || [], byTitle: true }; drawSugg(); }); return; }
+      addNow(x.name, x.ext, s.cat); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
+    list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}, s.cat); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
     box.append(list);
   }
 
@@ -854,7 +872,7 @@
           }); } }, 'Bild übernehmen')), dbMsg);
       var nm = h('input', { type: 'text', maxlength: '40', value: v.name, autocomplete: 'nickname', name: 'anzeigename', 'data-lpignore': 'true', 'data-1p-ignore': 'true', 'aria-label': 'Name', placeholder: 'z. B. dein Vorname', oninput: function () { v.name = nm.value; } });
       var yr = h('input', { type: 'number', min: '1900', max: String(new Date().getFullYear() - 10), value: v.year || '', autocomplete: 'bday-year', name: 'geburtsjahr', inputmode: 'numeric', 'data-lpignore': 'true', 'data-1p-ignore': 'true', 'aria-label': 'Geburtsjahr', placeholder: 'z. B. 1985', oninput: function () { v.year = yr.value; } });
-      var dt = h('input', { type: 'date', min: '1900-01-01', max: new Date().toISOString().slice(0, 10), value: v.date, autocomplete: 'bday', name: 'geburtsdatum', 'data-lpignore': 'true', 'data-1p-ignore': 'true', 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
+      var dt = h('input', { type: 'date', min: '1900-01-01', max: (function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })(new Date()), value: v.date, autocomplete: 'bday', name: 'geburtsdatum', 'data-lpignore': 'true', 'data-1p-ignore': 'true', 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
       wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), picRow, dbBox, wishBox,
@@ -1707,7 +1725,7 @@
     function isTeam() { return staff && S.sup.sel === 'team'; }
     function isDm() { return !admin && staff && /^dm\d+$/.test(String(S.sup.sel)); }
     function scopeOf() { return isTeam() ? 'team' : (kindSel === 'chat' ? 'chat' : 'feedback'); }
-    function drawDrafts() { draftBox.textContent = ''; drafts.forEach(function (d) { draftBox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Bild entfernen', onclick: function () { drafts = drafts.filter(function (e) { return e !== d; }); api('/api/image.php?a=remove', { id: d.id }); drawDrafts(); } }, '×'))); }); drawNote(); }
+    function drawDrafts() { draftBox.textContent = ''; drafts.forEach(function (d) { draftBox.append(h('span', { class: 'draft' + (d.name ? ' txt' : '') }, d.name ? h('span', { class: 'dname' }, '📄 ' + d.name) : h('img', { src: d.url, alt: 'Angehängtes Bild' }), h('button', { type: 'button', class: 'x', 'aria-label': 'Bild entfernen', onclick: function () { drafts = drafts.filter(function (e) { return e !== d; }); if (d.url && /^blob:/.test(d.url)) { try { URL.revokeObjectURL(d.url); } catch (_) {} } api('/api/image.php?a=remove', { id: d.id }); drawDrafts(); } }, '×'))); }); drawNote(); }
     function addFiles(files) {
       [].slice.call(files).forEach(function (f) {
         if (drafts.length >= 3) { msg.className = 'msg err'; msg.textContent = scopeOf() === 'chat' ? 'Höchstens 3 Bilder pro Nachricht.' : 'Höchstens 3 Anhänge.'; return; }
@@ -1724,7 +1742,7 @@
       if (isDm()) { var dt = inp.value.trim(); if (!dt) return; api('/api/chat.php?a=dm_send', { uid: String(S.sup.sel).slice(2), text: dt }).then(function (r) { if (r && r.ok) { inp.value = ''; msg.textContent = ''; dmPull(true); } else { msg.className = 'msg err'; msg.textContent = (r && r.error) || 'Das hat nicht geklappt.'; } }); return; }
       var t = inp.value.trim(), ids = drafts.map(function (d) { return d.id; }); if (kindSel !== 'chat') { var ti = titleIn.value.trim(); if (ti.length < 3) { msg.className = 'msg err'; msg.textContent = 'Bitte gib eine Kurzbeschreibung an (mindestens 3 Zeichen).'; titleIn.focus(); return; } } else if (!t && !(kindSel === 'chat' && ids.length)) return; if (admin && kindSel === 'chat' && !S.sup.sel) { msg.textContent = 'Wähle erst eine Unterhaltung.'; return; }
       if (kindSel !== 'chat') { var kd = kindSel; api('/api/feedback.php?a=add', { kind: kd, title: titleIn.value.trim(), text: t, images: ids }).then(function (r) { if (r.ok) { inp.value = ''; titleIn.value = ''; drafts = []; drawDrafts(); msg.className = 'msg'; msg.textContent = ''; popup(kd === 'feature' ? 'Idee abgeschickt' : 'Bugmeldung abgeschickt', (D.admin ? (kd === 'feature' ? 'Gespeichert. Du findest sie in der Liste „Ideen“ und kannst sie dort freigeben.' : 'Gespeichert. Du findest sie in der Liste „Bugs“ und kannst sie dort freigeben.') : (kd === 'feature' ? 'Danke! Deine Idee ist angekommen. Sie erscheint in der Liste, sobald das Team sie freigegeben hat.' : 'Danke! Deine Bugmeldung ist angekommen. Sie erscheint in der Liste, sobald das Team sie freigegeben hat.')) + (ids.length && !D.alpha && !D.admin ? ' Dein Bild erscheint für andere, sobald es freigegeben ist.' : '')); } else { msg.className = 'msg err'; msg.textContent = r.error || 'Senden nicht möglich.'; } }); return; }
-      inp.value = ''; drafts = []; drawDrafts(); var wantMail = admin && mailCk.checked; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids, mail: wantMail }).then(function (r) { msg.textContent = r.ok ? (wantMail ? (r.mailed ? 'Gesendet, auch per E-Mail zugestellt.' : 'Im Chat gesendet, aber die E-Mail konnte nicht verschickt werden.') : '') : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok && (!wantMail || r.mailed) ? '' : ' err'); pull(); });
+      var keepT = inp.value, keepD = drafts.slice(), keepSel = S.sup.sel; inp.value = ''; drafts = []; drawDrafts(); var wantMail = admin && mailCk.checked; api('/api/chat.php?a=send', { text: t, uid: S.sup.sel, images: ids, mail: wantMail }).then(function (r) { if (!r.ok && S.sup.sel === keepSel && !inp.value) { inp.value = keepT; drafts = keepD; drawDrafts(); } /* Senden fehlgeschlagen: Text und Anhänge zurück ins Feld */ msg.textContent = r.ok ? (wantMail ? (r.mailed ? 'Gesendet, auch per E-Mail zugestellt.' : 'Im Chat gesendet, aber die E-Mail konnte nicht verschickt werden.') : '') : (r.error || 'Senden nicht möglich.'); msg.className = 'msg' + (r.ok && (!wantMail || r.mailed) ? '' : ' err'); pull(); });
     }
     var kindSel = 'chat', kindBox = h('div', { class: 'kindsel', role: 'radiogroup', 'aria-label': 'Art der Nachricht' }), kindHint = h('p', { class: 'hint', style: 'margin:0' });
     var KINDS = [['chat', admin ? 'Antwort' : 'Chat', 'Nachricht schreiben … (Enter sendet, Umschalt+Enter für neue Zeile)', ''], ['feature', 'Idee', 'Details zu deiner Idee: Was genau schwebt dir vor, und wozu wäre es gut?', 'Das Team schaut sich deine Idee an. Nach der Freigabe erscheint sie in der Liste „Ideen“ und alle können dafür abstimmen.'], ['bug', 'Bugmeldung', 'Details: Was funktioniert nicht? Wo, und was hast du gemacht?', 'Das Team schaut sich die Meldung an. Nach der Freigabe erscheint sie in der Liste „Bugs“.']];
@@ -1746,7 +1764,8 @@
         if (staff && S.sup.sel === 'team') { teamPull(); return; }
         if (isDm()) { dmPull(); return; }
         if (admin && !S.sup.sel) { log.textContent = ''; log.append(h('p', { class: 'chatempty' }, 'Wähle links eine Unterhaltung.')); return; }
-        api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
+        var selAt = S.sup.sel; api('/api/chat.php?a=thread' + (admin ? '&uid=' + S.sup.sel : '')).then(function (r) {
+          if (S.sup.sel !== selAt) return; // inzwischen andere Unterhaltung gewählt: späte Antwort verwerfen
           var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40 || !log.childNodes.length; log.textContent = '';
           if (admin) mailCk.checked = !(r.messages || []).length;
           if (!(r.messages || []).length) log.append(h('p', { class: 'chatempty' }, h('b', null, 'Noch keine Nachrichten.'), h('br'), admin ? 'Hier ist noch nichts geschrieben worden. Deine Nachricht erscheint auch im Chat des Nutzers.' : 'Schreibe unten deine erste Nachricht. Antworten des Administrators erscheinen hier.'));
@@ -2332,7 +2351,7 @@
           var row = h('div', { class: 'wishrow' }, h('div', { class: 'nm2' }, (x.username || 'Nutzer ' + x.uid) + ' · ' + String(x.created_at || '').slice(0, 10)), h('div', null, x.wish));
           if (x.status !== 'open') { row.append(h('div', { class: 'meta2' }, x.status === 'ready' ? 'Bilder bereitgestellt (' + x.n + ')' : 'Abgelehnt')); wsBox.append(row); return; }
           var fi = h('input', { type: 'file', accept: '.svg,image/svg+xml', multiple: true, 'aria-label': 'SVG-Dateien' }), pv = h('div', { class: 'wishpv' }), wm = h('p', { class: 'msg', role: 'status' }), nt = h('input', { type: 'text', maxlength: '300', placeholder: 'Anmerkung bei Ablehnung (optional)', 'aria-label': 'Anmerkung' });
-          fi.onchange = function () { pv.textContent = ''; [].slice.call(fi.files, 0, 3).forEach(function (f) { pv.append(h('img', { src: URL.createObjectURL(f), alt: '', width: '64', height: '64' })); }); };
+          fi.onchange = function () { [].forEach.call(pv.querySelectorAll('img'), function (im) { try { URL.revokeObjectURL(im.src); } catch (_) {} }); pv.textContent = ''; [].slice.call(fi.files, 0, 3).forEach(function (f) { pv.append(h('img', { src: URL.createObjectURL(f), alt: '', width: '64', height: '64' })); }); };
           row.append(fi, pv, h('div', { class: 'acts' },
             h('button', { class: 'btn small', type: 'button', onclick: function () {
               var fs = [].slice.call(fi.files); if (!fs.length || fs.length > 3) { wm.className = 'msg err'; wm.textContent = 'Bitte 1 bis 3 SVG-Dateien wählen.'; return; }

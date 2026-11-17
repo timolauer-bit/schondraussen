@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0, auf einen festen Commit gesetzt
       - name: lftp installieren (falls das Netz des Runners es erlaubt)
         run: |
           timeout 150 bash -c 'sudo apt-get -o Acquire::Retries=1 -o Acquire::ForceIPv4=true update -qq && sudo apt-get -o Acquire::ForceIPv4=true install -y -qq lftp' || echo "lftp nicht installierbar, es wird das Python-Skript benutzt"

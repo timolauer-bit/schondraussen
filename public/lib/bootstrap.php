@@ -3,6 +3,21 @@ if (!defined('ENTRY_LIMIT')) define('ENTRY_LIMIT', 1000); // höchstens so viele
 // Gemeinsame Grundfunktionen: Konfiguration, Datenbank, Sitzung, JSON-Antworten.
 $GLOBALS['CFG'] = is_file(__DIR__ . '/../config.php') ? require __DIR__ . '/../config.php' : [];
 function cfg(string $k, $d = null) { return $GLOBALS['CFG'][$k] ?? $d; }
+// Schnittstellen antworten auch bei unerwarteten Fehlern mit JSON (statt leerer Seite oder HTML-500); der Fehler landet im PHP-Protokoll, nicht beim Nutzer
+if (strpos((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '/api/') !== false && !in_array(basename((string) $_SERVER['SCRIPT_NAME']), ['shot.php', 'image.php', 'cron.php', 'health.php'], true)) {
+    $GLOBALS['SD_API_JSON'] = true;
+    set_exception_handler(function (Throwable $e) {
+        error_log('Schondraussen ' . ($_SERVER['SCRIPT_NAME'] ?? '') . ' ' . get_class($e) . ': ' . $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')');
+        if (!headers_sent()) { http_response_code(500); header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: no-store'); }
+        echo json_encode(['error' => 'Auf dem Server ist ein Fehler aufgetreten. Bitte versuche es gleich noch einmal.' . (stripos($e->getMessage(), 'Unknown column') !== false || stripos($e->getMessage(), "doesn't exist") !== false ? ' (Die Datenbank ist vermutlich noch nicht aktualisiert: migrate.php)' : '')], JSON_UNESCAPED_UNICODE);
+    });
+    register_shutdown_function(function () {
+        $er = error_get_last(); if (!$er || !in_array($er['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) return;
+        if (!headers_sent()) { http_response_code(500); header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: no-store'); }
+        echo json_encode(['error' => 'Auf dem Server ist ein Fehler aufgetreten. Bitte versuche es gleich noch einmal.'], JSON_UNESCAPED_UNICODE);
+    });
+    ini_set('display_errors', '0');
+}
 if (is_file(__DIR__ . '/maintenance.php')) { require_once __DIR__ . '/maintenance.php'; maintenance_gate(); } // Wartungsmodus während eines Deployments
 
 function db(): PDO {
@@ -61,6 +76,7 @@ function current_user(): ?array {
     $s->execute([$_SESSION['uid']]);
     $u = $s->fetch();
     if (!$u || !empty($u['admin_deleted'])) return null;
+    if (array_key_exists('sess_ver', $u) && (int) $u['sess_ver'] !== (int) ($_SESSION['sv'] ?? 0)) { $_SESSION = []; return null; } // Passwort wurde geändert: ältere Sitzungen gelten nicht mehr
     unset($u['pass_hash']);
     $u['totp_on'] = (int) ($u['totp_enabled'] ?? 0) === 1; unset($u['totp_secret'], $u['totp_codes'], $u['totp_step']);
     $u['deleting'] = !empty($u['delete_requested_at']);
@@ -75,7 +91,11 @@ function approval_required(): bool {
     catch (Throwable $e) { return false; }
 }
 
-function client_ip(): string { return substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45); }
+function client_ip(): string { // für Mengenbegrenzungen: bei IPv6 zählt der ganze Anschluss (/64), sonst ließe sich die Grenze durch Adresswechsel umgehen
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    if (strpos($ip, ':') !== false && ($bin = @inet_pton($ip)) !== false && strlen($bin) === 16) return inet_ntop(substr($bin, 0, 8) . str_repeat("\0", 8)) . '/64';
+    return substr($ip, 0, 45);
+}
 function token_new(): array { $t = bin2hex(random_bytes(24)); return [$t, hash('sha256', $t)]; }
 
 // Alphafunktionen: sichtbar für Admins und als Alphatester markierte Nutzer.

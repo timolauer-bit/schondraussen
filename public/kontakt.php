@@ -18,9 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif (mb_strlen($text) > 3000) $msg = 'Die Nachricht ist zu lang (höchstens 3000 Zeichen).';
         else {
             $pdo->prepare("INSERT INTO login_attempts (ip,kind) VALUES (?,'kontakt')")->execute([client_ip()]);
-            $sent = false;
+            $sent = false; $nm2 = str_replace(['[[', ']]'], ['[ [', '] ]'], $name); $tx2 = str_replace(['[[', ']]'], ['[ [', '] ]'], $text); // keine Knöpfe ([[Text|Link]]) in die Admin-Mail einschleusen
             foreach ($pdo->query("SELECT email FROM users WHERE role='admin' AND email_verified_at IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN) as $adm)
-                $sent = send_mail($adm, 'Kontaktformular Schondraussen.de', "Nachricht über das öffentliche Kontaktformular\n\nName: " . ($name !== '' ? $name : '(nicht angegeben)') . "\nE-Mail: $mail\n\n$text\n", ['Reply-To: ' . $mail]) || $sent;
+                $sent = send_mail($adm, 'Kontaktformular Schondraussen.de', "Nachricht über das öffentliche Kontaktformular\n\nName: " . ($nm2 !== '' ? $nm2 : '(nicht angegeben)') . "\nE-Mail: $mail\n\n$tx2\n", ['Reply-To: ' . $mail]) || $sent;
             if ($sent) $ok = true; else $msg = 'Die Nachricht konnte gerade nicht gesendet werden. Bitte schreibe stattdessen direkt an admin@schondraussen.de.';
         }
     } catch (Throwable $e) { $msg = 'Die Nachricht konnte gerade nicht gesendet werden. Bitte schreibe stattdessen direkt an admin@schondraussen.de.'; }

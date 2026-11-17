@@ -7,6 +7,11 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+  '086_settings_text_sessver_bugno' => [ // Rechte-Einstellung passte nicht in 200 Zeichen; Sitzungsversion (Passwortwechsel beendet andere Sitzungen); Bugnummern eindeutig
+  "ALTER TABLE site_settings MODIFY v TEXT NULL",
+  "ALTER TABLE users ADD COLUMN sess_ver INT UNSIGNED NOT NULL DEFAULT 0",
+  "ALTER TABLE feedback ADD UNIQUE KEY uq_bug_no (bug_no)"
+ ],
   '085_orphan_csv_subjects' => [ // weitere Reste von stefanh: ganze CSV-Zeilen (IMDb-Export) als Name, auf keiner Liste mehr
   "DELETE ep FROM episodes ep JOIN subjects s ON s.id=ep.subject_id WHERE (s.name REGEXP '^[0-9]+ *,' OR s.name LIKE '%imdb.com/%' OR s.name REGEXP 'https?://' OR s.name REGEXP '(^|[^a-zA-Z])tt[0-9]{5,}') AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)",
   "DELETE ws FROM work_seen ws JOIN subjects s ON s.id=ws.subject_id WHERE (s.name REGEXP '^[0-9]+ *,' OR s.name LIKE '%imdb.com/%' OR s.name REGEXP 'https?://' OR s.name REGEXP '(^|[^a-zA-Z])tt[0-9]{5,}') AND NOT EXISTS (SELECT 1 FROM user_entries e WHERE e.subject_id=s.id)",
@@ -422,9 +427,20 @@ Quellen: kinocheck.de, thewrap.com, the-spot-mediafilm.com, buchmarkt.de, Branch
   "ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64) NULL, ADD COLUMN totp_enabled TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN totp_codes TEXT NULL, ADD COLUMN totp_step BIGINT NOT NULL DEFAULT 0",
  ],
 ];
+ksort($M, SORT_STRING); // immer in Nummernfolge (wichtig für eine leere Datenbank)
+$PRE = [ // Vorarbeiten in PHP, die vor einer Migration laufen müssen
+  '086_settings_text_sessver_bugno' => function (PDO $pdo) { // doppelte Bugnummern auflösen, damit der eindeutige Index angelegt werden kann
+    $max = (int) $pdo->query("SELECT COALESCE(MAX(bug_no),0) FROM feedback")->fetchColumn(); $seen = [];
+    foreach ($pdo->query("SELECT id,bug_no FROM feedback WHERE bug_no IS NOT NULL ORDER BY id")->fetchAll() as $r) {
+        if (isset($seen[$r['bug_no']])) { $max++; $pdo->prepare('UPDATE feedback SET bug_no=? WHERE id=?')->execute([$max, $r['id']]); echo "Bugnummer #{$r['bug_no']} war doppelt, ein Beitrag hat jetzt #$max\n"; }
+        $seen[$r['bug_no']] = 1;
+    }
+  },
+];
 foreach ($M as $name => $stmts) {
     $q = $pdo->prepare('SELECT 1 FROM migrations WHERE name=?'); $q->execute([$name]);
     if ($q->fetch()) { echo "schon vorhanden: $name\n"; continue; }
+    if (isset($PRE[$name])) $PRE[$name]($pdo);
     foreach ($stmts as $s) { $pdo->exec($s); }
     $pdo->prepare('INSERT INTO migrations (name) VALUES (?)')->execute([$name]);
     echo "eingespielt: $name\n";

@@ -128,7 +128,11 @@ if ($a === 'add') {
         $cols = ['user_id', 'kind', 'title', 'body']; $vals = [$u['id'], $kind, $title, $text];
         if ($bn !== null) { $cols[] = 'bug_no'; $vals[] = $bn; }
         if ($hasCat && $cat !== '') { $cols[] = 'category'; $vals[] = $cat; }
-        $pdo->prepare('INSERT INTO feedback (' . implode(',', $cols) . ') VALUES (' . implode(',', array_fill(0, count($cols), '?')) . ')')->execute($vals);
+        $ins = 'INSERT INTO feedback (' . implode(',', $cols) . ') VALUES (' . implode(',', array_fill(0, count($cols), '?')) . ')';
+        for ($try = 0; ; $try++) { // zwei gleichzeitige Bugmeldungen könnten dieselbe Nummer bekommen: dann die nächste nehmen
+            try { $pdo->prepare($ins)->execute($vals); break; }
+            catch (PDOException $e) { $bi = array_search('bug_no', $cols, true); if ($bi === false || $try >= 4 || strpos($e->getMessage(), 'uq_bug_no') === false) throw $e; $vals[$bi]++; }
+        }
         $fid = (int) $pdo->lastInsertId();
         // Bilder von Admin/Alpha gelten sofort als freigegeben, alle anderen warten auf die Prüfung
         if (!empty($b['images']) && is_array($b['images'])) { try { images_attach($pdo, $b['images'], (int) $u['id'], 'feedback', $fid, $alpha ? 'approved' : 'pending'); } catch (Throwable $e) {} }

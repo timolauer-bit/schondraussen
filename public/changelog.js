@@ -4,6 +4,14 @@ window.CHANGELOG = [
     'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',
     'B|Buchreihen: Reihen, die nicht im DNB-Katalog gefunden werden, ließen sich seit gestern nicht mehr aktualisieren und haben den nächtlichen Lauf abgebrochen. Behoben.',
     'A|Admin: Neuer Kasten „Datenpflege“ unter Tools. Er listet verdächtige Einträge (Namen wie Zahlen, Zeilen aus Exportdateien oder Links, Einträge auf keiner Liste, dauerhaft fehlschlagende Einträge ohne Werke) und löscht ausgewählte auf Knopfdruck. Das Briefing weist darauf hin.',
+    'B|Registrierung: Wer sich mit E-Mail-Adresse, aber ohne Benutzernamen anmeldet, bekommt wieder die Bestätigungsmail (vorher „Serverfehler“).',
+    'B|Chat: Scheitert das Senden, bleiben Text und Anhänge im Eingabefeld. Späte Antworten erscheinen nicht mehr unter einer anderen Unterhaltung.',
+    'B|Neu hinzufügen: Eine späte Suchantwort landet nicht mehr in der falschen Kategorie. Ohne Verbindung erscheint eine Meldung statt eines endlosen „Lade …“.',
+    'B|Mails: Wer einen Eintrag entfernt, die Glocke aus- und wieder einschaltet oder eine Kategorie ausblendet, bekommt danach keine alten Termine mehr als „neu“. Eine umbenannte Serienfolge löst keine zweite Mail mehr aus. Der Abmeldelink ist auch in der ersten Mail gültig.',
+    'B|Kalender-Abo: Ganztägige Termine enden am richtigen Tag, jeder Termin steht nur einmal drin, Podcasts haben eine eigene Kategorie, und ein leerer Kalender ist gültig.',
+    'O|Sitzung: Ist die Anmeldung abgelaufen, geht es zur Anmeldung statt zu leeren Listen. Nach einer Passwortänderung (auch über Zurücksetzen oder Wiederherstellungscode) sind alle anderen Geräte abgemeldet.',
+    'A|Sicherheit und Technik: Schnittstellen antworten auch bei Serverfehlern verständlich, health.php nur noch mit Token, Mengenbegrenzungen zählen bei IPv6 den ganzen Anschluss, Kontaktformular ohne eingeschleuste Knöpfe, Rechte der Nutzergruppen ohne Längengrenze, Bugnummern eindeutig (Migration 086), Migrationen laufen immer in Nummernfolge.',
+    'A|Suchmaschinen: Kontaktseite in der Sitemap, Vorschaubild mit Maßen, Screenshots nicht mehr gesperrt.',
     'A|Deploy: Beim Hochladen gibt es keine Wartungsseite mehr, die Seite bleibt erreichbar.'
   ] },
   { v: 15, d: '16.11.2026', t: [

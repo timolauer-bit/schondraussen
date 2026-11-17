@@ -1,4 +1,11 @@
 <?php
+function sess_bump(PDO $pdo, int $uid): void { // alle Sitzungen dieses Kontos beenden (nach Passwortwechsel); die aktuelle bleibt, falls es die eigene ist
+    try { $pdo->prepare('UPDATE users SET sess_ver=sess_ver+1 WHERE id=?')->execute([$uid]); if ((int) ($_SESSION['uid'] ?? 0) === $uid) { $q = $pdo->prepare('SELECT sess_ver FROM users WHERE id=?'); $q->execute([$uid]); $_SESSION['sv'] = (int) $q->fetchColumn(); } } catch (Throwable $e) {}
+}
+function sess_set(PDO $pdo, int $uid): void {
+    $_SESSION['uid'] = $uid;
+    try { $q = $pdo->prepare('SELECT sess_ver FROM users WHERE id=?'); $q->execute([$uid]); $_SESSION['sv'] = (int) $q->fetchColumn(); } catch (Throwable $e) { $_SESSION['sv'] = 0; }
+}
 function email_blocked(PDO $pdo, string $email): bool { try { $s = $pdo->prepare('SELECT 1 FROM blocked_emails WHERE email=?'); $s->execute([$email]); return (bool) $s->fetchColumn(); } catch (Throwable $e) { return false; } }
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/mail.php';
@@ -109,6 +116,7 @@ try {
         if (!$row || empty($row['recovery_hash']) || !password_verify(recovery_norm((string) ($b['code'] ?? '')), $row['recovery_hash'])) { note($pdo, 'recover'); json_out(['error' => 'Benutzername oder Wiederherstellungscode stimmt nicht.'], 401); }
         $code = recovery_code_new();
         $pdo->prepare('UPDATE users SET pass_hash=?, recovery_hash=? WHERE id=?')->execute([password_hash($pw, PASSWORD_DEFAULT), password_hash(recovery_norm($code), PASSWORD_DEFAULT), $row['id']]);
+        sess_bump($pdo, (int) $row['id']);
         json_out(['ok' => true, 'recovery_code' => $code, 'message' => 'Dein Passwort wurde geändert. Der alte Code ist verbraucht, bitte notiere den neuen.']);
     }
     if ($a === 'email_change') { // neue E-Mail-Adresse beantragen (angemeldet, mit Passwort), gilt erst nach Klick auf den Link in der neuen Mail
@@ -180,19 +188,23 @@ try {
         $s = $pdo->prepare('SELECT id,email_verified_at FROM users WHERE email=?'); $s->execute([$email]); $ex = $s->fetch();
         if ($ex) {
             // Keine Auskunft, ob die Adresse schon existiert; unbestätigte Konten bekommen den Link erneut.
-            if (!$ex['email_verified_at']) link_mail($pdo, (int) $ex['id'], $email, 'verify');
+            if (!$ex['email_verified_at']) { // unbestätigtes Konto: das Passwort der neuesten Registrierung gilt (sonst könnte jemand ein Konto mit fremder Adresse vorab anlegen und nach der Bestätigung durch die echte Person nutzen)
+                try { $pdo->prepare('UPDATE users SET pass_hash=? WHERE id=? AND email_verified_at IS NULL')->execute([password_hash($pw, PASSWORD_DEFAULT), $ex['id']]); sess_bump($pdo, (int) $ex['id']); } catch (Throwable $e) {}
+                link_mail($pdo, (int) $ex['id'], $email, 'verify');
+            }
         } elseif (!email_blocked($pdo, $email)) {
             $first = (int) $pdo->query('SELECT COUNT(*) c FROM users')->fetch()['c'] === 0;
             try {
                 if ($uname !== '') { $t = $pdo->prepare('SELECT 1 FROM users WHERE username=?'); $t->execute([$uname]);
                     if ($t->fetch()) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409); }
                 $pdo->prepare('INSERT INTO users (email,pass_hash,role,username,username_changed_at) VALUES (?,?,?,?,' . ($uname !== '' ? 'NOW()' : 'NULL') . ')')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user', $uname !== '' ? $uname : null]);
-                if ($uname === '') { $nid0 = (int) $pdo->lastInsertId(); try { $pdo->prepare('UPDATE users SET username=? WHERE id=? AND username IS NULL')->execute(['User-' . $nid0, $nid0]); } catch (Throwable $e0) {} }
+                if ($uname === '') { $nid0 = (int) $pdo->lastInsertId(); if ($nid0 <= 0) { $q0 = $pdo->prepare('SELECT id FROM users WHERE email=?'); $q0->execute([$email]); $nid0 = (int) $q0->fetchColumn(); } try { $pdo->prepare('UPDATE users SET username=? WHERE id=? AND username IS NULL')->execute(['User-' . $nid0, $nid0]); } catch (Throwable $e0) {} }
             } catch (PDOException $e) {
                 if (strpos($e->getMessage(), 'username') !== false && strpos($e->getMessage(), 'Unknown column') === false) json_out(['error' => 'Dieser Benutzername ist schon vergeben.'], 409);
                 $pdo->prepare('INSERT INTO users (email,pass_hash,role) VALUES (?,?,?)')->execute([$email, password_hash($pw, PASSWORD_DEFAULT), $first ? 'admin' : 'user']); // Spalte fehlt noch (migrate.php)
             }
             $nid2 = (int) $pdo->lastInsertId();
+            if ($nid2 <= 0) { $q = $pdo->prepare('SELECT id FROM users WHERE email=?'); $q->execute([$email]); $nid2 = (int) $q->fetchColumn(); } // nach dem UPDATE für „User-<Nr>“ liefert lastInsertId() 0
             $needApproval = approval_required();
             if (!$needApproval) { try { $pdo->prepare('UPDATE users SET approved_at=NOW() WHERE id=?')->execute([$nid2]); } catch (Throwable $e) {} }
             if ($inv && !$first) {
@@ -238,7 +250,7 @@ try {
         if (!$u['email_verified_at']) json_out(['error' => 'Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.'], 403);
         try { $t = $pdo->prepare('SELECT totp_enabled FROM users WHERE id=?'); $t->execute([$u['id']]); if ((int) $t->fetchColumn() === 1) { $_SESSION['mfa_uid'] = (int) $u['id']; $_SESSION['mfa_at'] = time(); json_out(['ok' => true, 'mfa' => true]); } } catch (Throwable $e) {}
         session_regenerate_id(true);
-        $_SESSION['uid'] = (int) $u['id'];
+        sess_set($pdo, (int) $u['id']);
         $pdo->prepare('UPDATE users SET last_seen_at=NOW() WHERE id=?')->execute([$u['id']]);
         json_out(['ok' => true, 'user' => current_user()]);
     }
@@ -250,7 +262,7 @@ try {
         $s = $pdo->prepare('SELECT id,totp_secret,totp_codes,totp_step FROM users WHERE id=? AND totp_enabled=1'); $s->execute([$uid]); $row = $s->fetch();
         if (!$row || !totp_verify_user($pdo, $row, (string) ($b['code'] ?? ''))) { note($pdo, 'login'); json_out(['error' => 'Der Code stimmt nicht.'], 401); }
         unset($_SESSION['mfa_uid'], $_SESSION['mfa_at']);
-        session_regenerate_id(true); $_SESSION['uid'] = $uid;
+        session_regenerate_id(true); sess_set($pdo, $uid);
         $pdo->prepare('UPDATE users SET last_seen_at=NOW() WHERE id=?')->execute([$uid]);
         json_out(['ok' => true]);
     }
@@ -360,6 +372,7 @@ try {
         $s->execute([$h]); $r = $s->fetch();
         if (!$r) json_out(['error' => 'Der Link ist abgelaufen oder wurde schon benutzt.'], 400);
         $pdo->prepare('UPDATE users SET pass_hash=? WHERE id=?')->execute([password_hash($pw, PASSWORD_DEFAULT), $r['user_id']]);
+        sess_bump($pdo, (int) $r['user_id']);
         $pdo->prepare('UPDATE email_tokens SET used_at=NOW() WHERE id=?')->execute([$r['id']]);
         json_out(['ok' => true, 'message' => 'Dein Passwort wurde geändert. Du kannst dich jetzt anmelden.']);
     }
