@@ -6,6 +6,9 @@
   function unFree() { return Math.max(0, Math.ceil(((D.uname_free_until || 0) - Date.now()) / 60000)); }
   if (!root) return;
   if (D.dev) document.documentElement.classList.add('devmode');
+  // Barrierefreiheit (Dev): Hauptbereich als Landmarke und Sprunglink „Zum Inhalt“ für Tastatur und Screenreader
+  root.setAttribute('role', 'main'); root.setAttribute('tabindex', '-1');
+  (function () { var wr = document.querySelector('.wrap'); if (!wr || document.getElementById('skiplink')) return; var a = document.createElement('a'); a.id = 'skiplink'; a.className = 'skiplink'; a.href = '#appview'; a.textContent = 'Zum Inhalt springen'; a.addEventListener('click', function (ev) { ev.preventDefault(); root.focus(); root.scrollIntoView(); }); wr.insertBefore(a, wr.firstChild); })();
   var CL = window.CHANGELOG || [], LATEST = CL.length ? CL[0].v : 1;
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
   var TYPES = {
@@ -289,13 +292,14 @@
     var left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, document.documentElement.clientWidth - tw - 8)) + sx, top = r.top - th - 8 >= 8 ? r.top - th - 8 + sy : r.bottom + 8 + sy;
     tip.style.left = left + 'px'; tip.style.top = top + 'px';
   }
+  function RM() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } } // Nutzer möchte wenig Bewegung
   function dayTip(el, date, list) {
     el.addEventListener('mouseenter', function () { showDayTip(el, date, list); });
     el.addEventListener('mouseleave', hideDayTip);
     el.addEventListener('focus', function () { showDayTip(el, date, list); });
     el.addEventListener('blur', hideDayTip);
     el.addEventListener('click', function (ev) { ev.stopPropagation(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); });
-    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); });
+    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); else if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); } }); // Kalendertage auch per Tastatur öffnen
   }
   document.addEventListener('scroll', hideDayTip, true); document.addEventListener('click', hideDayTip);
   function renderMonths(items, onFilter) {
@@ -673,7 +677,7 @@
     draw(); return sec;
   }
   function relinkBox(cur, e) {
-    var box = h('div', { class: 'cfgpanel', style: 'margin:14px 0' }), inp = h('input', { type: 'text', maxlength: '80', placeholder: 'Anderer Titel oder Schreibweise', value: '', style: 'flex:1 1 200px;min-width:0;width:auto' }), res = h('div', { class: 'suggest wide2' });
+    var box = h('div', { class: 'cfgpanel', style: 'margin:14px 0' }), inp = h('input', { type: 'text', maxlength: '80', placeholder: 'Anderer Titel oder Schreibweise', 'aria-label': 'Anderer Titel oder Schreibweise', value: '', style: 'flex:1 1 200px;min-width:0;width:auto' }), res = h('div', { class: 'suggest wide2' });
     function pick(x) { res.textContent = ''; res.append(h('p', { class: 'hint pulse' }, 'Lade Daten …')); api('/api/data.php?a=relink&id=' + e.id, { ext: x.ext }).then(function (r) { S.relink = null; load(function () { nav(); if ($('list')) { filt(); rows(); } content(); }); if (!r.ok) say(r.msg || 'Das hat nicht geklappt.', true); }); }
     function search() {
       var v = inp.value.trim(); if (v.length < 2) return; res.textContent = ''; res.append(h('p', { class: 'hint pulse' }, 'Suche …'));
@@ -2074,7 +2078,7 @@
         acts.hidden = body.hidden; // Knopfleiste erst zeigen, wenn der Beitrag angewählt (aufgeklappt) ist
         var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') + (isNew(x) ? ' isnew' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
                 box.append(row);
-        if (S.fbFocus === x.id) { S.fbFocus = null; setTimeout(function () { try { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { row.scrollIntoView(); } }, 60); }
+        if (S.fbFocus === x.id) { S.fbFocus = null; setTimeout(function () { try { row.scrollIntoView({ block: 'center', behavior: RM() ? 'auto' : 'smooth' }); } catch (_) { row.scrollIntoView(); } }, 60); }
       });
     }
     function reload() { var op = firstLoad && staff; firstLoad = false; api('/api/feedback.php?a=list&kind=' + kind + (op ? '&open=1' : '')).then(function (r) { if (op && r) seen = r.seen || null; draw(r); }); }
@@ -2190,7 +2194,7 @@
     function CAN(k) { return !!D.admin || (D.admsec || []).indexOf(k) > -1; }
     var brBox = briefingBox();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Admin')), amz = h('div', { class: 'cfgpanel' }), msg = h('span', { class: 'msg', style: 'margin:0' });
-    var tag = h('input', { type: 'text', maxlength: '64', placeholder: 'deinname-21', spellcheck: 'false', autocapitalize: 'off', value: S.site.tag || '' }), dom = h('select', null, ['amazon.de', 'amazon.fr', 'amazon.it', 'amazon.es', 'amazon.co.uk', 'amazon.com'].map(function (d) { return h('option', { value: d }, d); })); dom.value = S.site.domain || 'amazon.de';
+    var tag = h('input', { type: 'text', maxlength: '64', placeholder: 'deinname-21', 'aria-label': 'Amazon-Partner-ID', spellcheck: 'false', autocapitalize: 'off', value: S.site.tag || '' }), dom = h('select', { 'aria-label': 'Amazon-Shop' }, ['amazon.de', 'amazon.fr', 'amazon.it', 'amazon.es', 'amazon.co.uk', 'amazon.com'].map(function (d) { return h('option', { value: d }, d); })); dom.value = S.site.domain || 'amazon.de';
     amz.append(h('label', { class: 'field' }, h('span', null, 'Amazon-Partner-ID (gilt für alle Nutzer)'), tag), 
       h('p', { class: 'hint wide2' }, 'Die Partner-ID wird in alle Amazon-Links aller Nutzer eingebaut. Die Links gehen an amazon.de, du brauchst dafür eine ID aus dem deutschen PartnerNet.'),
       h('div', { class: 'add' }, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/admin.php?a=savesite', { tag: tag.value.trim(), domain: S.site.domain || 'amazon.de' }).then(function (r) { msg.className = 'msg' + (r.ok ? '' : ' err'); msg.textContent = r.ok ? 'Gespeichert.' : (r.error || 'Speichern nicht möglich.'); if (r.ok) S.site = { tag: tag.value.trim(), domain: dom.value }; }); } }, 'Speichern'), msg));
@@ -2430,8 +2434,8 @@
     var newsAdm = h('div', { class: 'wide2' }), newsMsg = h('span', { class: 'msg', style: 'margin:0' });
     (function () {
       var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-      var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }),
-        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), cx = h('textarea', { rows: '10', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }), old = h('div', null), all = [];
+      var day = h('input', { type: 'date', value: iso(new Date()), 'aria-label': 'Datum der Seitennews' }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift', 'aria-label': 'Überschrift der Seitennews' }), sx = h('textarea', { rows: '5', maxlength: '6000', 'aria-label': 'Text der Seitennews', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }),
+        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift', 'aria-label': 'Überschrift der Inhaltsnews' }), cx = h('textarea', { rows: '10', maxlength: '6000', 'aria-label': 'Text der Inhaltsnews', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }), old = h('div', null), all = [];
       function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; }
       function say2(t, bad) { newsMsg.className = 'msg' + (bad ? ' err' : ''); newsMsg.textContent = t; }
       function load() {
@@ -2574,5 +2578,7 @@
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  // Startfenster nacheinander statt übereinander öffnen (sonst landet der Fokus in einem verdeckten Feld)
+  function modalNext(fn) { (function wait() { if (document.querySelector('.unmodal')) setTimeout(wait, 300); else fn(); })(); }
+  load(function () { render(); askName(); modalNext(askCommunity); setTimeout(function () { modalNext(showNews); }, 50); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();

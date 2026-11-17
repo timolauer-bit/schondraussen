@@ -942,3 +942,24 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .commpicks .commtbl tr{height:40px}
 .commpicks .pkbody{min-height:213px}
 .commpicks .admtabs{margin-bottom:6px}
+
+/* ===== Barrierefreiheit (Dev, 17.11.2026): Kontraste, Fokus, Felder, wenig Bewegung ===== */
+/* Akzentfarbe im hellen Standard-Farbschema etwas dunkler: Text und Knöpfe erreichen 5:1 statt 3,7–4,1:1 */
+:root:not([data-skin]),:root[data-skin=light]{--accent:#bf4416}
+@media(prefers-color-scheme:dark){:root:not([data-skin]){--accent:#ff7842}}
+/* Rahmen von Eingabefeldern mindestens 3:1 gegenüber dem Hintergrund (in jedem Farbschema aus Schrift- und Flächenfarbe gemischt) */
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{border-color:color-mix(in srgb,var(--ink) 55%,var(--surface))}
+/* Deutlicher Fokusring für Tastaturbedienung, auch bei Auswahlfeldern */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 22%,transparent)}
+select:focus,select:focus-visible{border-color:var(--accent)}
+#appview:focus{outline:none}
+/* Zähler-Badges in dunklen Farbschemata: dunkle Schrift auf hellem Rot statt Weiß (vorher 1,8–3:1) */
+:root[data-skin=dark] .badge,:root[data-skin=cinema] .badge,:root[data-skin=eighties] .badge{color:#14080a}
+@media(prefers-color-scheme:dark){:root:not([data-skin]) .badge{color:#14080a}}
+/* Sprunglink: unsichtbar, bis er per Tab angesteuert wird */
+.skiplink{position:absolute;left:12px;top:-60px;z-index:200;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}
+.skiplink:focus{top:12px}
+/* Kalendertage sind per Tastatur erreichbar: sichtbarer Fokus */
+.pie:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+/* Wenig Bewegung, wenn im System so eingestellt */
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
