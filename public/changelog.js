@@ -1,5 +1,9 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 16, d: '17.11.2026', t: [
+    'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',
+    'A|Deploy: Beim Hochladen gibt es keine Wartungsseite mehr, die Seite bleibt erreichbar.'
+  ] },
   { v: 15, d: '16.11.2026', t: [
     'F|Filme: Neu hinzufügen sucht jetzt bei TMDB (mit Jahr und Originaltitel). Zu jedem Film gibt es Beschreibung, Genres, Kinostart und Digitalstart in Deutschland sowie die Teile einer Filmreihe. Die Daten werden regelmäßig aktualisiert.',
     'F|Filme: „Treffer ändern“ gibt es jetzt auch bei Filmen, falls der falsche Film gefunden wurde.',
