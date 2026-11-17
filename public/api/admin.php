@@ -3,6 +3,7 @@
 require __DIR__ . '/../lib/bootstrap.php';
 require_once __DIR__ . '/../lib/mail.php';
 require_once __DIR__ . '/../lib/invite.php';
+require_once __DIR__ . '/../lib/datacheck.php';
 if (!function_exists('valid_email')) { function valid_email(string $e): bool { return strlen($e) <= 190 && filter_var($e, FILTER_VALIDATE_EMAIL); } }
 $u = current_user();
 $isAdm = $u && $u['role'] === 'admin';
@@ -139,6 +140,13 @@ if ($a === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try { $pdo->prepare('DELETE FROM announcements WHERE id=?')->execute([$i]); $pdo->prepare('DELETE FROM announcement_reads WHERE ann_id=?')->execute([$i]); } catch (Throwable $e) {}
     json_out(['ok' => true]);
 }
+if ($a === 'suspects') { // Datenpflege: verdächtige Einträge auflisten (nur Admin)
+    json_out(['ok' => true, 'items' => suspicious_subjects($pdo)]);
+}
+if ($a === 'suspects_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $n = delete_subjects($pdo, (array) ($b['ids'] ?? []));
+    json_out(['ok' => true, 'deleted' => $n]);
+}
 if ($a === 'briefing') { // Morning-Briefing: Lage der Seite in den letzten 24 Stunden (nur Zahlen und Namen, keine E-Mail-Adressen)
     $q1 = function (string $sql, array $args = []) use ($pdo) { try { $st = $pdo->prepare($sql); $st->execute($args); $v = $st->fetchColumn(); return $v === false || $v === null ? 0 : (int) $v; } catch (Throwable $e) { return null; } };
     $qa = function (string $sql, array $args = []) use ($pdo) { try { $st = $pdo->prepare($sql); $st->execute($args); return $st->fetchAll(PDO::FETCH_ASSOC); } catch (Throwable $e) { return null; } };
@@ -207,6 +215,7 @@ if ($a === 'briefing') { // Morning-Briefing: Lage der Seite in den letzten 24 S
         'admin_log' => $qa("SELECT l.created_at, l.action, IFNULL(NULLIF(TRIM(t.username),''), IF(l.target_id IS NULL, '', CONCAT('User-', l.target_id))) AS target FROM admin_log l LEFT JOIN users t ON t.id=l.target_id WHERE l.created_at > NOW() - INTERVAL 24 HOUR ORDER BY l.id DESC LIMIT 10"),
         'blocked' => $q1('SELECT COUNT(*) FROM blocked_emails WHERE created_at > NOW() - INTERVAL 24 HOUR'),
     ];
+    if ($isAdm) { try { $o['suspects'] = count(suspicious_subjects($pdo)); } catch (Throwable $e) { $o['suspects'] = 0; } }
     if (!$isAdm) { $o['health'] = null; $o['security'] = null; } // Zustand der Seite und Sicherheit nur für Admins
     json_out($o);
 }

@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/sources.php';
+require_once __DIR__ . '/../lib/datacheck.php';
 $u = current_user();
 if (!$u) json_out(['error' => 'Bitte anmelden.'], 401);
 if (empty($u['approved'])) json_out(['error' => 'Dein Konto wartet auf Freischaltung.', 'pending' => true], 403);
@@ -384,9 +385,6 @@ if ($a === 'mystats') { // persönliche Statistik für die Info-Seite (nur eigen
         }
     } catch (Throwable $e) {}
     json_out($o);
-}
-function junk_name(string $t): bool { // Zeilen aus CSV-Exporten (z. B. IMDb: „1,tt0110912,2013-08-29,…“), Links und reine Nummern sind keine Namen
-    return (bool) (preg_match('~https?://|www\.|imdb\.com|\btt\d{5,}\b~i', $t) || preg_match('/^\d+\s*,/', $t) || substr_count($t, ',') >= 4 || preg_match('/^[\d\s\p{P}]+$/u', $t) && !preg_match('/^\d{1,4}$/', $t));
 }
 if ($a === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $names = []; $seen = [];

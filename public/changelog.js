@@ -3,6 +3,7 @@ window.CHANGELOG = [
   { v: 16, d: '17.11.2026', t: [
     'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',
     'B|Buchreihen: Reihen, die nicht im DNB-Katalog gefunden werden, ließen sich seit gestern nicht mehr aktualisieren und haben den nächtlichen Lauf abgebrochen. Behoben.',
+    'A|Admin: Neuer Kasten „Datenpflege“ unter Tools. Er listet verdächtige Einträge (Namen wie Zahlen, Zeilen aus Exportdateien oder Links, Einträge auf keiner Liste, dauerhaft fehlschlagende Einträge ohne Werke) und löscht ausgewählte auf Knopfdruck. Das Briefing weist darauf hin.',
     'A|Deploy: Beim Hochladen gibt es keine Wartungsseite mehr, die Seite bleibt erreichbar.'
   ] },
   { v: 15, d: '16.11.2026', t: [
