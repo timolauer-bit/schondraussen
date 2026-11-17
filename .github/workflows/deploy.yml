@@ -17,14 +17,6 @@ jobs:
       - name: lftp installieren (falls das Netz des Runners es erlaubt)
         run: |
           timeout 150 bash -c 'sudo apt-get -o Acquire::Retries=1 -o Acquire::ForceIPv4=true update -qq && sudo apt-get -o Acquire::ForceIPv4=true install -y -qq lftp' || echo "lftp nicht installierbar, es wird das Python-Skript benutzt"
-      - name: Wartungsmodus einschalten (Hilfsdatei zuerst, dann die Wartungsdatei; schlägt das fehl, wird trotzdem deployt)
-        continue-on-error: true
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_DIR: ${{ secrets.FTP_DIR }}
-        run: python3 scripts/maintenance_ftps.py on
       - name: Per FTPS auf den Webspace laden
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
@@ -46,7 +38,7 @@ jobs:
           else
             python3 scripts/deploy_ftps.py public
           fi
-      - name: Wartungsmodus ausschalten (läuft auch nach Fehlern)
+      - name: Wartungsdatei entfernen, falls noch eine vorhanden ist (Wartungsmodus beim Deploy ist abgeschaltet, 17.11.2026)
         if: always()
         continue-on-error: true
         env:
