@@ -928,6 +928,25 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .commpicks .pkbody{min-height:213px}
 .commpicks .admtabs{margin-bottom:6px}
 
+/* ===== Eigenes Farbschema „Individuell“ (17.11.2026) ===== */
+.skin .dots.rainbow i:nth-child(1){background:#ff5a5f}.skin .dots.rainbow i:nth-child(2){background:#ffd166}.skin .dots.rainbow i:nth-child(3){background:#06d6a0}
+.unbox.csbox{width:min(640px,94vw);max-width:640px;max-height:92vh;overflow:auto}
+.csrow{display:flex;align-items:center;gap:12px;margin:0 0 10px}.csrow.big{margin-bottom:12px}
+.cspick{-webkit-appearance:none;appearance:none;width:34px;height:34px;padding:0;border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);border-radius:9px;background:none;cursor:pointer;flex:none}
+.cspick.big{width:46px;height:46px;border-radius:12px}
+.cspick::-webkit-color-swatch-wrapper{padding:0}.cspick::-webkit-color-swatch{border:none;border-radius:inherit}.cspick::-moz-color-swatch{border:none;border-radius:inherit}
+.cslbl{flex:1;display:grid}.cslbl small{color:var(--muted);font-size:12.5px}
+.cshex{width:96px!important;font:14px var(--font-mono)!important;padding:7px 9px!important}.cshex.bad{border-color:var(--danger)!important}
+.cspv{border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);margin:14px 0;font-size:13px}
+.cspb{padding:14px;background:var(--p-bg)}.csph{font:700 16px var(--font-display);color:var(--p-ink)}.csph span{color:var(--p-accent)}
+.cspn{display:flex;gap:12px;margin:9px 0;padding:7px 11px;background:var(--p-surface);border:1px solid var(--p-line);border-radius:9px;color:var(--p-ink)}.cspn b{border-bottom:2px solid var(--p-accent)}
+.cspc{background:var(--p-surface);border:1px solid var(--p-line);border-radius:10px;padding:11px;color:var(--p-ink)}.cspc .csm{color:var(--p-muted);margin:2px 0 8px}
+.csb1{display:inline-block;background:var(--p-accent);color:var(--p-accentInk);padding:5px 11px;border-radius:7px;font-weight:700}
+.csb2{display:inline-block;margin-left:6px;border:1px solid var(--p-accent);color:var(--p-accent);padding:4px 11px;border-radius:7px;font-weight:700}
+.csfine{margin:4px 0 6px}.csfine summary{cursor:pointer;font-size:14px;margin-bottom:10px}
+.csfoot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.csrate{font-weight:700;font-size:13.5px}.csrate.ok{color:#17784a}.csrate.mid{color:#a6520c}.csrate.bad{color:var(--danger)}
+:root[data-skin=dark] .csrate.ok,:root[data-skin=cinema] .csrate.ok,:root[data-skin=eighties] .csrate.ok{color:#5fd39a}
 /* ===== Design 8-Bit: Pixelschrift, harte Kanten, dicke Rahmen, Schlagschatten ohne Weichzeichnung ===== */
 @font-face{font-family:'SD Pixel';src:url('/designs/8bit/pixel.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'SD Pixel Text';src:url('/designs/8bit/text.woff2') format('woff2');font-display:swap;size-adjust:128%}

@@ -15,6 +15,7 @@ window.CHANGELOG = [
     'O|Datenschutzerklärung aktualisiert: Profilbilder über DiceBear, Einladungen per E-Mail, Liste aller Cookies und Browser-Speicher, der freie Text zum Löschgrund wird nach 6 Monaten gelöscht, zuständige Aufsichtsbehörde (LfDI Rheinland-Pfalz).',
     'A|Admin: Die Mailvorschau unter „Infomails“ entspricht jetzt den echten Mails (Knöpfe, Kategorie und Kurzbeschreibung, alle Abschnitte der Morgenmail) und zeigt auch die Warnmail bei Cron-Ausfall.',
     'A|Suchmaschinen: Kürzerer Seitentitel „Schondraussen.de – Nie wieder eine Neuerscheinung verpassen“, der in den Suchergebnissen vollständig angezeigt wird.',
+    'F|Farbschema „Individuell“: Unter Einstellungen → Optik/Optionen wählst du Hintergrund, Akzent und Schrift selbst (Farbkarte oder Farbcode); Flächen, Linien und Nebenschrift passt die Seite automatisch an, unter „Feinheiten“ auch einzeln. Eine Anzeige zeigt, wie gut alles lesbar ist. Gespeichert wird im Konto.',
     'A|Deploy: Beim Hochladen gibt es keine Wartungsseite mehr, die Seite bleibt erreichbar.'
   ] },
   { v: 15, d: '16.11.2026', t: [
