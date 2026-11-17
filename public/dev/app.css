@@ -783,7 +783,11 @@ hr.newshr{margin-inline:auto}
   .navrest .devsw{flex:0 1 auto;min-width:0;padding-inline:6px}
 }
 /* Handy: die sechs Admin-Reiter passen in eine Zeile */
-@media(max-width:600px){.admtabs.admnav{flex-wrap:nowrap;gap:2px}.admtabs.admnav .admtab{flex:1 1 auto;min-width:0;padding:8px clamp(3px,1.3vw,8px);font-size:clamp(11.5px,3.5vw,14px);text-align:center;white-space:nowrap}.admtabs.admnav .admtab .badge{margin-left:3px}}
+@media(max-width:600px){ /* Handy: Admin-Reiter als Raster mit 3 Spalten statt einer überlappenden Zeile */
+.admtabs.admnav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;border-bottom:0;margin:12px 0 4px}
+.admtabs.admnav .admtab{min-width:0;padding:9px 4px;font-size:13.5px;line-height:1.2;text-align:center;border:1px solid var(--line);border-radius:10px;hyphens:auto;overflow-wrap:break-word}
+.admtabs.admnav .admtab.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:700}
+.admtabs.admnav .admtab .badge{margin-left:3px}}
 /* Handy: Dev/Live, Benutzername, Version und Abmelden in einer Zeile */
 @media(max-width:760px){
   .whobox{flex-wrap:nowrap;gap:6px;justify-content:flex-start;width:100%}
