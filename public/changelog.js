@@ -12,6 +12,8 @@ window.CHANGELOG = [
     'O|Sitzung: Ist die Anmeldung abgelaufen, geht es zur Anmeldung statt zu leeren Listen. Nach einer Passwortänderung (auch über Zurücksetzen oder Wiederherstellungscode) sind alle anderen Geräte abgemeldet.',
     'A|Sicherheit und Technik: Schnittstellen antworten auch bei Serverfehlern verständlich, health.php nur noch mit Token, Mengenbegrenzungen zählen bei IPv6 den ganzen Anschluss, Kontaktformular ohne eingeschleuste Knöpfe, Rechte der Nutzergruppen ohne Längengrenze, Bugnummern eindeutig (Migration 086), Migrationen laufen immer in Nummernfolge.',
     'A|Suchmaschinen: Kontaktseite in der Sitemap, Vorschaubild mit Maßen, Screenshots nicht mehr gesperrt.',
+    'O|Datenschutzerklärung aktualisiert: Profilbilder über DiceBear, Einladungen per E-Mail, Liste aller Cookies und Browser-Speicher, der freie Text zum Löschgrund wird nach 6 Monaten gelöscht, zuständige Aufsichtsbehörde (LfDI Rheinland-Pfalz).',
+    'A|Admin: Die Mailvorschau unter „Infomails“ entspricht jetzt den echten Mails (Knöpfe, Kategorie und Kurzbeschreibung, alle Abschnitte der Morgenmail) und zeigt auch die Warnmail bei Cron-Ausfall.',
     'A|Deploy: Beim Hochladen gibt es keine Wartungsseite mehr, die Seite bleibt erreichbar.'
   ] },
   { v: 15, d: '16.11.2026', t: [

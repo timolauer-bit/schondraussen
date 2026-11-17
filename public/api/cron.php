@@ -38,6 +38,7 @@ try {
 try { [$m, $f] = run_digests($pdo); echo "Mails: $m versendet, $f fehlgeschlagen\n"; } catch (Throwable $e) { echo "Mails: übersprungen (" . $e->getMessage() . ")\n"; }
 try { $pdo->exec('DELETE FROM login_attempts WHERE at < NOW() - INTERVAL 2 DAY'); } catch (Throwable $e) {}
 try { $pdo->exec('DELETE FROM invites WHERE expires_at < NOW() - INTERVAL 1 DAY OR used_at < NOW() - INTERVAL 30 DAY'); } catch (Throwable $e) {}
+try { $pdo->exec('UPDATE account_exits SET reason_text=NULL WHERE reason_text IS NOT NULL AND exited_on < CURDATE() - INTERVAL 6 MONTH'); } catch (Throwable $e) {} // Freitext zum Löschgrund nach 6 Monaten entfernen (Datenschutzerklärung Punkt 4)
 try { $pdo->exec("DELETE FROM images WHERE ref_id IS NULL AND created_at < NOW() - INTERVAL 1 DAY"); } catch (Throwable $e) {}
 try {
     $dead = $pdo->query("SELECT id FROM users WHERE role<>'admin' AND delete_requested_at IS NOT NULL AND delete_requested_at < NOW() - INTERVAL 7 DAY")->fetchAll(PDO::FETCH_COLUMN);
