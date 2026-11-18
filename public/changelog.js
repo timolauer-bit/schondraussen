@@ -1,5 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 18, d: '19.11.2026', t: [
+    'U|Serien: Unter „Staffeln und Folgen“ steht das Datum der letzten Aktualisierung nicht mehr doppelt, es steht nur noch oben neben „Serie“.',
+  ] },
   { v: 17, d: '18.11.2026', t: [
     'F|Import: Unter Einstellungen → Import findet „Doppelte Einträge prüfen“ Serien und Filme, die unter zwei Namen auf deiner Liste stehen (z. B. deutscher Titel und englischer Titel aus dem Trakt-Import). Du wählst, welcher Name bleibt; gesehene Folgen, Glocke und Stern werden übernommen.',
     'U|Listen: Aktive Filter (z. B. ein Genre) stehen mit etwas Abstand unter dem Feld „In der Liste filtern“ statt direkt daran.',

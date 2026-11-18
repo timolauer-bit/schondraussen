@@ -472,6 +472,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .btn.ph-postponed[aria-pressed=true]{background:#efedff;border-color:#5b4a8a;color:#5b4a8a}
 
 /* Community */
+.nav.commnav{font:600 14px var(--font-body)}
 .commpanel .commh{margin:22px 0 4px;font:650 17px var(--font-display)}
 .commnote{margin:0 0 12px;padding:10px 12px}
 .commgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:10px 0}
@@ -551,7 +552,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 /* Hauptmenü: Punkt und Zahl an der Schrift ausrichten (Grundlinie), Symbole mittig */
 .navmain .nav,.navtop .nav{align-items:baseline}
 .navmain .nav svg,.navtop .nav svg{align-self:center}
-.navmain .nav .cdot,.navtop .nav .cdot{vertical-align:baseline;position:relative;top:-2px}
+.navmain .nav .cdot,.navtop .nav .cdot{vertical-align:baseline}
 /* Obere Leiste: Inhalt optisch mittig (unten liegen Innenabstand und Unterstrich der Menüpunkte) */
 .topbar{padding-top:5px}
 
