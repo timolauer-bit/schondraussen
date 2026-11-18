@@ -467,10 +467,8 @@
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main calpage' });
-    var calNote = h('p', { class: 'note calnote', hidden: true, id: 'calnote' }, (D.demo ? 'Einblick: angekündigte Veröffentlichungen aus den Listen eines Beispielnutzers (je Kategorie 10 Einträge, jede Woche neu ausgewählt), nach Datum sortiert.' : 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert.') + ' Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.');
-    var infoB = h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Woher die Termine kommen', 'aria-expanded': 'false', 'aria-controls': 'calnote', title: 'Woher die Termine kommen', onclick: function () { calNote.hidden = !calNote.hidden; infoB.setAttribute('aria-expanded', String(!calNote.hidden)); } }, 'i');
-    var calHead = h('div', { class: 'calhead' }, h('div', { class: 'calttl' }, h('h2', null, 'Kalender'), infoB));
-    wrap.append(calHead, calNote);
+    var calHead = h('div', { class: 'calhead' }, h('div', { class: 'calttl' }, h('h2', null, 'Kalender')));
+    wrap.append(calHead);
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
     if (!S.calHide) { S.calHide = {}; (D.calhide || []).forEach(function (k) { if (TYPES[k]) S.calHide[k] = true; }); } // im Konto gespeichert
