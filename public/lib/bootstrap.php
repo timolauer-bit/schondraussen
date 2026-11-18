@@ -206,6 +206,8 @@ function design_list(): array {
     return $out;
 }
 // Für alle Nutzer wählbare (experimentelle) Themes: Einträge in designs/index.json mit "public": true
+// Nur Test-Varianten fürs Versionsmenü am Dev-Knopf; offizielle Themes ("public") wählt man in den Einstellungen
+function design_private(): array { return array_values(array_filter(design_list(), function ($d) { return empty($d['public']); })); }
 function design_public(): array { return array_values(array_filter(design_list(), function ($d) { return !empty($d['public']); })); }
 function dev_notes(): array {
     $f = __DIR__ . '/../dev/changes.json'; if (!is_file($f)) return [];

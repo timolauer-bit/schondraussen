@@ -14,7 +14,7 @@ if ($u && !empty($u['approved']) && isset($_GET['gast']) && perm($u, 'devmode'))
 $einblick = showcase_public() || $gast; // Links zum Einblick (Beispielnutzer) auf der Startseite
 $app = $u && !empty($u['approved']);
 $cv = (string) ($_COOKIE['sd_dev'] ?? ''); $design = ''; $designs = [];
-if ($app && perm($u, 'devmode')) { $designs = design_list(); if (strncmp($cv, 'd:', 2) === 0) foreach ($designs as $dd) if ($dd['slug'] === substr($cv, 2)) $design = $dd['slug']; }
+if ($app && perm($u, 'devmode')) { $designs = design_private(); if (strncmp($cv, 'd:', 2) === 0) foreach ($designs as $dd) if ($dd['slug'] === substr($cv, 2)) $design = $dd['slug']; }
 $theme = ''; $pubd = []; // experimentelles Theme für alle: Cookie sd_theme, nur Einträge mit "public"
 if ($app) { $pubd = design_public(); $ct = (string) ($_COOKIE['sd_theme'] ?? ''); foreach ($pubd as $dd) if ($dd['slug'] === $ct) $theme = $ct; }
 $dev = $app && perm($u, 'devmode') && ($design !== '' || ($cv === '1' && is_file(__DIR__ . '/dev/app.js') && is_file(__DIR__ . '/dev/app.css'))); // Entwicklungs- oder Design-Version nur mit Recht, per Schalter

@@ -94,7 +94,7 @@ if ($a === 'devmode' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Admin: zwisc
     if (isset($b['mode'])) { // 'live', 'dev' oder 'd:<kennung>' einer vorhandenen Design-Variante
         $m = (string) $b['mode'];
         if ($m === 'dev') $val = '1';
-        elseif (strncmp($m, 'd:', 2) === 0) foreach (design_list() as $dd) if ($dd['slug'] === substr($m, 2)) $val = $m;
+        elseif (strncmp($m, 'd:', 2) === 0) foreach (design_private() as $dd) if ($dd['slug'] === substr($m, 2)) $val = $m;
     } else $val = !empty($b['on']) ? '1' : ''; // ältere Oberfläche
     setcookie('sd_dev', $val, ['expires' => $val !== '' ? time() + 30 * 86400 : time() - 3600, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
     json_out(['ok' => true]);
