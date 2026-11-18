@@ -551,7 +551,7 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 /* Hauptmenü: Punkt und Zahl an der Schrift ausrichten (Grundlinie), Symbole mittig */
 .navmain .nav,.navtop .nav{align-items:baseline}
 .navmain .nav svg,.navtop .nav svg{align-self:center}
-.navmain .nav .cdot,.navtop .nav .cdot{vertical-align:baseline}
+.navmain .nav .cdot,.navtop .nav .cdot{vertical-align:baseline;position:relative;top:-2px}
 /* Obere Leiste: Inhalt optisch mittig (unten liegen Innenabstand und Unterstrich der Menüpunkte) */
 .topbar{padding-top:5px}
 
