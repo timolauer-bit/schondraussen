@@ -985,7 +985,7 @@ select:focus,select:focus-visible{border-color:var(--accent)}
 :root[data-skin=dark] .csrate.ok,:root[data-skin=cinema] .csrate.ok,:root[data-skin=eighties] .csrate.ok{color:#5fd39a}
 
 /* „Wo läuft der Film?“ bei Filmreihen und Regie (Dev) */
-.wcard .wwatch{font-size:12.5px;color:var(--muted);line-height:1.35;margin:2px 0 8px}.wcard .wwatch b{font-weight:600;color:var(--ink)}.wcard .wwatch.none{opacity:.8}
+.wcard .wwatch{font-size:12.5px;color:var(--muted);line-height:1.35;margin:auto 0 0;padding-top:8px}.wcard .wwatch+.wfoot{margin-top:0;padding-top:6px}.wcard .wwatch b{font-weight:600;color:var(--ink)}.wcard .wwatch.none{opacity:.8}
 .wcard .wplay{width:30px;height:30px;padding:0!important;display:inline-flex;align-items:center;justify-content:center}
 .favtip.wtip{white-space:normal;width:max-content;max-width:280px;border-radius:12px;padding:8px 12px;line-height:1.45;background:rgba(17,23,29,.95)}.favtip.wtip small{opacity:.75;font-size:11px}
 .wcard .wfoot .wplay{margin-left:auto}.wcard .wfoot{display:flex;align-items:center;gap:8px}
