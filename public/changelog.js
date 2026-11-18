@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 17, d: '18.11.2026', t: [
+    'F|Import: Unter Einstellungen → Import findet „Doppelte Einträge prüfen“ Serien und Filme, die unter zwei Namen auf deiner Liste stehen (z. B. deutscher Titel und englischer Titel aus dem Trakt-Import). Du wählst, welcher Name bleibt; gesehene Folgen, Glocke und Stern werden übernommen.',
     'U|Listen: Aktive Filter (z. B. ein Genre) stehen mit etwas Abstand unter dem Feld „In der Liste filtern“ statt direkt daran.',
     'A|Admin → Tools → Datenpflege: Die Knöpfe „Ausgewählte löschen“ und „Neu prüfen“ haben wieder Abstand zueinander.',
     'F|Filme: „Wo läuft der Film?“ jetzt auch bei Filmreihen (in jeder Filmkachel direkt über dem Amazon-Knopf) und bei Regie-Einträgen (▶ in der Kachel zeigt die Anbieter).',

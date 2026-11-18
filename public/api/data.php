@@ -447,6 +447,42 @@ if ($a === 'trakt' && $_SERVER['REQUEST_METHOD'] === 'POST') { // Import aus ein
     }
     json_out(['ok' => true] + $res);
 }
+// Doppelte Einträge: dieselbe Serie (TVmaze) oder derselbe Film (TMDB) unter zwei Namen auf der eigenen Liste, z. B. nach einem Trakt-Import mit englischen Titeln
+function dupe_groups(PDO $pdo, int $uid): array {
+    $q = $pdo->prepare("SELECT s.id, s.type, s.name, s.external_ids, e.added_at FROM user_entries e JOIN subjects s ON s.id=e.subject_id WHERE e.user_id=? AND s.type IN ('series','film') AND s.external_ids IS NOT NULL");
+    $q->execute([$uid]); $g = [];
+    foreach ($q->fetchAll() as $r) {
+        $x = json_decode((string) $r['external_ids'], true) ?: [];
+        $k = $r['type'] === 'series' ? (!empty($x['tvmaze']) ? 'v' . (int) $x['tvmaze'] : '') : (!empty($x['tmdb']) && empty($x['tmdb_col']) && empty($x['tmdb_person']) ? 'm' . (int) $x['tmdb'] : '');
+        if ($k === '') continue;
+        $g[$k][] = ['id' => (int) $r['id'], 'type' => $r['type'], 'name' => (string) $r['name'], 'added' => (string) $r['added_at']];
+    }
+    $out = [];
+    foreach ($g as $k => $list) {
+        if (count($list) < 2) continue;
+        usort($list, fn($a, $b) => strcmp($a['added'], $b['added']) ?: $a['id'] <=> $b['id']); // zuerst angelegter Eintrag zuerst (vor dem Import, meist der deutsche Name)
+        $out[] = ['key' => $k, 'type' => $list[0]['type'], 'items' => $list];
+    }
+    return $out;
+}
+if ($a === 'dupes') json_out(['ok' => true, 'groups' => dupe_groups($pdo, (int) $u['id'])]);
+if ($a === 'dedupe' && $_SERVER['REQUEST_METHOD'] === 'POST') { // je Gruppe einen Eintrag behalten; Gesehen-Haken, Glocke und Stern der anderen wandern mit
+    $keep = array_map('intval', (array) (body()['keep'] ?? [])); $groups = dupe_groups($pdo, (int) $u['id']); $merged = 0;
+    $dn = $pdo->prepare('INSERT IGNORE INTO user_done (user_id,subject_id,item_key,created_at) SELECT user_id,?,item_key,created_at FROM user_done WHERE user_id=? AND subject_id=?');
+    foreach ($groups as $gr) {
+        $ids = array_column($gr['items'], 'id'); $k = array_values(array_intersect($ids, $keep)); $k = $k ? $k[0] : $ids[0];
+        foreach ($ids as $d) {
+            if ($d === $k) continue;
+            try { $dn->execute([$k, $u['id'], $d]); } catch (Throwable $e) {}
+            try { $f = $pdo->prepare('SELECT fav,bell FROM user_entries WHERE user_id=? AND subject_id=?'); $f->execute([$u['id'], $d]); $o = $f->fetch();
+                if ($o) $pdo->prepare('UPDATE user_entries SET fav=GREATEST(fav,?), bell=GREATEST(bell,?) WHERE user_id=? AND subject_id=?')->execute([(int) $o['fav'], (int) $o['bell'], $u['id'], $k]); } catch (Throwable $e) {}
+            $pdo->prepare('DELETE FROM user_entries WHERE user_id=? AND subject_id=?')->execute([$u['id'], $d]);
+            try { $pdo->prepare('DELETE FROM user_fav_work WHERE user_id=? AND subject_id=?')->execute([$u['id'], $d]); } catch (Throwable $e) {}
+            $merged++;
+        }
+    }
+    json_out(['ok' => true, 'merged' => $merged]);
+}
 if ($a === 'samples' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = (string) (body()['mode'] ?? '');
     try { if ($mode !== 'remove') $pdo->prepare('UPDATE users SET sample_asked=1 WHERE id=?')->execute([$u['id']]); } catch (Throwable $e) { json_out(['ok' => false, 'msg' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).']); }

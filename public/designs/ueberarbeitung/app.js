@@ -1394,6 +1394,36 @@
     tPanel.append(h('p', { class: 'hint' }, 'Lade deinen Datenexport von Trakt hoch (die ZIP-Datei oder einzelne JSON-Dateien daraus, z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Die Datei wird nur in deinem Browser gelesen, übertragen werden die Titel und gesehenen Folgen. Die Angaben zu den Titeln werden danach nach und nach geladen.'), h('p', { class: 'hint' }, 'Erlaubt sind ZIP- und JSON-Dateien (bis 80 MB), keine CSV-Dateien. Gelesen werden Serien und Filme im Aufbau von Trakt. Exporte anderer Dienste können ebenfalls klappen, wenn sie ähnlich aufgebaut sind: Serien und Filme als eigene Einträge mit den Feldern „title“ und „ids“, am besten in Dateien, deren Name „show“, „serie“, „movie“ oder „film“ enthält. Ob etwas erkannt wurde, siehst du vor dem Import. Klappt es nicht, melde dich gern über „Kontakt“ (Bugmeldung) mit dem Namen der Seite und einem kleinen Beispiel aus der Datei, ohne persönliche Daten.'), tFile, h('p', { style: 'margin:8px 0 0' }, tGo), tMsg);
     tImp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { tPanel.hidden = !tPanel.hidden; this.setAttribute('aria-expanded', String(!tPanel.hidden)); } }, 'Trakt-Export importieren'), tPanel);
     tImp.style.marginTop = '12px'; imp.append(tImp); // gehört in dieselbe Karte „Import“ (die Karten werden über die Reihenfolge der Blöcke zugeordnet)
+    // Doppelte Einträge (dieselbe Serie oder derselbe Film unter zwei Namen, z. B. nach dem Trakt-Import mit englischen Titeln)
+    var dImp = h('div', { class: 'wide2', style: 'margin-top:12px' }), dPanel = h('div', { hidden: true, style: 'margin-top:10px' }), dMsg = h('p', { class: 'msg', role: 'status' }), dList = h('div');
+    function dupLoad() {
+      dList.textContent = ''; dMsg.className = 'msg'; dMsg.textContent = 'Prüfe …';
+      api('/api/data.php?a=dupes').then(function (r) {
+        if (!r.ok) { dMsg.className = 'msg err'; dMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; }
+        var gs = r.groups || [];
+        if (!gs.length) { dMsg.textContent = 'Keine doppelten Serien oder Filme gefunden. Neu importierte Einträge werden erst erkannt, wenn ihre Angaben geladen sind.'; return; }
+        dMsg.textContent = pl(gs.length, 'Serie oder Film steht', 'Serien oder Filme stehen') + ' doppelt auf deinen Listen. Wähle jeweils den Namen, der bleiben soll. Gesehene Folgen und Filme, Glocke und Stern des anderen Eintrags werden übernommen.';
+        gs.forEach(function (g, gi) {
+          var box = h('fieldset', { style: 'border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0 0' }, h('legend', { class: 'hint', style: 'padding:0 4px' }, TYPES[g.type] ? TYPES[g.type].plural : ''));
+          g.items.forEach(function (it, ii) {
+            box.append(h('label', { style: 'display:flex;gap:8px;align-items:center;margin:4px 0' }, h('input', { type: 'radio', name: 'dup' + gi, value: String(it.id), checked: ii === 0 }), h('span', null, it.name), h('span', { class: 'hint' }, ii === 0 ? '(zuerst angelegt)' : '')));
+          });
+          dList.append(box);
+        });
+        dList.append(h('p', { style: 'margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px' }, h('button', { class: 'btn small', type: 'button', onclick: function () {
+          var keep = [].slice.call(dList.querySelectorAll('input[type=radio]:checked')).map(function (x) { return +x.value; }), b = this; b.disabled = true;
+          api('/api/data.php?a=dedupe', { keep: keep }).then(function (r2) {
+            b.disabled = false;
+            if (!r2.ok) { dMsg.className = 'msg err'; dMsg.textContent = r2.error || 'Das hat nicht geklappt.'; return; }
+            dList.textContent = ''; dMsg.className = 'msg'; dMsg.textContent = 'Erledigt: ' + pl(r2.merged, 'doppelter Eintrag', 'doppelte Einträge') + ' zusammengeführt.';
+            load(function () {});
+          });
+        } }, 'Zusammenführen')));
+      });
+    }
+    dPanel.append(h('p', { class: 'hint' }, 'Findet Serien und Filme, die unter zwei Namen auf deiner Liste stehen, z. B. „Haus des Geldes“ und „Money Heist“ nach einem Trakt-Import.'), dMsg, dList);
+    dImp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { dPanel.hidden = !dPanel.hidden; this.setAttribute('aria-expanded', String(!dPanel.hidden)); if (!dPanel.hidden) dupLoad(); } }, 'Doppelte Einträge prüfen'), dPanel);
+    imp.append(dImp);
     // Kalender-Abo (.ics)
     var calUrl = h('input', { type: 'text', readonly: true, 'aria-label': 'Link zum Kalender-Abo', style: 'width:100%;margin-top:8px', onclick: function () { this.select(); } }), calMsg = h('p', { class: 'msg', role: 'status' }), calBtns = h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' });
     function calSet(mode) { calMsg.className = 'msg'; calMsg.textContent = 'Einen Moment …'; api('/api/data.php?a=caltoken', { mode: mode }).then(function (r) { if (!r.ok) { calMsg.className = 'msg err'; calMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } calMsg.textContent = mode === 'off' ? 'Das Abo ist beendet, der alte Link funktioniert nicht mehr.' : (mode === 'reset' ? 'Neuer Link erzeugt, der alte funktioniert nicht mehr.' : ''); calDraw(r.url); }); }
