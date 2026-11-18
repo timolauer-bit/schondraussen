@@ -1,5 +1,10 @@
 [
  {
+  "slug": "ueberarbeitung",
+  "name": "Überarbeitung",
+  "desc": "Neuer Kopf mit Profil- und Versionsmenü, Hilfe & Feedback gebündelt, Kalender nach Tagen, ruhigere Eintragsseiten, Einstellungen mit Bereichen links, Community mit Reitern, Handy mit Leiste unten."
+ },
+ {
   "slug": "nav-b",
   "name": "Navigation B",
   "desc": "Feedback gebündelt, Kopf und Handy-Leiste kompakter, Kalender mit Kategorie-Text, gleichwertige Einwilligungsknöpfe."
