@@ -1003,3 +1003,14 @@ select:focus,select:focus-visible{border-color:var(--accent)}
 .demomode .commusers td.nm .namelink{font-style:italic;color:var(--muted);background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--muted) 22%,transparent) 0 4px,transparent 4px 8px);padding:2px 8px;border-radius:6px;opacity:1;filter:none}
 h2.sec.pagettl{font:700 24px var(--font-display);margin:0 0 8px}h2.sec.pagettl+p.hint{margin:0 0 12px}
 .cronruns .okback{color:#1f7a4d;font-weight:600}
+/* Obere Leiste (Dev, 18.11.2026): Community zwischen News und Bücher; rechte Symbole enger beieinander und gemeinsam rechtsbündig */
+@media(min-width:761px){
+  .navrest{display:flex;align-items:flex-end;gap:0 clamp(2px,.35vw,6px);margin-left:auto}
+  .navrest .nav.rg{margin-left:0}
+  .nav.rg::before{left:calc(clamp(6px,1.2vw,22px) / -2 - 1px)}
+}
+@media(max-width:760px){
+  .navrest{justify-content:flex-end;gap:0 2px}
+  .navrest .nav{flex:0 0 auto;padding-inline:9px!important}
+  .navtop{gap:0 22px}
+}

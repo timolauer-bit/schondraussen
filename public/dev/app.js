@@ -249,20 +249,20 @@
   function nav() {
     topbar.textContent = '';
     // Rechte Gruppe: Symbole. Für alle nur Symbole (Name per Tooltip, bei der aktiven Seite sichtbar).
-    var RI = { comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
+    var RI = { adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : '') + (D.demo && /^(cal|series|comm)$/.test(key) ? ' demo-open' : ''), type: 'button', 'data-demotip': D.demo ? 'Gibt es mit eigenem Konto' : null, 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
-        key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
+        key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : (key === 'comm' ? ico(ICONS.people) : null)), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     var navTop = null;
     if (D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
     else navMain.append(btn('cal', 'Kalender', 0));
+    if (commOn()) (navTop || navMain).append(btn('comm', 'Community', 0, ' commnav')); // Community prominent zwischen News und Bücher (Handy: Zeile mit Kalender und News)
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
-    if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
     if ((D.admin || D.devsw) && !S.preview) { var dsLabel = D.design ? ((D.designs || []).filter(function (x) { return x.slug === D.design; })[0] || {}).name || 'Design' : (D.dev ? 'Dev' : 'Live'); var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', 'aria-haspopup': 'menu', title: 'Du siehst: ' + dsLabel + '. Klicken, um die Version zu wechseln (Live, Entwicklung, Design-Varianten).', onclick: function () { devMenu(dsw); } }, h('span', { class: 'devlbl' }, dsLabel)); var dn = (D.devnotes || []).filter(function (x) { return typeof x === 'string' && x; }); if (dn.length) { dsw.append(h('span', { class: 'devbadge', 'aria-hidden': 'true' }, String(dn.length))); dsw.title += '\n\nUnterschiede der Entwicklungsversion zur Live-Version (' + dn.length + '):\n• ' + dn.join('\n• '); dsw.setAttribute('aria-label', dsLabel + ', ' + dn.length + ' Unterschiede zur Live-Version'); } var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
     if (hasAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
     navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
