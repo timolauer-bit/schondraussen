@@ -733,7 +733,7 @@
       rows.push({ w: w, pill: pill, row: row }); grid.append(row);
     });
     if (grid !== card) card.append(grid);
-    if (e.type === 'film' && (e.kind === 'col' && e.wparts || e.kind === 'person') && r.works.length) card.append(devMark(h('p', { class: 'note' }, e.kind === 'person' ? 'Mit ▶ siehst du, wo ein Film in Deutschland läuft. ' : '', 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'), 'wparts'));
+    if (e.type === 'film' && (e.kind === 'col' && e.wparts || e.kind === 'person') && r.works.length) card.append(h('p', { class: 'note' }, e.kind === 'person' ? 'Mit ▶ siehst du, wo ein Film in Deutschland läuft. ' : '', 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'));
     updAll();
     if (e.type !== 'podcast') card.append(renderSimilar(e));
     return card;
@@ -769,7 +769,7 @@
     var l = watchText(wt), d = h('div', { class: 'wwatch' });
     if (!l.length) { d.textContent = 'Noch bei keinem Anbieter'; d.classList.add('none'); }
     else l.forEach(function (x, i) { if (i) d.append(h('br')); d.append(h('b', null, x[0] + ': '), x[1]); });
-    return devMark(d, 'wparts');
+    return d;
   }
   function wplay(e, w) {
     if (e.type !== 'film' || e.kind !== 'person' || !/^t\d+$/.test(w.k || '')) return null;
@@ -779,7 +779,7 @@
       if (b._w) { watchTip(b, b._w); return; } b.disabled = true;
       api('/api/data.php?a=watch&tmdb=' + w.k.slice(1)).then(function (x) { b.disabled = false; if (!x || !x.ok) { watchTip(b, null, (x && x.error) || 'Das hat nicht geklappt.'); return; } b._w = x.watch; watchTip(b, x.watch); });
     });
-    return devMark(b, 'wparts');
+    return b;
   }
   function watchTip(btn, wt, err) {
     var old = document.getElementById('favtip'); if (old) old.remove();
