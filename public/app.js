@@ -2316,7 +2316,7 @@
         } }, 'Ausgewählte löschen');
         dpOut.append(h('p', { class: 'hint' }, pl(r.items.length, 'verdächtiger Eintrag', 'verdächtige Einträge') + '. Nichts wird automatisch gelöscht.'),
           h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl' }, h('thead', null, h('tr', null, h('th', null, all), h('th', null, 'Eintrag und Grund'), h('th', null, 'Kategorie'), h('th', { style: 'text-align:right' }, 'Auf Listen'))), h('tbody', null, rows))),
-          h('div', { class: 'row', style: 'margin-top:10px;gap:8px' }, del, h('button', { class: 'btn ghost small', type: 'button', onclick: dpLoad }, 'Neu prüfen')));
+          h('div', { class: 'row', style: 'margin-top:10px;display:flex;flex-wrap:wrap;gap:8px' }, del, h('button', { class: 'btn ghost small', type: 'button', onclick: dpLoad }, 'Neu prüfen')));
       });
     }
     var dpBox = h('div', { class: 'wide2' }, h('p', { class: 'hint' }, 'Sucht nach Einträgen, die vermutlich Reste fehlerhafter Importe sind: Namen wie Zahlen, Zeilen aus Exportdateien oder Links, Einträge, die auf keiner Liste mehr stehen, und Einträge, deren Aktualisierung fehlschlägt und die keine Werke haben.'), dpOut, dpMsg);

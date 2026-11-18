@@ -1,7 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 17, d: '18.11.2026', t: [
-    'U|Listen: Aktive Filter (z. B. ein Genre) stehen mit etwas Abstand unter dem Feld „In der Liste filtern“ statt direkt daran.'
+    'U|Listen: Aktive Filter (z. B. ein Genre) stehen mit etwas Abstand unter dem Feld „In der Liste filtern“ statt direkt daran.',
+    'A|Admin → Tools → Datenpflege: Die Knöpfe „Ausgewählte löschen“ und „Neu prüfen“ haben wieder Abstand zueinander.'
   ] },
   { v: 16, d: '17.11.2026', t: [
     'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',
