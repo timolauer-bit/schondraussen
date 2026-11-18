@@ -8,6 +8,10 @@ header('Referrer-Policy: same-origin');
 $nonce = base64_encode(random_bytes(16));
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-$nonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 $u = null; try { $u = current_user(); } catch (Throwable $e) {}
+require_once __DIR__ . '/lib/showcase.php';
+$gast = false; // Vorschau der Startseite für Gäste (/?gast=1): für Admin und Recht „Entwicklerversion nutzen“, die Seite wird wie ohne Anmeldung gezeigt
+if ($u && !empty($u['approved']) && isset($_GET['gast']) && perm($u, 'devmode')) { $gast = true; $u = null; }
+$einblick = showcase_public() || $gast; // Links zum Einblick (Beispielnutzer) auf der Startseite
 $app = $u && !empty($u['approved']);
 $cv = (string) ($_COOKIE['sd_dev'] ?? ''); $design = ''; $designs = [];
 if ($app && perm($u, 'devmode')) { $designs = design_list(); if (strncmp($cv, 'd:', 2) === 0) foreach ($designs as $dd) if ($dd['slug'] === substr($cv, 2)) $design = $dd['slug']; }
@@ -22,7 +26,7 @@ $skin = ($u && in_array($u['skin'] ?? '', ['light', 'dark', 'paper', 'cinema', '
 $skinTk = $design !== '' ? $design : ($theme !== '' ? $theme : 'std'); // eigene Farben gelten je Theme (Standard, 8-Bit …)
 $skinCss = $skin === 'custom' ? custom_skin_css($u['custom_colors'] ?? null, $skinTk) : ''; if ($skin === 'custom' && $skinCss === '') $skin = ''; // eigenes Farbschema
 try { require_once __DIR__ . '/lib/watchdog.php'; ops_watchdog(db()); } catch (Throwable $e) {}
-$seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u); // sendet ggf. X-Robots-Tag, daher vor der Ausgabe
+$seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u && !$gast); // sendet ggf. X-Robots-Tag, daher vor der Ausgabe
 ?><!doctype html>
 <html lang="de"<?= $skin ? ' data-skin="' . $skin . '"' : '' ?>><head><meta charset="utf-8"><?= $skinCss !== '' ? '<style id="customskin">' . $skinCss . '</style>' : '' ?><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title><?= (!$u && seo_public()) ? SEO_TITLE : 'Schondraussen.de' ?></title>
@@ -65,6 +69,9 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 .land-grid .card{margin-top:0}.land-pitch{order:1;margin:0!important}.land-shots{order:2;margin:0!important}.land-login{order:3}
 .land-pitch h2{margin-top:0}.land-shots h2{margin-top:0}.land .thumbs{flex-direction:column;flex-wrap:nowrap}.land .thumb{width:100%}.land .thumb img{height:auto;max-height:190px}
 @media(max-width:980px){.land-grid{grid-template-columns:1fr}.land-login{order:1}.land-pitch{order:2}.land-shots{order:3}}
+.land-peek h2{margin:0 0 4px;font-size:20px}.land-peek p{margin:0 0 12px}.peeks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.peek{display:block;border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none;background:var(--bg)}.peek b{display:block;color:var(--accent);font-size:16px}.peek span{display:block;color:var(--muted);font-size:14px;margin-top:2px}.peek:hover,.peek:focus-visible{border-color:var(--accent)}
+@media(max-width:700px){.peeks{grid-template-columns:1fr}}
 </style>
 <?php endif; ?>
 </head><body>
@@ -86,6 +93,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 <script src="<?= $ap ?>/app.js?v=<?= filemtime(__DIR__ . $ap . '/app.js') ?>"></script>
 <?php else: ?>
 <main<?= $u ? '' : ' class="land"' ?>>
+<?php if ($gast): ?><div class="note"><b>Vorschau:</b> So sieht die Startseite für Gäste aus (du bleibst angemeldet). <a href="/einblick/kalender">Einblick ansehen</a> · <a href="/">Zurück zur App</a></div><?php endif; ?>
 <h1>Schondraussen<span>.de</span></h1>
 <p>Deine Bücher, Musik, Filme und Serien an einem Ort: mit Überblick über alles, was du kennst, und Neuigkeiten zu dem, was du verfolgst.</p>
 <?php if ($u): ?>
@@ -168,6 +176,12 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     </div>
   </section><?php endif; ?>
   </div>
+<?php if ($einblick): ?>  <section class="card land-peek" aria-labelledby="peek-h">
+    <h2 id="peek-h">Einblick ohne Anmeldung</h2>
+    <p>So sieht Schondraussen.de mit eigenem Konto aus, hier mit den Listen eines Beispielnutzers. Ansehen geht sofort, eigene Einträge brauchen ein kostenloses Konto.</p>
+    <div class="peeks"><a class="peek" href="/einblick/kalender"><b>Kalender</b><span>Kommende Bücher, Alben, Filme, Serienfolgen und Podcasts</span></a><a class="peek" href="/einblick/serien"><b>Serien</b><span>Staffeln, Folgen und Sendetermine</span></a><a class="peek" href="/einblick/community"><b>Community</b><span>Was andere am häufigsten verfolgen und gesehen haben</span></a></div>
+  </section>
+<?php endif; ?>
   <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Bildansicht" hidden>
     <button type="button" class="lbx" id="lbx" aria-label="Schließen">×</button>
     <button type="button" class="lbn prev" id="lbp" aria-label="Vorheriges Bild">‹</button>
@@ -200,6 +214,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   }
   function show(id) { ['f-login', 'f-mfa', 'f-register', 'f-forgot', 'f-reset', 'f-recover', 'f-code'].forEach(function (f) { var e = document.getElementById(f); if (e) e.hidden = f !== id; }); say(''); }
   document.querySelectorAll('[data-show]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.show); }); });
+  if (location.hash === '#registrieren' && document.getElementById('f-register')) show('f-register'); // Link „Kostenlos registrieren“ aus dem Einblick
   function pwErr(v) { var n = Array.from(v).length; if (n < 10) return 'Das Passwort ist zu kurz: ' + (n ? 'es fehlen noch ' + (10 - n) + ' Zeichen (mindestens 10).' : 'bitte mindestens 10 Zeichen eingeben.'); if (new TextEncoder().encode(v).length > 72) return 'Das Passwort ist zu lang (höchstens 72 Zeichen).'; return ''; }
   function unErr(v) { var n = Array.from(v).length; if (n < 3 || n > 20) return 'Der Benutzername braucht 3 bis 20 Zeichen' + (n ? ' (aktuell ' + n + ').' : '.'); if (/\s/.test(v)) return 'Leerzeichen sind nicht erlaubt.'; if (!/^[\p{L}\p{N}][\p{L}\p{N}_.\-]*[\p{L}\p{N}]$/u.test(v)) { var bad = Array.from(new Set(Array.from(v).filter(function (c) { return !/[\p{L}\p{N}_.\-]/u.test(c); }))); if (bad.length) return 'Im Benutzernamen ist ' + (bad.length > 1 ? 'sind die Zeichen' : 'das Zeichen') + ' „' + bad.join(' ') + '“ nicht erlaubt (erlaubt: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich).'; return 'Der Benutzername darf nicht mit Punkt, Unterstrich oder Bindestrich beginnen oder enden.'; } return ''; }
   function live(inp, out, fn, okText) { if (!inp || !out) return; inp.addEventListener('input', function () { var e = inp.value ? fn(inp.value) : ''; out.textContent = inp.value ? (e || okText) : ''; out.style.color = e ? 'var(--bad,#b3261e)' : ''; }); }

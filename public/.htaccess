@@ -20,3 +20,6 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^lib/ - [F,L]
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# Einblick für Gäste (Beispielnutzer)
+RewriteRule ^einblick/?$ einblick.php?s=kalender [L,QSA]
+RewriteRule ^einblick/(kalender|serien|community)/?$ einblick.php?s=$1 [L,QSA]

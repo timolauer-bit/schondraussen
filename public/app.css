@@ -947,3 +947,4 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .csfoot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .csrate{font-weight:700;font-size:13.5px}.csrate.ok{color:#17784a}.csrate.mid{color:#a6520c}.csrate.bad{color:var(--danger)}
 :root[data-skin=dark] .csrate.ok,:root[data-skin=cinema] .csrate.ok,:root[data-skin=eighties] .csrate.ok{color:#5fd39a}
+.devmenu a.dmi{text-decoration:none;border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:4px}

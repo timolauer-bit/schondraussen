@@ -70,7 +70,47 @@
     return el;
   }
   function ico(svg, cls) { var s = document.createElement('span'); s.className = cls || 'ico'; s.setAttribute('aria-hidden', 'true'); s.innerHTML = svg; return s; }
+  /* ---------- Einblick für Gäste (einblick.php): Beispielnutzer, nur ansehen ---------- */
+  // Lesende Abfragen gehen an /api/showcase.php, alles andere wird gar nicht erst gesendet.
+  function demoUrl(url, data) {
+    if (data !== undefined) return null;
+    var m = /^\/api\/(data|community)\.php\?a=([a-z_]+)(.*)$/.exec(url); if (!m) return null;
+    var a = m[1] === 'community' ? (m[2] === 'overview' ? 'community' : '') : ({ list: 'list', calendar: 'calendar', entry: 'entry', episum: 'episum' })[m[2]];
+    return a ? '/api/showcase.php?a=' + a + m[3] : null;
+  }
+  // Was im Einblick bedienbar bleibt (ansehen, blättern, sortieren). Alles andere wird ausgegraut und zeigt beim Anklicken einen Hinweis wie beim sechsten Favoriten.
+  var DEMO_OPEN = '.demo-open, .row-btn, .backlink, .pie, .epinfo, .strip .s, #filtBtn, .fopt, .fchip, .filtpop select, #srch, .sumtoggle';
+  var DEMO_TIP = 'Nur mit eigenem Konto möglich';
+  function demoTip(el) {
+    var old = document.getElementById('favtip'); if (old) old.remove();
+    var tip = h('div', { id: 'favtip', class: 'favtip', role: 'status' }, el.getAttribute('data-demotip') || DEMO_TIP);
+    document.body.append(tip);
+    var r = el.getBoundingClientRect(), w = tip.offsetWidth, x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    tip.style.left = (x + window.scrollX) + 'px'; tip.style.top = (r.bottom + window.scrollY + 9) + 'px'; tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
+    setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
+    setTimeout(close, 3500);
+  }
+  function demoLock() {
+    document.querySelectorAll('#appview button, #appview input, #appview select, #appview textarea, #appview [role=button], #topbar button').forEach(function (el) {
+      if (el.classList.contains('demolock') || el.matches(DEMO_OPEN)) return;
+      el.classList.add('demolock'); el.setAttribute('aria-disabled', 'true'); el.title = DEMO_TIP;
+      if (el.matches('input, textarea')) el.readOnly = true;
+    });
+  }
+  function demoBlock(ev) {
+    var el = ev.target && ev.target.closest ? ev.target.closest('.demolock') : null; if (!el) return;
+    if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+    ev.preventDefault(); ev.stopImmediatePropagation(); if (ev.type !== 'mousedown') demoTip(el);
+  }
+  if (D.demo) {
+    document.documentElement.classList.add('demomode');
+    ['click', 'mousedown', 'keydown'].forEach(function (t) { document.addEventListener(t, demoBlock, true); });
+    document.addEventListener('submit', function (ev) { ev.preventDefault(); ev.stopImmediatePropagation(); }, true);
+    var demoT = null; new MutationObserver(function () { clearTimeout(demoT); demoT = setTimeout(demoLock, 0); }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }); // auch wenn eine Ansicht die Klasse eines Knopfs neu setzt
+  }
   function api(url, data) {
+    if (D.demo) { url = demoUrl(url, data); if (!url) return Promise.resolve({ error: 'Im Einblick ist das nur mit eigenem Konto möglich.', demo: true }); }
     var o = { credentials: 'same-origin' };
     if (data !== undefined) { o.method = 'POST'; o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(data || {}); }
     return fetch(url, o).then(function (r) {
@@ -199,7 +239,7 @@
     var opts = [{ m: 'live', t: 'Live-Version', d: 'Was alle Nutzer sehen.', on: !D.dev }, { m: 'dev', t: 'Entwicklungsversion', d: 'Neues, das noch nicht freigegeben ist.', on: D.dev && !D.design }].concat((D.designs || []).map(function (x) { return { m: 'd:' + x.slug, t: x.name, d: x.desc, on: D.design === x.slug }; }));
     var box = h('div', { id: 'devmenu', class: 'devmenu', role: 'menu' }, opts.map(function (o) {
       return h('button', { type: 'button', role: 'menuitemradio', 'aria-checked': o.on ? 'true' : 'false', class: 'dmi' + (o.on ? ' on' : ''), onclick: function () { if (o.on) { box._close(); return; } api('/api/data.php?a=devmode', { mode: o.m }).then(function () { location.reload(); }); } }, h('b', null, o.t), o.d ? h('small', null, o.d) : null);
-    }));
+    }).concat([devMark(h('a', { class: 'dmi dmlink', role: 'menuitem', href: '/einblick/kalender' }, h('b', null, 'Gäste-Ansicht (Einblick)'), h('small', null, 'Kalender, Serien und Community aus Sicht eines Beispielnutzers, wie Gäste sie sehen. Noch nicht öffentlich.')), 'einblick')]));
     var wb = anchor.parentNode; wb.append(box);
     function off(ev) { if (!box.contains(ev.target) && ev.target !== anchor) { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); } }
     function esc(ev) { if (ev.key === 'Escape') { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); anchor.focus(); } }
@@ -212,7 +252,7 @@
     var RI = { comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
-      return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
+      return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : '') + (D.demo && /^(cal|series|comm)$/.test(key) ? ' demo-open' : ''), type: 'button', 'data-demotip': D.demo ? 'Gibt es mit eigenem Konto' : null, 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
         key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
@@ -241,6 +281,11 @@
     w.hidden = true;
     w.hidden = true;
   }
+  // Einblick: Adresse und Seitentitel passend zur Ansicht (/einblick/kalender, /serien, /community), Zurück-Taste des Browsers funktioniert
+  var DEMOP = { cal: ['kalender', 'Neuerscheinungen im Kalender'], series: ['serien', 'Serien mit Staffeln, Folgen und Sendeterminen'], comm: ['community', 'Community'] };
+  function demoKey() { return S.view === 'list' ? S.cat : S.view; }
+  function demoUrlSync() { var d = DEMOP[demoKey()]; if (!d) return; document.title = d[1] + ' – Schondraussen.de'; var path = '/einblick/' + d[0]; if (location.pathname !== path) try { history.pushState({ v: demoKey() }, '', path); } catch (_) {} }
+  if (D.demo) window.addEventListener('popstate', function () { var m = /\/einblick\/(kalender|serien|community)/.exec(location.pathname), k = m ? { kalender: 'cal', serien: 'series', community: 'comm' }[m[1]] : 'cal'; S.view = k === 'series' ? 'list' : k; S.cat = k; S.sel = null; render(); });
   function render() {
     nav(); welcome(); mainEl.textContent = '';
     if (!S.ready) { mainEl.append(h('p', { class: 'state pulse' }, 'Lade deine Liste …')); return; }
@@ -267,7 +312,7 @@
       h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
       h('div', { class: 'acts' }, it.e.type === 'podcast' ? null : amazonLink(it.e, it.u.title)));
   }
-  function nameLink(e) { return h('button', { class: 'namelink', type: 'button', title: 'Seite von ' + e.name + ' öffnen', onclick: function () { S.view = 'list'; S.cat = e.type; S.sel = String(e.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, e.name); }
+  function nameLink(e) { return h('button', { class: 'namelink' + (D.demo && e.type === 'series' ? ' demo-open' : ''), type: 'button', title: 'Seite von ' + e.name + ' öffnen', onclick: function () { S.view = 'list'; S.cat = e.type; S.sel = String(e.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, e.name); }
   function groupByMonth(items) {
     var g = {}, order = [], wrap = h('div', null);
     items.forEach(function (it) { var key = (it.p.prec === 'year' || it.p.prec === 'none') ? 'later' : it.p.y + '-' + String(it.p.m).padStart(2, '0'); if (!g[key]) { g[key] = []; order.push(key); } g[key].push(it); });
@@ -330,7 +375,7 @@
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
-    wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
+    wrap.append(h('p', { class: 'note' }, (D.demo ? 'Einblick: angekündigte Veröffentlichungen aus den Listen eines Beispielnutzers (je Kategorie 10 Einträge, jede Woche neu ausgewählt), nach Datum sortiert.' : 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert.') + ' Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
     if (!S.calHide) { S.calHide = {}; (D.calhide || []).forEach(function (k) { if (TYPES[k]) S.calHide[k] = true; }); } // im Konto gespeichert
@@ -410,7 +455,7 @@
         n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null));
     });
   }
-  function saveView() { try { sessionStorage.setItem('sd_view', JSON.stringify({ v: S.view, c: S.cat, s: S.sel, t: Date.now() })); } catch (_) {} }
+  function saveView() { if (D.demo) { demoUrlSync(); return; } try { sessionStorage.setItem('sd_view', JSON.stringify({ v: S.view, c: S.cat, s: S.sel, t: Date.now() })); } catch (_) {} }
   function content() {
     saveView();
     var box = $('content'); box.textContent = '';
@@ -1458,7 +1503,8 @@
     var C = S.comm = S.comm || { open: {}, sort: 'all', period: 'all', uid: null, data: null, ud: null };
     var p = h('section', { class: 'panel commpanel' }, h('h2', { class: 'sec' }, 'Community'));
     mainEl.append(p);
-    if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Bis dahin siehst du bei „Aktivste User“ und bei den Listen anderer nur anonymisierte Platzhalter statt der echten Werte. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
+    if (D.demo) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, h('b', null, 'Einblick: '), 'So sieht die Community-Seite für Mitglieder aus. Die Namen der Nutzer sind hier absichtlich anonymisiert („Anonym #1“ usw.), Profile und Übernehmen gibt es nur mit eigenem Konto.'));
+    else if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Bis dahin siehst du bei „Aktivste User“ und bei den Listen anderer nur anonymisierte Platzhalter statt der echten Werte. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
     var body = h('div'); p.append(body);
     var LOCKNOTE = function () { return h('p', { class: 'warnbox commnote', role: 'status' }, 'Diese Details siehst du erst, wenn du der Nutzung deiner Einträge für die Community zustimmst. Bis dahin zeigen wir nur Platzhalter: Du siehst, wie die Übersicht aussieht, die Inhalte sind aber nicht lesbar. Aktiviere es in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' unter „Meine Einträge für die Community nutzen“.'); };
     function adoptBtn(row) {
@@ -2679,6 +2725,7 @@
     });
   }
   // Nach F5 wieder dort starten, wo man war (nur im selben Tab und höchstens 8 Stunden; sonst Kalender)
+  if (D.demo) { var dv = (D.demo.view || 'cal'); S.view = dv === 'series' ? 'list' : dv; S.cat = dv; try { history.replaceState({ v: dv }, '', location.pathname); } catch (_) {} load(function () { render(); }); return; }
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {

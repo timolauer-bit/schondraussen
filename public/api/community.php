@@ -1,9 +1,10 @@
 <?php
 // Community: Ranglisten (anonym) und Nutzerübersichten (nur mit ausdrücklicher Zustimmung). Für alle freigeschalteten Nutzer.
-require __DIR__ . '/../lib/bootstrap.php';
-$u = current_user();
+require_once __DIR__ . '/../lib/bootstrap.php';
+$SC = defined('SD_SHOWCASE'); // Einblick für Gäste (lib/showcase.php): Übersicht als Beispielnutzer ohne eigene Einträge berechnen und zurückgeben statt ausgeben
+$u = $SC ? ['id' => 0, 'role' => 'admin', 'community' => 1, 'approved' => 1] : current_user();
 if (!$u || empty($u['approved'])) json_out(['error' => 'Nicht erlaubt.'], 403);
-$pdo = db(); $a = $_GET['a'] ?? '';
+$pdo = db(); $a = $SC ? 'overview' : ($_GET['a'] ?? '');
 $TYPES = allowed_cats($u); // nur Kategorien, die für die Gruppe des Nutzers freigeschaltet sind
 // Zustimmung: ausdrücklich 1, oder noch nicht entschieden und Admin (Startmodus)
 $CONSENT = "(u.community=1 OR (u.community IS NULL AND u.role='admin'))";
@@ -30,6 +31,7 @@ function q_all(PDO $pdo, string $sql, array $p = []): array {
             $sql = str_replace(['AND e.is_sample=0', 'WHERE e.is_sample=0 AND'], ['', 'WHERE'], $sql);
             try { $s = $pdo->prepare($sql); $s->execute($p); return $s->fetchAll(PDO::FETCH_ASSOC); } catch (Throwable $e2) {}
         }
+        if (defined('SD_SHOWCASE')) throw new RuntimeException('Community-Abfrage fehlgeschlagen');
         json_out(['error' => 'Die Datenbank ist noch nicht aktualisiert (migrate.php).'], 500);
     }
 }
@@ -145,6 +147,7 @@ if ($a === 'overview') {
             foreach (['all', 'rec'] as $k) foreach ($fu[$k] as $t => $c) $fu[$k][$t] = $c > 0 ? mt_rand(1, max(2, min(30, $c + 3))) : 0;
         } unset($fu);
     }
+    if ($SC) return $out;
     json_out($out);
 }
 

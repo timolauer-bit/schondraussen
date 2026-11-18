@@ -1003,3 +1003,4 @@ a{text-decoration-thickness:2px;text-underline-offset:3px}
 .fbhead .fbmeta,.bugno{font-family:var(--font-mono);font-size:14px}
 @media(max-width:760px){body{font-size:17px;background-size:24px 24px}.nav{font-size:16px}.btn{font-size:10px!important}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+.devmenu a.dmi{text-decoration:none;border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:4px}
