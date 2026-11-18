@@ -2,7 +2,11 @@ window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 17, d: '18.11.2026', t: [
     'U|Listen: Aktive Filter (z. B. ein Genre) stehen mit etwas Abstand unter dem Feld „In der Liste filtern“ statt direkt daran.',
-    'A|Admin → Tools → Datenpflege: Die Knöpfe „Ausgewählte löschen“ und „Neu prüfen“ haben wieder Abstand zueinander.'
+    'A|Admin → Tools → Datenpflege: Die Knöpfe „Ausgewählte löschen“ und „Neu prüfen“ haben wieder Abstand zueinander.',
+    'F|Filme: „Wo läuft der Film?“ jetzt auch bei Filmreihen (in jeder Filmkachel direkt über dem Amazon-Knopf) und bei Regie-Einträgen (▶ in der Kachel zeigt die Anbieter).',
+    'U|Ideen, Bugs und Info: Der Seitentitel steht wie bei den Kategorien direkt unter der oberen Leiste, die Reiter darunter.',
+    'U|Barrierefreiheit: kräftigere Akzentfarbe im hellen Farbschema, deutlichere Rahmen an Eingabefeldern, gut sichtbarer Fokusrahmen bei Bedienung mit der Tastatur, Sprunglink „Zum Inhalt springen“, lesbarere Zähler in dunklen Farbschemata und weniger Bewegung, wenn das im System so eingestellt ist.',
+    'U|Versionsmenü: Die Testvarianten „Ruhig C“ und „Evergrid“ sind entfernt; 8-Bit gibt es nur noch als Theme in den Einstellungen.'
   ] },
   { v: 16, d: '17.11.2026', t: [
     'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',

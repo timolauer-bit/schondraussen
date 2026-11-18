@@ -904,6 +904,19 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 @media(max-width:600px){.infotabs.admtabs:has(.addrep){flex-wrap:wrap}.infotabs.admtabs:has(.addrep) .admtab:not(.addrep){flex:1 1 0;min-width:0}.infotabs .admtab.addrep{flex:1 0 100%;margin:6px 0 8px;border-radius:10px;padding:10px;text-align:center;border-bottom:1px solid var(--accent)}}
 .row-btn:disabled{opacity:.55;cursor:default}.row-btn:disabled:hover{background:transparent}
 
+/* FAQ */
+.faqitem{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 8px;padding:0}
+.faqitem summary{cursor:pointer;padding:11px 14px;font-weight:600;list-style:none}.faqitem summary::-webkit-details-marker{display:none}
+.faqitem summary:before{content:'＋';display:inline-block;width:1.4em;color:var(--accent)}.faqitem[open] summary:before{content:'－'}
+.faqans{padding:0 14px 6px 14px}.faqans p{margin:0 0 .7em;line-height:1.55}
+.faqsec h3{margin-bottom:10px}
+.faqtopic{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;margin:14px 0}
+.faqthead{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.faqthead input{flex:1;min-width:180px;font-weight:700}
+.faqmv{display:inline-flex;gap:4px}
+.faqitemrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px dashed var(--line)}
+.faqitemrow .faqq{flex:1;min-width:200px;overflow-wrap:anywhere}.faqacts{display:inline-flex;gap:6px;flex-wrap:wrap}
+.faqform{margin:8px 0;padding:12px;border:1px solid var(--accent);border-radius:10px;background:var(--bg)}
+
 /* Favoritenstern: Rahmen, wenn nicht gewählt; golden, wenn gewählt */
 .favbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
 .card .actions .favbtn{padding:0}
@@ -921,14 +934,37 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .favtip:before{content:'';position:absolute;top:-5px;left:var(--ax,50%);margin-left:-5px;border:5px solid transparent;border-top:0;border-bottom-color:rgba(17,23,29,.66)}
 @keyframes favtip{from{opacity:0;transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.favtip{animation:none}}
+
 .nextbox .nbig.ended{color:var(--muted)}
+
 /* Persönliche Empfehlungen: immer Platz für 5 Zeilen, Abstand nach unten */
 .commpicks{margin-bottom:22px}
 .commpicks .commtbl tr{height:40px}
 .commpicks .pkbody{min-height:213px}
 .commpicks .admtabs{margin-bottom:6px}
 
-/* ===== Eigenes Farbschema „Individuell“ (17.11.2026) ===== */
+/* ===== Barrierefreiheit (Dev, 17.11.2026): Kontraste, Fokus, Felder, wenig Bewegung ===== */
+/* Akzentfarbe im hellen Standard-Farbschema etwas dunkler: Text und Knöpfe erreichen 5:1 statt 3,7–4,1:1 */
+:root:not([data-skin]),:root[data-skin=light]{--accent:#bf4416}
+@media(prefers-color-scheme:dark){:root:not([data-skin]){--accent:#ff7842}}
+/* Rahmen von Eingabefeldern mindestens 3:1 gegenüber dem Hintergrund (in jedem Farbschema aus Schrift- und Flächenfarbe gemischt) */
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{border-color:color-mix(in srgb,var(--ink) 55%,var(--surface))}
+/* Deutlicher Fokusring für Tastaturbedienung, auch bei Auswahlfeldern */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 22%,transparent)}
+select:focus,select:focus-visible{border-color:var(--accent)}
+#appview:focus{outline:none}
+/* Zähler-Badges in dunklen Farbschemata: dunkle Schrift auf hellem Rot statt Weiß (vorher 1,8–3:1) */
+:root[data-skin=dark] .badge,:root[data-skin=cinema] .badge,:root[data-skin=eighties] .badge{color:#14080a}
+@media(prefers-color-scheme:dark){:root:not([data-skin]) .badge{color:#14080a}}
+/* Sprunglink: unsichtbar, bis er per Tab angesteuert wird */
+.skiplink{position:absolute;left:12px;top:-60px;z-index:200;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}
+.skiplink:focus{top:12px}
+/* Kalendertage sind per Tastatur erreichbar: sichtbarer Fokus */
+.pie:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+/* Wenig Bewegung, wenn im System so eingestellt */
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ===== Eigenes Farbschema „Individuell“ (Dev, 17.11.2026) ===== */
 .skin .dots.rainbow i:nth-child(1){background:#ff5a5f}.skin .dots.rainbow i:nth-child(2){background:#ffd166}.skin .dots.rainbow i:nth-child(3){background:#06d6a0}
 .unbox.csbox{width:min(640px,94vw);max-width:640px;max-height:92vh;overflow:auto}
 .csrow{display:flex;align-items:center;gap:12px;margin:0 0 10px}.csrow.big{margin-bottom:12px}
@@ -947,4 +983,22 @@ html{scrollbar-gutter:stable;overflow-y:scroll}
 .csfoot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .csrate{font-weight:700;font-size:13.5px}.csrate.ok{color:#17784a}.csrate.mid{color:#a6520c}.csrate.bad{color:var(--danger)}
 :root[data-skin=dark] .csrate.ok,:root[data-skin=cinema] .csrate.ok,:root[data-skin=eighties] .csrate.ok{color:#5fd39a}
+
+/* „Wo läuft der Film?“ bei Filmreihen und Regie (Dev) */
+.wcard .wwatch{font-size:12.5px;color:var(--muted);line-height:1.35;margin:auto 0 0;padding-top:8px}.wcard .wwatch+.wfoot{margin-top:0;padding-top:6px}.wcard .wwatch b{font-weight:600;color:var(--ink)}.wcard .wwatch.none{opacity:.8}
+.wcard .wplay{width:30px;height:30px;padding:0!important;display:inline-flex;align-items:center;justify-content:center}
+.favtip.wtip{white-space:normal;width:max-content;max-width:280px;border-radius:12px;padding:8px 12px;line-height:1.45;background:rgba(17,23,29,.95)}.favtip.wtip small{opacity:.75;font-size:11px}
+.wcard .wfoot .wplay{margin-left:auto}.wcard .wfoot{display:flex;align-items:center;gap:8px}
+/* Einblick für Gäste (einblick.php): ausgegraute Bedienelemente, Kopf mit Registrieren/Anmelden, vorab eingebetteter Inhalt für Suchmaschinen */
+.demomode .demolock{opacity:.45;cursor:not-allowed;filter:grayscale(.5)}
+.demomode .demolock:hover{opacity:.55}
+.demomode input.demolock{cursor:not-allowed}
+.demohead .homelink{color:inherit;text-decoration:none}
+.demohead .whobox a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.demobar a{color:inherit}
+.demopre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px}
+.demopre h2{margin:0 0 6px}.demopre h3{margin:16px 0 4px;font-size:16px}.demopre h4{margin:10px 0 2px;font-size:14px}.demopre ul,.demopre ol{margin:4px 0;padding-left:20px}.demopre li{margin:2px 0}
+.demopre .sr-title{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .devmenu a.dmi{text-decoration:none;border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:4px}
+.demomode .commusers td.nm .namelink{font-style:italic;color:var(--muted);background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--muted) 22%,transparent) 0 4px,transparent 4px 8px);padding:2px 8px;border-radius:6px;opacity:1;filter:none}
+h2.sec.pagettl{font:700 24px var(--font-display);margin:0 0 8px}h2.sec.pagettl+p.hint{margin:0 0 12px}

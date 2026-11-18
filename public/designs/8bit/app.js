@@ -6,6 +6,9 @@
   function unFree() { return Math.max(0, Math.ceil(((D.uname_free_until || 0) - Date.now()) / 60000)); }
   if (!root) return;
   if (D.dev) document.documentElement.classList.add('devmode');
+  // Barrierefreiheit (Dev): Hauptbereich als Landmarke und Sprunglink „Zum Inhalt“ für Tastatur und Screenreader
+  root.setAttribute('role', 'main'); root.setAttribute('tabindex', '-1');
+  (function () { var wr = document.querySelector('.wrap'); if (!wr || document.getElementById('skiplink')) return; var a = document.createElement('a'); a.id = 'skiplink'; a.className = 'skiplink'; a.href = '#appview'; a.textContent = 'Zum Inhalt springen'; a.addEventListener('click', function (ev) { ev.preventDefault(); root.focus(); root.scrollIntoView(); }); wr.insertBefore(a, wr.firstChild); })();
   var CL = window.CHANGELOG || [], LATEST = CL.length ? CL[0].v : 1;
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
   var TYPES = {
@@ -67,7 +70,47 @@
     return el;
   }
   function ico(svg, cls) { var s = document.createElement('span'); s.className = cls || 'ico'; s.setAttribute('aria-hidden', 'true'); s.innerHTML = svg; return s; }
+  /* ---------- Einblick für Gäste (einblick.php): Beispielnutzer, nur ansehen ---------- */
+  // Lesende Abfragen gehen an /api/showcase.php, alles andere wird gar nicht erst gesendet.
+  function demoUrl(url, data) {
+    if (data !== undefined) return null;
+    var m = /^\/api\/(data|community)\.php\?a=([a-z_]+)(.*)$/.exec(url); if (!m) return null;
+    var a = m[1] === 'community' ? (m[2] === 'overview' ? 'community' : '') : ({ list: 'list', calendar: 'calendar', entry: 'entry', episum: 'episum' })[m[2]];
+    return a ? '/api/showcase.php?a=' + a + m[3] : null;
+  }
+  // Was im Einblick bedienbar bleibt (ansehen, blättern, sortieren). Alles andere wird ausgegraut und zeigt beim Anklicken einen Hinweis wie beim sechsten Favoriten.
+  var DEMO_OPEN = '.demo-open, .row-btn, .backlink, .pie, .epinfo, .strip .s, #filtBtn, .fopt, .fchip, .filtpop select, #srch, .sumtoggle';
+  var DEMO_TIP = 'Nur mit eigenem Konto möglich';
+  function demoTip(el) {
+    var old = document.getElementById('favtip'); if (old) old.remove();
+    var tip = h('div', { id: 'favtip', class: 'favtip', role: 'status' }, el.getAttribute('data-demotip') || DEMO_TIP);
+    document.body.append(tip);
+    var r = el.getBoundingClientRect(), w = tip.offsetWidth, x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    tip.style.left = (x + window.scrollX) + 'px'; tip.style.top = (r.bottom + window.scrollY + 9) + 'px'; tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
+    setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
+    setTimeout(close, 3500);
+  }
+  function demoLock() {
+    document.querySelectorAll('#appview button, #appview input, #appview select, #appview textarea, #appview [role=button], #topbar button').forEach(function (el) {
+      if (el.classList.contains('demolock') || el.matches(DEMO_OPEN)) return;
+      el.classList.add('demolock'); el.setAttribute('aria-disabled', 'true'); el.title = DEMO_TIP;
+      if (el.matches('input, textarea')) el.readOnly = true;
+    });
+  }
+  function demoBlock(ev) {
+    var el = ev.target && ev.target.closest ? ev.target.closest('.demolock') : null; if (!el) return;
+    if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+    ev.preventDefault(); ev.stopImmediatePropagation(); if (ev.type !== 'mousedown') demoTip(el);
+  }
+  if (D.demo) {
+    document.documentElement.classList.add('demomode');
+    ['click', 'mousedown', 'keydown'].forEach(function (t) { document.addEventListener(t, demoBlock, true); });
+    document.addEventListener('submit', function (ev) { ev.preventDefault(); ev.stopImmediatePropagation(); }, true);
+    var demoT = null; new MutationObserver(function () { clearTimeout(demoT); demoT = setTimeout(demoLock, 0); }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }); // auch wenn eine Ansicht die Klasse eines Knopfs neu setzt
+  }
   function api(url, data) {
+    if (D.demo) { url = demoUrl(url, data); if (!url) return Promise.resolve({ error: 'Im Einblick ist das nur mit eigenem Konto möglich.', demo: true }); }
     var o = { credentials: 'same-origin' };
     if (data !== undefined) { o.method = 'POST'; o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(data || {}); }
     return fetch(url, o).then(function (r) {
@@ -196,7 +239,7 @@
     var opts = [{ m: 'live', t: 'Live-Version', d: 'Was alle Nutzer sehen.', on: !D.dev }, { m: 'dev', t: 'Entwicklungsversion', d: 'Neues, das noch nicht freigegeben ist.', on: D.dev && !D.design }].concat((D.designs || []).map(function (x) { return { m: 'd:' + x.slug, t: x.name, d: x.desc, on: D.design === x.slug }; }));
     var box = h('div', { id: 'devmenu', class: 'devmenu', role: 'menu' }, opts.map(function (o) {
       return h('button', { type: 'button', role: 'menuitemradio', 'aria-checked': o.on ? 'true' : 'false', class: 'dmi' + (o.on ? ' on' : ''), onclick: function () { if (o.on) { box._close(); return; } api('/api/data.php?a=devmode', { mode: o.m }).then(function () { location.reload(); }); } }, h('b', null, o.t), o.d ? h('small', null, o.d) : null);
-    }).concat([h('a', { class: 'dmi dmlink', role: 'menuitem', href: '/einblick/kalender' }, h('b', null, 'Gäste-Ansicht (Einblick)'), h('small', null, 'Kalender, Serien und Community aus Sicht eines Beispielnutzers, wie Gäste sie sehen. Noch nicht öffentlich.'))]));
+    }).concat([devMark(h('a', { class: 'dmi dmlink', role: 'menuitem', href: '/einblick/kalender' }, h('b', null, 'Gäste-Ansicht (Einblick)'), h('small', null, 'Kalender, Serien und Community aus Sicht eines Beispielnutzers, wie Gäste sie sehen. Noch nicht öffentlich.')), 'einblick')]));
     var wb = anchor.parentNode; wb.append(box);
     function off(ev) { if (!box.contains(ev.target) && ev.target !== anchor) { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); } }
     function esc(ev) { if (ev.key === 'Escape') { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); anchor.focus(); } }
@@ -209,7 +252,7 @@
     var RI = { comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
-      return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : ''), type: 'button', 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
+      return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : '') + (D.demo && /^(cal|series|comm)$/.test(key) ? ' demo-open' : ''), type: 'button', 'data-demotip': D.demo ? 'Gibt es mit eigenem Konto' : null, 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
         key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
@@ -238,6 +281,11 @@
     w.hidden = true;
     w.hidden = true;
   }
+  // Einblick: Adresse und Seitentitel passend zur Ansicht (/einblick/kalender, /serien, /community), Zurück-Taste des Browsers funktioniert
+  var DEMOP = { cal: ['kalender', 'Neuerscheinungen im Kalender'], series: ['serien', 'Serien mit Staffeln, Folgen und Sendeterminen'], comm: ['community', 'Community'] };
+  function demoKey() { return S.view === 'list' ? S.cat : S.view; }
+  function demoUrlSync() { var d = DEMOP[demoKey()]; if (!d) return; document.title = d[1] + ' – Schondraussen.de'; var path = '/einblick/' + d[0]; if (location.pathname !== path) try { history.pushState({ v: demoKey() }, '', path); } catch (_) {} }
+  if (D.demo) window.addEventListener('popstate', function () { var m = /\/einblick\/(kalender|serien|community)/.exec(location.pathname), k = m ? { kalender: 'cal', serien: 'series', community: 'comm' }[m[1]] : 'cal'; S.view = k === 'series' ? 'list' : k; S.cat = k; S.sel = null; render(); });
   function render() {
     nav(); welcome(); mainEl.textContent = '';
     if (!S.ready) { mainEl.append(h('p', { class: 'state pulse' }, 'Lade deine Liste …')); return; }
@@ -264,7 +312,7 @@
       h('div', null, h('div', { class: 'ttl' }, it.u.title), sub, soon ? h('div', { class: 'soon' }, soon) : null),
       h('div', { class: 'acts' }, it.e.type === 'podcast' ? null : amazonLink(it.e, it.u.title)));
   }
-  function nameLink(e) { return h('button', { class: 'namelink', type: 'button', title: 'Seite von ' + e.name + ' öffnen', onclick: function () { S.view = 'list'; S.cat = e.type; S.sel = String(e.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, e.name); }
+  function nameLink(e) { return h('button', { class: 'namelink' + (D.demo && e.type === 'series' ? ' demo-open' : ''), type: 'button', title: 'Seite von ' + e.name + ' öffnen', onclick: function () { S.view = 'list'; S.cat = e.type; S.sel = String(e.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, e.name); }
   function groupByMonth(items) {
     var g = {}, order = [], wrap = h('div', null);
     items.forEach(function (it) { var key = (it.p.prec === 'year' || it.p.prec === 'none') ? 'later' : it.p.y + '-' + String(it.p.m).padStart(2, '0'); if (!g[key]) { g[key] = []; order.push(key); } g[key].push(it); });
@@ -289,13 +337,14 @@
     var left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, document.documentElement.clientWidth - tw - 8)) + sx, top = r.top - th - 8 >= 8 ? r.top - th - 8 + sy : r.bottom + 8 + sy;
     tip.style.left = left + 'px'; tip.style.top = top + 'px';
   }
+  function RM() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } } // Nutzer möchte wenig Bewegung
   function dayTip(el, date, list) {
     el.addEventListener('mouseenter', function () { showDayTip(el, date, list); });
     el.addEventListener('mouseleave', hideDayTip);
     el.addEventListener('focus', function () { showDayTip(el, date, list); });
     el.addEventListener('blur', hideDayTip);
     el.addEventListener('click', function (ev) { ev.stopPropagation(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); });
-    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); });
+    el.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideDayTip(); else if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); if (dayTipEl) hideDayTip(); else showDayTip(el, date, list); } }); // Kalendertage auch per Tastatur öffnen
   }
   document.addEventListener('scroll', hideDayTip, true); document.addEventListener('click', hideDayTip);
   function renderMonths(items, onFilter) {
@@ -326,7 +375,7 @@
   }
   function renderCalendar() {
     var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
-    wrap.append(h('p', { class: 'note' }, 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert. Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
+    wrap.append(h('p', { class: 'note' }, (D.demo ? 'Einblick: angekündigte Veröffentlichungen aus den Listen eines Beispielnutzers (je Kategorie 10 Einträge, jede Woche neu ausgewählt), nach Datum sortiert.' : 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert.') + ' Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
     if (!S.calHide) { S.calHide = {}; (D.calhide || []).forEach(function (k) { if (TYPES[k]) S.calHide[k] = true; }); } // im Konto gespeichert
@@ -406,7 +455,7 @@
         n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null));
     });
   }
-  function saveView() { try { sessionStorage.setItem('sd_view', JSON.stringify({ v: S.view, c: S.cat, s: S.sel, t: Date.now() })); } catch (_) {} }
+  function saveView() { if (D.demo) { demoUrlSync(); return; } try { sessionStorage.setItem('sd_view', JSON.stringify({ v: S.view, c: S.cat, s: S.sel, t: Date.now() })); } catch (_) {} }
   function content() {
     saveView();
     var box = $('content'); box.textContent = '';
@@ -580,11 +629,12 @@
     flt.addEventListener('click', function () { hideDone = !hideDone; flt.className = 'pill' + (hideDone ? ' on' : ''); flt.setAttribute('aria-pressed', hideDone ? 'true' : 'false'); updAll(); });
     if (r.works.length && e.type !== 'series') card.append(h('div', { class: 'donebar' }, cnt, flt, allB), wbar);
     r.works.forEach(function (w) {
-      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), h('div', { class: 'wtr' }, pill, wstar(e, w, favw))), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, h('div', { class: 'wfoot' }, amazonLink(e, w.title)));
+      var pill = h('button', { type: 'button', title: 'Nur für dich: Markiere, was du schon ' + dv[0] + ' hast. Andere sehen das nicht.' }), row = e.type === 'podcast' ? h('div', { class: 'work' }, h('div', { class: 'yr' }, w.year || '–'), h('div', null, podTitle(w), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null), h('div', { class: 'wact' }, pill)) : h('div', { class: 'work wcard' }, h('div', { class: 'wtop' }, h('div', { class: 'yr' }, w.year || '–'), h('div', { class: 'wtr' }, pill, wstar(e, w, favw))), h('div', { class: 'ttl' }, w.title), (w.kind || w.note) ? h('div', { class: 'sub' }, [w.kind, w.note].filter(Boolean).join(' · ')) : null, wwatch(e, w), h('div', { class: 'wfoot' }, amazonLink(e, w.title), wplay(e, w)));
       pill.addEventListener('click', function () { var on = !done[w.k]; setDone(e, [w.k], on, function () { if (on) done[w.k] = 1; else delete done[w.k]; updAll(); }); });
       rows.push({ w: w, pill: pill, row: row }); grid.append(row);
     });
     if (grid !== card) card.append(grid);
+    if (e.type === 'film' && (e.kind === 'col' && e.wparts || e.kind === 'person') && r.works.length) card.append(devMark(h('p', { class: 'note' }, e.kind === 'person' ? 'Mit ▶ siehst du, wo ein Film in Deutschland läuft. ' : '', 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'), 'wparts'));
     updAll();
     if (e.type !== 'podcast') card.append(renderSimilar(e));
     return card;
@@ -607,6 +657,42 @@
     setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
     setTimeout(close, 3500);
     return tip;
+  }
+
+  /* „Wo läuft der Film?“ bei Filmreihen (Zeile in der Kachel) und Regie-Einträgen (▶ lädt beim Antippen) */
+  function watchText(wt) {
+    var o = []; if ((wt.flatrate || []).length) o.push(['Streaming', wt.flatrate.join(', ')]);
+    var rb = (wt.rent || []).concat((wt.buy || []).filter(function (x) { return (wt.rent || []).indexOf(x) < 0; })); if (rb.length) o.push(['Leihen/Kaufen', rb.join(', ')]); return o;
+  }
+  function wwatch(e, w) {
+    if (e.type !== 'film' || e.kind !== 'col' || !e.wparts || !w.k) return null;
+    var wt = e.wparts[w.k]; if (!wt) return null;
+    var l = watchText(wt), d = h('div', { class: 'wwatch' });
+    if (!l.length) { d.textContent = 'Noch bei keinem Anbieter'; d.classList.add('none'); }
+    else l.forEach(function (x, i) { if (i) d.append(h('br')); d.append(h('b', null, x[0] + ': '), x[1]); });
+    return devMark(d, 'wparts');
+  }
+  function wplay(e, w) {
+    if (e.type !== 'film' || e.kind !== 'person' || !/^t\d+$/.test(w.k || '')) return null;
+    var b = h('button', { class: 'btn ghost small favbtn off wplay', type: 'button', title: 'Wo läuft „' + w.title + '“?', 'aria-label': 'Wo läuft „' + w.title + '“?' });
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+    b.addEventListener('click', function () {
+      if (b._w) { watchTip(b, b._w); return; } b.disabled = true;
+      api('/api/data.php?a=watch&tmdb=' + w.k.slice(1)).then(function (x) { b.disabled = false; if (!x || !x.ok) { watchTip(b, null, (x && x.error) || 'Das hat nicht geklappt.'); return; } b._w = x.watch; watchTip(b, x.watch); });
+    });
+    return devMark(b, 'wparts');
+  }
+  function watchTip(btn, wt, err) {
+    var old = document.getElementById('favtip'); if (old) old.remove();
+    var tip = h('div', { id: 'favtip', class: 'favtip wtip', role: 'status' });
+    if (err) tip.textContent = err;
+    else { var l = watchText(wt || {}); if (!l.length) tip.append('Zurzeit bei keinem Anbieter in Deutschland.'); l.forEach(function (x, i) { if (i) tip.append(h('br')); tip.append(h('b', null, x[0] + ': '), x[1]); }); tip.append(h('br'), h('small', null, 'Daten: JustWatch (über TMDB)')); }
+    document.body.append(tip);
+    var r = btn.getBoundingClientRect(), wd = tip.offsetWidth, x = Math.max(8, Math.min(window.innerWidth - wd - 8, r.left - 16));
+    tip.style.left = (x + window.scrollX) + 'px'; tip.style.top = (r.bottom + window.scrollY + 9) + 'px'; tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    function close() { tip.remove(); document.removeEventListener('click', close, true); window.removeEventListener('resize', close); }
+    setTimeout(function () { document.addEventListener('click', close, true); window.addEventListener('resize', close); }, 0);
+    setTimeout(close, 8000);
   }
   /* Stern an einem Einzeltitel (Film einer Reihe, Album, Buch); zählt zu den 5 Favoriten der Kategorie */
   function wstar(e, w, set) {
@@ -673,7 +759,7 @@
     draw(); return sec;
   }
   function relinkBox(cur, e) {
-    var box = h('div', { class: 'cfgpanel', style: 'margin:14px 0' }), inp = h('input', { type: 'text', maxlength: '80', placeholder: 'Anderer Titel oder Schreibweise', value: '', style: 'flex:1 1 200px;min-width:0;width:auto' }), res = h('div', { class: 'suggest wide2' });
+    var box = h('div', { class: 'cfgpanel', style: 'margin:14px 0' }), inp = h('input', { type: 'text', maxlength: '80', placeholder: 'Anderer Titel oder Schreibweise', 'aria-label': 'Anderer Titel oder Schreibweise', value: '', style: 'flex:1 1 200px;min-width:0;width:auto' }), res = h('div', { class: 'suggest wide2' });
     function pick(x) { res.textContent = ''; res.append(h('p', { class: 'hint pulse' }, 'Lade Daten …')); api('/api/data.php?a=relink&id=' + e.id, { ext: x.ext }).then(function (r) { S.relink = null; load(function () { nav(); if ($('list')) { filt(); rows(); } content(); }); if (!r.ok) say(r.msg || 'Das hat nicht geklappt.', true); }); }
     function search() {
       var v = inp.value.trim(); if (v.length < 2) return; res.textContent = ''; res.append(h('p', { class: 'hint pulse' }, 'Suche …'));
@@ -806,6 +892,7 @@
 
   /* ---------- Einstellungen ---------- */
   function setSkin(id) { var r = document.documentElement; if (id) r.setAttribute('data-skin', id); else r.removeAttribute('data-skin'); S.skin = id; }
+
   /* ---------- Eigenes Farbschema „Individuell“: drei Grundfarben, der Rest wird berechnet; Feinheiten aufklappbar ---------- */
   function hexRgb(x) { x = String(x || '').replace('#', ''); return [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2, 4), 16), parseInt(x.slice(4, 6), 16)]; }
   function rgbHex(c) { return '#' + c.map(function (v) { v = Math.max(0, Math.min(255, Math.round(v))); return ('0' + v.toString(16)).slice(-2); }).join(''); }
@@ -1416,7 +1503,8 @@
     var C = S.comm = S.comm || { open: {}, sort: 'all', period: 'all', uid: null, data: null, ud: null };
     var p = h('section', { class: 'panel commpanel' }, h('h2', { class: 'sec' }, 'Community'));
     mainEl.append(p);
-    if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Bis dahin siehst du bei „Aktivste User“ und bei den Listen anderer nur anonymisierte Platzhalter statt der echten Werte. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
+    if (D.demo) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, h('b', null, 'Einblick: '), 'So sieht die Community-Seite für Mitglieder aus. Die Namen der Nutzer sind hier absichtlich anonymisiert („Anonym #1“ usw.), Profile und Übernehmen gibt es nur mit eigenem Konto.'));
+    else if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Bis dahin siehst du bei „Aktivste User“ und bei den Listen anderer nur anonymisierte Platzhalter statt der echten Werte. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
     var body = h('div'); p.append(body);
     var LOCKNOTE = function () { return h('p', { class: 'warnbox commnote', role: 'status' }, 'Diese Details siehst du erst, wenn du der Nutzung deiner Einträge für die Community zustimmst. Bis dahin zeigen wir nur Platzhalter: Du siehst, wie die Übersicht aussieht, die Inhalte sind aber nicht lesbar. Aktiviere es in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' unter „Meine Einträge für die Community nutzen“.'); };
     function adoptBtn(row) {
@@ -1659,13 +1747,78 @@
     });
     d.append(effortSection());
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
-    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
+    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); if (D.dev) tabs.push(['faq', 'FAQ']); /* FAQ vorerst nur in Dev */ if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
+    var ttl = h('h2', { class: 'sec pagettl' }); // Seitentitel über den Reitern (wie bei den Kategorien); der Titel im Reiter selbst wird ausgeblendet
     function showTab(k) {
-      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'about' ? aboutPage() : d);
+      S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'faq' ? faqPage() : k === 'about' ? aboutPage() : d);
+      var t0 = holder.querySelector('h2.sec'); ttl.textContent = t0 ? t0.textContent : ''; ttl.hidden = !t0; if (t0) t0.hidden = true;
       btns.forEach(function (b) { var on = b.k === k; b.el.className = 'admtab' + (on ? ' on' : ''); b.el.setAttribute('aria-selected', on ? 'true' : 'false'); });
     }
-    tabs.forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); btns.push({ k: x[0], el: b }); bar.append(b); });
-    mainEl.append(bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
+    tabs.forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); if (x[0] === 'faq') devMark(b, 'faq'); btns.push({ k: x[0], el: b }); bar.append(b); });
+    mainEl.append(ttl, bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
+  }
+
+  /* ---------- FAQ (Info-Reiter) und FAQ-Verwaltung (Admin) ---------- */
+  function faqText(t) { // Absätze, Links (http/https) werden anklickbar
+    var box = h('div', { class: 'faqans' });
+    String(t || '').split(/\n+/).forEach(function (ln) {
+      if (!ln.trim()) return; var p = h('p', null), re = /https?:\/\/[^\s<>"']+/g, last = 0, m;
+      while ((m = re.exec(ln))) { var u = m[0].replace(/[.,;:!?)]+$/, ''); p.append(document.createTextNode(ln.slice(last, m.index)), h('a', { href: u, target: '_blank', rel: 'noopener noreferrer' }, u)); last = m.index + u.length; re.lastIndex = last; }
+      p.append(document.createTextNode(ln.slice(last))); box.append(p);
+    });
+    return box;
+  }
+  function faqPage() {
+    var P = devMark(h('section', { class: 'panel infopanel faqpanel' }, h('h2', { class: 'sec' }, 'FAQ')), 'faq'), list = h('div', null, h('p', { class: 'hint pulse' }, 'Lade …'));
+    var srch = h('input', { type: 'search', maxlength: '80', placeholder: 'In den Fragen suchen', 'aria-label': 'FAQ durchsuchen', style: 'max-width:420px' });
+    P.append(h('p', { class: 'hint' }, 'Antworten auf häufige Fragen. Fehlt dir etwas? Schreib uns über „Kontakt“ oder melde eine Idee.'), h('p', null, srch), list);
+    var topics = [];
+    function draw() {
+      var q = srch.value.trim().toLowerCase(), any = false; list.textContent = '';
+      topics.forEach(function (t) {
+        var its = t.items.filter(function (i) { return !q || (i.question + ' ' + i.answer).toLowerCase().indexOf(q) >= 0; });
+        if (!its.length) return; any = true;
+        var sec = h('section', { class: 'infosec faqsec' }, h('h3', null, t.title));
+        its.forEach(function (i) { var d = h('details', { class: 'faqitem' }, h('summary', null, i.question), faqText(i.answer)); if (q) d.open = true; sec.append(d); });
+        list.append(sec);
+      });
+      if (!any) list.append(h('p', { class: 'hint' }, topics.length ? 'Nichts gefunden. Versuche ein anderes Wort oder frage uns über „Kontakt“.' : 'Noch keine Einträge.'));
+    }
+    srch.addEventListener('input', draw);
+    api('/api/faq.php?a=list').then(function (r) { if (!r || r.error) { list.textContent = ''; list.append(h('p', { class: 'hint' }, (r && r.error) || 'Die FAQ ist gerade nicht verfügbar.')); return; } topics = r.topics || []; draw(); });
+    return P;
+  }
+  function faqAdmin() {
+    var box = devMark(h('div', { class: 'wide2 faqadm' }, h('p', { class: 'hint pulse' }, 'Lade …')), 'faqadm'), msg = h('p', { class: 'msg', role: 'status' }), topics = [], openForm = null;
+    function say(t, bad) { msg.className = 'msg' + (bad ? ' err' : ''); msg.textContent = t || ''; }
+    function call(act, data) { return api('/api/faq.php?a=' + act, data).then(function (r) { if (!r || !r.ok) { say((r && r.error) || 'Das hat nicht geklappt.', true); return r; } say(''); return load().then(function () { return r; }); }); }
+    function mv(kind, id, dir) { return h('span', { class: 'faqmv' }, h('button', { class: 'btn ghost small', type: 'button', title: 'Nach oben', 'aria-label': 'Nach oben', onclick: function () { call('move', { kind: kind, id: id, dir: -1 }); } }, '▲'), h('button', { class: 'btn ghost small', type: 'button', title: 'Nach unten', 'aria-label': 'Nach unten', onclick: function () { call('move', { kind: kind, id: id, dir: 1 }); } }, '▼')); }
+    function itemForm(item, tid) {
+      var sel = h('select', { 'aria-label': 'Themenbereich' }, topics.map(function (t) { return h('option', { value: String(t.id) }, t.title); })); sel.value = String(tid);
+      var qi = h('input', { type: 'text', maxlength: '240', value: item ? item.question : '', 'aria-label': 'Frage' }), an = h('textarea', { rows: '7', maxlength: '8000', 'aria-label': 'Antwort', style: 'width:100%;box-sizing:border-box' }, item ? item.answer : '');
+      return h('div', { class: 'faqform' }, h('label', { class: 'field' }, h('span', null, 'Themenbereich'), sel), h('label', { class: 'field' }, h('span', null, 'Frage'), qi), h('label', { class: 'field' }, h('span', null, 'Antwort (Absätze mit Leerzeile, Links einfach einfügen)'), an),
+        h('p', { style: 'display:flex;gap:8px;margin:8px 0 0' }, h('button', { class: 'btn small', type: 'button', onclick: function () { openForm = null; call('item_save', { id: item ? item.id : 0, topic_id: +sel.value, question: qi.value, answer: an.value }); } }, 'Speichern'), h('button', { class: 'btn ghost small', type: 'button', onclick: function () { openForm = null; draw(); } }, 'Abbrechen')));
+    }
+    function draw() {
+      box.textContent = ''; var add = h('input', { type: 'text', maxlength: '120', placeholder: 'Neuer Themenbereich', 'aria-label': 'Name des neuen Themenbereichs' });
+      box.append(h('p', { class: 'hint' }, 'Änderungen sind sofort für alle sichtbar, ohne Markierung. Reihenfolge mit den Pfeilen ändern; über „Bearbeiten“ kannst du einen Beitrag auch in einen anderen Themenbereich verschieben.'),
+        h('div', { class: 'inline' }, add, h('button', { class: 'btn small', type: 'button', onclick: function () { call('topic_save', { title: add.value }); } }, 'Themenbereich anlegen')), msg);
+      topics.forEach(function (t) {
+        var ti = h('input', { type: 'text', maxlength: '120', value: t.title, 'aria-label': 'Name des Themenbereichs' }), card = h('div', { class: 'faqtopic' });
+        card.append(h('div', { class: 'faqthead' }, ti, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { call('topic_save', { id: t.id, title: ti.value }); } }, 'Umbenennen'), mv('topic', t.id),
+          h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Den Themenbereich „' + t.title + '“ mit ' + t.items.length + ' Beitrag/Beiträgen löschen?')) call('topic_delete', { id: t.id }); } }, 'Löschen')));
+        t.items.forEach(function (i) {
+          var row = h('div', { class: 'faqitemrow' }, h('span', { class: 'faqq' }, i.question), h('span', { class: 'faqacts' }, mv('item', i.id),
+            h('button', { class: 'btn ghost small', type: 'button', onclick: function () { openForm = 'e' + i.id; draw(); } }, 'Bearbeiten'),
+            h('button', { class: 'btn warn small', type: 'button', onclick: function () { if (confirm('Den Beitrag „' + i.question + '“ löschen?')) call('item_delete', { id: i.id }); } }, 'Löschen')));
+          card.append(row); if (openForm === 'e' + i.id) card.append(itemForm(i, t.id));
+        });
+        if (openForm === 'n' + t.id) card.append(itemForm(null, t.id)); else card.append(h('p', { style: 'margin:8px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { openForm = 'n' + t.id; draw(); } }, '＋ Beitrag')));
+        box.append(card);
+      });
+    }
+    function load() { return api('/api/faq.php?a=list').then(function (r) { if (!r || r.error) { box.textContent = ''; box.append(h('p', { class: 'warnbox' }, (r && r.error) || 'Das hat nicht geklappt.')); return; } topics = r.topics || []; draw(); }); }
+    load(); return box;
   }
   /* ---------- Über mich (Info-Reiter, für alle) ---------- */
   var ABOUT_PUBLIC = true;
@@ -1974,7 +2127,8 @@
       repBtn.setAttribute('aria-expanded', 'true'); repBtn.classList.add('open');
       repForm = reportForm(kind, repHost, function () { repForm = null; repBtn.setAttribute('aria-expanded', 'false'); repBtn.classList.remove('open'); }, function () { S.fbTab[tabKey] = 'rel'; reload(); });
     } }, '＋ ' + (bug ? 'Bug melden' : 'Idee melden'));
-    tbar.append(repBtn); mainEl.prepend(tbar); tbar.after(repHost);
+    var fbTtl = p.querySelector('h2.sec'), fbHint = fbTtl && fbTtl.nextElementSibling; // Seitentitel über den Reitern, wie bei den Kategorien
+    tbar.append(repBtn); mainEl.prepend(tbar); tbar.after(repHost); if (fbTtl) { fbTtl.classList.add('pagettl'); tbar.before(fbTtl); if (fbHint && fbHint.matches('p.hint')) tbar.before(fbHint); }
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
@@ -2081,7 +2235,7 @@
         acts.hidden = body.hidden; // Knopfleiste erst zeigen, wenn der Beitrag angewählt (aufgeklappt) ist
         var row = h('div', { class: 'fbrow' + (bug ? ' bugrow p-' + x.priority : '') + (x.done_at ? ' done' : '') + (!x.released_at ? ' unreleased' : '') + (isNew(x) ? ' isnew' : '') }, h('div', { class: 'fbmain' }, voteBtn ? h('div', { class: 'fbline' }, voteBtn, head) : head, body, acts.childNodes.length ? acts : null, noteForm));
                 box.append(row);
-        if (S.fbFocus === x.id) { S.fbFocus = null; setTimeout(function () { try { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { row.scrollIntoView(); } }, 60); }
+        if (S.fbFocus === x.id) { S.fbFocus = null; setTimeout(function () { try { row.scrollIntoView({ block: 'center', behavior: RM() ? 'auto' : 'smooth' }); } catch (_) { row.scrollIntoView(); } }, 60); }
       });
     }
     function reload() { var op = firstLoad && staff; firstLoad = false; api('/api/feedback.php?a=list&kind=' + kind + (op ? '&open=1' : '')).then(function (r) { if (op && r) seen = r.seen || null; draw(r); }); }
@@ -2197,7 +2351,7 @@
     function CAN(k) { return !!D.admin || (D.admsec || []).indexOf(k) > -1; }
     var brBox = briefingBox();
     var p = h('section', { class: 'panel' }, h('h2', { class: 'sec' }, 'Admin')), amz = h('div', { class: 'cfgpanel' }), msg = h('span', { class: 'msg', style: 'margin:0' });
-    var tag = h('input', { type: 'text', maxlength: '64', placeholder: 'deinname-21', spellcheck: 'false', autocapitalize: 'off', value: S.site.tag || '' }), dom = h('select', null, ['amazon.de', 'amazon.fr', 'amazon.it', 'amazon.es', 'amazon.co.uk', 'amazon.com'].map(function (d) { return h('option', { value: d }, d); })); dom.value = S.site.domain || 'amazon.de';
+    var tag = h('input', { type: 'text', maxlength: '64', placeholder: 'deinname-21', 'aria-label': 'Amazon-Partner-ID', spellcheck: 'false', autocapitalize: 'off', value: S.site.tag || '' }), dom = h('select', { 'aria-label': 'Amazon-Shop' }, ['amazon.de', 'amazon.fr', 'amazon.it', 'amazon.es', 'amazon.co.uk', 'amazon.com'].map(function (d) { return h('option', { value: d }, d); })); dom.value = S.site.domain || 'amazon.de';
     amz.append(h('label', { class: 'field' }, h('span', null, 'Amazon-Partner-ID (gilt für alle Nutzer)'), tag), 
       h('p', { class: 'hint wide2' }, 'Die Partner-ID wird in alle Amazon-Links aller Nutzer eingebaut. Die Links gehen an amazon.de, du brauchst dafür eine ID aus dem deutschen PartnerNet.'),
       h('div', { class: 'add' }, h('button', { class: 'btn', type: 'button', onclick: function () { api('/api/admin.php?a=savesite', { tag: tag.value.trim(), domain: S.site.domain || 'amazon.de' }).then(function (r) { msg.className = 'msg' + (r.ok ? '' : ' err'); msg.textContent = r.ok ? 'Gespeichert.' : (r.error || 'Speichern nicht möglich.'); if (r.ok) S.site = { tag: tag.value.trim(), domain: dom.value }; }); } }, 'Speichern'), msg));
@@ -2437,8 +2591,8 @@
     var newsAdm = h('div', { class: 'wide2' }), newsMsg = h('span', { class: 'msg', style: 'margin:0' });
     (function () {
       var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-      var day = h('input', { type: 'date', value: iso(new Date()) }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), sx = h('textarea', { rows: '5', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }),
-        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift' }), cx = h('textarea', { rows: '10', maxlength: '6000', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }), old = h('div', null), all = [];
+      var day = h('input', { type: 'date', value: iso(new Date()), 'aria-label': 'Datum der Seitennews' }), st = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift', 'aria-label': 'Überschrift der Seitennews' }), sx = h('textarea', { rows: '5', maxlength: '6000', 'aria-label': 'Text der Seitennews', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }),
+        ct = h('input', { type: 'text', maxlength: '160', placeholder: 'Überschrift', 'aria-label': 'Überschrift der Inhaltsnews' }), cx = h('textarea', { rows: '10', maxlength: '6000', 'aria-label': 'Text der Inhaltsnews', placeholder: 'Haupttext. Leerzeile = neuer Absatz, Zeilen mit „- “ werden zur Liste. Neue News mit einer Zeile --- beginnen; Quelle: Name | https://…' }), old = h('div', null), all = [];
       function fill(d) { var x = all.filter(function (y) { return y.day === d; })[0] || {}; st.value = x.site_title || ''; sx.value = x.site_text || ''; ct.value = x.content_title || ''; cx.value = x.content_text || ''; }
       function say2(t, bad) { newsMsg.className = 'msg' + (bad ? ' err' : ''); newsMsg.textContent = t; }
       function load() {
@@ -2464,6 +2618,7 @@
       load();
     })();
     p.append(h('h3', { class: 'sec' }, 'News'), newsAdm);
+    if (D.dev && CAN('adm_faq')) p.append(h('h3', { class: 'sec' }, 'FAQ'), faqAdmin()); // FAQ vorerst nur in Dev
 
     var tickGh = function () {}, ghBox = h('div', { class: 'wide2 ghbox' }, h('p', { class: 'state pulse' }, 'Lade …'));
     (function () {
@@ -2492,8 +2647,9 @@
     p.insertBefore(h('h3', { class: 'sec' }, 'Deployment (GitHub Actions)'), ghAt); p.insertBefore(ghBox, ghAt); setTimeout(tickGh, 0);
     sectionize(p, 'Amazon-Partner-Links');
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
-      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Datenpflege', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
-      var OWN = { 'Briefing': 'adm_briefing', 'Nutzerverwaltung': 'adm_users', 'Wunschbilder': 'adm_users', 'Gesperrte E-Mail-Adressen': 'adm_users_danger', 'Statistik': 'adm_stats', 'Systemnachrichten': 'adm_news', 'News': 'adm_news', 'Eintrag prüfen': 'adm_tools' };
+      var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Datenpflege', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['FAQ', ['FAQ']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
+      var OWN = { 'Briefing': 'adm_briefing', 'Nutzerverwaltung': 'adm_users', 'Wunschbilder': 'adm_users', 'Gesperrte E-Mail-Adressen': 'adm_users_danger', 'Statistik': 'adm_stats', 'Systemnachrichten': 'adm_news', 'News': 'adm_news', 'FAQ': 'adm_faq', 'Eintrag prüfen': 'adm_tools' };
+      if (!D.dev) TABS = TABS.filter(function (t) { return t[0] !== 'FAQ'; }); // FAQ vorerst nur in Dev
       if (!D.admin) { // Moderatoren: nur die in der Rechtetabelle freigegebenen Kästen und Reiter
         TABS = TABS.map(function (t) { return [t[0], t[1].filter(function (n) { return OWN[n] && CAN(OWN[n]); })]; }).filter(function (t) { return t[1].length; });
         [].slice.call(p.querySelectorAll('.setstack>.setcard')).forEach(function (c) { var tt = c.querySelector('h3').textContent; if (!(OWN[tt] && CAN(OWN[tt]))) c.remove(); });
@@ -2502,7 +2658,7 @@
       try { var sv = sessionStorage.getItem('sd_admtab'); if (sv && TABS.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       if (!TABS.some(function (t) { return t[0] === cur; })) cur = TABS[0][0];
       admBadge = h('span', { class: 'admbadge', hidden: true });
-      var btns = TABS.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_admtab', cur); } catch (_) {} show(); } }, t[0] === 'Seitenadministration' ? 'Seiten\u00ADadministration' : t[0]); if (t[0] === 'Nutzer') b.append(' ', admBadge); bar.append(b); return b; });
+      var btns = TABS.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_admtab', cur); } catch (_) {} show(); } }, t[0] === 'Seitenadministration' ? 'Seiten\u00ADadministration' : t[0]); if (t[0] === 'Nutzer') b.append(' ', admBadge); if (t[0] === 'FAQ') devMark(b, 'faqadm'); bar.append(b); return b; });
       function show() {
         TABS.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = TABS.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Seitenadministration'; });
@@ -2573,6 +2729,7 @@
     });
   }
   // Nach F5 wieder dort starten, wo man war (nur im selben Tab und höchstens 8 Stunden; sonst Kalender)
+  if (D.demo) { var dv = (D.demo.view || 'cal'); S.view = dv === 'series' ? 'list' : dv; S.cat = dv; try { history.replaceState({ v: dv }, '', location.pathname); } catch (_) {} load(function () { render(); }); return; }
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
@@ -2580,5 +2737,7 @@
       if (okv[sv.v] && (sv.v !== 'list' || TYPES[sv.c])) { S.view = sv.v; S.cat = sv.v === 'list' ? sv.c : sv.v; S.sel = sv.v === 'list' && sv.s ? String(sv.s) : null; }
     }
   } catch (_) {}
-  load(function () { render(); showNews(); askName(); askCommunity(); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
+  // Startfenster nacheinander statt übereinander öffnen (sonst landet der Fokus in einem verdeckten Feld)
+  function modalNext(fn) { (function wait() { if (document.querySelector('.unmodal')) setTimeout(wait, 300); else fn(); })(); }
+  load(function () { render(); askName(); modalNext(askCommunity); setTimeout(function () { modalNext(showNews); }, 50); unreadPoll(); fbPoll(); setInterval(unreadPoll, 60000); setInterval(fbPoll, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { fbPoll(); unreadPoll(); } }); if (D.admin) api('/api/admin.php?a=users').then(function (r) { S.pend = (r.users || []).filter(function (x) { return x.role !== 'admin' && !x.approved_at; }).length; nav(); }); });
 })();

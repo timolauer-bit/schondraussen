@@ -1747,7 +1747,7 @@
     });
     d.append(effortSection());
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
-    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); tabs.push(['faq', 'FAQ']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
+    var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); if (D.dev) tabs.push(['faq', 'FAQ']); /* FAQ vorerst nur in Dev */ if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
     var ttl = h('h2', { class: 'sec pagettl' }); // Seitentitel über den Reitern (wie bei den Kategorien); der Titel im Reiter selbst wird ausgeblendet
     function showTab(k) {
       S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'faq' ? faqPage() : k === 'about' ? aboutPage() : d);
@@ -2618,7 +2618,7 @@
       load();
     })();
     p.append(h('h3', { class: 'sec' }, 'News'), newsAdm);
-    if (CAN('adm_faq')) p.append(h('h3', { class: 'sec' }, 'FAQ'), faqAdmin());
+    if (D.dev && CAN('adm_faq')) p.append(h('h3', { class: 'sec' }, 'FAQ'), faqAdmin()); // FAQ vorerst nur in Dev
 
     var tickGh = function () {}, ghBox = h('div', { class: 'wide2 ghbox' }, h('p', { class: 'state pulse' }, 'Lade …'));
     (function () {
@@ -2649,6 +2649,7 @@
     (function () { // Reiter: die Kästen nach Kategorie gruppieren
       var TABS = [['Briefing', ['Briefing']], ['Nutzer', ['Nutzerverwaltung', 'Registrierung', 'Wunschbilder', 'Gesperrte E-Mail-Adressen', 'Rechte der Nutzergruppen']], ['Statistik', ['Statistik']], ['Seitenadministration', ['Amazon-Partner-Links']], ['Tools', ['Testmail', 'Einladen', 'Systemnachrichten', 'Eintrag prüfen', 'Datenpflege', 'Bilder der Anmeldeseite']], ['Infomails', ['Infomails']], ['News', ['News']], ['FAQ', ['FAQ']], ['Sicherheit', ['Deployment (GitHub Actions)', 'Protokoll der Admin-Zugriffe', 'Ansicht prüfen', 'Aktualisierung der Einträge']]];
       var OWN = { 'Briefing': 'adm_briefing', 'Nutzerverwaltung': 'adm_users', 'Wunschbilder': 'adm_users', 'Gesperrte E-Mail-Adressen': 'adm_users_danger', 'Statistik': 'adm_stats', 'Systemnachrichten': 'adm_news', 'News': 'adm_news', 'FAQ': 'adm_faq', 'Eintrag prüfen': 'adm_tools' };
+      if (!D.dev) TABS = TABS.filter(function (t) { return t[0] !== 'FAQ'; }); // FAQ vorerst nur in Dev
       if (!D.admin) { // Moderatoren: nur die in der Rechtetabelle freigegebenen Kästen und Reiter
         TABS = TABS.map(function (t) { return [t[0], t[1].filter(function (n) { return OWN[n] && CAN(OWN[n]); })]; }).filter(function (t) { return t[1].length; });
         [].slice.call(p.querySelectorAll('.setstack>.setcard')).forEach(function (c) { var tt = c.querySelector('h3').textContent; if (!(OWN[tt] && CAN(OWN[tt]))) c.remove(); });
