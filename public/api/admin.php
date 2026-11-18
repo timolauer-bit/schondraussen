@@ -324,6 +324,7 @@ if ($a === 'cron') {
     $o['empty'] = $pdo->query("SELECT type,name,fetched_at FROM subjects WHERE fetched_at IS NOT NULL AND (total_works IS NULL OR total_works=0) ORDER BY fetched_at LIMIT 40")->fetchAll();
     $o['now'] = date('Y-m-d H:i:s');
     require_once __DIR__ . '/../lib/watchdog.php'; $o['ops'] = ops_health($pdo);
+    try { $o['api_ok'] = []; foreach ($pdo->query("SELECT k,v FROM site_state WHERE k LIKE 'apiok:%'")->fetchAll() as $x) $o['api_ok'][substr($x['k'], 6)] = $x['v']; } catch (Throwable $e) {} // wann eine Quelle nach Fehlern wieder funktioniert hat
     try { $o['api_errors'] = $pdo->query("SELECT source,kind,http_code,message,cnt,first_at,last_at FROM api_errors WHERE last_at > NOW() - INTERVAL 7 DAY ORDER BY last_at DESC LIMIT 30")->fetchAll(); } catch (Throwable $e) { $o['api_errors'] = null; }
     json_out($o);
 }

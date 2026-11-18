@@ -6,7 +6,9 @@ window.CHANGELOG = [
     'F|Filme: „Wo läuft der Film?“ jetzt auch bei Filmreihen (in jeder Filmkachel direkt über dem Amazon-Knopf) und bei Regie-Einträgen (▶ in der Kachel zeigt die Anbieter).',
     'U|Ideen, Bugs und Info: Der Seitentitel steht wie bei den Kategorien direkt unter der oberen Leiste, die Reiter darunter.',
     'U|Barrierefreiheit: kräftigere Akzentfarbe im hellen Farbschema, deutlichere Rahmen an Eingabefeldern, gut sichtbarer Fokusrahmen bei Bedienung mit der Tastatur, Sprunglink „Zum Inhalt springen“, lesbarere Zähler in dunklen Farbschemata und weniger Bewegung, wenn das im System so eingestellt ist.',
-    'U|Versionsmenü: Die Testvarianten „Ruhig C“ und „Evergrid“ sind entfernt; 8-Bit gibt es nur noch als Theme in den Einstellungen.'
+    'U|Versionsmenü: Die Testvarianten „Ruhig C“ und „Evergrid“ sind entfernt; 8-Bit gibt es nur noch als Theme in den Einstellungen.',
+    'T|Bücher: Anfragen an den Katalog der Deutschen Nationalbibliothek laufen langsamer (höchstens eine pro Sekunde). Meldet die DNB „zu viele Anfragen“ oder ist sie nicht erreichbar, pausieren die Abfragen 30 Minuten, und bereits geladene Bücher und Reihen behalten ihren Stand, statt auf eine andere Quelle umzuschwenken.',
+    'A|Admin → Schnittstellen: Hinter einer Störung steht jetzt, seit wann die Quelle wieder erreichbar ist; solche Einträge sind nicht mehr rot.'
   ] },
   { v: 16, d: '17.11.2026', t: [
     'B|Aktualisierung: Ein Fehler bei einem einzelnen Eintrag bricht den nächtlichen Lauf nicht mehr ab; der Eintrag landet stattdessen bei den fehlgeschlagenen Aktualisierungen.',

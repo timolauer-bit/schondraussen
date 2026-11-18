@@ -1,6 +1,21 @@
 <?php
 // Datenquellen. Bisher angebunden: TVmaze (Serien). Weitere folgen (MusicBrainz, Open Library, TMDB).
 // Fehlerprotokoll der Datenquellen: nur Komplettfehler (nicht erreichbar, Limit/Kontingent, Zugang abgelehnt, Dienst-Fehler), keine Einzelfälle wie „nicht gefunden“.
+/** Anzeigename der Quelle zu einer Adresse (für Fehlerprotokoll und „wieder erreichbar“). */
+function api_src(string $url): string {
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+    $map = ['itunes.apple.com' => 'Apple Podcasts', 'musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
+    foreach ($map as $d => $n) if ($host === $d || substr($host, -strlen($d) - 1) === '.' . $d) return $n;
+    return $host;
+}
+/** Erfolgreiche Antwort: Bei Quellen mit Fehlern in den letzten 7 Tagen wird gemerkt, wann sie wieder funktioniert haben (site_state 'apiok:<Quelle>').
+ *  Pro Aufruf und Quelle höchstens ein Schreibzugriff; Quellen ohne Fehler kosten nur eine Abfrage pro Aufruf. */
+function api_ok(string $url): void {
+    if (!function_exists('db')) return;
+    if (!isset($GLOBALS['api_err_src_loaded'])) { $GLOBALS['api_err_src_loaded'] = 1; try { foreach (db()->query("SELECT DISTINCT source FROM api_errors WHERE last_at > NOW() - INTERVAL 7 DAY")->fetchAll(PDO::FETCH_COLUMN) as $x) $GLOBALS['api_err_src'][$x] = 1; } catch (Throwable $e) {} }
+    $src = api_src($url); if (empty($GLOBALS['api_err_src'][$src]) || isset($GLOBALS['api_ok_done'][$src])) return; $GLOBALS['api_ok_done'][$src] = 1;
+    try { db()->prepare("INSERT INTO site_state (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v), updated_at=NOW()")->execute(['apiok:' . mb_substr($src, 0, 40), (string) db()->query('SELECT NOW()')->fetchColumn()]); /* Datenbankzeit wie bei api_errors */ } catch (Throwable $e) {}
+}
 function api_note(string $url, $code, $raw, string $cerr = ''): void {
     $code = (int) $code; $kind = null; $url = preg_replace('/(api_key=)[^&]+/i', '$1***', $url);
     if ($raw === false || $code === 0) $kind = 'nicht erreichbar';
@@ -8,9 +23,7 @@ function api_note(string $url, $code, $raw, string $cerr = ''): void {
     elseif (in_array($code, [401, 403], true)) $kind = 'Zugang abgelehnt oder gesperrt';
     elseif ($code >= 500) $kind = 'Fehler beim Dienst';
     if ($kind === null || !function_exists('db')) return;
-    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-    $map = ['itunes.apple.com' => 'Apple Podcasts', 'musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
-    $src = $host; foreach ($map as $d => $n) if ($host === $d || substr($host, -strlen($d) - 1) === '.' . $d) { $src = $n; break; }
+    $src = api_src($url); $GLOBALS['api_err_src'][$src] = 1; unset($GLOBALS['api_ok_done'][$src]); // nach einem Fehler die nächste Erfolgsmeldung wieder speichern
     $msg = $raw === false ? mb_substr($cerr, 0, 160) : '';
     if ($raw !== false && $raw !== '') {
         $j = json_decode((string) $raw, true);
@@ -31,7 +44,7 @@ function http_json(string $url, int $timeout = 12, array $hdr = []): ?array {
         CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $hdr)]);
     $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
     if ($r === false || $code >= 400) { api_note($url, $code, $r, $cerr); return null; }
-    $j = json_decode($r, true);
+    api_ok($url); $j = json_decode($r, true);
     return is_array($j) ? $j : null;
 }
 
@@ -46,6 +59,7 @@ function translate_de(string $text, string $from = 'EN'): ?string {
         CURLOPT_POSTFIELDS => json_encode(['text' => [mb_substr($text, 0, 1500)], 'source_lang' => $from, 'target_lang' => 'DE'], JSON_UNESCAPED_UNICODE)]);
     $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
     if ($r === false || $code >= 400) { api_note('https://' . $host . '/v2/translate', $code, $r, $cerr); return null; }
+    api_ok('https://' . $host . '/v2/translate');
     $j = json_decode($r, true); $t = trim((string) ($j['translations'][0]['text'] ?? ''));
     return $t !== '' ? $t : null;
 }
@@ -459,11 +473,32 @@ function lobid_strings($v, array $skip, string $key = ''): array { // alle Textw
     return $o;
 }
 // Deutsche Nationalbibliothek (SRU, MARC21): nummerierte Bände einer Reihe, auch angekündigte (Erscheinungsjahr in der Zukunft).
+// Schonung der DNB: höchstens eine Anfrage pro Sekunde; nach „Too Many Requests“ (429) oder abgewiesener Verbindung 30 Minuten Pause
+// (gemeinsam für Cron und Nutzer, gespeichert in site_state 'dnb_pause'). Während der Pause wird gar nicht erst angefragt.
+$GLOBALS['dnb_failed'] = false; // true, sobald im laufenden Aufruf eine DNB-Anfrage gescheitert ist (nicht „keine Treffer“)
+function dnb_pause_until(): int {
+    static $until = null; if ($until !== null) return $until;
+    require_once __DIR__ . '/watchdog.php'; $st = function_exists('db') ? state_get(db(), 'dnb_pause') : null;
+    return $until = (int) ($st['v'] ?? 0);
+}
 function dnb_sru(string $query, int $start): array {
+    static $last = 0.0;
+    $pu = dnb_pause_until(); if ($pu > time()) { $GLOBALS['dnb_failed'] = true; return ['err' => 'DNB pausiert bis ' . (new DateTime('@' . $pu))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('H:i') . ' Uhr (zu viele Anfragen)']; }
+    $wait = 1.0 - (microtime(true) - $last); if ($wait > 0) usleep((int) ($wait * 1e6));
     $url = 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&recordSchema=MARC21-xml&maximumRecords=100&startRecord=' . $start . '&query=' . rawurlencode($query);
-    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
-    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
-    if ($raw === false || $code >= 400) { api_note($url, $code, $raw, $cerr); return ['err' => $raw === false ? 'Verbindungsfehler: ' . $cerr : 'Status ' . $code]; }
+    $hdr = [];
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)',
+        CURLOPT_HEADERFUNCTION => function ($c, $l) use (&$hdr) { if (stripos($l, 'Retry-After:') === 0) $hdr['ra'] = trim(substr($l, 12)); return strlen($l); }]);
+    $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch); $last = microtime(true);
+    if ($raw === false || $code >= 400) {
+        api_note($url, $code, $raw, $cerr); $GLOBALS['dnb_failed'] = true;
+        if ($code === 429 || $raw === false) { // Pause für alle weiteren DNB-Anfragen (Retry-After der DNB, sonst 30 Minuten)
+            $sec = isset($hdr['ra']) && ctype_digit($hdr['ra']) ? max(60, min(6 * 3600, (int) $hdr['ra'])) : 1800;
+            try { require_once __DIR__ . '/watchdog.php'; state_set(db(), 'dnb_pause', (string) (time() + $sec)); } catch (Throwable $e) {}
+        }
+        return ['err' => $raw === false ? 'Verbindungsfehler: ' . $cerr : 'Status ' . $code];
+    }
+    api_ok($url);
     $dom = new DOMDocument(); $prev = libxml_use_internal_errors(true); $ok = $dom->loadXML($raw); libxml_clear_errors(); libxml_use_internal_errors($prev);
     if (!$ok) return ['err' => 'Antwort nicht lesbar'];
     $xp = new DOMXPath($dom);
@@ -583,7 +618,7 @@ function lobid_fetch(string $q, int $from, string $sort = ''): ?array {
     $url = 'https://lobid.org/resources/search?format=json&size=100&from=' . $from . ($sort !== '' ? '&sort=' . $sort : '') . '&q=' . rawurlencode($q);
     $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)', CURLOPT_HTTPHEADER => ['Accept: application/json']]);
     $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
-    if ($raw === false || $code >= 400) api_note($url, $code, $raw, $cerr);
+    if ($raw === false || $code >= 400) api_note($url, $code, $raw, $cerr); else api_ok($url);
     $j = ($raw !== false && $code < 400) ? json_decode($raw, true) : null;
     return is_array($j) ? $j : (['_err' => $code ?: 0]);
 }
@@ -657,7 +692,12 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     $sid = (int) $sub['id']; $title = trim((string) $ext['gbs']);
     $works = []; $rel = []; $seen = []; $got = false; $today = date('Y-m-d');
     $key = trim((string) cfg('google_books_key', '')); $lastErr = ''; $nItems = 0; $nLang = 0; $nTitle = 0; $langs = []; $sample = [];
+    $GLOBALS['dnb_failed'] = false;
     [$works, $rel, $ldInfo] = dnb_series($title); // zuerst der Katalog der Deutschen Nationalbibliothek (SRU)
+    if (!$works && !$rel && $GLOBALS['dnb_failed']) { // DNB gerade nicht erreichbar oder Limit: bisherigen Stand behalten statt auf eine andere Quelle umzuschwenken
+        $c = $pdo->prepare('SELECT COUNT(*) FROM works WHERE subject_id=?'); $c->execute([$sid]);
+        if ((int) $c->fetchColumn() > 0) return ['ok' => false, 'msg' => 'Katalog der DNB gerade nicht erreichbar (' . $ldInfo . '). Der bisherige Stand bleibt, der nächste Versuch folgt automatisch.'];
+    }
     if (!$works && !$rel) { [$works, $rel, $ld2] = lobid_series($title); $ldInfo .= ' | ' . $ld2; } // dann lobid.org, zuletzt Google Books
     if (!$works && !$rel) {
     for ($p = 0; $p < 2; $p++) {
@@ -666,7 +706,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
             $url = 'https://www.googleapis.com/books/v1/volumes?maxResults=40&startIndex=' . ($p * 40) . '&printType=books' . $extra . ($key !== '' ? '&key=' . rawurlencode($key) : '') . '&q=' . rawurlencode($qq);
             $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
             $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
-            if ($raw !== false && $code < 400 && is_array($j = json_decode($raw, true))) { $got = true; $items = $j['items'] ?? []; if ($items) break; continue; }
+            if ($raw !== false && $code < 400 && is_array($j = json_decode($raw, true))) { api_ok($url); $got = true; $items = $j['items'] ?? []; if ($items) break; continue; }
             api_note($url, $code, $raw, $cerr);
             $lastErr = $raw === false ? ('Verbindungsfehler: ' . $cerr) : ('Status ' . $code . (($m = json_decode((string) $raw, true)['error']['message'] ?? '') ? ', ' . mb_substr($m, 0, 120) : ''));
         }
@@ -783,7 +823,9 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         else $works[] = [$t, $yr ?: null, 'Buch'];
     }
     // Bevorzugt der DNB-Katalog (deutsche Titel); liefert er zu wenig oder bricht ab, bleibt es bei Open Library mit Sprachfilter.
-    $dn = []; try { $dn = dnb_author_works((string) $sub['name']); } catch (Throwable $e) { $dn = [[], [], 'DNB: Fehler']; }
+    $dn = []; $GLOBALS['dnb_failed'] = false; try { $dn = dnb_author_works((string) $sub['name']); } catch (Throwable $e) { $dn = [[], [], 'DNB: Fehler']; }
+    if (count($dn[0] ?? []) + count($dn[1] ?? []) < 3 && $GLOBALS['dnb_failed'] && ($ext['works_src'] ?? '') === 'DNB') // DNB gerade nicht erreichbar: nicht auf Open Library umschwenken, bisherigen Stand behalten
+        return ['ok' => false, 'msg' => 'Katalog der DNB gerade nicht erreichbar (' . (string) ($dn[2] ?? '') . '). Der bisherige Stand bleibt, der nächste Versuch folgt automatisch.'];
     $ext['works_src'] = 'Open Library'; $ext['works_info'] = (string) ($dn[2] ?? '');
     if (count($dn[0] ?? []) + count($dn[1] ?? []) >= 3) { $works = $dn[0]; $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; }
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
@@ -841,6 +883,7 @@ function podcast_feed_fetch(string $url): ?SimpleXMLElement {
     $ok = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
     if ($cut && $buf !== '' && ($p = strrpos($buf, '</item>')) !== false) { $buf = substr($buf, 0, $p + 7) . '</channel></rss>'; $code = 200; } // sehr großer Feed: bis zur letzten vollständigen Folge verwenden (neueste stehen vorn)
     if ($code >= 400 || $code === 0 || $buf === '') { api_note($url, $code, $ok === false && $buf === '' ? false : $buf, $cerr); return null; }
+    api_ok($url);
     $prev = libxml_use_internal_errors(true);
     $x = @simplexml_load_string($buf, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
     libxml_clear_errors(); libxml_use_internal_errors($prev);

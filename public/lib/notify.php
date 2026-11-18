@@ -48,7 +48,7 @@ function news_for(PDO $pdo, string $name, string $title): array {
     $ch = curl_init('https://news.google.com/rss/search?q=' . rawurlencode($q) . '&hl=de&gl=DE&ceid=DE:de');
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 6, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
     $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
-    if ($r === false || $code >= 400) api_note('https://news.google.com/rss', $code, $r, $cerr);
+    if ($r === false || $code >= 400) api_note('https://news.google.com/rss', $code, $r, $cerr); elseif (function_exists('api_ok')) api_ok('https://news.google.com/rss');
     $out = [];
     if ($r !== false && $code < 400 && ($x = @simplexml_load_string($r)) && isset($x->channel->item)) {
         foreach ($x->channel->item as $it) {

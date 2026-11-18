@@ -1432,7 +1432,8 @@
           SRC.forEach(function (n) {
             var l = by[n];
             if (!l) { ae.append(h('li', null, h('b', null, n), ' · keine Schnittstellenfehler')); return; }
-            l.forEach(function (x) { ae.append(h('li', { style: 'color:#a3281c' }, h('b', null, n), ' · ' + x.kind + ' · ' + x.cnt + '×, zuletzt ' + ts(x.last_at) + (x.first_at && String(x.first_at).slice(0, 10) !== String(x.last_at).slice(0, 10) ? ', seit ' + ts(x.first_at) : ''), x.message ? h('div', { class: 'hint' }, x.message) : null)); });
+            var okAt = (r.api_ok || {})[n] || ''; // wann die Quelle nach dem letzten Fehler wieder funktioniert hat
+            l.forEach(function (x) { var back = okAt && String(okAt) > String(x.last_at); ae.append(h('li', { style: back ? '' : 'color:#a3281c' }, h('b', null, n), ' · ' + x.kind + ' · ' + x.cnt + '×, zuletzt ' + ts(x.last_at) + (x.first_at && String(x.first_at).slice(0, 10) !== String(x.last_at).slice(0, 10) ? ', seit ' + ts(x.first_at) : ''), back ? h('span', { class: 'okback' }, ' · seit ' + ts(okAt) + ' wieder erreichbar') : null, x.message ? h('div', { class: 'hint' }, x.message) : null)); });
           });
           cronBox.append(ae, h('p', { class: 'hint' }, 'Protokolliert werden nur Komplettfehler (nicht erreichbar, Limit oder Kontingent, Zugang abgelehnt, Fehler beim Dienst), keine einzelnen „nicht gefunden“. TMDB ist noch nicht angebunden.'));
           if (r.api_errors.length) cronBox.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { api('/api/admin.php?a=apierrors_clear', {}).then(function () { cronLoad(); }); } }, 'Liste leeren'));

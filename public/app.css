@@ -1002,3 +1002,4 @@ select:focus,select:focus-visible{border-color:var(--accent)}
 .devmenu a.dmi{text-decoration:none;border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:4px}
 .demomode .commusers td.nm .namelink{font-style:italic;color:var(--muted);background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--muted) 22%,transparent) 0 4px,transparent 4px 8px);padding:2px 8px;border-radius:6px;opacity:1;filter:none}
 h2.sec.pagettl{font:700 24px var(--font-display);margin:0 0 8px}h2.sec.pagettl+p.hint{margin:0 0 12px}
+.cronruns .okback{color:#1f7a4d;font-weight:600}
