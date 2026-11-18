@@ -1213,3 +1213,8 @@ a.go:hover{background:transparent;color:var(--ink)}
 @media(max-width:1000px){.commlayout{grid-template-columns:1fr}.callgrid,.ctwo{grid-template-columns:1fr}}
 @media(max-width:760px){.commtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.commtabs .ctab{flex:0 0 auto}.crow{grid-template-columns:22px minmax(0,1fr) auto}.crow>:nth-child(4){grid-column:2/4;justify-self:start}}
 .cper button{white-space:nowrap}.caside .cch{flex-wrap:wrap;align-items:center}.ctwo{align-items:start}
+/* Leiste: feste Zeilenhöhe, damit Firefox und Chrome gleich aussehen; Hilfe & Feedback in der Schrift der Leiste und mittig zur Schrift */
+@media(min-width:761px){
+.topbar .nav{line-height:22px}
+.nav.hfbtn{align-self:flex-end;height:36px;line-height:20px;margin:0 0 8px;font:650 15px var(--font-display);border-bottom-width:1.5px}
+}
