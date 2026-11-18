@@ -10,16 +10,6 @@
   "desc": "Navigation links als Seitenleiste, weiche Karten, einheitliche Knöpfe und Staffel-Kacheln. Handy: Leiste oben zum Wischen."
  },
  {
-  "slug": "ruhig-c",
-  "name": "Ruhig C: Pillen",
-  "desc": "Kategorien als runde Pillen, runde Knöpfe, großzügige Kacheln mit gefüllten gesehenen Staffeln."
- },
- {
-  "slug": "evergrid",
-  "name": "Evergrid-Stil",
-  "desc": "Große Rundungen, Funktionsabschnitte mit Text und Bild im Wechsel auf der Info-Seite, Häkchenlisten, sanftes Einblenden beim Scrollen. Texte der Funktionsabschnitte sind Platzhalter."
- },
- {
   "slug": "8bit",
   "name": "8-Bit",
   "desc": "Pixelschrift (Press Start 2P und VT323, lokal eingebunden), eckige Kanten, dicke Rahmen mit hartem Schatten, Spielknöpfe, Rasterhintergrund. Alle Farbthemen funktionieren.",

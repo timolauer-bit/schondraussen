@@ -1,0 +1,4 @@
+# Dateien und Ordner, die beim nächsten Deploy auf dem Webspace gelöscht werden (der Upload selbst löscht nichts).
+# Eine Zeile je Pfad, relativ zu public/. Einträge können nach einem erfolgreichen Deploy stehen bleiben, fehlende Pfade werden übersprungen.
+designs/ruhig-c
+designs/evergrid

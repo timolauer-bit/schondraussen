@@ -21,7 +21,7 @@ Zum Ausprobieren von Umgestaltungen gibt es zusätzlich Design-Varianten. Der Sc
 
 - Jede Variante liegt in `public/designs/<kennung>/app.js` und `app.css` (vollständige Kopien, z. B. von `dev/`). Kennung: Kleinbuchstaben, Ziffern, Bindestrich, höchstens 30 Zeichen.
 - Eingetragen wird sie in `public/designs/index.json`: `[{"slug":"nav-b","name":"Navigation B","desc":"Kurzbeschreibung"}]`. Nur eingetragene Varianten mit beiden Dateien erscheinen im Menü.
-- Gleiche Datenbank und API wie Live und Dev. Eine Variante wird gelöscht, indem Ordner und Eintrag entfernt werden.
+- Gleiche Datenbank und API wie Live und Dev. Eine Variante wird gelöscht, indem Ordner und Eintrag entfernt werden und der Ordner in `deploy-remove.txt` eingetragen wird (der Upload selbst löscht nichts auf dem Webspace; `scripts/remove_ftps.py` löscht die dort genannten Pfade nach dem Upload).
 - Gefällt eine Variante: Dateien nach `public/dev/` und `public/` kopieren (wie bei der Freigabe), Eintrag und Ordner danach entfernen.
 
 ## Mailtexte und Admin-Reiter „Infomails“

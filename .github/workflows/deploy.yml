@@ -38,6 +38,14 @@ jobs:
           else
             python3 scripts/deploy_ftps.py public
           fi
+      - name: Entfernte Dateien auf dem Webspace löschen (Liste in deploy-remove.txt)
+        continue-on-error: true
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.FTP_DIR }}
+        run: python3 scripts/remove_ftps.py
       - name: Wartungsdatei entfernen, falls noch eine vorhanden ist (Wartungsmodus beim Deploy ist abgeschaltet, 17.11.2026)
         if: always()
         continue-on-error: true
