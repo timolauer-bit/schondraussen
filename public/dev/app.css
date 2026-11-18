@@ -1001,3 +1001,4 @@ select:focus,select:focus-visible{border-color:var(--accent)}
 .demopre .sr-title{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .devmenu a.dmi{text-decoration:none;border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:4px}
 .demomode .commusers td.nm .namelink{font-style:italic;color:var(--muted);background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--muted) 22%,transparent) 0 4px,transparent 4px 8px);padding:2px 8px;border-radius:6px;opacity:1;filter:none}
+h2.sec.pagettl{font:700 24px var(--font-display);margin:0 0 8px}h2.sec.pagettl+p.hint{margin:0 0 12px}

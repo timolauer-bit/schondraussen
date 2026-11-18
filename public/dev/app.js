@@ -1748,12 +1748,14 @@
     d.append(effortSection());
     var holder = h('div', null), bar = h('div', { class: 'admtabs infotabs', role: 'tablist', 'aria-label': 'Info-Seiten' }), btns = [];
     var tabs = [['info', 'Info']]; if (ABOUT_PUBLIC || isAdm()) tabs.push(['about', 'Über mich']); tabs.push(['faq', 'FAQ']); if (nerdOn()) tabs.push(['nerd', 'Nerdinfos']);
+    var ttl = h('h2', { class: 'sec pagettl' }); // Seitentitel über den Reitern (wie bei den Kategorien); der Titel im Reiter selbst wird ausgeblendet
     function showTab(k) {
       S.infoTab = k; holder.textContent = ''; holder.append(k === 'nerd' ? nerdPage() : k === 'faq' ? faqPage() : k === 'about' ? aboutPage() : d);
+      var t0 = holder.querySelector('h2.sec'); ttl.textContent = t0 ? t0.textContent : ''; ttl.hidden = !t0; if (t0) t0.hidden = true;
       btns.forEach(function (b) { var on = b.k === k; b.el.className = 'admtab' + (on ? ' on' : ''); b.el.setAttribute('aria-selected', on ? 'true' : 'false'); });
     }
     tabs.forEach(function (x) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { showTab(x[0]); } }, x[1]); if (x[0] === 'faq') devMark(b, 'faq'); btns.push({ k: x[0], el: b }); bar.append(b); });
-    mainEl.append(bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
+    mainEl.append(ttl, bar, holder); showTab(tabs.some(function (x) { return x[0] === S.infoTab; }) ? S.infoTab : 'info');
   }
 
   /* ---------- FAQ (Info-Reiter) und FAQ-Verwaltung (Admin) ---------- */
@@ -2125,7 +2127,8 @@
       repBtn.setAttribute('aria-expanded', 'true'); repBtn.classList.add('open');
       repForm = reportForm(kind, repHost, function () { repForm = null; repBtn.setAttribute('aria-expanded', 'false'); repBtn.classList.remove('open'); }, function () { S.fbTab[tabKey] = 'rel'; reload(); });
     } }, '＋ ' + (bug ? 'Bug melden' : 'Idee melden'));
-    tbar.append(repBtn); mainEl.prepend(tbar); tbar.after(repHost);
+    var fbTtl = p.querySelector('h2.sec'), fbHint = fbTtl && fbTtl.nextElementSibling; // Seitentitel über den Reitern, wie bei den Kategorien
+    tbar.append(repBtn); mainEl.prepend(tbar); tbar.after(repHost); if (fbTtl) { fbTtl.classList.add('pagettl'); tbar.before(fbTtl); if (fbHint && fbHint.matches('p.hint')) tbar.before(fbHint); }
     function draw(r) {
       lastR = r; box.textContent = ''; var l = r.items || [];
       if (r.error) { box.append(h('p', { class: 'warnbox' }, r.error)); return; }
