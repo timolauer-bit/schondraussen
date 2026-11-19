@@ -65,6 +65,16 @@ function translate_de(string $text, string $from = 'EN'): ?string {
     return $t !== '' ? $t : null;
 }
 
+/** Termine eines Eintrags vor dem Neuschreiben löschen. Vergangene Termine des laufenden Monats bleiben stehen,
+ *  damit der Kalender sie unter „Frühere Termine in diesem Monat“ und als Punkte in der Monatsansicht zeigen kann. */
+function rel_clear(PDO $pdo, int $sid): void {
+    $pdo->prepare("DELETE FROM releases WHERE subject_id=? AND NOT (LENGTH(release_date)=10 AND release_date < CURDATE() AND release_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))")->execute([$sid]);
+}
+/** Doppelte Termine (gleicher Titel und Tag) eines Eintrags entfernen, z. B. wenn eine Quelle einen schon vergangenen Termin erneut liefert. */
+function rel_dedupe(PDO $pdo, int $sid): void {
+    try { $pdo->prepare('DELETE r1 FROM releases r1 JOIN releases r2 ON r2.subject_id=r1.subject_id AND r2.title=r1.title AND r2.release_date=r1.release_date AND r2.id<r1.id WHERE r1.subject_id=?')->execute([$sid]); } catch (Throwable $e) {}
+}
+
 function clean_text(?string $h, int $max = 380): string {
     $t = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $h), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
     return mb_strlen($t) > $max ? mb_substr($t, 0, $max - 1) . '…' : $t;
@@ -126,7 +136,7 @@ function film_store(PDO $pdo, int $sid, array $ext, string $sum, array $genres, 
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), $sum, json_encode($genres, JSON_UNESCAPED_UNICODE), count($works), $sid]);
-        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]); $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]); rel_clear($pdo, $sid);
         try { $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note,ext_id) VALUES (?,?,?,?,?,?)'); $hasExt = true; } catch (Throwable $e) { $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)'); $hasExt = false; }
         foreach ($works as $x) { try { $hasExt ? $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3], $x[4] ?? null]) : $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3]]); } catch (Throwable $e) { if (!$hasExt) throw $e; $hasExt = false; $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)'); $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3]]); } }
         $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)'); foreach (array_slice(array_values($rel), 0, 20) as $x) $r->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
@@ -177,7 +187,7 @@ function film_refresh_movie(PDO $pdo, array $sub, array $ext): array {
     $ext['watch'] = ['flatrate' => [], 'rent' => [], 'buy' => []];
     foreach (array_keys($ext['watch']) as $k) foreach (array_slice((array) ($wp[$k] ?? []), 0, 12) as $p) if (!empty($p['provider_name'])) $ext['watch'][$k][] = mb_substr((string) $p['provider_name'], 0, 40);
     $today = date('Y-m-d'); $rel = [];
-    foreach (tmdb_dates($m, $today) as $x) $rel[$x[0] . $x[1]] = [(string) $m['title'], $x[0], $x[1]];
+    foreach (tmdb_dates($m, substr($today, 0, 8) . '01') as $x) $rel[$x[0] . $x[1]] = [(string) $m['title'], $x[0], $x[1]]; // ab Monatsanfang (Kalender: Frühere Termine)
     ksort($rel);
     $works = [[(string) $m['title'], (int) substr((string) ($m['release_date'] ?? ''), 0, 4) ?: null, 'Film', !empty($m['runtime']) ? (int) $m['runtime'] . ' Min.' : null, (string) $id]];
     return film_store($pdo, $sid, $ext, $sum, $genres, $works, $rel);
@@ -264,6 +274,7 @@ function refresh_subject(PDO $pdo, int $sid): array {
             $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($x, JSON_UNESCAPED_UNICODE), $sid]);
         }
     } catch (Throwable $e) {}
+    if (!empty($r['ok'])) rel_dedupe($pdo, $sid); // vergangene Monatstermine nicht doppelt
     return $r;
 }
 function refresh_subject_run(PDO $pdo, int $sid): array {
@@ -290,7 +301,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
         $seasons[$n]['n']++;
         $d = $e['airdate'] ?? '';
         if ($d && (!$seasons[$n]['first'] || $d < $seasons[$n]['first'])) $seasons[$n]['first'] = $d;
-        if ($d && $d >= $today) $rel[] = [sprintf('S%02dE%02d %s', $n, (int) ($e['number'] ?? 0), $e['name'] ?? ''), $d, 'Folge'];
+        if ($d && $d >= substr($today, 0, 8) . '01') $rel[] = [sprintf('S%02dE%02d %s', $n, (int) ($e['number'] ?? 0), $e['name'] ?? ''), $d, 'Folge'];
     }
     $pdo->beginTransaction();
     try {
@@ -305,7 +316,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
             ->execute([json_encode($ext), $sumTxt, json_encode($genres, JSON_UNESCAPED_UNICODE), count($seasons), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
-        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        rel_clear($pdo, $sid);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         ksort($seasons);
         foreach ($seasons as $n => $x) $w->execute([$sid, "Staffel $n", $x['first'] ? (int) substr($x['first'], 0, 4) : null, 'Staffel', $x['n'] . ((int) $x['n'] === 1 ? ' Folge' : ' Folgen')]);
@@ -329,7 +340,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
             foreach (array_slice($epRows, 0, 1500) as $x) $q->execute([$sid, $x[0], $x[1], $x[2] ?: null, $x[3] ?: null]);
         }
     } catch (Throwable $e) {}
-    return ['ok' => true, 'msg' => count($seasons) . ' Staffeln, ' . count($rel) . ' kommende Folgen'];
+    return ['ok' => true, 'msg' => count($seasons) . ' Staffeln, ' . count(array_filter($rel, fn($x) => $x[1] >= $today)) . ' kommende Folgen'];
 }
 
 // Teilweise Datumsangaben (YYYY, YYYY-MM) vorsichtig als „in der Zukunft“ einstufen.
@@ -408,7 +419,7 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
             ->execute([json_encode($ext), $summary, json_encode($genres, JSON_UNESCAPED_UNICODE), count($works), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
-        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        rel_clear($pdo, $sid);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_slice($works, 0, 200) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1] ?: null, $x[2], null]);
         $r = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
@@ -740,7 +751,7 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
             ->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), 'Reihe „' . $title . '“ · Bände nach Titel aus dem Katalog der Deutschen Nationalbibliothek (nummerierte deutsche Ausgaben, auch angekündigte). Abfrage: ' . ($ldInfo ?? ''), '[]', count($works), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
-        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        rel_clear($pdo, $sid);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_slice($works, 0, 200) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
         $q = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');
@@ -854,7 +865,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
             ->execute([json_encode($ext), $summary, !empty($ext['gen']) ? json_encode($ext['gen'], JSON_UNESCAPED_UNICODE) : ($sub['genres'] ?: '[]'), ($ext['works_src'] === 'DNB' ? count($works) : (int) ($r['numFound'] ?? count($works))), $sid]);
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
-        $pdo->prepare('DELETE FROM releases WHERE subject_id=?')->execute([$sid]);
+        rel_clear($pdo, $sid);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
         foreach (array_slice($works, 0, 300) as $x) $w->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], null]);
         $q = $pdo->prepare('INSERT INTO releases (subject_id,title,release_date,kind,note) VALUES (?,?,?,?,?)');

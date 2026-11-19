@@ -644,7 +644,7 @@ if ($a === 'entry') {
     try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum,ext_id FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
     catch (Throwable $t4) { try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
     catch (Throwable $t3) { $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); } } // vor Migration 063/080
-    $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
+    $r = $pdo->prepare("SELECT title,release_date,kind,note FROM releases WHERE subject_id=? AND (? = 'podcast' OR LENGTH(release_date)<>10 OR release_date>=CURDATE()) ORDER BY release_date LIMIT 100"); $r->execute([$id, (string) ($e['type'] ?? '')]);
     $works = $w->fetchAll(); foreach ($works as &$x) { $x['lk'] = done_key_work($x['title'], $x['year']); $x['k'] = !empty($x['ext_id']) ? 't' . (int) $x['ext_id'] : $x['lk']; unset($x['ext_id']); } unset($x);
     foreach ($eps as &$x) $x['k'] = done_key_ep($x['season'], $x['number']); unset($x);
     $done = []; try { $q = $pdo->prepare('SELECT item_key FROM user_done WHERE user_id=? AND subject_id=?'); $q->execute([$u['id'], $id]); $done = $q->fetchAll(PDO::FETCH_COLUMN); } catch (Throwable $t) {}

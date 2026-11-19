@@ -84,7 +84,7 @@ function showcase_list(PDO $pdo, array $snap): array {
     $s = $pdo->query("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,1 AS bell,0 AS fav,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
         (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
-        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming,
+        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id AND (s.type='podcast' OR LENGTH(r.release_date)<>10 OR r.release_date>=CURDATE())) AS upcoming,
         s.total_works, (s.external_ids LIKE '%gbs%') AS is_series, (s.external_ids LIKE '%tmdb_col%') AS is_col, (s.external_ids LIKE '%tmdb_person%') AS is_person,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id AND w.kind='Single') AS singles,
         (SELECT MAX(w.year) FROM works w WHERE w.subject_id=s.id) AS last_year,
@@ -115,7 +115,7 @@ function showcase_entry(PDO $pdo, array $snap, int $id): ?array {
     try { $w = $pdo->prepare('SELECT title,year,kind,note,summary AS sum FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
     catch (Throwable $t) { $w = $pdo->prepare('SELECT title,year,kind,note FROM works WHERE subject_id=? ORDER BY year DESC, id DESC LIMIT 300'); $w->execute([$id]); }
     $works = $w->fetchAll(); foreach ($works as &$y) { $y['lk'] = $y['k'] = 'w' . substr(md5(mb_strtolower(trim((string) $y['title'])) . '|' . (int) $y['year']), 0, 16); } unset($y);
-    $r = $pdo->prepare('SELECT title,release_date,kind,note FROM releases WHERE subject_id=? ORDER BY release_date LIMIT 100'); $r->execute([$id]);
+    $r = $pdo->prepare("SELECT title,release_date,kind,note FROM releases WHERE subject_id=? AND (? = 'podcast' OR LENGTH(release_date)<>10 OR release_date>=CURDATE()) ORDER BY release_date LIMIT 100"); $r->execute([$id, (string) ($e['type'] ?? '')]);
     return ['entry' => $e, 'works' => $works, 'releases' => $r->fetchAll(), 'episodes' => $eps, 'done' => [], 'favw' => []];
 }
 /** Kurzfassung einer Folge: nur, was schon gespeichert ist (keine Übersetzung für Gäste, das würde das Kontingent belasten). */

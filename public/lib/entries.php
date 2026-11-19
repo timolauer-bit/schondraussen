@@ -8,7 +8,7 @@ function list_entries(PDO $pdo, int $uid): array {
     $s = $pdo->prepare("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,$bellSql AS bell, $favSql AS fav,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
         (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
-        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id) AS upcoming,
+        (SELECT COUNT(*) FROM releases r WHERE r.subject_id=s.id AND (s.type='podcast' OR LENGTH(r.release_date)<>10 OR r.release_date>=CURDATE())) AS upcoming,
         s.total_works, (s.external_ids LIKE '%gbs%') AS is_series, (s.external_ids LIKE '%tmdb_col%') AS is_col, (s.external_ids LIKE '%tmdb_person%') AS is_person,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id AND w.kind='Single') AS singles,
         (SELECT MAX(w.year) FROM works w WHERE w.subject_id=s.id) AS last_year,
