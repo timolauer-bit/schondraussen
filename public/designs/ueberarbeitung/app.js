@@ -620,6 +620,14 @@
     }
     return { node: node, prog: prog };
   }
+  // Bilder von Filmen und Serien (TMDB/TVmaze, über den eigenen Server ausgeliefert); abschaltbar in Einstellungen → Darstellung
+  function picsOn() { try { return localStorage.getItem('sd_pics') !== '0'; } catch (_) { return true; } }
+  function picUrl(rel) { return '/bilder/' + rel; }
+  function picHide(ev) { var el = ev.currentTarget; (el.closest('.ebanner') || el).remove(); }
+  function heroBox(e) {
+    if (!e.img || !e.img.b || !picsOn()) return null;
+    return h('div', { class: 'ebanner', 'aria-hidden': 'true' }, h('img', { src: picUrl(e.img.bs || e.img.b), srcset: picUrl(e.img.bs || e.img.b) + ' 780w, ' + picUrl(e.img.b) + ' 1280w', sizes: '(max-width: 760px) 100vw, 960px', alt: '', decoding: 'async', onerror: picHide, onload: function (ev) { ev.currentTarget.parentNode.classList.add('ok'); } }));
+  }
   function entryCard(cur, r) {
     var e = r.entry, card = h('article', { class: 'card cat-' + e.type, style: '--cc:' + CATCOL[e.type] }), t = TYPES[e.type];
     var stamp = e.fetched_at ? 'Stand ' + LONG.format(new Date(e.fetched_at.replace(' ', 'T'))) : '';
@@ -663,6 +671,7 @@
     var actions = h('div', { class: 'actions' }, bellBtn, favBtn, wrap);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp tipd', title: 'Zeitpunkt der letzten Aktualisierung aus der Datenquelle. Die Angaben werden automatisch alle 12 Stunden erneuert; „Aktualisieren“ lädt sie sofort neu.' }, stamp) : null);
     var gch = gensOf(e).length ? h('div', { class: 'gchips' }, gensOf(e).map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
+    var bnr = heroBox(e); if (bnr) card.append(bnr);
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));
     if (S.relink === e.id) card.append(relinkBox(cur, e));
     else if (e.fetched_at && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
@@ -705,7 +714,7 @@
     var nb = nextBox(e, r, up, t);
     card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
     var progCb = nb.prog;
-    if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
+    if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, e.img && e.img.b && picsOn() ? 'Filmdaten und Bilder von ' : 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
     if (e.type === 'film' && (!e.kind || e.kind === 'movie') && r.works.length <= 1) { card.append(renderSimilar(e)); return card; } // einzelner Film: Gesehen-Knopf oben genügt
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     if (e.type !== 'series') { // bei Serien steht das schon in der Staffelübersicht und im Kasten rechts oben
@@ -882,7 +891,7 @@
     var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null, gbtns = [], updFns = [];
     box.append(h('h3', { class: 'sec' }, 'Staffeln und Folgen'));
     box.append(h('p', { class: 'note' }, 'Folgen und Sendetermine von ', h('a', { href: e.tvmaze ? 'https://www.tvmaze.com/shows/' + e.tvmaze : 'https://www.tvmaze.com', target: '_blank', rel: 'noopener noreferrer' }, 'TVmaze'),
-      e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
+      e.img && e.img.b && picsOn() ? ['. Bild von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB')] : '', e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
     eps.forEach(function (x) { (by[x.season] = by[x.season] || []).push(x); });
     var nums = Object.keys(by).map(Number).sort(function (a, b) { return a - b; }), liveSeason = null;
     function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); gbtns.forEach(function (b) { b.textContent = n === eps.length ? 'Alles zurücksetzen' : 'Alles als gesehen markieren'; }); }
@@ -969,13 +978,18 @@
       S.sugg = null; S.sel = String(r.id); load(function () { render(); var q = $('q'); if (q) q.value = ''; });
     });
   }
+  function sthumb(x, cat) { // kleines Vorschaubild bei Filmen und Serien (auf dem Handy per CSS ausgeblendet)
+    if ((cat !== 'film' && cat !== 'series') || !picsOn()) return null;
+    if (!x.img) return h('span', { class: 'sthumb none', 'aria-hidden': 'true' });
+    return h('img', { class: 'sthumb', src: picUrl(x.img), alt: '', loading: 'lazy', decoding: 'async', width: '34', height: '50', onerror: function (ev) { ev.currentTarget.replaceWith(h('span', { class: 'sthumb none', 'aria-hidden': 'true' })); } });
+  }
   function drawSugg() {
     var box = $('sugg'); if (!box) return; box.textContent = ''; var s = S.sugg; if (!s) return;
     if (s.loading) { box.append(h('p', { class: 'hint pulse' }, 'Suche …')); return; }
     if (s.local) {
       box.append(h('p', { class: 'hint' }, s.list.length ? 'Schon auf der Seite vorhanden. Passt keiner, drücke Enter, dann wird im Netz gesucht.' : 'Noch nicht auf der Seite vorhanden. Drücke Enter, um im Netz zu suchen.'));
       if (s.list.length) { var ll = h('div', { class: 'suggest' });
-        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext, s.cat); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
+        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext, s.cat); } }, sthumb(x, s.cat), h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
         box.append(ll); }
       return;
     }
@@ -984,7 +998,7 @@
     var list = h('div', { class: 'suggest' });
     s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
       if (x.title_search) { S.sugg = { loading: true }; drawSugg(); var my2 = ++srchSeq; api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { if (my2 !== srchSeq || S.cat !== 'author') return; S.sugg = { q: s.q, cat: 'author', list: r.results || [], byTitle: true }; drawSugg(); }); return; }
-      addNow(x.name, x.ext, s.cat); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
+      addNow(x.name, x.ext, s.cat); } }, sthumb(x, s.cat), h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
     list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}, s.cat); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
     box.append(list);
   }
@@ -1230,8 +1244,10 @@
       ORDER.forEach(function (t) { var ck = h('input', { type: 'checkbox', checked: !isHid(t), onchange: function () { var hide = []; ORDER.forEach(function (x) { if ((x === t ? !ck.checked : isHid(x))) hide.push(x); }); if (hide.length >= ORDER.length) { ck.checked = true; hcMsg.className = 'msg err'; hcMsg.textContent = 'Mindestens eine Kategorie muss sichtbar bleiben.'; return; } api('/api/data.php?a=hidecats', { cats: hide }).then(function (r) { if (!r.ok) { ck.checked = !ck.checked; hcMsg.className = 'msg err'; hcMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } D.hide = hide; hcMsg.className = 'msg'; hcMsg.textContent = 'Gespeichert.'; load(function () { nav(); }); }); } }); hcRow.append(h('label', { style: 'display:flex;gap:6px;align-items:center' }, ck, TYPES[t].plural)); });
       hcBox = h('div', { style: 'margin-top:14px' }, h('p', { class: 'label' }, 'Kategorien anzeigen'), h('p', { class: 'hint', style: 'margin:0' }, 'Nicht angezeigte Kategorien verschwinden aus Menü, Kalender und Übersicht. Deine Einträge bleiben erhalten, Benachrichtigungen kommen weiterhin, und in der Community siehst du die Kategorien weiterhin.'), hcRow, hcMsg); }
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Farbschema'), skins));
+    var picCk = h('input', { type: 'checkbox', onchange: function () { try { localStorage.setItem('sd_pics', this.checked ? '1' : '0'); } catch (_) {} } }); picCk.checked = picsOn();
+    var picBox = h('div', { style: 'margin-top:14px' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, picCk, 'Bilder bei Filmen und Serien anzeigen'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Ein Bannerbild oben auf der Eintragsseite und kleine Vorschaubilder in der Suche (am Computer). Bilder von TMDB und TVmaze, ausgeliefert über schondraussen.de. Die Einstellung gilt für dieses Gerät.'));
     var uiBox = h('div', { class: 'wide2' }, hcBox,
-      h('div', { style: hcBox ? 'margin-top:14px' : '' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg));
+      h('div', { style: hcBox ? 'margin-top:14px' : '' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg), picBox);
     var tm = h('span', { class: 'msg', style: 'margin:0' }), cb = h('input', { type: 'checkbox', id: 'ntf', onchange: function () { S.notify = this.checked; api('/api/data.php?a=notify', { on: this.checked }); opts.style.opacity = this.checked ? '1' : '.5'; } }); cb.checked = !!S.notify;
     var sv = h('span', { class: 'msg', style: 'margin:0' });
     function saveN() { api('/api/data.php?a=notifyset', { 'new': S.n['new'], day: S.n.day, week: S.n.week, mode: S.n.mode, weekday: S.n.weekday, bell_default: S.n.bell_default }).then(function (r) { sv.className = 'msg' + (r.ok ? '' : ' err'); sv.textContent = r.ok ? 'Gespeichert.' : (r.msg || r.error || 'Speichern nicht möglich.'); setTimeout(function () { sv.textContent = ''; }, 2500); }); }
@@ -1826,9 +1842,9 @@
       ['Versionsverlauf', 'Eine Sammelversion je Kalendertag, Kategorien F, O, U, B, A, D, T']]));
     sec('Externe Datenquellen und Schnittstellen', h('p', null, 'Alle Abfragen laufen serverseitig und nur für Titel, die Nutzer wirklich anlegen. An die Dienste gehen nie E-Mail-Adressen oder Kontodaten.'),
       tbl(['Quelle', 'Wofür', 'Schlüssel', 'Auflagen und Hinweise'], [
-        [{ t: 'TMDB', href: 'https://www.themoviedb.org' }, 'Filme: Titel, Beschreibung, Kino- und Digitalstart in Deutschland, Filmreihen', 'Zugangsschlüssel', 'Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'],
+        [{ t: 'TMDB', href: 'https://www.themoviedb.org' }, 'Filme: Titel, Beschreibung, Kino- und Digitalstart in Deutschland, Filmreihen; Bannerbilder und Vorschaubilder bei Filmen und Serien (über schondraussen.de ausgeliefert, höchstens 90 Tage gespeichert)', 'Zugangsschlüssel', 'Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'],
         [{ t: 'JustWatch', href: 'https://www.justwatch.com' }, 'Filme: wo ein Film in Deutschland gestreamt, geliehen oder gekauft werden kann (Daten kommen über TMDB)', 'keiner (über TMDB)', 'Quellenangabe „JustWatch“ ist bei jeder Anzeige Pflicht, sonst verliert die Seite den TMDB-Zugang'],
-        [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
+        [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung, Poster als Vorschaubild, wenn TMDB keines hat; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
         [{ t: 'MusicBrainz', href: 'https://musicbrainz.org' }, 'Musik: Künstler:innen, Alben, Termine', 'keiner', 'höchstens eine Anfrage pro Sekunde, daher gebremste Abfrage'],
         ['ListenBrainz', 'Musik: Vorschläge ähnlicher Künstler:innen', 'keiner', '–'],
         [{ t: 'Apple Podcasts', href: 'https://podcasts.apple.com' }, 'Podcasts: Suche und Feed-Adresse (iTunes Search API); die Folgen kommen aus dem öffentlichen Feed des jeweiligen Podcasts', 'keiner', 'etwa 20 Anfragen pro Minute; Feeds werden höchstens alle 12 Stunden abgerufen'],

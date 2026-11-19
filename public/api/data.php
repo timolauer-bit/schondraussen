@@ -262,7 +262,8 @@ if ($a === 'search') {
     elseif ($type === 'series') {
         $r = http_json('https://api.tvmaze.com/search/shows?q=' . rawurlencode($q)) ?? [];
         foreach (array_slice($r, 0, 8) as $x) { $s = $x['show'] ?? []; if (empty($s['name'])) continue;
-            $out[] = ['name' => $s['name'], 'hint' => trim(substr((string) ($s['premiered'] ?? ''), 0, 4) . ' ' . implode(', ', array_slice($s['genres'] ?? [], 0, 2))), 'ext' => ['tvmaze' => (int) $s['id']]]; }
+            $tm = pic_tvm_path($s['image']['medium'] ?? '');
+            $out[] = ['name' => $s['name'], 'hint' => trim(substr((string) ($s['premiered'] ?? ''), 0, 4) . ' ' . implode(', ', array_slice($s['genres'] ?? [], 0, 2))), 'ext' => ['tvmaze' => (int) $s['id']], 'img' => $tm !== '' ? 'm/' . $tm : null]; }
     } elseif ($type === 'artist') {
         $r = http_json('https://musicbrainz.org/ws/2/artist/?fmt=json&limit=8&query=' . rawurlencode($q)) ?? [];
         foreach (($r['artists'] ?? []) as $x) {
@@ -314,7 +315,8 @@ if ($a === 'suggest_local') { // Treffer aus den bereits vorhandenen Einträgen 
     $out = [];
     foreach ($st->fetchAll() as $r) {
         $ext = json_decode((string) $r['external_ids'], true); if (!is_array($ext)) $ext = [];
-        $out[] = ['name' => $r['name'], 'hint' => !empty($ext['gbs']) || !empty($ext['tmdb_col']) ? 'Reihe' : (!empty($ext['tmdb_person']) ? 'Regie' : ''), 'ext' => $ext, 'mine' => (int) $r['mine'] > 0];
+        $po = pic_out($ext); unset($ext['img']);
+        $out[] = ['name' => $r['name'], 'hint' => !empty($ext['gbs']) || !empty($ext['tmdb_col']) ? 'Reihe' : (!empty($ext['tmdb_person']) ? 'Regie' : ''), 'ext' => $ext, 'mine' => (int) $r['mine'] > 0, 'img' => $po['t'] ?? null];
     }
     json_out(['results' => $out]);
 }
@@ -629,7 +631,7 @@ if ($a === 'entry') {
     $e = $s->fetch(); if ($e && !in_array($e['type'], $TYPES, true)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
-    $e['kind'] = ''; $e['dirs'] = []; $e['watch'] = null;
+    $e['kind'] = ''; $e['dirs'] = []; $e['watch'] = null; $e['img'] = in_array($e['type'], ['film', 'series'], true) ? pic_out($x) : null;
     if ($e['type'] === 'film') { // Film, Filmreihe oder Regie-Eintrag
         $e['kind'] = !empty($x['tmdb_person']) ? 'person' : (!empty($x['tmdb_col']) ? 'col' : 'movie');
         foreach ((array) ($x['dir'] ?? []) as $dd) if (!empty($dd['id']) && !empty($dd['name'])) $e['dirs'][] = ['id' => (int) $dd['id'], 'name' => (string) $dd['name']];

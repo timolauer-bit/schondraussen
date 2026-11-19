@@ -1,0 +1,9 @@
+# Zwischengespeicherte Bilder von TMDB/TVmaze (werden vom Server angelegt, nach 90 Tagen gelöscht)
+Options -Indexes
+<FilesMatch "\.(?!(jpg|png)$)[^.]+$">
+  Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=2592000"
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>

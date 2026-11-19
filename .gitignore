@@ -2,3 +2,7 @@ config.php
 *.local
 .DS_Store
 node_modules/
+
+# vom Server angelegte Bilder (TMDB/TVmaze)
+public/bilder/*
+!public/bilder/.htaccess

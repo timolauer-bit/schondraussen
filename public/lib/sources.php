@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/pics.php';
 // Datenquellen. Bisher angebunden: TVmaze (Serien). Weitere folgen (MusicBrainz, Open Library, TMDB).
 // Fehlerprotokoll der Datenquellen: nur Komplettfehler (nicht erreichbar, Limit/Kontingent, Zugang abgelehnt, Dienst-Fehler), keine Einzelfälle wie „nicht gefunden“.
 /** Anzeigename der Quelle zu einer Adresse (für Fehlerprotokoll und „wieder erreichbar“). */
@@ -94,7 +95,8 @@ function tmdb_search(string $q, bool $people = true): array { // Trefferliste f�
     foreach (array_slice((array) ($r['results'] ?? []), 0, $people ? 6 : 8) as $x) {
         if (empty($x['id']) || empty($x['title'])) continue;
         $y = substr((string) ($x['release_date'] ?? ''), 0, 4); $o = (string) ($x['original_title'] ?? '');
-        $out[] = ['name' => (string) $x['title'], 'hint' => implode(' · ', array_filter([$y, ($o !== '' && $o !== $x['title']) ? 'Original: ' . $o : ''])), 'ext' => ['tmdb' => (int) $x['id']]];
+        $pp = pic_tmdb_path($x['poster_path'] ?? '');
+        $out[] = ['name' => (string) $x['title'], 'hint' => implode(' · ', array_filter([$y, ($o !== '' && $o !== $x['title']) ? 'Original: ' . $o : ''])), 'ext' => ['tmdb' => (int) $x['id']], 'img' => $pp !== '' ? 't/w92' . $pp : null];
     }
     if ($people && ($pr = tmdb_get('/search/person', ['query' => $q, 'include_adult' => 'false']))) {
         $n = 0;
@@ -158,7 +160,7 @@ function film_refresh_movie(PDO $pdo, array $sub, array $ext): array {
     if (!$id) { $hit = tmdb_search($sub['name'], false); if (!$hit) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.']; $id = (int) $hit[0]['ext']['tmdb']; }
     $m = tmdb_get("/movie/$id", ['append_to_response' => 'release_dates,credits,watch/providers']);
     if (!$m || empty($m['id'])) return ['ok' => false, 'msg' => 'Bei TMDB nicht gefunden oder nicht erreichbar.'];
-    $ext['tmdb'] = $id;
+    $ext['tmdb'] = $id; pic_film($ext, $m);
     if (!empty($m['belongs_to_collection']['id'])) { // Teil einer Filmreihe: alle Einträge der Nutzer wandern in den Reiheneintrag
         $cid = (int) $m['belongs_to_collection']['id'];
         $newId = film_merge_collection($pdo, $sub, $id, $cid, (string) ($m['belongs_to_collection']['name'] ?? ''));
@@ -190,6 +192,7 @@ function film_watch_get(int $id): ?array {
 function film_refresh_collection(PDO $pdo, array $sub, array $ext): array {
     $cid = (int) $ext['tmdb_col']; $c = tmdb_get("/collection/$cid");
     if (!$c || empty($c['parts'])) return ['ok' => false, 'msg' => 'Die Filmreihe wurde bei TMDB nicht gefunden.'];
+    pic_film($ext, $c);
     $parts = (array) $c['parts']; usort($parts, fn($a, $b) => strcmp((string) ($a['release_date'] ?? '9999'), (string) ($b['release_date'] ?? '9999')));
     $works = []; foreach (array_slice($parts, 0, 40) as $x) if (!empty($x['title'])) $works[] = [(string) $x['title'], (int) substr((string) ($x['release_date'] ?? ''), 0, 4) ?: null, 'Film', null, (string) ($x['id'] ?? '')];
     $rel = []; film_future($parts, 0, date('Y-m-d'), $rel); ksort($rel);
@@ -277,6 +280,7 @@ function refresh_subject_run(PDO $pdo, int $sid): array {
     $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
     $show = tvmaze_fetch($sub['name'], isset($ext['tvmaze']) ? (int) $ext['tvmaze'] : null);
     if (!$show || empty($show['id'])) return ['ok' => false, 'msg' => 'Bei TVmaze nicht gefunden oder nicht erreichbar.'];
+    try { pic_series($ext, $show); } catch (Throwable $e) {} // Banner und Vorschaubild (TMDB, ersatzweise TVmaze)
     $eps = $show['_embedded']['episodes'] ?? [];
     $seasons = []; $today = date('Y-m-d'); $rel = []; $epRows = [];
     foreach ($eps as $e) {
