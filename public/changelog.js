@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'U|Serien: In der Folgenliste ist eine Folge, die heute erscheint, umrahmt und mit dem Schildchen „Heute“ markiert; „morgen“ steht in der Akzentfarbe.',
     'B|Serien und Filme: Die Übersicht zeigt unter „Kommende Veröffentlichungen“ und in der Kachel „Kommende Termine“ nur noch Termine ab heute (vergangene Folgen stehen weiter im Kalender).',
     'U|Serien: Die Staffel-Kästen sind jetzt alle gleich breit, auch einzelne Kästen in der letzten Reihe.',
     'U|Startseite: Der Kasten mit den Screenshots ist entfallen (die Einblick-Kacheln zeigen die Seite jetzt live). Der Infotext ist breiter und so hoch wie der Anmeldekasten. „Einblick ohne Anmeldung“ steht jetzt ganz oben.',

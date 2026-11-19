@@ -824,7 +824,8 @@
           if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
           ttl.append(' ', ib);
         }
-        det.append(h('div', { class: 'work ep' }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', { class: 'epcell' }, ttl, h('div', { class: 'sub' }, when), sbox), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
+        var isT = isFut && diff === 0, isM = isFut && diff === 1; // heute: Rahmen und gefülltes Schildchen, morgen: nur Akzentfarbe
+        det.append(h('div', { class: 'work ep' + (isT ? ' today' : '') }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', { class: 'epcell' }, ttl, h('div', { class: 'sub' }, when), sbox), h('div', { class: 'stat ' + (isT ? 'soon tpill' : isM ? 'soon tmr' : isFut ? 'soon' : 'sub') }, isT ? 'Heute' : stat)));
       });
       allBtn.addEventListener('click', function () { var keys = cks.map(function (c) { return c.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); upd(); }); });
       var gBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Markiert alle Folgen aller Staffeln dieser Serie auf einmal' }); gbtns.push(gBtn);
