@@ -1,6 +1,13 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'U|Neues Design für alle (Überarbeitung): Oben rechts stehen dein Profilknopf (Profilkarte, Einstellungen, Benachrichtigungen, Was ist neu?, Abmelden) und bei Testern der Versionsknopf. Ideen, Bugs, Info und Kontakt liegen gebündelt unter „Hilfe & Feedback“, Community steht in der Leiste zwischen News und Bücher.',
+    'U|Kalender: links zwei Monate mit Punkten je Kategorie, rechts die Termine nach Tagen (Heute, Morgen, in N Tagen); vergangene Tage des Monats sind eingeklappt. Die Kategorie-Filter mit „Alle“ stehen oben neben der Überschrift.',
+    'U|Eintragsseiten ruhiger: gleich große Knöpfe, neutraler Kasten „Nächster Termin“, Amazon als Textlink. Bei Serien gibt es den Knopf „S02E05 gesehen“ für die nächste Folge; in der Liste links steht die Zahl der Termine.',
+    'F|Bilder bei Filmen und Serien: ein Bannerbild oben auf der Eintragsseite und kleine Vorschaubilder in der Suche (am Computer). Die Bilder kommen von TMDB (bei Serien ersatzweise TVmaze) und werden über schondraussen.de ausgeliefert; abschaltbar unter Einstellungen → Darstellung. Im 8-Bit-Theme erscheint das Banner verpixelt.',
+    'U|Einstellungen: Bereiche links (Profil, Konto und Anmeldung, Benachrichtigungen, Darstellung und Themes, Daten und Datenschutz), Schalter statt Häkchen; die Bildauswahl fürs Profil öffnet sich über „Bild ändern“.',
+    'U|Community: Reiter je Kategorie, breite Top-Listen mit „+ Auf meine Liste“, „Neu entdeckt“ und „Meistgesehen“ nebeneinander, Aktivste Mitglieder rechts mit dem Umschalter Gesamt/14 Tage. Wer nicht mitmacht, sieht oben eine dezente Gast-Leiste.',
+    'U|Handy: Leiste unten mit Kalender, Listen, Community und Mehr; oben nur noch die Kategorien, wenn du in einer Liste bist.',
     'U|Serien: Unter „Staffeln und Folgen“ steht das Datum der letzten Aktualisierung nicht mehr doppelt, es steht nur noch oben neben „Serie“.',
   ] },
   { v: 17, d: '18.11.2026', t: [

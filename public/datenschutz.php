@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Datenschutzerklärung – Schondraussen.de</title><?= $seo ?>
 <style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:6vh auto;padding:0 16px}h2{font-size:19px;margin:1.6em 0 .3em}h3{font-size:16px;margin:1.2em 0 .2em}</style></head><body>
 <h1>Datenschutzerklärung</h1>
-<p><i>Stand: 17.11.2026</i></p>
+<p><i>Stand: 19.11.2026</i></p>
 <h2>1. Verantwortlicher</h2>
 <p>Verantwortlich für die Datenverarbeitung auf dieser Seite im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:</p>
 <p>Timo Lauer, Peter-Friedhofen-Straße 2, 54292 Trier, <a href="mailto:admin@schondraussen.de">admin@schondraussen.de</a></p>
@@ -47,6 +47,7 @@
 <p><b>Ideen, Bugmeldungen und Anhänge:</b> Beiträge samt hochgeladener Bilder oder Textdateien sind zunächst nur für den Betreiber und die Alphatester sichtbar, nach der Freigabe auch für andere Nutzer, jeweils mit deinem Benutzernamen. Bilder werden vor der Freigabe geprüft, und der Betreiber kann Anhänge entfernen. Du kannst deine Texte nachträglich bearbeiten; frühere Fassungen bleiben für andere sichtbar. Die Beiträge bleiben auch nach der Löschung deines Kontos erhalten (siehe Punkt 4).</p>
 <h2>7. Datenquellen für Neuerscheinungen</h2>
 <p>Termine und Werke ermittle ich aus öffentlichen Quellen: MusicBrainz, Wikipedia/Wikidata (Kurzvorstellung von Bands), Open Library, Apple Podcasts (Podcast-Suche; die Folgen stammen aus dem öffentlichen Feed des jeweiligen Podcasts), Google Books, Deutsche Nationalbibliothek (Katalogschnittstelle, für Buchreihen; bei Bedarf ersatzweise lobid.org), TMDB, TVmaze. Die Abfragen erfolgen serverseitig anhand der Namen der Einträge. Englische Beschreibungstexte dieser Quellen lasse ich über den Übersetzungsdienst DeepL (DeepL SE, Köln) ins Deutsche übersetzen; dorthin gehen nur diese öffentlichen Texte, nichts zu dir oder deinem Konto. <b>Deine personenbezogenen Daten (E-Mail, Konto) werden dabei nicht an diese Dienste übertragen.</b> Einige dieser Dienste sitzen außerhalb der EU (siehe Punkt 10).</p>
+<p><b>Bilder von Filmen und Serien:</b> Bannerbilder und Vorschaubilder stammen von TMDB (The Movie Database) und bei Serien ersatzweise von TVmaze. Der Server ruft jedes Bild einmal bei diesen Diensten ab, speichert es auf dem Webspace und liefert es von schondraussen.de aus. Dein Browser hat dabei keinen Kontakt zu TMDB oder TVmaze, deine IP-Adresse wird dorthin nicht übertragen. Gespeicherte Bilder werden nach spätestens 90 Tagen gelöscht und bei Bedarf neu abgerufen. Die Bilder kannst du unter Einstellungen → Darstellung ausschalten.</p>
 <p><b>Import aus Trakt oder Spotify:</b> Wenn du eine Exportdatei hochlädst, wird sie in deinem Browser gelesen. An den Server gesendet werden nur die erkannten Namen oder Titel, nicht die ganze Datei.</p>
 <?php if (amz_active()): ?><h2>8. Amazon-Partnerlinks</h2>
 <p>Die Seite enthält Links zu Amazon, die als Werbung gekennzeichnet sind (Amazon-Partnerprogramm). Beim Klick wirst du auf die Seite von Amazon weitergeleitet. Erst dort setzt Amazon Cookies und verarbeitet Daten nach der eigenen Datenschutzerklärung. Ich erhalte von Amazon keine Angaben zu dir persönlich, sondern nur anonymisierte Provisionsdaten. Auf meiner Seite werden vor dem Klick keine Daten an Amazon übertragen.</p><?php else: ?><h2>8. Links zu Amazon</h2>
@@ -59,7 +60,7 @@
 <li>Cookie „sd_dev“: nur für Admin und Tester, die gewählte Version der Seite.</li>
 <li>Cookie „sd_maint“: nur für den Betreiber, Zugang während einer Wartung, höchstens 2 Stunden.</li>
 <li>Sitzungsspeicher des Browsers: zuletzt geöffnete Ansicht und Reiter, damit die Seite nach dem Neuladen dort weitermacht; wird mit dem Schließen des Tabs gelöscht.</li>
-<li>Lokaler Speicher des Browsers: welche Einträge im Versionsverlauf du schon gesehen hast, damit nur Neues markiert wird.</li>
+<li>Lokaler Speicher des Browsers: welche Einträge im Versionsverlauf du schon gesehen hast, damit nur Neues markiert wird, und ob Bilder bei Filmen und Serien angezeigt werden sollen.</li>
 </ul>
 <h2>10. Weitergabe an Dritte</h2>
 <p>Eine Weitergabe deiner Daten an Dritte erfolgt nur an die genannten Dienstleister (Hosting, E-Mail-Versand), soweit sie zur Leistung nötig sind, oder wenn ich gesetzlich dazu verpflichtet bin. Meine Abfragen bei den Datenquellen (Punkt 7) gehen teilweise an Anbieter mit Sitz außerhalb der EU, vor allem in den USA, zum Beispiel Google (Google Books, Google-News-Suche), die Wikimedia Foundation (Wikipedia/Wikidata), das Internet Archive (Open Library) und die MetaBrainz Foundation (MusicBrainz, ListenBrainz), TMDB (Streaming-Angaben stammen dort von JustWatch). Dorthin gehen nur öffentliche Namen und Titel von Einträgen sowie technisch bedingt die IP-Adresse meines Servers, keine Angaben zu dir, keine E-Mail-Adressen und keine Kontodaten. Wenn du auf einen Link zu einem solchen Dienst klickst (zum Beispiel zu Amazon oder einer Nachrichtenseite), verlässt du diese Seite und es gilt die Datenschutzerklärung des jeweiligen Anbieters.</p>

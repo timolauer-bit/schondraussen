@@ -49,14 +49,6 @@
     bug: '<svg viewBox="0 0 24 24"><rect x="8" y="6" width="8" height="14" rx="4"/><path d="M19 7l-3 2M5 7l3 2M19 19l-3-2M5 19l3-2M20 13h-4M4 13h4M10 2l1 2M14 2l-1 2"/></svg>',
     info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
     chat: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-    list: '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
-    dots: '<svg viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>',
-    key: '<svg viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16 7l3 3M14 9l2 2"/></svg>',
-    eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
-    check: '<svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg>',
-    eyeoff: '<svg viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A10 10 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.2 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.5 6 10 6a9.6 9.6 0 0 0 4.4-1"/></svg>',
-    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
-    logout: '<svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
     refresh: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8M3 3v5h5M3 12a9 9 0 0 0 15 6.7L21 16M21 21v-5h-5"/></svg>'
   };
 
@@ -205,7 +197,7 @@
     if (window.matchMedia && matchMedia('(hover:hover)').matches) { ib.addEventListener('mouseenter', function () { if (!shown) { show(true); ib.dataset.hv = '1'; } }); ib.addEventListener('mouseleave', function () { if (ib.dataset.hv) { delete ib.dataset.hv; show(false); } }); ib.addEventListener('click', function () { delete ib.dataset.hv; }); }
     ttl.append(' ', ib); return h('div', { class: 'epcell' }, ttl, box);
   }
-  function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon ansehen ↗'); } // Überarbeitung: Textlink statt Knopf
+  function amazonLink(e, title) { return h('a', { class: 'go', href: amazonUrl(e, title), target: '_blank', rel: 'sponsored noopener noreferrer' }, 'Bei Amazon'); }
   function popup(title, text) { // Bestätigung als Fenster, schließt mit OK, Esc oder Klick daneben
     var prev = document.activeElement, ok = h('button', { class: 'btn', type: 'button' }, 'OK');
     var box = h('div', { class: 'unmodal', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'pph' }, h('div', { class: 'unbox' }, h('h2', { id: 'pph', style: 'margin:0 0 6px;font-size:20px' }, title), h('p', { class: 'hint', style: 'margin:0 0 14px' }, text), ok));
@@ -254,98 +246,34 @@
     box._close = function () { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); }; // Listener beim Schließen immer mit entfernen
     setTimeout(function () { document.addEventListener('click', off, true); document.addEventListener('keydown', esc, true); }, 0);
   }
-  // Überarbeitung: einfaches Aufklappmenü unter einem Knopf (Profil, Hilfe & Feedback)
-  function popMenu(anchor, items, label, head) {
-    var old = document.getElementById('popmenu'); if (old) { var was = old._anchor; old._close(); if (was === anchor) return; }
-    var box = h('div', { id: 'popmenu', class: 'popmenu', role: 'menu', 'aria-label': label });
-    if (head) box.append(head);
-    items.forEach(function (o) {
-      if (o.sep) { box.append(h('div', { class: 'pmsep', role: 'separator' })); return; }
-      box.append(h('button', { type: 'button', role: 'menuitem', class: 'pmi' + (o.on ? ' on' : ''), onclick: function () { box._close(); o.go(); } },
-        o.icon ? ico(ICONS[o.icon]) : null, h('span', { class: 'pmt' }, h('b', null, o.t), o.d ? h('small', null, o.d) : null), o.badge ? h('span', { class: 'badge' }, String(o.badge)) : null));
-    });
-    var r = anchor.getBoundingClientRect(); document.body.append(box);
-    var x = Math.max(8, Math.min(window.innerWidth - box.offsetWidth - 8, r.right - box.offsetWidth));
-    var below = r.bottom + 8 + box.offsetHeight <= window.innerHeight || r.top < box.offsetHeight + 16;
-    if (below) { box.style.left = (x + window.scrollX) + 'px'; box.style.top = (r.bottom + window.scrollY + 8) + 'px'; }
-    else { box.style.position = 'fixed'; box.style.left = x + 'px'; box.style.top = Math.max(8, r.top - box.offsetHeight - 8) + 'px'; } // über dem Knopf, z. B. an der Leiste unten
-    anchor.setAttribute('aria-expanded', 'true'); box._anchor = anchor;
-    function off(ev) { if (!box.contains(ev.target) && !anchor.contains(ev.target)) box._close(); }
-    function esc(ev) { if (ev.key === 'Escape') { box._close(); anchor.focus(); } }
-    box._close = function () { box.remove(); anchor.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); window.removeEventListener('resize', box._close); };
-    setTimeout(function () { document.addEventListener('click', off, true); document.addEventListener('keydown', esc, true); window.addEventListener('resize', box._close); }, 0);
-    var f = box.querySelector('.pmi'); if (f) f.focus();
-  }
-  function setTabGo(tab) { try { sessionStorage.setItem('sd_settab', tab); } catch (_) {} if (S.view === 'set') render(); else go('set'); }
-  function profileHead() {
-    var wb = document.querySelector('.whobox'); if (!wb || D.demo) return; var old = $('profbtn'); if (old) old.remove();
-    var nm = D.username || 'Profil', n = D.nerd ? logBadge() : 0;
-    var pb = h('button', { id: 'profbtn', class: 'profbtn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-label': 'Profil und Konto: ' + nm, onclick: function () {
-      popMenu(pb, [
-        { t: 'Profilkarte', icon: 'user', go: function () { setTabGo('Profil'); } },
-        { t: 'Einstellungen', icon: 'gear', on: S.view === 'set', go: function () { go('set'); } },
-        { t: 'Benachrichtigungen', icon: 'bell', go: function () { setTabGo('Benachrichtigungen'); } },
-        { t: 'Was ist neu?', d: 'Version ' + LATEST, icon: 'refresh', badge: n, on: S.view === 'log', go: function () { go('log'); } },
-        { sep: true },
-        { t: 'Abmelden', icon: 'logout', go: function () { api('/api/auth.php?a=logout', {}).then(function () { location.reload(); }); } }
-      ], 'Profil und Konto', h('div', { class: 'pmhead' }, h('b', null, nm), h('small', null, D.admin ? 'Admin' : (D.mod ? 'Moderator' : (D.alpha ? 'Alphatester' : 'Mitglied')))));
-    } }, h('span', { class: 'pav', 'aria-hidden': 'true' }, nm.charAt(0).toUpperCase()), h('span', { class: 'pnm' }, nm), ico(ICONS.chev, 'ico chev'), n ? h('span', { class: 'badge', 'aria-label': n + ' neue Änderungen' }, n > 99 ? '99+' : String(n)) : null);
-    wb.append(pb);
-  }
-  // Überarbeitung, Handy: Leiste unten mit Kalender, Listen, Community und Mehr
-  function tabBar() {
-    var tb = $('tabbar'); if (!tb) { tb = h('nav', { id: 'tabbar', class: 'tabbar', 'aria-label': 'Hauptbereiche' }); document.body.append(tb); }
-    tb.textContent = '';
-    var isList = S.view === 'list', more = ['news', 'info', 'feat', 'bug', 'sup', 'adm', 'set', 'log'].indexOf(S.view) > -1;
-    function tab(lbl, icon, on, fn, extra) { var b = h('button', { type: 'button', class: 'tab' + (on ? ' on' : ''), 'aria-current': on ? 'page' : null, onclick: fn }, ico(ICONS[icon]), h('span', null, lbl), extra || null); tb.append(b); return b; }
-    tab('Kalender', 'cal', S.view === 'cal', function () { go('cal'); });
-    tab('Listen', 'list', isList, function () { var c = S.lastCat && TYPES[S.lastCat] && !isHid(S.lastCat) ? S.lastCat : ORDER.filter(function (k) { return !isHid(k); })[0] || 'author'; go('list', c); });
-    if (commOn()) tab('Community', 'people', S.view === 'comm', function () { go('comm'); });
-    var badge = (S.unread || 0) + (S.preview ? 0 : ((S.fbNew || {}).feat || 0) + ((S.fbNew || {}).bug || 0));
-    var mb = tab('Mehr', 'dots', more, function () {
-      var it = [];
-      if (D.news && !S.preview) it.push({ t: 'News', icon: 'news', on: S.view === 'news', go: function () { go('news'); } });
-      it.push({ t: 'Info und FAQ', icon: 'info', on: S.view === 'info', go: function () { go('info'); } });
-      if (feat('feat')) it.push({ t: 'Ideen', icon: 'bulb', badge: S.preview ? 0 : (S.fbNew || {}).feat || 0, on: S.view === 'feat', go: function () { go('feat'); } });
-      it.push({ t: 'Bugs', icon: 'bug', badge: S.preview ? 0 : (S.fbNew || {}).bug || 0, on: S.view === 'bug', go: function () { go('bug'); } }, { t: 'Kontakt', icon: 'chat', badge: S.unread || 0, on: S.view === 'sup', go: function () { go('sup'); } });
-      if (hasAdm()) it.push({ t: 'Admin', icon: 'shield', badge: S.pend || 0, on: S.view === 'adm', go: function () { go('adm'); } });
-      it.push({ sep: true }, { t: 'Einstellungen', icon: 'gear', on: S.view === 'set', go: function () { go('set'); } });
-      popMenu(mb, it, 'Weitere Bereiche');
-    }, badge ? h('span', { class: 'badge' }, badge > 99 ? '99+' : String(badge)) : null);
-    mb.setAttribute('aria-haspopup', 'menu');
-  }
   function nav() {
-    if (S.view === 'list' && TYPES[S.cat]) S.lastCat = S.cat;
-    document.documentElement.classList.toggle('inlist', S.view === 'list'); if (S.view !== 'list') document.documentElement.classList.remove('hassel');
     topbar.textContent = '';
     // Rechte Gruppe: Symbole. Für alle nur Symbole (Name per Tooltip, bei der aktiven Seite sichtbar).
-    var RI = { adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
+    var RI = { comm: 'people', adm: 'shield', set: 'gear', feat: 'bulb', bug: 'bug', info: 'info', sup: 'chat' }, iconOnly = true;
     function btn(key, text, count, extra) {
       var cur = S.view === 'list' ? S.cat === key : S.view === key, ri = RI[key], io = ri && iconOnly;
       return h('button', { class: 'nav' + (extra || '') + (io ? ' ionly' : '') + (D.demo && /^(cal|series|comm)$/.test(key) ? ' demo-open' : ''), type: 'button', 'data-demotip': D.demo ? 'Gibt es mit eigenem Konto' : null, 'aria-current': cur ? 'page' : null, title: io ? text : null, 'aria-label': io ? text : null, onclick: function () { /^(author|artist|film|series|podcast)$/.test(key) ? go('list', key) : go(key); } },
-        key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : (key === 'comm' ? ico(ICONS.people) : null)), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
+        key === 'cal' ? ico(ICONS.cal) : (key === 'news' ? ico(ICONS.news) : null), ri ? ico(ICONS[ri]) : null, /^(author|artist|film|series|podcast)$/.test(key) ? h('i', { class: 'cdot c-' + key, 'aria-hidden': 'true' }) : null, io ? h('span', { class: 'lbl' }, text) : h('span', { class: 'nt' }, text), count ? h('small', null, String(count)) : null);
     }
     var navMain = h("div", { class: "navgrp navmain" }), navRest = h("div", { class: "navgrp navrest" });
     var navTop = null;
     if (D.news && !S.preview) { navTop = h("div", { class: "navgrp navtop" }); navTop.append(btn('cal', 'Kalender', 0), btn('news', 'News', 0, ' newsnav')); } // Handy: eigene Zeile
     else navMain.append(btn('cal', 'Kalender', 0));
-    if (commOn()) (navTop || navMain).append(btn('comm', 'Community', 0, ' commnav')); // Community prominent zwischen News und Bücher (Handy: Zeile mit Kalender und News)
     ORDER0.forEach(function (k) { if (!isHid(k)) navMain.append(btn(k, TYPES[k].plural, 0)); });
     var rg = ' rg';
     if (D.podcast && !isHid('podcast')) navMain.append(btn('podcast', 'Podcasts', 0, ' podnav'));
+    if (commOn()) { navRest.append(btn('comm', 'Community', 0, ' commnav' + rg)); rg = ''; }
     if ((D.admin || D.devsw) && !S.preview) { var dsLabel = D.design ? ((D.designs || []).filter(function (x) { return x.slug === D.design; })[0] || {}).name || 'Design' : (D.dev ? 'Dev' : 'Live'); var dsw = h('button', { class: 'devsw' + (D.dev ? ' on' : ''), type: 'button', 'aria-haspopup': 'menu', title: 'Du siehst: ' + dsLabel + '. Klicken, um die Version zu wechseln (Live, Entwicklung, Design-Varianten).', onclick: function () { devMenu(dsw); } }, h('span', { class: 'devlbl' }, dsLabel)); var dn = (D.devnotes || []).filter(function (x) { return typeof x === 'string' && x; }); if (dn.length) { dsw.append(h('span', { class: 'devbadge', 'aria-hidden': 'true' }, String(dn.length))); dsw.title += '\n\nUnterschiede der Entwicklungsversion zur Live-Version (' + dn.length + '):\n• ' + dn.join('\n• '); dsw.setAttribute('aria-label', dsLabel + ', ' + dn.length + ' Unterschiede zur Live-Version'); } var wb = document.querySelector('.whobox'), od = document.getElementById('devsw'); if (od) od.remove(); dsw.id = 'devsw'; if (wb) wb.insertBefore(dsw, wb.firstChild); }
     if (hasAdm()) { var b = btn('adm', 'Admin', 0, ' adminnav' + rg); if (S.pend) b.append(h('span', { class: 'badge' }, String(S.pend))); navRest.append(b); rg = ''; }
-    // Überarbeitung: Info, Ideen, Bugs und Kontakt in einem Menü „Hilfe & Feedback“ (Zahlen addiert am Knopf); Einstellungen stehen im Profilmenü
-    var HF = [['info', 'Info und FAQ', 'Über die Seite, häufige Fragen', 'info', 0]];
-    if (feat('feat')) HF.push(['feat', 'Ideen', 'Vorschlagen und abstimmen', 'bulb', S.preview ? 0 : ((S.fbNew || {}).feat || 0)]);
-    HF.push(['bug', 'Bugs', 'Fehler melden und verfolgen', 'bug', S.preview ? 0 : ((S.fbNew || {}).bug || 0)], ['sup', 'Kontakt', 'Nachricht an den Admin', 'chat', S.unread || 0]);
-    var hfOn = HF.some(function (x) { return S.view === x[0]; }), hfSum = HF.reduce(function (a, x) { return a + (S.view === x[0] ? 0 : (+x[4] || 0)); }, 0);
-    var hfb = h('button', { class: 'nav hfbtn' + rg, type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-current': hfOn ? 'page' : null, 'data-demotip': D.demo ? 'Gibt es mit eigenem Konto' : null, onclick: function () { popMenu(hfb, HF.map(function (x) { return { t: x[1], d: x[2], icon: x[3], badge: x[4], on: S.view === x[0], go: function () { go(x[0]); } }; }), 'Hilfe und Feedback'); } },
-      ico(ICONS.chat), h('span', { class: 'nt' }, 'Hilfe & Feedback'), ico(ICONS.chev, 'ico chev'), hfSum ? h('span', { class: 'badge', 'aria-label': hfSum + ' neu' }, hfSum > 99 ? '99+' : String(hfSum)) : null);
-    navRest.append(hfb);
+    navRest.append(btn('set', 'Einstellungen', 0, ' settings' + rg));
+    function fbBadge(b, key) { var n = (S.fbNew || {})[key] || 0; if (n && S.view !== key && !S.preview) b.append(h('span', { class: 'badge', 'aria-label': n + ' offen: Freischaltungen und Neues' }, n > 99 ? '99+' : String(n))); return b; }
+    if (feat('feat')) navRest.append(fbBadge(btn('feat', 'Ideen', 0, ' feat'), 'feat'));
+    navRest.append(fbBadge(btn('bug', 'Bugs', 0, ' bugs'), 'bug'));
+    navRest.append(btn('info', 'Info', 0, ' info'));
+    var k = btn('sup', 'Kontakt', 0, ' support'); if (S.unread) k.append(h('span', { class: 'badge', 'aria-label': S.unread + ' ungelesen' }, S.unread > 99 ? '99+' : String(S.unread))); navRest.append(k);
     if (navTop) topbar.append(navTop);
     topbar.append(navMain, navRest);
-    renderVer(); profileHead(); tabBar();
+    renderVer();
   }
   function welcome() {
     var w = $('welcome'); if (!w) { w = h('section', { class: 'warnbox', id: 'welcome', style: 'margin:12px 0' }); $('topbar').before(w); }
@@ -385,7 +313,6 @@
       h('div', { class: 'acts' }, it.e.type === 'podcast' ? null : amazonLink(it.e, it.u.title)));
   }
   function nameLink(e) { return h('button', { class: 'namelink' + (D.demo && e.type === 'series' ? ' demo-open' : ''), type: 'button', title: 'Seite von ' + e.name + ' öffnen', onclick: function () { S.view = 'list'; S.cat = e.type; S.sel = String(e.id); S.confirm = null; S.filter = ''; render(); window.scrollTo(0, 0); } }, e.name); }
-  var WDAYL = new Intl.DateTimeFormat('de-DE', { weekday: 'long' }), MONTHN = new Intl.DateTimeFormat('de-DE', { month: 'long' });
   function groupByMonth(items) {
     var g = {}, order = [], wrap = h('div', null);
     items.forEach(function (it) { var key = (it.p.prec === 'year' || it.p.prec === 'none') ? 'later' : it.p.y + '-' + String(it.p.m).padStart(2, '0'); if (!g[key]) { g[key] = []; order.push(key); } g[key].push(it); });
@@ -393,21 +320,7 @@
     order.forEach(function (key) {
       var l = g[key]; l.sort(function (a, b) { return a.p.sort - b.p.sort || String(a.u.title).localeCompare(String(b.u.title), 'de'); });
       var sec = h('section', { class: 'month' }, h('h3', null, key === 'later' ? 'Termin noch offen' : MONTH.format(l[0].p.start)));
-      // Überarbeitung: innerhalb des Monats nach Tagen gruppiert, Tageskopf statt Datum in jeder Zeile
-      var now = today0(), dg = {}, dord = [], pastBox = null;
-      l.forEach(function (it) { var dk = it.p.prec === 'day' ? String(it.p.d) : 'x'; if (!dg[dk]) { dg[dk] = []; dord.push(dk); } dg[dk].push(it); });
-      dord.forEach(function (dk) {
-        var first = dg[dk][0], lbl, sub = '';
-        if (dk === 'x') lbl = key === 'later' ? '' : 'Tag noch offen';
-        else { var diff = Math.round((first.p.start - now) / 864e5), full = WDAYL.format(first.p.start) + ', ' + first.p.d + '. ' + MONTHN.format(first.p.start);
-          if (diff === 0) { lbl = 'Heute'; sub = full; } else if (diff === 1) { lbl = 'Morgen'; sub = full; } else if (diff === -1) { lbl = 'Gestern'; sub = full; } else { lbl = full; sub = diff > 1 && diff <= 60 ? 'in ' + diff + ' Tagen' : (diff < 0 ? 'vorbei' : ''); } }
-        var box = h('div', { class: 'daybox' + (dk !== 'x' && first.p.start < now ? ' past' : '') });
-        dg[dk].forEach(function (it) { box.append(h('div', { class: 'rel calrow dayrow c-' + it.e.type }, h('i', { class: 'cbar', 'aria-hidden': 'true' }), h('span', { class: 'ccat' }, h('i', { 'aria-hidden': 'true' }), TYPES[it.e.type].label), h('div', { class: 'one' }, nameLink(it.e), ' · ' + it.u.title + ((it.u.kind && it.u.kind !== 'Folge' ? ' · ' + it.u.kind : '') + (it.u.note ? ' · ' + it.u.note : ''))))); });
-        var dgEl = h('div', { class: 'dayg' }, lbl ? h('h4', { class: 'dayh' }, lbl, sub ? h('span', null, sub) : null) : null, box);
-        if (dk !== 'x' && first.p.start < now) { if (!pastBox) { pastBox = h('details', { class: 'pastdays' }, h('summary', null, 'Frühere Termine in diesem Monat')); sec.append(pastBox); } pastBox.append(dgEl); } // Vergangenes eingeklappt, damit „Heute“ und „Morgen“ oben stehen
-        else sec.append(dgEl);
-      });
-      wrap.append(sec);
+      l.forEach(function (it) { sec.append(relRow(it, true)); }); wrap.append(sec);
     });
     return wrap;
   }
@@ -438,7 +351,7 @@
     var now = today0(), byDay = {};
     items.forEach(function (it) { if (it.p.prec !== 'day') return; var k = it.p.y + '-' + it.p.m + '-' + it.p.d, o = byDay[k] || (byDay[k] = { n: 0, cats: {}, list: [] }); o.n++; o.cats[it.e.type] = 1; o.list.push(it); });
     var grid = h('div', { class: 'mgrid' });
-    for (var mi = 0; mi < 2; mi++) { // Überarbeitung: zwei Monate neben der Liste
+    for (var mi = 0; mi < 4; mi++) {
       var first = new Date(now.getFullYear(), now.getMonth() + mi, 1), y = first.getFullYear(), m = first.getMonth() + 1, days = new Date(y, m, 0).getDate(), lead = (first.getDay() + 6) % 7;
       var cal = h('div', { class: 'mcal' }, ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(function (d) { return h('div', { class: 'wd' }, d); }));
       for (var b = 0; b < lead; b++) cal.append(h('div', { class: 'dc' }));
@@ -447,28 +360,22 @@
         if (o) {
           var cats = ORDER.filter(function (k) { return o.cats[k]; }), step = 100 / cats.length;
           var stops = cats.map(function (k, i) { return CATCOL[k] + ' ' + (i * step) + '% ' + ((i + 1) * step) + '%'; }).join(', ');
-          var pie = h('span', { class: 'pie', tabindex: '0', role: 'button', 'aria-label': d + '.' + m + '.: ' + o.n + (o.n === 1 ? ' Termin' : ' Termine') + ' (' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') + ')' }, h('span', { class: 'pn' }, String(d)), h('span', { class: 'pdots', 'aria-hidden': 'true' }, cats.map(function (k) { return h('i', { style: 'background:' + CATCOL[k] }); }))); /* Überarbeitung: je Kategorie ein Punkt statt Farbring */ dayTip(pie, new Date(y, m - 1, d), o.list); cell.append(pie);
+          var pie = h('span', { class: 'pie', style: 'background:conic-gradient(' + stops + ')', tabindex: '0', role: 'button', 'aria-label': d + '.' + m + '.: ' + o.n + (o.n === 1 ? ' Termin' : ' Termine') + ' (' + cats.map(function (k) { return TYPES[k].plural; }).join(', ') + ')' }, h('span', { class: 'pn' }, String(d))); dayTip(pie, new Date(y, m - 1, d), o.list); cell.append(pie);
         } else cell.append(h('span', { class: 'pn plain' }, String(d)));
         cal.append(cell);
       }
       grid.append(h('div', { class: 'mon' }, h('h3', null, MONTH.format(first)), cal));
     }
     var cnt = {}; items.forEach(function (it) { cnt[it.e.type] = (cnt[it.e.type] || 0) + 1; });
-    var shown = ORDER.filter(function (k) { return !isHid(k); });
-    function saveHide() { api('/api/data.php?a=calhide', { hide: Object.keys(S.calHide).filter(function (x) { return S.calHide[x]; }) }); }
-    function paintAll() { var none = !shown.some(function (k) { return S.calHide[k]; }); allB.setAttribute('aria-pressed', none ? 'true' : 'false'); }
-    var allB = h('button', { class: 'lchip lall', type: 'button', title: 'Alle Kategorien zeigen', onclick: function () { shown.forEach(function (k) { S.calHide[k] = false; }); saveHide(); [].forEach.call(leg.querySelectorAll('.lchip[data-k]'), function (b) { b.setAttribute('aria-pressed', 'true'); }); paintAll(); if (onFilter) onFilter(); } }, 'Alle');
-    var leg = h('div', { class: 'legend legfilt', role: 'group', 'aria-label': 'Kategorien filtern' }, [allB].concat(shown.map(function (k) {
-      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; api('/api/data.php?a=calhide', { hide: Object.keys(S.calHide).filter(function (x) { return S.calHide[x]; }) }); b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; paintAll(); if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
-      b.setAttribute('data-k', k); return b;
-    })));
-    paintAll();
-    var sec = h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid); sec._leg = leg; return sec; // Überarbeitung: Filter stehen über Raster und Liste
+    var leg = h('div', { class: 'legend legfilt', role: 'group', 'aria-label': 'Kategorien filtern' }, ORDER.filter(function (k) { return !isHid(k); }).map(function (k) {
+      var b = h('button', { class: 'lchip', type: 'button', style: '--c:' + CATCOL[k], 'aria-pressed': S.calHide[k] ? 'false' : 'true', title: (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)', onclick: function () { S.calHide[k] = !S.calHide[k]; api('/api/data.php?a=calhide', { hide: Object.keys(S.calHide).filter(function (x) { return S.calHide[x]; }) }); b.setAttribute('aria-pressed', S.calHide[k] ? 'false' : 'true'); b.title = (S.calHide[k] ? 'Einblenden: ' : 'Ausblenden: ') + TYPES[k].plural + ' (' + (cnt[k] || 0) + ' Termine)'; if (onFilter) onFilter(); } }, h('i', { 'aria-hidden': 'true' }), TYPES[k].plural);
+      return b;
+    }));
+    return h('section', { class: 'months', 'aria-label': 'Monatsübersicht' }, grid, leg);
   }
   function renderCalendar() {
-    var items = S.rels.map(toItem), wrap = h('div', { class: 'main calpage' });
-    var calHead = h('div', { class: 'calhead' }, h('div', { class: 'calttl' }, h('h2', null, 'Kalender')));
-    wrap.append(calHead);
+    var items = S.rels.map(toItem), wrap = h('div', { class: 'main' });
+    wrap.append(h('p', { class: 'note' }, (D.demo ? 'Einblick: angekündigte Veröffentlichungen aus den Listen eines Beispielnutzers (je Kategorie 10 Einträge, jede Woche neu ausgewählt), nach Datum sortiert.' : 'Angekündigte Veröffentlichungen aus allen deinen Listen, nach Datum sortiert.') + ' Die Angaben kommen aus TVmaze, MusicBrainz, Open Library und TMDB und werden alle 12 Stunden erneuert.'));
     if (!S.entries.length) { wrap.append(h('div', { class: 'empty' }, h('h2', null, 'Noch nichts auf deinen Listen'), h('p', null, 'Wähle oben eine Liste und füge etwas hinzu. Die kommenden Termine erscheinen dann hier.'))); return wrap; }
     if (!items.length) { wrap.append(h('p', { class: 'state' }, 'Keine angekündigten Termine bekannt.')); return wrap; }
     if (!S.calHide) { S.calHide = {}; (D.calhide || []).forEach(function (k) { if (TYPES[k]) S.calHide[k] = true; }); } // im Konto gespeichert
@@ -482,8 +389,7 @@
       if (pastPod.length > 10) { var drop = pastPod.slice().sort(function (x, y) { return x.p.sort - y.p.sort; }).slice(0, pastPod.length - 10); vis = vis.filter(function (it) { return drop.indexOf(it) < 0; }); }
       if (!vis.length) tbl.append(h('p', { class: 'state' }, 'Alle Kategorien sind ausgeblendet. Wähle oben eine Kategorie, um Termine zu sehen.')); else tbl.append(groupByMonth(vis));
     }
-    var mon = renderMonths(items, drawTbl); calHead.append(mon._leg);
-    wrap.append(h('div', { class: 'calgrid' }, mon, tbl)); drawTbl(); return wrap;
+    wrap.append(renderMonths(items, drawTbl)); wrap.append(tbl); drawTbl(); return wrap;
   }
 
   /* ---------- Listen ---------- */
@@ -546,12 +452,12 @@
       var mode = S.sort[S.cat], n = e.upcoming;
       box.append(h('button', { class: 'row-btn', type: 'button', 'aria-current': String(S.sel === e.id), onclick: function () { S.sel = e.id; S.confirm = null; S.menuFor = null; rows(); content(); if (window.innerWidth < 900) $('content').scrollIntoView({ behavior: 'smooth' }); } },
         h('span', { class: 'nm' }, e.name), h('span', { class: 'tp' }, (mode === 'last' || mode === 'next') ? (e._lab || 'keine Angabe') : worksLine(e), +e.bell === 0 ? h('span', { class: 'beloff', title: 'Benachrichtigungen für diesen Eintrag sind aus' }, ico(ICONS.bellOff)) : null),
-        n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, n + (n === 1 ? ' Termin' : ' Termine')) : null)); // Überarbeitung: Zahl mit Wort statt roter Kreis
+        n ? h('span', { class: 'ct', title: 'Kommende Veröffentlichungen' }, String(n)) : null));
     });
   }
   function saveView() { if (D.demo) { demoUrlSync(); return; } try { sessionStorage.setItem('sd_view', JSON.stringify({ v: S.view, c: S.cat, s: S.sel, t: Date.now() })); } catch (_) {} }
   function content() {
-    saveView(); document.documentElement.classList.toggle('hassel', !!S.sel); // Überarbeitung, Handy: Liste oder Eintrag
+    saveView();
     var box = $('content'); box.textContent = '';
     var es = entriesOf(S.cat), t = TYPES[S.cat];
     if (!es.length) { box.append(h('div', { class: 'empty' }, h('h2', null, 'Noch keine ' + t.plural), h('p', null, 'Gib links einen Namen ein und wähle den passenden Treffer. Werke und angekündigte Neuerscheinungen werden dann automatisch geladen.'), h('p', { class: 'hint' }, 'Tipp: In den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' kannst du unter „Import“ ganze Listen oder Exporte (zum Beispiel von Spotify oder Trakt) einspielen und eigene Sammellisten hinzufügen.'))); box.append(popularBox(S.cat)); return; }
@@ -607,11 +513,6 @@
       var gs = h('span', null), sst = nxt && TVS[e.tv_status] ? h('span', null, 'Serie ', h('b', null, TVS[e.tv_status])) : null; node.append(st, h('div', { class: 'nstats' }, gs, sst));
       prog = function (n, tot) { gs.textContent = ''; gs.append(h('b', null, n), ' von ' + tot + ' gesehen'); };
       var dn = doneSetOf(r), c0 = 0; eps.forEach(function (x) { if (dn[x.k]) c0++; }); prog(c0, eps.length);
-      // Überarbeitung: ein Hauptknopf für die nächste ungesehene, bereits gelaufene Folge
-      var tdk = new Date(), tds = tdk.getFullYear() + '-' + String(tdk.getMonth() + 1).padStart(2, '0') + '-' + String(tdk.getDate()).padStart(2, '0');
-      var nx = eps.slice().sort(function (a, b) { return a.season - b.season || a.number - b.number; }).filter(function (x) { return !dn[x.k] && x.airdate && String(x.airdate) <= tds; })[0];
-      if (nx && !D.demo) { var lab = 'S' + String(nx.season).padStart(2, '0') + 'E' + String(nx.number).padStart(2, '0') + ' gesehen';
-        var nb = h('button', { class: 'btn nbtn', type: 'button', onclick: function () { nb.disabled = true; setDone(e, [nx.k], true, function () { (r.done = r.done || []).push(nx.k); content(); }); } }, lab); node.append(nb); }
     } else {
       var tot = Math.max(+e.total_works || 0, r.works.length), dn2 = doneSetOf(r), c1 = 0; r.works.forEach(function (w) { if (dn2[w.k]) c1++; });
       if (tot) st.append(h('span', null, h('b', null, tot), ' ' + (e.type === 'author' ? 'Bücher' : e.type === 'artist' ? (+e.singles > 0 && +e.singles === +e.works ? 'Veröffentlichungen' : 'Alben') : e.type === 'podcast' ? 'Folgen' : 'Werke')));
@@ -619,14 +520,6 @@
       if (st.childNodes.length) node.append(st);
     }
     return { node: node, prog: prog };
-  }
-  // Bilder von Filmen und Serien (TMDB/TVmaze, über den eigenen Server ausgeliefert); abschaltbar in Einstellungen → Darstellung
-  function picsOn() { try { return localStorage.getItem('sd_pics') !== '0'; } catch (_) { return true; } }
-  function picUrl(rel) { return '/bilder/' + rel; }
-  function picHide(ev) { var el = ev.currentTarget; (el.closest('.ebanner') || el).remove(); }
-  function heroBox(e) {
-    if (!e.img || !e.img.b || !picsOn()) return null;
-    return h('div', { class: 'ebanner', 'aria-hidden': 'true' }, h('img', { src: picUrl(e.img.bs || e.img.b), srcset: picUrl(e.img.bs || e.img.b) + ' 780w, ' + picUrl(e.img.b) + ' 1280w', sizes: '(max-width: 760px) 100vw, 960px', alt: '', decoding: 'async', onerror: picHide, onload: function (ev) { ev.currentTarget.parentNode.classList.add('ok'); } }));
   }
   function entryCard(cur, r) {
     var e = r.entry, card = h('article', { class: 'card cat-' + e.type, style: '--cc:' + CATCOL[e.type] }), t = TYPES[e.type];
@@ -671,7 +564,6 @@
     var actions = h('div', { class: 'actions' }, bellBtn, favBtn, wrap);
     var meta = h('div', { class: 'meta' }, h('span', { class: 'mcat' }, ico(ICONS[e.type]), t.label), stamp ? h('span', { class: 'mstamp tipd', title: 'Zeitpunkt der letzten Aktualisierung aus der Datenquelle. Die Angaben werden automatisch alle 12 Stunden erneuert; „Aktualisieren“ lädt sie sofort neu.' }, stamp) : null);
     var gch = gensOf(e).length ? h('div', { class: 'gchips' }, gensOf(e).map(function (g) { return h('span', { class: 'gchip' }, g); })) : null;
-    var bnr = heroBox(e); if (bnr) card.append(bnr);
     card.append(h('div', { class: 'card-head' }, h('div', { class: 'ch1' }, meta, h('h2', null, e.name), gch), actions));
     if (S.relink === e.id) card.append(relinkBox(cur, e));
     else if (e.fetched_at && !r.works.length && !r.releases.length && !(r.episodes || []).length) card.append(h('p', { class: 'warnbox' }, 'Zu diesem Eintrag wurden keine Daten gefunden. Oft hilft ein anderer Titel, bei Serien und Filmen zum Beispiel der englische. ' + ((r.entry && r.entry.err) ? 'Rückmeldung der Quelle: ' + r.entry.err + ' ' : ''), h('button', { class: 'btn small', type: 'button', style: 'margin-left:6px', title: 'Suche in der Datenquelle nach dem passenden Titel, zum Beispiel mit dem englischen Namen', onclick: function () { S.relink = e.id; content(); } }, 'Treffer ändern')));
@@ -714,7 +606,7 @@
     var nb = nextBox(e, r, up, t);
     card.append(h('div', { class: 'hero' + (sumNode ? '' : ' solo') }, sumNode, nb.node));
     var progCb = nb.prog;
-    if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, e.img && e.img.b && picsOn() ? 'Filmdaten und Bilder von ' : 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
+    if (e.type === 'film' && e.fetched_at) card.append(h('p', { class: 'note' }, 'Filmdaten von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB'), '. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'));
     if (e.type === 'film' && (!e.kind || e.kind === 'movie') && r.works.length <= 1) { card.append(renderSimilar(e)); return card; } // einzelner Film: Gesehen-Knopf oben genügt
     if (e.type === 'podcast' && (e.by || e.page)) card.append(h('p', { class: 'hint' }, e.by ? 'Von ' + e.by : '', e.by && e.page ? ' · ' : '', e.page ? h('a', { href: e.page, target: '_blank', rel: 'noopener noreferrer' }, 'Bei Apple Podcasts ansehen') : null));
     if (e.type !== 'series') { // bei Serien steht das schon in der Staffelübersicht und im Kasten rechts oben
@@ -742,7 +634,7 @@
       rows.push({ w: w, pill: pill, row: row }); grid.append(row);
     });
     if (grid !== card) card.append(grid);
-    if (e.type === 'film' && (e.kind === 'col' && e.wparts || e.kind === 'person') && r.works.length) card.append(h('p', { class: 'note' }, e.kind === 'person' ? 'Mit ▶ siehst du, wo ein Film in Deutschland läuft. ' : '', 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'));
+    if (e.type === 'film' && (e.kind === 'col' && e.wparts || e.kind === 'person') && r.works.length) card.append(devMark(h('p', { class: 'note' }, e.kind === 'person' ? 'Mit ▶ siehst du, wo ein Film in Deutschland läuft. ' : '', 'Angaben zur Verfügbarkeit in Deutschland von ', h('a', { href: 'https://www.justwatch.com', target: '_blank', rel: 'noopener noreferrer' }, 'JustWatch'), ' (über TMDB), ohne Gewähr.'), 'wparts'));
     updAll();
     if (e.type !== 'podcast') card.append(renderSimilar(e));
     return card;
@@ -778,7 +670,7 @@
     var l = watchText(wt), d = h('div', { class: 'wwatch' });
     if (!l.length) { d.textContent = 'Noch bei keinem Anbieter'; d.classList.add('none'); }
     else l.forEach(function (x, i) { if (i) d.append(h('br')); d.append(h('b', null, x[0] + ': '), x[1]); });
-    return d;
+    return devMark(d, 'wparts');
   }
   function wplay(e, w) {
     if (e.type !== 'film' || e.kind !== 'person' || !/^t\d+$/.test(w.k || '')) return null;
@@ -788,7 +680,7 @@
       if (b._w) { watchTip(b, b._w); return; } b.disabled = true;
       api('/api/data.php?a=watch&tmdb=' + w.k.slice(1)).then(function (x) { b.disabled = false; if (!x || !x.ok) { watchTip(b, null, (x && x.error) || 'Das hat nicht geklappt.'); return; } b._w = x.watch; watchTip(b, x.watch); });
     });
-    return b;
+    return devMark(b, 'wparts');
   }
   function watchTip(btn, wt, err) {
     var old = document.getElementById('favtip'); if (old) old.remove();
@@ -891,7 +783,7 @@
     var now = today0(), box = h('div', null), by = {}, strip = h('div', { class: 'strip', role: 'tablist' }), panels = {}, tiles = {}, sel = null, gbtns = [], updFns = [];
     box.append(h('h3', { class: 'sec' }, 'Staffeln und Folgen'));
     box.append(h('p', { class: 'note' }, 'Folgen und Sendetermine von ', h('a', { href: e.tvmaze ? 'https://www.tvmaze.com/shows/' + e.tvmaze : 'https://www.tvmaze.com', target: '_blank', rel: 'noopener noreferrer' }, 'TVmaze'),
-      e.img && e.img.b && picsOn() ? ['. Bild von ', h('a', { href: 'https://www.themoviedb.org', target: '_blank', rel: 'noopener noreferrer' }, 'TMDB')] : '', e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
+      e.tv_status ? '. Serienstatus: ' + (TVS[e.tv_status] || e.tv_status) : '', '. Die Angaben werden alle 12 Stunden erneuert.'));
     eps.forEach(function (x) { (by[x.season] = by[x.season] || []).push(x); });
     var nums = Object.keys(by).map(Number).sort(function (a, b) { return a - b; }), liveSeason = null;
     function total() { var n = 0; eps.forEach(function (x) { if (done[x.k]) n++; }); if (progCb) progCb(n, eps.length); gbtns.forEach(function (b) { b.textContent = n === eps.length ? 'Alles zurücksetzen' : 'Alles als gesehen markieren'; }); }
@@ -900,7 +792,7 @@
       var l = by[sn], fut = 0; l.forEach(function (x) { var p = x.airdate ? parseDate(x.airdate) : null; if (p && p.prec !== 'none' && p.end >= now) fut++; });
       var past = l.length - fut, live = fut > 0, state = !live ? 'abgeschlossen' : past === 0 ? 'startet bald' : 'läuft gerade';
       if (live && liveSeason === null) liveSeason = sn;
-      var cks = [], allBtn = h('button', { class: 'btn ghost small sbtn2', type: 'button' }), fill = h('i'), prog = h('span', { class: 'sprog' });
+      var cks = [], allBtn = h('button', { class: 'btn ghost small', type: 'button' }), fill = h('i'), prog = h('span', { class: 'sprog' });
       var tile = h('button', { class: 's', type: 'button', role: 'tab', title: 'So viele Folgen dieser Staffel hast du als gesehen markiert. Nur für dich sichtbar.' }, h('b', null, 'Staffel ' + sn), h('span', null, pl(l.length, 'Folge', 'Folgen') + ' · ' + state), h('span', { class: 'bar' }, fill), prog);
       tile.addEventListener('click', function () { pick(sn); });
       tiles[sn] = tile; strip.append(tile);
@@ -929,7 +821,7 @@
         det.append(h('div', { class: 'work ep' }, ckb, h('div', { class: 'yr' }, 'E' + String(x.number).padStart(2, '0')), h('div', { class: 'epcell' }, ttl, h('div', { class: 'sub' }, when), sbox), h('div', { class: 'stat ' + (isFut ? 'soon' : 'sub') }, stat)));
       });
       allBtn.addEventListener('click', function () { var keys = cks.map(function (c) { return c.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); upd(); }); });
-      var gBtn = h('button', { class: 'btn ghost small sbtn3', type: 'button', title: 'Markiert alle Folgen aller Staffeln dieser Serie auf einmal' }); gbtns.push(gBtn);
+      var gBtn = h('button', { class: 'btn ghost small', type: 'button', title: 'Markiert alle Folgen aller Staffeln dieser Serie auf einmal' }); gbtns.push(gBtn);
       gBtn.addEventListener('click', function () { var keys = eps.map(function (x) { return x.k; }), on = !keys.every(function (k) { return done[k]; }); setDone(e, keys, on, function () { keys.forEach(function (k) { if (on) done[k] = 1; else delete done[k]; }); updFns.forEach(function (f) { f(); }); }); });
       updFns.push(upd);
       upd();
@@ -978,18 +870,13 @@
       S.sugg = null; S.sel = String(r.id); load(function () { render(); var q = $('q'); if (q) q.value = ''; });
     });
   }
-  function sthumb(x, cat) { // kleines Vorschaubild bei Filmen und Serien (auf dem Handy per CSS ausgeblendet)
-    if ((cat !== 'film' && cat !== 'series') || !picsOn()) return null;
-    if (!x.img) return h('span', { class: 'sthumb none', 'aria-hidden': 'true' });
-    return h('img', { class: 'sthumb', src: picUrl(x.img), alt: '', loading: 'lazy', decoding: 'async', width: '34', height: '50', onerror: function (ev) { ev.currentTarget.replaceWith(h('span', { class: 'sthumb none', 'aria-hidden': 'true' })); } });
-  }
   function drawSugg() {
     var box = $('sugg'); if (!box) return; box.textContent = ''; var s = S.sugg; if (!s) return;
     if (s.loading) { box.append(h('p', { class: 'hint pulse' }, 'Suche …')); return; }
     if (s.local) {
       box.append(h('p', { class: 'hint' }, s.list.length ? 'Schon auf der Seite vorhanden. Passt keiner, drücke Enter, dann wird im Netz gesucht.' : 'Noch nicht auf der Seite vorhanden. Drücke Enter, um im Netz zu suchen.'));
       if (s.list.length) { var ll = h('div', { class: 'suggest' });
-        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext, s.cat); } }, sthumb(x, s.cat), h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
+        s.list.forEach(function (x) { ll.append(h('button', { class: 'row-btn', type: 'button', disabled: !!x.mine, onclick: function () { addNow(x.name, x.ext, s.cat); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.mine ? 'schon in deiner Liste' : (x.hint || '')))); });
         box.append(ll); }
       return;
     }
@@ -998,7 +885,7 @@
     var list = h('div', { class: 'suggest' });
     s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
       if (x.title_search) { S.sugg = { loading: true }; drawSugg(); var my2 = ++srchSeq; api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { if (my2 !== srchSeq || S.cat !== 'author') return; S.sugg = { q: s.q, cat: 'author', list: r.results || [], byTitle: true }; drawSugg(); }); return; }
-      addNow(x.name, x.ext, s.cat); } }, sthumb(x, s.cat), h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
+      addNow(x.name, x.ext, s.cat); } }, h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
     list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}, s.cat); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
     box.append(list);
   }
@@ -1109,8 +996,7 @@
         b.dataset.a = id; grid.append(b);
       })('s' + String(i).padStart(2, '0'));
       paintPrev();
-      var pickBox = h('div', { class: 'pickbox', hidden: true }), pickBtn = h('button', { class: 'btn ghost', type: 'button', 'aria-expanded': 'false', onclick: function () { pickBox.hidden = !pickBox.hidden; pickBtn.setAttribute('aria-expanded', String(!pickBox.hidden)); pickBtn.textContent = pickBox.hidden ? 'Bild ändern' : 'Auswahl schließen'; } }, 'Bild ändern');
-      var picRow = h('div', { class: 'profpic ueb' }, prev, h('div', { class: 'pickctl' }, pickBtn, h('span', { class: 'hint' }, 'Über 60 gezeichnete Bilder, eigenes DiceBear-Bild oder Wunschbild'))); // Überarbeitung: Auswahl erst nach Klick
+      var picRow = h('div', null, h('div', { class: 'profpic' }, prev, grid));
       var wishBox = h('div', { class: 'wishbox' });
       function drawWish(d) {
         wishBox.textContent = ''; var ws = d.wishes || [], last = ws[0], open = ws.some(function (x) { return x.status === 'open'; });
@@ -1144,8 +1030,7 @@
       var dt = h('input', { type: 'date', min: '1900-01-01', max: (function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })(new Date()), value: v.date, autocomplete: 'bday', name: 'geburtsdatum', 'data-lpignore': 'true', 'data-1p-ignore': 'true', 'aria-label': 'Geburtsdatum', oninput: function () { v.date = dt.value; if (v.date) { v.year = v.date.slice(0, 4); yr.value = v.year; } yr.disabled = !!v.date; } });
       yr.disabled = !!v.date;
       var sel = h('select', { 'aria-label': 'Altersanzeige', onchange: function () { v.age_show = sel.value; } }, [['none', 'nicht anzeigen'], ['age', 'als Alter anzeigen'], ['year', 'als Geburtsjahr anzeigen']].map(function (o) { return h('option', { value: o[0], selected: v.age_show === o[0] ? true : null }, o[1]); }));
-      pickBox.append(grid, dbBox, wishBox);
-      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), picRow, pickBox,
+      wrap.append(h('p', { class: 'plab' }, 'Dein Bild'), picRow, dbBox, wishBox,
         h('p', { class: 'plab' }, 'Name'), nm, h('p', { class: 'plab' }, 'Geburtsdatum'), dt,
         h('p', { class: 'hint' }, 'Optional. Mit Datum passt sich das Alter automatisch an. Anderen zeigen wir nie das Datum, nur Alter oder Jahr.'),
         h('p', { class: 'plab' }, 'Oder nur das Geburtsjahr'), yr,
@@ -1244,10 +1129,8 @@
       ORDER.forEach(function (t) { var ck = h('input', { type: 'checkbox', checked: !isHid(t), onchange: function () { var hide = []; ORDER.forEach(function (x) { if ((x === t ? !ck.checked : isHid(x))) hide.push(x); }); if (hide.length >= ORDER.length) { ck.checked = true; hcMsg.className = 'msg err'; hcMsg.textContent = 'Mindestens eine Kategorie muss sichtbar bleiben.'; return; } api('/api/data.php?a=hidecats', { cats: hide }).then(function (r) { if (!r.ok) { ck.checked = !ck.checked; hcMsg.className = 'msg err'; hcMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; } D.hide = hide; hcMsg.className = 'msg'; hcMsg.textContent = 'Gespeichert.'; load(function () { nav(); }); }); } }); hcRow.append(h('label', { style: 'display:flex;gap:6px;align-items:center' }, ck, TYPES[t].plural)); });
       hcBox = h('div', { style: 'margin-top:14px' }, h('p', { class: 'label' }, 'Kategorien anzeigen'), h('p', { class: 'hint', style: 'margin:0' }, 'Nicht angezeigte Kategorien verschwinden aus Menü, Kalender und Übersicht. Deine Einträge bleiben erhalten, Benachrichtigungen kommen weiterhin, und in der Community siehst du die Kategorien weiterhin.'), hcRow, hcMsg); }
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'Farbschema'), skins));
-    var picCk = h('input', { type: 'checkbox', onchange: function () { try { localStorage.setItem('sd_pics', this.checked ? '1' : '0'); } catch (_) {} } }); picCk.checked = picsOn();
-    var picBox = h('div', { style: 'margin-top:14px' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, picCk, 'Bilder bei Filmen und Serien anzeigen'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Ein Bannerbild oben auf der Eintragsseite und kleine Vorschaubilder in der Suche (am Computer). Bilder von TMDB und TVmaze, ausgeliefert über schondraussen.de. Die Einstellung gilt für dieses Gerät.'));
     var uiBox = h('div', { class: 'wide2' }, hcBox,
-      h('div', { style: hcBox ? 'margin-top:14px' : '' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg), picBox);
+      h('div', { style: hcBox ? 'margin-top:14px' : '' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, nerdCk, 'Nerdoption: Genauere Info, was seit deinem letzten Besuch geändert wurde, und Nerdinfos zur Technik'), h('p', { class: 'hint', style: 'margin:2px 0 0 26px' }, 'Zeigt an der Versionsnummer, wie viele Änderungen neu sind, und im Versionsverlauf oben die neuen Einträge. Auf der Info-Seite erscheint oben der zusätzliche Reiter „Nerdinfos“ (Technik, Datenquellen, Dienste).'), nerdMsg));
     var tm = h('span', { class: 'msg', style: 'margin:0' }), cb = h('input', { type: 'checkbox', id: 'ntf', onchange: function () { S.notify = this.checked; api('/api/data.php?a=notify', { on: this.checked }); opts.style.opacity = this.checked ? '1' : '.5'; } }); cb.checked = !!S.notify;
     var sv = h('span', { class: 'msg', style: 'margin:0' });
     function saveN() { api('/api/data.php?a=notifyset', { 'new': S.n['new'], day: S.n.day, week: S.n.week, mode: S.n.mode, weekday: S.n.weekday, bell_default: S.n.bell_default }).then(function (r) { sv.className = 'msg' + (r.ok ? '' : ' err'); sv.textContent = r.ok ? 'Gespeichert.' : (r.msg || r.error || 'Speichern nicht möglich.'); setTimeout(function () { sv.textContent = ''; }, 2500); }); }
@@ -1544,18 +1427,17 @@
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
-      // Überarbeitung: Bereiche links statt Reiter oben
-      var T = [['Profil', ['Meine Daten', 'Benutzername', 'Profilkarte'], 'user'], ['Konto und Anmeldung', ['E-Mail und Wiederherstellung', 'Zwei-Faktor-Anmeldung', 'Konto löschen'], 'key'], ['Benachrichtigungen', ['E-Mail-Benachrichtigungen', 'Kalender-Abo'], 'bell'], ['Darstellung und Themes', ['Farbschemata', 'Themes', 'Oberflächenanpassungen'], 'eye'], ['Daten und Datenschutz', ['Import', 'Privatsphäre'], 'lock']];
-      var cards = [].slice.call(st.children), cur = 'Profil', bar = h('nav', { class: 'admtabs setnav', role: 'tablist', 'aria-orientation': 'vertical', 'aria-label': 'Bereiche der Einstellungen' });
+      var T = [['Profil', ['Meine Daten', 'Benutzername', 'Profilkarte']], ['Optik/Optionen', ['Farbschemata', 'Themes', 'Oberflächenanpassungen', 'Kalender-Abo', 'E-Mail-Benachrichtigungen']], ['Daten', ['E-Mail und Wiederherstellung', 'Import']], ['Datenschutz', ['Privatsphäre', 'Zwei-Faktor-Anmeldung', 'Konto löschen']]];
+      var cards = [].slice.call(st.children), cur = 'Profil', bar = h('div', { class: 'admtabs', role: 'tablist' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
-      var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, ICONS[t[2]] ? ico(ICONS[t[2]]) : null, t[0]); bar.append(b); return b; });
+      var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, t[0]); bar.append(b); return b; });
       function show() {
         T.forEach(function (t, i) { btns[i].setAttribute('aria-selected', String(t[0] === cur)); btns[i].className = 'admtab' + (t[0] === cur ? ' on' : ''); });
         cards.forEach(function (c) { var tt = c.querySelector('h3').textContent, own = T.filter(function (t) { return t[1].indexOf(tt) > -1; })[0]; c.hidden = own ? own[0] !== cur : cur !== 'Profil'; });
       }
-      var sg = h('div', { class: 'setgrid' }, bar, st); p.querySelector('h2.sec').after(sg); show();
+      p.querySelector('h2.sec').after(bar); show();
     })();
-    if (!st.parentNode) p.append(st); mainEl.append(p);
+    p.append(st); mainEl.append(p);
   }
 
   /* ---------- Info ---------- */
@@ -1653,7 +1535,7 @@
     var p = h('section', { class: 'panel commpanel' }, h('h2', { class: 'sec' }, 'Community'));
     mainEl.append(p);
     if (D.demo) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, h('b', null, 'Einblick: '), 'So sieht die Community-Seite für Mitglieder aus. Die Namen der Nutzer sind hier absichtlich anonymisiert („Anonym #1“ usw.), Profile und Übernehmen gibt es nur mit eigenem Konto.'));
-    else if (!D.community && false) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Bis dahin siehst du bei „Aktivste User“ und bei den Listen anderer nur anonymisierte Platzhalter statt der echten Werte. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
+    else if (!D.community) p.append(h('p', { class: 'warnbox commnote', role: 'status' }, 'Deine eigenen Einträge fließen in die Übersichten mit Nutzern (Aktivste User, Listen anderer) nicht ein, solange du nicht zugestimmt hast. Bis dahin siehst du bei „Aktivste User“ und bei den Listen anderer nur anonymisierte Platzhalter statt der echten Werte. Du kannst das in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' aktivieren.'));
     var body = h('div'); p.append(body);
     var LOCKNOTE = function () { return h('p', { class: 'warnbox commnote', role: 'status' }, 'Diese Details siehst du erst, wenn du der Nutzung deiner Einträge für die Community zustimmst. Bis dahin zeigen wir nur Platzhalter: Du siehst, wie die Übersicht aussieht, die Inhalte sind aber nicht lesbar. Aktiviere es in den ', h('button', { class: 'namelink', type: 'button', onclick: function () { go('set'); } }, 'Einstellungen'), ' unter „Meine Einträge für die Community nutzen“.'); };
     function adoptBtn(row) {
@@ -1662,10 +1544,10 @@
       var b = h('button', { class: 'btn ghost small commadd', type: 'button', title: 'In meine Liste übernehmen', 'aria-label': row.name + ' in meine Liste übernehmen', onclick: function () {
         b.disabled = true;
         api('/api/community.php?a=adopt', { subject_id: row.id }).then(function (r) {
-          if (r && r.ok) { row.mine = 1; b.replaceWith(h('span', { class: 'cmine' }, ico(ICONS.check), 'auf deiner Liste')); load(function () { nav(); }); toast('„' + row.name + '“ ist jetzt in deiner Liste.'); }
+          if (r && r.ok) { row.mine = 1; b.replaceWith(h('span', { class: 'commhave' }, '✓')); load(function () { nav(); }); toast('„' + row.name + '“ ist jetzt in deiner Liste.'); }
           else { b.disabled = false; toast((r && r.error) || 'Das hat nicht geklappt.'); }
         });
-      } }, '+ Auf meine Liste');
+      } }, '+');
       return b;
     }
     var CT = ORDER.slice();
@@ -1679,69 +1561,46 @@
       if (rows.length > 15) box.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open[key] = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(50, rows.length) + ' anzeigen'));
       return box;
     }
-    function drawOverview() { // Überarbeitung: Reiter je Kategorie, breite Listen, Aktivste Mitglieder rechts, Gast-Hinweis dezent
-      var d = C.data; body.textContent = ''; if (!C.cat || (C.cat !== 'all' && CT.indexOf(C.cat) < 0)) C.cat = 'all';
-      var lockedNew = !!d.locked;
-      var hiddenBar = false; try { hiddenBar = sessionStorage.getItem('sd_commbar') === '0'; } catch (_) {}
-      if (!D.community && !D.demo && !hiddenBar) {
-        var why = h('p', { class: 'hint commwhy', hidden: true }, 'Wer mitmacht, erscheint mit Namen bei den aktivsten Mitgliedern, und andere sehen die eigene Liste und können Einträge übernehmen. Ohne Zustimmung bleibt deine Liste unsichtbar und du siehst Namen und neu entdeckte Titel nur als Platzhalter. Du kannst das jederzeit in den Einstellungen ändern.');
-        var bar = h('div', { class: 'commbar', role: 'status' }, ico(ICONS.eyeoff), h('span', { class: 'cbt' }, 'Du schaust als ', h('b', null, 'Gast'), ' zu: Zahlen und Listen ja, Namen und Profile nicht. Deine eigene Liste bleibt unsichtbar.'),
-          h('button', { class: 'btn ghost small', type: 'button', onclick: function () { setTabGo('Profil'); } }, 'Mitmachen'),
-          h('button', { class: 'linkbtn', type: 'button', 'aria-expanded': 'false', onclick: function (ev) { why.hidden = !why.hidden; ev.currentTarget.setAttribute('aria-expanded', String(!why.hidden)); } }, 'Was heißt das?'),
-          h('button', { class: 'xbtn', type: 'button', 'aria-label': 'Hinweis ausblenden', onclick: function () { try { sessionStorage.setItem('sd_commbar', '0'); } catch (_) {} drawOverview(); } }, '×'));
-        body.append(bar, why);
-      }
-      var tabs = h('div', { class: 'commtabs', role: 'tablist', 'aria-label': 'Kategorie' });
-      [['all', 'Alle']].concat(CT.map(function (t) { return [t, TYPES[t].plural]; })).forEach(function (x) {
-        tabs.append(h('button', { type: 'button', role: 'tab', class: 'ctab' + (C.cat === x[0] ? ' on' : ''), 'aria-selected': String(C.cat === x[0]), onclick: function () { C.cat = x[0]; drawOverview(); } }, x[0] !== 'all' ? h('i', { style: 'background:' + CATCOL[x[0]], 'aria-hidden': 'true' }) : null, x[1]));
+    function drawOverview() {
+      var d = C.data; body.textContent = '';
+      // Aktivste User (nur mit Zustimmung)
+      var us = (d.users || []).map(function (u) {
+        var src = C.period === 'rec' ? u.rec : u.all, tot = 0; CT.forEach(function (t) { tot += +src[t] || 0; });
+        return { id: u.id, name: u.name, tot: tot, by: src };
+      }).filter(function (u) { return u.tot > 0; });
+      us.sort(function (a, b) { var x = C.sort === 'all' ? a.tot : a.by[C.sort], y = C.sort === 'all' ? b.tot : b.by[C.sort]; return (y - x) || (b.tot - a.tot) || a.name.localeCompare(b.name, 'de'); });
+      var open = !!C.open.users, shown = us.slice(0, open ? 20 : 5);
+      var per = h('div', { class: 'seg', role: 'group', 'aria-label': 'Zeitraum' }, [['all', 'Gesamt'], ['rec', 'Letzte 14 Tage']].map(function (x) {
+        return h('button', { class: 'btn small' + (C.period === x[0] ? '' : ' ghost'), type: 'button', 'aria-pressed': String(C.period === x[0]), onclick: function () { C.period = x[0]; drawOverview(); } }, x[1]);
+      }));
+      var head = h('tr', null, h('th', null, '#'), h('th', null, 'Nutzer'));
+      [['all', 'Gesamt']].concat(CT.map(function (t) { return [t, TYPES[t].plural]; })).forEach(function (x) {
+        head.append(h('th', { class: 'num' }, h('button', { class: 'sortbtn', type: 'button', 'aria-pressed': String(C.sort === x[0]), title: 'Nach ' + x[1] + ' sortieren', onclick: function () { C.sort = x[0]; drawOverview(); } }, x[1] + (C.sort === x[0] ? ' ↓' : ''))));
       });
-      body.append(tabs);
-      function hatch(w) { return h('span', { class: 'hatch', style: 'width:' + w + '%', 'aria-label': 'verborgen' }); }
-      function rowList(rows, n, cat, opt) {
-        opt = opt || {}; var mx = rows.length ? Math.max.apply(null, rows.map(function (x) { return +x.c || 0; })) : 1, l = h('div', { class: 'clist' });
-        rows.slice(0, n).forEach(function (r, i) {
-          var nm = opt.lock ? hatch(38 + (i * 17) % 40) : h('span', { class: 'cnm' }, r.name);
-          var act = opt.lock || opt.noAct ? null : (+r.mine ? h('span', { class: 'cmine' }, ico(ICONS.check), 'auf deiner Liste') : (r.id > 0 ? adoptBtn(r) : null));
-          l.append(h('div', { class: 'crow' }, h('span', { class: 'crk' }, String(i + 1)), h('span', { class: 'cmain' }, nm, opt.bars ? h('span', { class: 'cbar2', 'aria-hidden': 'true' }, h('i', { style: 'width:' + Math.round(100 * (+r.c || 0) / (mx || 1)) + '%;background:' + CATCOL[cat] })) : null),
-            h('span', { class: 'ccnt' }, (opt.plus ? '+' : '') + (+r.c || 0) + (opt.unit ? ' ' + opt.unit(+r.c || 0) : '')), act));
-        });
-        if (!rows.length) l.append(h('p', { class: 'hint' }, 'Noch keine Daten.'));
-        return l;
-      }
-      var mem = function (n) { return n === 1 ? 'Mitglied' : 'Mitglieder'; };
-      var SEENT = { series: ['Meistgesehen', 'mindestens eine halbe Staffel'], author: ['Meistgelesen', 'mindestens ein gelesenes Buch'], artist: ['Meistgehört', 'mindestens 5 Alben oder 20 %'], film: ['Meistgesehen', 'gesehen'], podcast: ['Meistgehört', 'mindestens 5 Folgen oder 20 %'] };
-      var main = h('div', { class: 'cmainc' }), aside = h('aside', { class: 'caside' });
-      if (C.cat === 'all') {
-        var gr = h('div', { class: 'callgrid' });
-        CT.forEach(function (t) { gr.append(h('section', { class: 'ccard', style: '--cc:' + CATCOL[t] }, h('div', { class: 'cch' }, h('h3', null, 'Top ' + TYPES[t].plural), h('button', { class: 'linkbtn', type: 'button', onclick: function () { C.cat = t; drawOverview(); } }, 'Alle ansehen')), rowList(d.top[t] || [], 5, t, { unit: mem, noAct: true }))); });
-        main.append(gr);
-      } else {
-        var t = C.cat, open = !!C.open['top' + t];
-        var top = h('section', { class: 'ccard big', style: '--cc:' + CATCOL[t] }, h('div', { class: 'cch' }, h('h3', null, 'Top ' + TYPES[t].plural, h('small', null, 'am häufigsten auf Listen'))), rowList(d.top[t] || [], open ? 50 : 10, t, { bars: true, unit: mem }));
-        if ((d.top[t] || []).length > 10) top.append(h('button', { class: 'linkbtn cmore', type: 'button', onclick: function () { C.open['top' + t] = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(50, (d.top[t] || []).length) + ' anzeigen'));
-        var two = h('div', { class: 'ctwo' },
-          h('section', { class: 'ccard' }, h('div', { class: 'cch' }, h('h3', null, 'Neu entdeckt', h('small', null, 'letzte 14 Tage'))), rowList(d['new'][t] || [], 8, t, { lock: lockedNew, plus: true, noAct: true }), lockedNew ? h('p', { class: 'clock' }, ico(ICONS.lock), 'Neu entdeckte Titel siehst du als Mitglied.') : null),
-          h('section', { class: 'ccard' }, h('div', { class: 'cch' }, h('h3', null, SEENT[t][0], h('small', null, SEENT[t][1]))), rowList((d.seen || {})[t] || [], 8, t, { noAct: true })));
-        main.append(top, two);
-      }
-      // Aktivste Mitglieder (rechts), Zeitraum nur hier
-      var us = (d.users || []).map(function (u) { var src = C.period === 'rec' ? u.rec : u.all, tot = 0, best = null; CT.forEach(function (k) { tot += +src[k] || 0; if (!best || (+src[k] || 0) > (+src[best] || 0)) best = k; }); return { id: u.id, name: u.name, tot: tot, best: best, by: src }; }).filter(function (u) { return u.tot > 0; });
-      us.sort(function (a, b) { return (b.tot - a.tot) || String(a.name).localeCompare(String(b.name), 'de'); });
-      var uOpen = !!C.open.users, uShown = us.slice(0, uOpen ? 20 : 6);
-      var per = h('div', { class: 'cper', role: 'group', 'aria-label': 'Zeitraum' }, [['all', 'Gesamt'], ['rec', '14 Tage']].map(function (x) { return h('button', { type: 'button', class: C.period === x[0] ? 'on' : '', 'aria-pressed': String(C.period === x[0]), onclick: function () { C.period = x[0]; drawOverview(); } }, x[1]); }));
-      var ul = h('div', { class: 'culist' });
-      uShown.forEach(function (u, i) {
-        var sub = u.best ? 'vor allem ' + TYPES[u.best].plural : '';
-        var who = d.locked ? h('span', { class: 'cuwho' }, hatch(40 + (i * 13) % 35), h('small', null, sub)) : h('span', { class: 'cuwho' }, h('button', { class: 'namelink', type: 'button', onclick: function () { C.uid = u.id; C.ud = null; drawUser(); } }, u.name), h('small', null, sub));
-        ul.append(h('div', { class: 'curow' }, h('span', { class: 'cav' + (d.locked ? ' anon' : ''), 'aria-hidden': 'true' }, d.locked ? ico(ICONS.user) : String(u.name || '?').charAt(0).toUpperCase()), who, h('b', { class: 'cutot' }, String(u.tot))));
+      var tb = h('tbody');
+      shown.forEach(function (u, i) {
+        var tr = h('tr', null, h('td', { class: 'rk' }, String(i + 1)), h('td', { class: 'nm' }, h('button', { class: 'namelink', type: 'button', onclick: function () { C.uid = u.id; C.ud = null; drawUser(); } }, u.name)), h('td', { class: 'num' }, String(u.tot)));
+        CT.forEach(function (t) { tr.append(h('td', { class: 'num' }, String(u.by[t] || 0))); });
+        tb.append(tr);
       });
-      if (!us.length) ul.append(h('p', { class: 'hint' }, 'Noch niemand in diesem Zeitraum.'));
-      aside.append(h('section', { class: 'ccard' }, h('div', { class: 'cch' }, h('h3', null, 'Aktivste Mitglieder'), per), ul,
-        us.length > 6 ? h('button', { class: 'linkbtn cmore', type: 'button', onclick: function () { C.open.users = !uOpen; drawOverview(); } }, uOpen ? 'Weniger anzeigen' : 'Top ' + Math.min(20, us.length) + ' anzeigen') : null,
-        d.locked ? h('p', { class: 'clock' }, ico(ICONS.lock), 'Namen und Profile siehst du als Mitglied.') : null));
-      aside.append(h('section', { class: 'ccard cstat' }, h('h3', null, 'Gerade dabei'), h('div', { class: 'cstats' }, h('div', null, h('b', null, String((d.users || []).length)), h('small', null, (d.users || []).length === 1 ? 'Mitglied' : 'Mitglieder')))));
-      body.append(h('div', { class: 'commlayout' }, main, aside));
-      body.append(h('p', { class: 'hint commfoot' }, 'Gezählt werden nur Mitglieder, die der Community-Nutzung zugestimmt haben (Beispieleinträge zählen nicht). Jeder zählt pro Titel einmal.'));
+      var ub = h('section', { class: 'commusers' + (d.locked ? ' locked' : '') }, h('h3', { class: 'commh' }, 'Aktivste User'), d.locked ? LOCKNOTE() : '',
+        h('p', { class: 'hint' }, 'Nur Nutzer, die der Nutzung ihrer Einträge für die Community ausdrücklich zugestimmt haben (Beispieleinträge zählen nicht). Namen sind anklickbar.'), per);
+      if (!us.length) ub.append(h('p', { class: 'hint' }, 'Noch niemand in diesem Zeitraum.'));
+      else {
+        ub.append(h('div', { class: 'tblwrap' }, h('table', { class: 'crontbl commtbl' }, h('thead', null, head), tb)));
+        if (us.length > 5) ub.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open.users = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(20, us.length) + ' anzeigen'));
+      }
+      body.append(ub);
+      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
+      var g = h('div', { class: 'commgrid' });
+      CT.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer', t)); });
+      body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.' + (d.locked ? ' Bis du zustimmst, siehst du hier nur Platzhalter.' : '')));
+      var g2 = h('div', { class: 'commgrid' });
+      CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t, !!d.locked)); });
+      body.append(g2);
+      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'mindestens einem gelesenen Buch'], artist: ['Meistgehört Musik', 'mindestens 5 Alben oder 20 %'], film: ['Meistgesehen Filme', 'gesehen (jeder Film einzeln)'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
+      var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], 'Nutzer mit ' + SEENT[t][1], t)); });
+      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Jeder Nutzer zählt pro Titel nur einmal, sobald er genug gesehen, gelesen oder gehört hat: Serien eine halbe Staffel, Bücher mindestens ein gelesenes Buch der Autor:in oder Reihe (bei Gleichstand entscheidet die Zahl der gelesenen Bücher), Musik mindestens 5 Alben oder 20 % des Katalogs, Filme einzeln, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
     }
     function drawUser() {
       body.textContent = '';
@@ -1842,9 +1701,9 @@
       ['Versionsverlauf', 'Eine Sammelversion je Kalendertag, Kategorien F, O, U, B, A, D, T']]));
     sec('Externe Datenquellen und Schnittstellen', h('p', null, 'Alle Abfragen laufen serverseitig und nur für Titel, die Nutzer wirklich anlegen. An die Dienste gehen nie E-Mail-Adressen oder Kontodaten.'),
       tbl(['Quelle', 'Wofür', 'Schlüssel', 'Auflagen und Hinweise'], [
-        [{ t: 'TMDB', href: 'https://www.themoviedb.org' }, 'Filme: Titel, Beschreibung, Kino- und Digitalstart in Deutschland, Filmreihen; Bannerbilder und Vorschaubilder bei Filmen und Serien (über schondraussen.de ausgeliefert, höchstens 90 Tage gespeichert)', 'Zugangsschlüssel', 'Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'],
+        [{ t: 'TMDB', href: 'https://www.themoviedb.org' }, 'Filme: Titel, Beschreibung, Kino- und Digitalstart in Deutschland, Filmreihen', 'Zugangsschlüssel', 'Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert.'],
         [{ t: 'JustWatch', href: 'https://www.justwatch.com' }, 'Filme: wo ein Film in Deutschland gestreamt, geliehen oder gekauft werden kann (Daten kommen über TMDB)', 'keiner (über TMDB)', 'Quellenangabe „JustWatch“ ist bei jeder Anzeige Pflicht, sonst verliert die Seite den TMDB-Zugang'],
-        [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung, Poster als Vorschaubild, wenn TMDB keines hat; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
+        [{ t: 'TVmaze', href: 'https://www.tvmaze.com' }, 'Serien: Staffeln, Folgen, Sendetermine, Beschreibung; auch Anime', 'keiner', 'Daten unter CC BY-SA 4.0, Quellenangabe im Footer und auf der Infoseite'],
         [{ t: 'MusicBrainz', href: 'https://musicbrainz.org' }, 'Musik: Künstler:innen, Alben, Termine', 'keiner', 'höchstens eine Anfrage pro Sekunde, daher gebremste Abfrage'],
         ['ListenBrainz', 'Musik: Vorschläge ähnlicher Künstler:innen', 'keiner', '–'],
         [{ t: 'Apple Podcasts', href: 'https://podcasts.apple.com' }, 'Podcasts: Suche und Feed-Adresse (iTunes Search API); die Folgen kommen aus dem öffentlichen Feed des jeweiligen Podcasts', 'keiner', 'etwa 20 Anfragen pro Minute; Feeds werden höchstens alle 12 Stunden abgerufen'],
@@ -2857,9 +2716,7 @@
   }
 
   /* ---------- Start ---------- */
-  var who = $('who'); if (who) { who.addEventListener('click', function () { go('set'); }); if (!D.demo) who.hidden = true; } // Überarbeitung: Profilknopf ersetzt Name, Version und Abmelden
-  var whr = document.querySelector('.whobox .whorow'); if (whr && !D.demo) whr.hidden = true;
-  document.documentElement.classList.add('ueb');
+  var who = $('who'); if (who) who.addEventListener('click', function () { go('set'); });
   var lg = $('logoutTop'); if (lg) lg.addEventListener('click', function () { api('/api/auth.php?a=logout', {}).then(function () { location.reload(); }); });
   var ver = $('ver'); if (ver) ver.addEventListener('click', function () { go('log'); });
   document.addEventListener('click', function () { var p = $('filtPop'); if (p && !p.hidden) { p.hidden = true; var b = $('filtBtn'); if (b) b.setAttribute('aria-expanded', 'false'); } });
