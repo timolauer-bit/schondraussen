@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'T|Sitemap für Suchmaschinen: Die einzelnen Serienseiten des Einblicks stehen jetzt in der Sitemap (bisher nur die Übersichtsseiten).',
     'B|Einblick: Die Kacheln „Serien“ und „Community“ auf der Startseite führten immer zum Kalender. Behoben, auch für die einzelnen Serienseiten.',
     'U|Community: In den Ranglisten (z. B. Top Serien, Top Podcasts) sind die Balken bei gleicher Zahl jetzt gleich lang, egal was rechts daneben steht (gilt für alle Ranglisten der Community).',
     'U|Serien: In der Folgenliste ist eine Folge, die heute erscheint, umrahmt und mit dem Schildchen „Heute“ markiert; „morgen“ steht in der Akzentfarbe.',
