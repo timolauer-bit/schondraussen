@@ -607,8 +607,8 @@ p.warnbox>.btn{display:block;margin:10px 0 0 !important}
 .nextbox .nstats{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}.nextbox .nstats b{color:var(--ink);font:700 15px var(--font-display)}
 @media(max-width:760px){.card .hero,.card .hero.solo{grid-template-columns:minmax(0,1fr)}.card .hero.solo .nextbox{grid-column:1}}
 /* Staffeln als Filmstreifen-Reiter */
-.strip{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
-.strip .s{position:relative;text-align:left;border:1px solid var(--line);border-radius:10px;padding:20px 14px 16px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:150px;font:inherit}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:6px 0 4px}
+.strip .s{position:relative;text-align:left;border:1px solid var(--line);border-radius:10px;padding:20px 14px 16px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:0;font:inherit}
 .strip .s:before,.strip .s:after{content:"";position:absolute;left:8px;right:8px;height:5px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--line) 0 7px,transparent 7px 14px)}
 .strip .s:before{top:6px}.strip .s:after{bottom:6px}
 .strip .s b{display:block;font:700 17px var(--font-display)}.strip .s>span{display:block;font-size:12.5px;color:var(--muted)}
