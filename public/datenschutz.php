@@ -74,4 +74,4 @@
 <p>Die Übertragung ist per HTTPS (TLS) verschlüsselt. Passwörter werden nur als Hash gespeichert. Der Zugriff auf die Datenbank ist auf mich beschränkt. Die Datenbank wird automatisch gesichert; es werden nur die jeweils letzten sieben Sicherungen aufbewahrt, ältere werden überschrieben. Auf Wunsch kannst du eine Zwei-Faktor-Anmeldung einschalten.</p>
 <h2>13. Änderungen</h2>
 <p>Ich passe diese Erklärung an, wenn sich die Seite oder die Rechtslage ändert. Es gilt die jeweils hier veröffentlichte Fassung.</p>
-<p><a href="/">Zurück</a> · <a href="/impressum.php">Impressum</a></p></body></html>
+<p><a href="/">Zurück</a> · <a href="/neuerscheinungen">Neuerscheinungen</a> · <a href="/impressum.php">Impressum</a></p></body></html>

@@ -51,4 +51,5 @@ try {
 try { echo 'Sicherung: ' . run_backup($pdo) . "\n"; ops_watchdog($pdo); } catch (Throwable $e) { echo 'Sicherung: übersprungen (' . $e->getMessage() . ")\n"; }
 try { $n = pic_cleanup(); if ($n) echo 'Bilder: ' . $n . " alte Bilder gelöscht\n"; } catch (Throwable $e) {}
 try { require_once __DIR__ . '/../lib/effort.php'; echo 'Aufwandszahlen: ' . effort_weekly($pdo) . "\n"; } catch (Throwable $e) { echo 'Aufwandszahlen: übersprungen (' . $e->getMessage() . ")\n"; }
+try { require_once __DIR__ . '/../lib/newreleases.php'; echo 'Neuerscheinungen: ' . nr_cron($pdo) . "\n"; } catch (Throwable $e) { echo 'Neuerscheinungen: übersprungen (' . $e->getMessage() . ")\n"; }
 try { require_once __DIR__ . '/../lib/showcase.php'; echo 'Einblick für Gäste: ' . showcase_weekly($pdo) . "\n"; } catch (Throwable $e) { echo 'Einblick: übersprungen (' . $e->getMessage() . ")\n"; }

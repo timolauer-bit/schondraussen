@@ -26,4 +26,7 @@ RewriteRule ^bilder/((t|m)/.+)$ pic.php?p=$1 [L,QSA]
 # Einblick für Gäste (Beispielnutzer)
 RewriteRule ^einblick/?$ einblick.php?s=kalender [L,QSA]
 RewriteRule ^einblick/(kalender|serien|community)/?$ einblick.php?s=$1 [L,QSA]
+# Öffentliche Neuerscheinungen je Kalenderwoche
+RewriteRule ^neuerscheinungen/?$ neuerscheinungen.php [L,QSA]
+RewriteRule ^neuerscheinungen/([0-9]{4}-[Kk][Ww][0-9]{1,2})/?$ neuerscheinungen.php?w=$1 [L,QSA]
 RewriteRule ^einblick/serie/([0-9]+)(-[a-z0-9-]*)?/?$ einblick.php?s=serie&id=$1 [L,QSA]

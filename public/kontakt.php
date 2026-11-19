@@ -44,4 +44,4 @@ $e = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <button type="submit">Nachricht senden</button>
 </form>
 <?php endif; ?>
-<p><a href="/">Zurück</a> · <a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p></body></html>
+<p><a href="/">Zurück</a> · <a href="/neuerscheinungen">Neuerscheinungen</a> · <a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p></body></html>

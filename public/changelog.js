@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'F|Neue öffentliche Seite „Neuerscheinungen“ (auch ohne Konto): alle Termine der Woche aus Büchern, Musik, Filmen, Serien und Podcasts, die auf den Listen der Nutzer stehen, nach Tagen sortiert. Mit Seiten für die nächsten vier Wochen und einem Archiv vergangener Wochen. Verlinkt unten in der Fußzeile.',
     'B|Obere Leiste: Beim Klick auf „Admin“ brach die Leiste auf großen Bildschirmen in zwei Zeilen um. Admin bleibt jetzt auch aktiv ein Symbol (die Markierung darunter zeigt, wo man ist).',
     'T|Sitemap für Suchmaschinen: Die einzelnen Serienseiten des Einblicks stehen jetzt in der Sitemap (bisher nur die Übersichtsseiten).',
     'B|Einblick: Die Kacheln „Serien“ und „Community“ auf der Startseite führten immer zum Kalender. Behoben, auch für die einzelnen Serienseiten.',

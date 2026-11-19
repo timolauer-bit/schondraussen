@@ -18,4 +18,4 @@
 <p>Diese Seite enthält Links zu externen Webseiten Dritter, auf deren Inhalte ich keinen Einfluss habe. Für diese fremden Inhalte kann ich keine Gewähr übernehmen. Verantwortlich ist stets der jeweilige Anbieter. Bei Bekanntwerden von Rechtsverletzungen entferne ich solche Links umgehend.</p>
 <h3>Urheberrecht</h3>
 <p>Die Inhalte dieser Seite unterliegen dem deutschen Urheberrecht. Titel, Cover und Beschreibungen von Werken gehören den jeweiligen Rechteinhabern.</p>
-<p><a href="/">Zurück</a> · <a href="/datenschutz.php">Datenschutz</a></p></body></html>
+<p><a href="/">Zurück</a> · <a href="/neuerscheinungen">Neuerscheinungen</a> · <a href="/datenschutz.php">Datenschutz</a></p></body></html>

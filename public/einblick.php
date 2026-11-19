@@ -126,7 +126,7 @@ $pre = ob_get_clean();
     <p>Weitere Einblicke: <?php foreach ($PAGES as $k => $p) if ($k !== $slug && $k !== 'serie') echo '<a href="/einblick/' . $k . '">' . $e($p[1]) . '</a> '; ?></p></div>
   <footer>
     <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Musik) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Bücher). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Filmdaten von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a> (dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert). Termine bitte vor dem Kauf prüfen.</p>
-    <p><a href="/">Startseite</a> · <a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
+    <p><a href="/">Startseite</a> · <a href="/neuerscheinungen">Neuerscheinungen</a> · <a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
 <?php $sd = showcase_sd($view); if ($sel) { $sd['demo']['sel'] = $sel; $sd['demo']['extra'] = $sel; } ?>

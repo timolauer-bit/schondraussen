@@ -4,9 +4,12 @@
 require_once __DIR__ . '/lib/bootstrap.php';
 require_once __DIR__ . '/lib/seo.php';
 require_once __DIR__ . '/lib/showcase.php';
+require_once __DIR__ . '/lib/newreleases.php';
 if (!seo_public()) { http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); echo 'Not found'; exit; }
 
 $paths = ['/', '/kontakt.php', '/impressum.php', '/datenschutz.php'];
+try { $paths = array_merge($paths, nr_sitemap_paths(db())); } // Neuerscheinungen: diese Woche, die nächsten Wochen und das Archiv
+catch (Throwable $e) { $paths[] = '/neuerscheinungen'; error_log('Schondraussen sitemap.php: Neuerscheinungen, ' . $e->getMessage()); }
 if (showcase_public()) {
     $paths = array_merge($paths, ['/einblick/kalender', '/einblick/serien', '/einblick/community']);
     // Serienseiten aus beiden Quellen: aktuelle Wochenauswahl (wie auf /einblick/serien verlinkt) und alle gemerkten Serienseiten früherer Wochen
