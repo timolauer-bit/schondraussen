@@ -7,7 +7,7 @@ require_once __DIR__ . '/watchdog.php';
 
 // Solange false: nur Admin und Gruppen mit dem Recht „Entwicklerversion nutzen“ (Alphatester) sehen die Seiten, für Google bleiben sie unsichtbar.
 // Zur Freigabe auf true setzen (dann auch Startseite-Links, Sitemap und robots.txt aktiv).
-const SHOWCASE_PUBLIC = false;
+const SHOWCASE_PUBLIC = true;
 const SHOWCASE_KEY = 'showcase';
 const SHOWCASE_TYPES = ['author', 'artist', 'film', 'series', 'podcast'];
 
