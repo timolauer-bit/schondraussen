@@ -247,7 +247,7 @@
     var opts = [{ m: 'live', t: 'Live-Version', d: 'Was alle Nutzer sehen.', on: !D.dev }, { m: 'dev', t: 'Entwicklungsversion', d: 'Neues, das noch nicht freigegeben ist.', on: D.dev && !D.design }].concat((D.designs || []).map(function (x) { return { m: 'd:' + x.slug, t: x.name, d: x.desc, on: D.design === x.slug }; }));
     var box = h('div', { id: 'devmenu', class: 'devmenu', role: 'menu' }, opts.map(function (o) {
       return h('button', { type: 'button', role: 'menuitemradio', 'aria-checked': o.on ? 'true' : 'false', class: 'dmi' + (o.on ? ' on' : ''), onclick: function () { if (o.on) { box._close(); return; } api('/api/data.php?a=devmode', { mode: o.m }).then(function () { location.reload(); }); } }, h('b', null, o.t), o.d ? h('small', null, o.d) : null);
-    }).concat([devMark(h('a', { class: 'dmi dmlink', role: 'menuitem', href: '/einblick/kalender' }, h('b', null, 'Gäste-Ansicht (Einblick)'), h('small', null, 'Kalender, Serien und Community aus Sicht eines Beispielnutzers, wie Gäste sie sehen. Noch nicht öffentlich.')), 'einblick')]));
+    })));
     var wb = anchor.parentNode; wb.append(box);
     function off(ev) { if (!box.contains(ev.target) && ev.target !== anchor) { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); } }
     function esc(ev) { if (ev.key === 'Escape') { box.remove(); document.removeEventListener('click', off, true); document.removeEventListener('keydown', esc, true); anchor.focus(); } }
