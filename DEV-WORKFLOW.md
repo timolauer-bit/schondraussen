@@ -25,6 +25,7 @@ Zum Ausprobieren von Umgestaltungen gibt es zusätzlich Design-Varianten. Der Sc
 - Gefällt eine Variante: Dateien nach `public/dev/` und `public/` kopieren (wie bei der Freigabe), Eintrag und Ordner danach entfernen.
 
 ## Mailtexte und Admin-Reiter „Infomails“
+Alle Mails laufen über `mail_html()` in `public/lib/mail.php` (Design „Karte“ seit 19.11.2026, serifenlos, Tabellenlayout mit Inline-CSS, Dark Mode). Die Klartext-Regeln (Einträge `- {series} Name – Titel (TT.MM.JJJJ)`, Überschriften in GROSSBUCHSTABEN, Knöpfe `[[Text|URL]]`, `--` vor dem Fußbereich) stehen oben in mail.php. Die Kategorie-Markierung `{…}` entfernt `mail_plain()` aus der Textfassung.
 Die Vorschau (`public/lib/mailpreview.php`) spiegelt die festen Mailtexte aus auth.php, admin.php, chat.php, feedback.php und notify.php. Ändert sich dort ein Text, bitte in `mailpreview.php` mitändern.
 
 ## Einheitliche Knöpfe

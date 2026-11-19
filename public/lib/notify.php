@@ -92,7 +92,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
     $hk = fn($t) => preg_match('/^(S\d+E\d+)\b/i', (string) $t, $mm) ? strtoupper($mm[1]) : (string) $t; // Serienfolgen nur über die Folgennummer erkennen, damit eine umbenannte Folge (z. B. TBA → Titel) keine zweite Mail auslöst
     $sort = fn($a, $b) => strcmp($a[0], $b[0]);
     $bud = 0; // Zahl der Titel mit Kurzinfo je Mail (nur Neu angekündigt und Heute erscheint)
-    $fmt = function (array $l) use ($pdo, &$bud) { usort($l, fn($a, $b) => strcmp($a[0], $b[0])); $o = array_map(function ($x) use ($pdo, &$bud) { $t = '- ' . $x[1]; if (isset($x[3]) && $bud > 0) { $bud--; $t .= item_info($pdo, $x[3], $x[4], $x[5] ?? null); } return $t; }, array_slice($l, 0, 40)); if (count($l) > 40) $o[] = '… und ' . (count($l) - 40) . ' weitere'; return implode("\n", $o); };
+    $fmt = function (array $l) use ($pdo, &$bud) { usort($l, fn($a, $b) => strcmp($a[0], $b[0])); $o = array_map(function ($x) use ($pdo, &$bud) { $t = '- ' . (!empty($x[6]) ? '{' . $x[6] . '} ' : '') . $x[1]; if (isset($x[3]) && $bud > 0) { $bud--; $t .= item_info($pdo, $x[3], $x[4], $x[5] ?? null); } return $t; }, array_slice($l, 0, 40)); if (count($l) > 40) $o[] = '… und ' . (count($l) - 40) . ' weitere'; return implode("\n", $o); };
     foreach ($users as $u) {
         $uid = (int) $u['id']; $digest = $u['n_mode'] !== 'instant';
         $known->execute([$uid]); $K = array_flip($known->fetchAll(PDO::FETCH_COLUMN));
@@ -117,7 +117,7 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
                 if (!isset($K[$kn])) {
                     $full = strlen($d) === 10; $nrow = [$d, $line, $sid, $s['name'], $r['title'], $s['summary'], $s['type']];
                     if ($cm && $s['type'] !== 'podcast' && $full && $d === $today && ($u['n_new'] || $u['n_day'])) { // erst jetzt bekannt, erscheint aber heute: gehört zu den heutigen Veröffentlichungen
-                        $day[$sid . '|' . $r['title']] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kn, 'new']; $mark[] = [$sid, $kd, 'day'];
+                        $day[$sid . '|' . $r['title']] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary'], $s['type']]; $mark[] = [$sid, $kn, 'new']; $mark[] = [$sid, $kd, 'day'];
                     } elseif ($u['n_new']) {
                         if ($s['type'] !== 'podcast' && $full && $d < $today) $past[] = $nrow; // schon erschienen
                         else $new[] = $nrow;
@@ -126,8 +126,8 @@ function run_digests(PDO $pdo, int $maxMails = 40): array {
                     else $ins->execute([$uid, $sid, $kn, 'new']); // still merken, damit später nichts auf einmal kommt
                 }
                 if (strlen($d) === 10) {
-                    if ($d === $today && $u['n_day'] && !isset($K[$kd]) && $s['type'] !== 'podcast') { $day[$sid . '|' . $r['title']] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary']]; $mark[] = [$sid, $kd, 'day']; }
-                    if ($d >= $today && $d <= $weekTo) $week[] = [$d, $line];
+                    if ($d === $today && $u['n_day'] && !isset($K[$kd]) && $s['type'] !== 'podcast') { $day[$sid . '|' . $r['title']] = [$d, $s['name'] . ' – ' . $r['title'], $sid, $s['name'], $r['title'], $s['summary'], $s['type']]; $mark[] = [$sid, $kd, 'day']; }
+                    if ($d >= $today && $d <= $weekTo) $week[] = [$d, $line, null, null, null, null, $s['type']];
                 }
             }
         }
@@ -174,18 +174,18 @@ function build_preview(PDO $pdo, array $u): array {
     date_default_timezone_set('Europe/Berlin');
     $today = date('Y-m-d');
     try {
-        $s = $pdo->prepare("SELECT s.name, r.title, r.release_date FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
+        $s = $pdo->prepare("SELECT s.name, s.type, r.title, r.release_date FROM user_entries e JOIN subjects s ON s.id=e.subject_id JOIN releases r ON r.subject_id=s.id
             WHERE e.user_id=? AND e.bell=1 AND LENGTH(r.release_date)=10 AND r.release_date>=?" . (hidden_cats($u) ? ' AND s.type NOT IN (' . implode(',', array_fill(0, count(hidden_cats($u)), '?')) . ')' : '') . " ORDER BY r.release_date, s.name, r.title LIMIT 12");
         $s->execute(array_merge([$u['id'], $today], hidden_cats($u))); $R = $s->fetchAll();
     } catch (Throwable $e) { $R = []; }
     $demo = !$R;
-    if ($demo) $R = [['name' => 'Beispiel-Band', 'title' => 'Neues Album', 'release_date' => date('Y-m-d', strtotime('+3 days'))], ['name' => 'Beispiel-Serie', 'title' => 'S02E05 Folgentitel', 'release_date' => date('Y-m-d', strtotime('+9 days'))]];
-    $line = fn($r) => '- ' . $r['name'] . ' – ' . $r['title'] . ' (' . fmt_date($r['release_date']) . ')';
+    if ($demo) $R = [['name' => 'Beispiel-Band', 'type' => 'artist', 'title' => 'Neues Album', 'release_date' => date('Y-m-d', strtotime('+3 days'))], ['name' => 'Beispiel-Serie', 'type' => 'series', 'title' => 'S02E05 Folgentitel', 'release_date' => date('Y-m-d', strtotime('+9 days'))]];
+    $line = fn($r) => '- ' . (!empty($r['type']) ? '{' . $r['type'] . '} ' : '') . $r['name'] . ' – ' . $r['title'] . ' (' . fmt_date($r['release_date']) . ')';
     $nNew = (int) ($u['n_new'] ?? 1); $nDay = (int) ($u['n_day'] ?? 1); $nWeek = (int) ($u['n_week'] ?? 0);
     $text = "VORSCHAU: So sieht deine Benachrichtigungsmail nach deinen aktuellen Einstellungen aus.\n" .
             "Die Termine sind nur als Beispiel eingesetzt" . ($demo ? " (Beispieldaten, du hast noch keine kommenden Termine mit Glocke)" : " (deine nächsten echten Termine mit Glocke)") . ". In der echten Mail steht nur, was wirklich zutrifft.\n\n" .
             "--- Morgenmail ---\n\nHallo,\n\nes gibt Neuigkeiten in deinen Listen.\n";
-    if ($nDay) $text .= "\nHEUTIGE VERÖFFENTLICHUNGEN\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . '- Beispiel-Serie – S01E01 Folgentitel' . "\n";
+    if ($nDay) $text .= "\nHEUTIGE VERÖFFENTLICHUNGEN\n[Beispiel: Hier stehen nur Titel, die am selben Tag erscheinen.]\n" . '- {series} Beispiel-Serie – S01E01 Folgentitel' . "\n";
     if ($nNew) $text .= "\nNEU ANGEKÜNDIGT\n[Beispiel: Hier steht jeder neue Termin nur einmal.]\n" . implode("\n", array_map($line, array_slice($R, 0, 6))) . "\n";
     if ($nNew || $nDay) $text .= "\n[Beispiel: In der echten Mail folgt unter jedem neuen Titel eine Kurzinfo (höchstens 8 Zeilen) und, wenn vorhanden, bis zu zwei aktuelle Schlagzeilen mit Link.]\n";
     if (!$nDay && !$nNew) $text .= "\n(Du hast gerade weder „Neu angekündigt“ noch „Am Erscheinungstag“ eingeschaltet, deshalb gäbe es keine solche Mail.)\n";
