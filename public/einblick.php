@@ -19,7 +19,13 @@ $PAGES = [
     'serien' => ['series', 'Serien', 'Serien mit Staffeln, Folgen und Sendeterminen', 'Serien mit allen Staffeln, Folgen und kommenden Sendeterminen. Ein Einblick, wie die Serienseite von Schondraussen.de mit eigenem Konto aussieht.'],
     'community' => ['comm', 'Community', 'Community: die beliebtesten Bücher, Alben, Filme, Serien und Podcasts', 'Was die Community von Schondraussen.de am häufigsten verfolgt, neu entdeckt und schon gesehen, gelesen oder gehört hat.'],
 ];
-$slug = (string) ($_GET['s'] ?? 'kalender');
+$slug = (string) ($_GET['s'] ?? '');
+if ($slug === '') { // Der Server kann /einblick/serien auch ohne die Umschreibung aus .htaccess an einblick.php geben (MultiViews), dann fehlt ?s=: Seite aus der Adresse lesen
+    $rp = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
+    if (preg_match('#^/einblick/serie/([0-9]+)#', $rp, $m)) { $slug = 'serie'; $_GET['id'] = $m[1]; }
+    elseif (preg_match('#^/einblick/(kalender|serien|community)/?$#', $rp, $m)) $slug = $m[1];
+    else $slug = 'kalender';
+}
 $pub = showcase_public();
 $pdo = db(); $snap = showcase_get($pdo);
 $e = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
