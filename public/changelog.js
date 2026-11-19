@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'U|Bücher: Solange die Deutsche Nationalbibliothek nicht erreichbar ist, kommen Bücher von Autor:innen aus Open Library. Dort zählt jetzt nur noch, ob es eine deutsche Ausgabe gibt, und es erscheint deren deutscher Titel. Spanische, französische und andere fremdsprachige Ausgaben fallen weg.',
     'U|E-Mails in neuem Design passend zur Seite: Karte mit Logo, Überschriften je Abschnitt, jeder Titel mit Streifen und Bezeichnung in seiner Kategoriefarbe (Buch, Musik, Film, Serie, Podcast), Datum mit Wochentag und ein Knopf „Alles im Überblick ansehen“. Funktioniert in Gmail, Outlook und Apple Mail, auch im Dark Mode, und ist besser für Screenreader lesbar. Abmeldelink und Inhalte bleiben wie bisher.',
     'F|Neue öffentliche Seite „Neuerscheinungen“ (auch ohne Konto): alle Termine der Woche aus Büchern, Musik, Filmen, Serien und Podcasts, die auf den Listen der Nutzer stehen, nach Tagen sortiert. Mit Seiten für die nächsten vier Wochen und einem Archiv vergangener Wochen. Verlinkt unten in der Fußzeile.',
     'B|Obere Leiste: Beim Klick auf „Admin“ brach die Leiste auf großen Bildschirmen in zwei Zeilen um. Admin bleibt jetzt auch aktiv ein Symbol (die Markierung darunter zeigt, wo man ist).',

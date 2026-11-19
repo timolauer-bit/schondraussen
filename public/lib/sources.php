@@ -826,15 +826,23 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         $ext['gen'] = author_genres((string) ($ext['qid'] ?? ''), basename((string) $ext['olid']));
     }
     if (!empty($ext['intro'])) $summary = $ext['bits'] . ' – ' . $ext['intro'];
-    $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&author=' . rawurlencode($ext['olid']));
+    // lang=de + editions: Open Library liefert je Werk die passendste Ausgabe, bevorzugt die deutsche (Titel und Sprache dieser Ausgabe)
+    $olf = 'limit=200&lang=de&fields=title,first_publish_year,language,editions,editions.title,editions.language&sort=new&';
+    $r = http_json('https://openlibrary.org/search.json?' . $olf . 'author=' . rawurlencode($ext['olid']));
     if (!$r) {
-        $r = http_json('https://openlibrary.org/search.json?limit=200&fields=title,first_publish_year,language&sort=new&q=author_key:' . rawurlencode($ext['olid']));
+        $r = http_json('https://openlibrary.org/search.json?' . $olf . 'q=author_key:' . rawurlencode($ext['olid']));
     }
     if (!$r) return ['ok' => false, 'msg' => 'Open Library nicht erreichbar.'];
     $seen = []; $works = []; $rel = []; $y = (int) date('Y');
+    $edOk = false; foreach (($r['docs'] ?? []) as $d) if (isset($d['editions'])) { $edOk = true; break; } // Ausgaben-Angaben vorhanden (sonst alter Weg über die Werksprachen)
     foreach (($r['docs'] ?? []) as $d) {
+        if ($edOk) { // nur Werke, deren passendste Ausgabe deutsch ist, mit deren deutschem Titel (statt Originaltitel oder spanischer, französischer usw. Ausgabe)
+            $ed = $d['editions']['docs'][0] ?? null;
+            if (!$ed || !in_array('ger', (array) ($ed['language'] ?? []), true)) continue;
+            if (trim((string) ($ed['title'] ?? '')) !== '') $d['title'] = (string) $ed['title'];
+        }
         $t = trim((string) ($d['title'] ?? '')); if ($t === '' || preg_match('/^_*(none|null|n\/a|unknown|untitled)_*$/i', $t)) continue; // Platzhaltertitel der Quelle
-        $lg = (array) ($d['language'] ?? []); if ($lg && !array_intersect($lg, ['ger', 'mul'])) continue; // nur Werke mit deutscher Ausgabe
+        $lg = (array) ($d['language'] ?? []); if (!$edOk && $lg && !array_intersect($lg, ['ger', 'mul'])) continue; // nur Werke mit deutscher Ausgabe
         if (looks_english_title($t)) continue; // Original-Titel in Englisch (auch ohne Sprachangabe oder mit nur einer Übersetzung): nicht anzeigen
         $k = mb_strtolower($t); if (isset($seen[$k])) continue; $seen[$k] = 1;
         $yr = (int) ($d['first_publish_year'] ?? 0);
