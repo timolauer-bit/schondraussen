@@ -68,7 +68,8 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
 .land-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.7fr) minmax(0,.9fr);gap:20px;align-items:start;margin-top:20px}
 .land-grid .card{margin-top:0}.land-pitch{order:1;margin:0!important}.land-shots{order:2;margin:0!important}.land-login{order:3}
 .land-pitch h2{margin-top:0}.land-shots h2{margin-top:0}.land .thumbs{flex-direction:column;flex-wrap:nowrap}.land .thumb{width:100%}.land .thumb img{height:auto;max-height:190px}
-@media(max-width:980px){.land-grid{grid-template-columns:1fr}.land-login{order:1}.land-pitch{order:2}.land-shots{order:3}}
+.land-grid.two{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:stretch}.land-grid.two .land-pitch{display:flex;flex-direction:column}
+@media(max-width:980px){.land-grid,.land-grid.two{grid-template-columns:1fr}.land-login{order:1}.land-pitch{order:2}.land-shots{order:3}}
 .land-peek h2{margin:0 0 4px;font-size:20px}.land-peek p{margin:0 0 12px}.peeks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .peek{display:block;border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none;background:var(--bg)}.peek b{display:block;color:var(--accent);font-size:16px}.peek span{display:block;color:var(--muted);font-size:14px;margin-top:2px}.peek:hover,.peek:focus-visible{border-color:var(--accent)}
 @media(max-width:700px){.peeks{grid-template-columns:1fr}}
@@ -112,7 +113,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php endif; ?>
 <?php else: ?>
-  <div class="land-grid">
+  <div class="land-grid<?= $einblick ? ' two' : '' ?>">
   <div class="card land-login">
 <?php if (approval_required()): ?>    <div class="note"><b>Hinweis:</b> Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
 <?php endif; ?>    <form id="f-login"><h2 style="margin:0 0 4px;font-size:20px">Anmelden</h2>
@@ -168,7 +169,7 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     </ul>
     <p>Registrieren, Einträge hinzufügen, fertig. Du wählst einen Benutzernamen, und dein Konto lässt sich jederzeit selbst löschen.</p>
   </section>
-  <?php if ($shots): ?><section class="card shots land-shots" aria-labelledby="shots-h">
+  <?php if ($shots && !$einblick): // mit Einblick zeigen dessen Kacheln die Seite, die Screenshots entfallen ?><section class="card shots land-shots" aria-labelledby="shots-h">
     <h2 id="shots-h">So sieht es aus</h2>
     <div class="thumbs">
 <?php foreach ($shots as $k => $sh): ?>      <button type="button" class="thumb" data-i="<?= $k ?>"><img src="<?= htmlspecialchars($sh['src']) ?>" alt="<?= htmlspecialchars($sh['title']) ?>" loading="lazy"><?php if ($sh['title'] !== ''): ?><span><?= htmlspecialchars($sh['title']) ?></span><?php endif; ?></button>

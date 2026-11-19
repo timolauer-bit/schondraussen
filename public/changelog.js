@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'U|Startseite: Der Kasten mit den Screenshots ist entfallen (die Einblick-Kacheln zeigen die Seite jetzt live). Der Infotext ist breiter und so hoch wie der Anmeldekasten.',
     'F|Einblick für Gäste ist öffentlich: Ohne Konto lassen sich Kalender, Serien (jede Serie mit eigener Seite) und Community aus Sicht eines Beispielnutzers ansehen. Die Startseite verlinkt darauf.',
     'F|Einblick (Vorschau, noch nicht öffentlich): Jede Serie aus dem Einblick hat eine eigene Seite unter /einblick/serie/… mit Banner, Beschreibung, kommenden Folgen und allen Staffeln. Die Seite bleibt bestehen, auch wenn die Serie aus der wöchentlichen Auswahl fällt, und ist immer so aktuell wie die Daten der Seite. Doppelte Linkzeile im Fuß des Einblicks entfernt.',
     'U|Community: „Top Bücher“ und „Meistgelesen Bücher“ zeigen jetzt einzelne Bücher statt Autor:innen und Reihen, gezählt nach Nutzern, die das Buch als gelesen markiert haben. Mit „+“ kommt die Autor:in bzw. Reihe auf deine Liste.',
