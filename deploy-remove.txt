@@ -3,3 +3,5 @@
 designs/ruhig-c
 designs/evergrid
 designs/ueberarbeitung
+designs/nav-b
+designs/ruhig-a

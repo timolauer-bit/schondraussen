@@ -5,16 +5,6 @@
   "desc": "Das Live-Design bis zum 19.11.2026, vor der Überarbeitung: Leiste mit Symbolen rechts, Kalender-Monatsliste, alte Eintragsseiten und Einstellungen. Zum Nachschauen und Vergleichen."
  },
  {
-  "slug": "nav-b",
-  "name": "Navigation B",
-  "desc": "Feedback gebündelt, Kopf und Handy-Leiste kompakter, Kalender mit Kategorie-Text, gleichwertige Einwilligungsknöpfe."
- },
- {
-  "slug": "ruhig-a",
-  "name": "Ruhig A: Seitenleiste",
-  "desc": "Navigation links als Seitenleiste, weiche Karten, einheitliche Knöpfe und Staffel-Kacheln. Handy: Leiste oben zum Wischen."
- },
- {
   "slug": "8bit",
   "name": "8-Bit",
   "desc": "Pixelschrift (Press Start 2P und VT323, lokal eingebunden), eckige Kanten, dicke Rahmen mit hartem Schatten, Spielknöpfe, Rasterhintergrund. Alle Farbthemen funktionieren.",
