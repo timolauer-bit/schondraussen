@@ -30,13 +30,26 @@ function nr_types(): array {
 /** Termine der Woche frisch aus der Datenbank. */
 function nr_query(PDO $pdo, int $y, int $w): array {
     [$a, $b] = nr_bounds($y, $w); $types = nr_types(); if (!$types) return [];
-    $q = $pdo->prepare("SELECT r.release_date AS d, r.title, r.kind, s.id AS sid, s.name, s.type FROM releases r JOIN subjects s ON s.id=r.subject_id
+    $q = $pdo->prepare("SELECT r.release_date AS d, r.title, r.kind, s.id AS sid, s.name, s.type, s.external_ids FROM releases r JOIN subjects s ON s.id=r.subject_id
         WHERE LENGTH(r.release_date)=10 AND r.release_date BETWEEN ? AND ? AND s.type IN ('" . implode("','", $types) . "')
         AND EXISTS (SELECT 1 FROM user_entries ue WHERE ue.subject_id=s.id)
         ORDER BY r.release_date, FIELD(s.type,'author','artist','film','series','podcast'), s.name, r.title LIMIT 800");
     $q->execute([$a, $b]);
+    $all = $q->fetchAll();
+    // Dieselbe Serie kann als zwei Einträge gespeichert sein (z. B. deutscher und englischer Titel, gleiche TVmaze-Nummer): nur einmal zeigen,
+    // bevorzugt den Eintrag mit eigener Serienseite, sonst den mit den meisten Terminen in dieser Woche
+    $pages = []; try { $pages = showcase_series_map($pdo); } catch (Throwable $e) {}
+    $grp = []; $n = [];
+    foreach ($all as $r) { $x = json_decode((string) ($r['external_ids'] ?? ''), true) ?: []; $g = $r['type'] === 'series' && !empty($x['tvmaze']) ? 'tv' . $x['tvmaze'] : 's' . $r['sid']; $grp[(int) $r['sid']] = $g; $n[$g][(int) $r['sid']] = ($n[$g][(int) $r['sid']] ?? 0) + 1; }
+    $keep = [];
+    foreach ($n as $g => $c) { arsort($c); $best = array_key_first($c); foreach ($c as $sid => $k) if (isset($pages[$sid])) { $best = $sid; break; } $keep[$g] = $best; }
     $rows = [];
-    foreach ($q->fetchAll() as $r) $rows[] = ['d' => (string) $r['d'], 't' => (string) $r['title'], 'k' => (string) ($r['kind'] ?? ''), 'sid' => (int) $r['sid'], 'n' => (string) $r['name'], 'ty' => (string) $r['type']];
+    foreach ($all as $r) {
+        $sid = (int) $r['sid']; if ($keep[$grp[$sid]] !== $sid) continue;
+        $t = trim((string) $r['title']); $nm = (string) $r['name'];
+        if ($r['type'] === 'podcast' && mb_stripos($t, $nm) === 0) { $rest = ltrim(mb_substr($t, mb_strlen($nm)), " \t-–—:|·"); if ($rest !== '') $t = $rest; } // „Raum & Zeit - Zeitschleife“ → „Zeitschleife“
+        $rows[] = ['d' => (string) $r['d'], 't' => $t, 'k' => (string) ($r['kind'] ?? ''), 'sid' => $sid, 'n' => $nm, 'ty' => (string) $r['type']];
+    }
     return $rows;
 }
 function nr_snap_get(PDO $pdo, int $y, int $w): ?array {

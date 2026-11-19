@@ -52,8 +52,8 @@ $sumTxt = $parts ? implode(', ', $parts) : '';
 
 $h1 = $isCur ? 'Neuerscheinungen diese Woche' : 'Neuerscheinungen KW ' . $w . ' ' . $y;
 $title = ($isCur ? 'Neuerscheinungen diese Woche (KW ' . $w . ')' : 'Neuerscheinungen KW ' . $w . '/' . $y) . ': Bücher, Musik, Filme, Serien – Schondraussen.de';
-$desc = 'Neuerscheinungen vom ' . $rangeTxt . ($sumTxt ? ': ' . $sumTxt : '') . '. Neue Bücher, Alben, Filmstarts, Serienfolgen und Podcasts auf einen Blick.';
-$desc = mb_substr($desc, 0, 160);
+$desc = 'Neuerscheinungen vom ' . $rangeTxt . ($sumTxt ? ': ' . $sumTxt : '') . '. Alle Termine der Woche auf einen Blick.';
+if (mb_strlen($desc) > 160) { $desc = mb_substr($desc, 0, 157); $desc = mb_substr($desc, 0, (int) mb_strrpos($desc, ' ')) . ' …'; } // nie mitten im Wort abschneiden
 $seo = seo_head($path, $title, $desc, !$u && count($rows) > 0); // leere Wochen nicht in den Index
 $wl = function (int $yy, int $ww) use ($cy, $cw): string { return ($yy === $cy && $ww === $cw) ? '/neuerscheinungen' : nr_path($yy, $ww); };
 [$py, $pw] = nr_shift($y, $w, -1); [$ny, $nw] = nr_shift($y, $w, 1);
