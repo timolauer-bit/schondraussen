@@ -19,13 +19,27 @@ $PAGES = [
     'serien' => ['series', 'Serien', 'Serien mit Staffeln, Folgen und Sendeterminen', 'Serien mit allen Staffeln, Folgen und kommenden Sendeterminen. Ein Einblick, wie die Serienseite von Schondraussen.de mit eigenem Konto aussieht.'],
     'community' => ['comm', 'Community', 'Community: die beliebtesten Bücher, Alben, Filme, Serien und Podcasts', 'Was die Community von Schondraussen.de am häufigsten verfolgt, neu entdeckt und schon gesehen, gelesen oder gehört hat.'],
 ];
-$slug = (string) ($_GET['s'] ?? 'kalender'); if (!isset($PAGES[$slug])) $slug = 'kalender';
-[$view, $navName, $h1, $desc] = $PAGES[$slug];
+$slug = (string) ($_GET['s'] ?? 'kalender');
 $pub = showcase_public();
 $pdo = db(); $snap = showcase_get($pdo);
 $e = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+$ser = null; $sel = 0; $path = '/einblick/' . $slug;
+if ($slug === 'serie') { // eigene Seite einer Serie
+    $sel = (int) ($_GET['id'] ?? 0);
+    $ser = $sel > 0 && showcase_series_ok($pdo, $snap, $sel) ? showcase_entry($pdo, $snap, $sel) : null;
+    if (!$ser) { http_response_code(404); header('X-Robots-Tag: noindex, nofollow'); echo '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>Nicht gefunden</title></head><body><p>Diese Serienseite gibt es nicht. <a href="/einblick/serien">Zu den Serien</a></p></body></html>'; exit; }
+    $path = showcase_series_path($sel, (string) $ser['entry']['name']);
+    if (strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?') !== $path) { header('Location: ' . $path, true, 301); exit; } // eine Adresse je Serie
+    $sum = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $ser['entry']['summary']))); $nx = null;
+    foreach ($ser['episodes'] as $ep) if ((string) $ep['airdate'] >= date('Y-m-d')) { $nx = $ep; break; }
+    $PAGES['serie'] = ['series', $ser['entry']['name'], $ser['entry']['name'] . ': Staffeln, Folgen und Sendetermine',
+        mb_substr($ser['entry']['name'] . ': alle Staffeln und Folgen' . ($nx ? ', nächste Folge am ' . date('d.m.Y', strtotime((string) $nx['airdate'])) : '') . '. ' . $sum, 0, 155)];
+}
+if (!isset($PAGES[$slug])) { $slug = 'kalender'; $path = '/einblick/kalender'; }
+[$view, $navName, $h1, $desc] = $PAGES[$slug];
 $title = $h1 . ' – Schondraussen.de';
-$seo = seo_head('/einblick/' . $slug, $title, $desc, !$u);
+$seo = seo_head($path, $title, $desc, !$u);
+if ($ser && !empty($ser['entry']['img']['b']) && $u === null && seo_public()) $seo = str_replace('/shots/shot1.webp"', '/bilder/' . $e($ser['entry']['img']['b']) . '"', preg_replace('/<meta property="og:image:(width|height|type)"[^>]*>/', '', $seo)); // Vorschaubild beim Teilen: Banner der Serie
 $ap = $pub ? '' : '/dev'; // bis zur Freigabe mit der Entwicklungsversion
 if (!is_file(__DIR__ . $ap . '/app.js')) $ap = '';
 $TN = ['author' => 'Bücher', 'artist' => 'Musik', 'film' => 'Filme', 'series' => 'Serien', 'podcast' => 'Podcasts'];
@@ -49,14 +63,36 @@ try {
             echo '<li><time datetime="' . $e($d) . '">' . $e(sc_date($d, $MON)) . '</time>: <b>' . $e($r['name']) . '</b> – ' . $e($r['title']) . ($r['kind'] && $r['kind'] !== 'Folge' ? ' (' . $e($r['kind']) . ')' : '') . ' · ' . $e($TN[$r['type']] ?? '') . '</li>';
         }
         if ($cur !== null) echo '</ul>'; else echo '<p>Gerade sind keine Termine bekannt.</p>';
+    } elseif ($ser) {
+        $en = $ser['entry']; $today = date('Y-m-d');
+        if (!empty($en['img']['b'])) echo '<p><img src="/bilder/' . $e($en['img']['bs'] ?? $en['img']['b']) . '" alt="' . $e($en['name']) . '" width="780" style="max-width:100%;height:auto"></p>';
+        echo '<h2>' . $e($en['name']) . '</h2>';
+        if ($en['genres']) echo '<p>' . $e(implode(', ', (array) $en['genres'])) . '</p>';
+        if ($sum !== '') echo '<p>' . $e($sum) . '</p>';
+        $up = array_values(array_filter($ser['episodes'], fn($x) => (string) $x['airdate'] >= $today));
+        echo '<h3>Kommende Folgen</h3>';
+        if ($up) { echo '<ul>'; foreach (array_slice($up, 0, 20) as $x) echo '<li><time datetime="' . $e($x['airdate']) . '">' . $e(sc_date((string) $x['airdate'], $MON)) . '</time>: Staffel ' . (int) $x['season'] . ', Folge ' . (int) $x['number'] . ($x['title'] !== '' ? ' – ' . $e($x['title']) : '') . '</li>'; echo '</ul>'; }
+        else echo '<p>Gerade ist keine neue Folge angekündigt.</p>';
+        $bys = []; foreach ($ser['episodes'] as $x) $bys[(int) $x['season']][] = $x;
+        krsort($bys);
+        foreach ($bys as $sn => $l) {
+            echo '<h3>Staffel ' . $sn . ' (' . count($l) . ' ' . (count($l) === 1 ? 'Folge' : 'Folgen') . ')</h3><ol>';
+            foreach ($l as $x) echo '<li value="' . (int) $x['number'] . '">' . $e($x['title'] !== '' ? $x['title'] : 'Folge ' . (int) $x['number']) . ($x['airdate'] ? ' · <time datetime="' . $e($x['airdate']) . '">' . $e(sc_date((string) $x['airdate'], $MON)) . '</time>' : '') . '</li>';
+            echo '</ol>';
+        }
+        echo '<p><a class="btn" href="/#registrieren">Kostenlos registrieren und „' . $e($en['name']) . '“ auf deine Liste setzen</a></p>';
+        echo '<p>Folgen und Sendetermine von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a>' . (!empty($en['img']['b']) ? ', Bild von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a>' : '') . '.</p>';
     } elseif ($view === 'series') {
         $rows = array_values(array_filter(showcase_list($pdo, $snap), fn($r) => $r['type'] === 'series'));
         echo '<h2>Serien</h2><p>Serien aus der Liste eines Beispielnutzers mit Staffeln, Folgen und kommenden Sendeterminen (Daten von TVmaze).</p><ul>';
         foreach ($rows as $r) {
             $sum = trim(strip_tags((string) $r['summary'])); if (mb_strlen($sum) > 220) $sum = mb_substr($sum, 0, 217) . '…';
-            echo '<li><b>' . $e($r['name']) . '</b>: ' . (int) $r['works'] . ' ' . ((int) $r['works'] === 1 ? 'Staffel' : 'Staffeln') . ((int) $r['episodes'] ? ', ' . (int) $r['episodes'] . ' Folgen' : '') . ($r['next_date'] ? ', nächster Termin ' . $e(sc_date((string) $r['next_date'], $MON)) : '') . ($sum !== '' ? '<br>' . $e($sum) : '') . '</li>';
+            echo '<li><b><a href="' . $e(showcase_series_path((int) $r['id'], (string) $r['name'])) . '">' . $e($r['name']) . '</a></b>: ' . (int) $r['works'] . ' ' . ((int) $r['works'] === 1 ? 'Staffel' : 'Staffeln') . ((int) $r['episodes'] ? ', ' . (int) $r['episodes'] . ' Folgen' : '') . ($r['next_date'] ? ', nächster Termin ' . $e(sc_date((string) $r['next_date'], $MON)) : '') . ($sum !== '' ? '<br>' . $e($sum) : '') . '</li>';
         }
         echo '</ul>';
+        $all = showcase_series_pages($pdo); $cur = array_flip(array_map(fn($r) => (int) $r['id'], $rows));
+        $more = array_values(array_filter($all, fn($r) => !isset($cur[(int) $r['id']])));
+        if ($more) { echo '<h3>Weitere Serienseiten</h3><ul>'; foreach ($more as $r) echo '<li><a href="' . $e(showcase_series_path((int) $r['id'], (string) $r['name'])) . '">' . $e($r['name']) . '</a></li>'; echo '</ul>'; }
     } else {
         $c = $snap['comm'] ?? null;
         echo '<h2>Community</h2><p>Am häufigsten verfolgt, neu hinzugefügt und gesehen, gelesen oder gehört. Gezählt werden nur Nutzer, die der Community-Nutzung zugestimmt haben; Namen sind hier anonymisiert.</p>';
@@ -81,13 +117,13 @@ $pre = ob_get_clean();
   <div class="whobox"><a class="btn" href="/#registrieren">Kostenlos registrieren</a><a class="btn ghost" href="/">Anmelden</a></div></header>
   <nav class="topbar" id="topbar" aria-label="Bereiche"></nav>
   <div id="appview" class="demopre"><h1 class="sr-title"><?= $e($h1) ?></h1><?= $pre ?>
-    <p>Weitere Einblicke: <?php foreach ($PAGES as $k => $p) if ($k !== $slug) echo '<a href="/einblick/' . $k . '">' . $e($p[1]) . '</a> '; ?></p></div>
+    <p>Weitere Einblicke: <?php foreach ($PAGES as $k => $p) if ($k !== $slug && $k !== 'serie') echo '<a href="/einblick/' . $k . '">' . $e($p[1]) . '</a> '; ?></p></div>
   <footer>
     <p>Werke und Termine stammen aus <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a> (Musik) und <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer">Open Library</a> (Bücher). Folgen und Sendetermine von Serien stammen von <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>). Filmdaten von <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB</a> (dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert). Termine bitte vor dem Kauf prüfen.</p>
-    <p>Einblick: <a href="/einblick/kalender">Kalender</a> · <a href="/einblick/serien">Serien</a> · <a href="/einblick/community">Community</a></p>
     <p><a href="/">Startseite</a> · <a href="/impressum.php">Impressum</a> · <a href="/datenschutz.php">Datenschutz</a></p>
   </footer>
 </div>
-<script nonce="<?= $nonce ?>">window.SD = <?= json_encode(showcase_sd($view), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;</script>
+<?php $sd = showcase_sd($view); if ($sel) { $sd['demo']['sel'] = $sel; $sd['demo']['extra'] = $sel; } ?>
+<script nonce="<?= $nonce ?>">window.SD = <?= json_encode($sd, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;</script>
 <script src="<?= $ap ?>/app.js?v=<?= filemtime(__DIR__ . $ap . '/app.js') ?>"></script>
 </body></html>

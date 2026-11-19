@@ -10,7 +10,7 @@ try {
     if ($a === 'list') {
         $site = ['tag' => '', 'domain' => 'amazon.de'];
         try { foreach ($pdo->query("SELECT k,v FROM site_settings WHERE k IN ('tag','domain')")->fetchAll() as $r) $site[$r['k']] = $r['v']; } catch (Throwable $e) {}
-        json_out(['entries' => showcase_list($pdo, $snap), 'site' => $site]);
+        json_out(['entries' => showcase_list($pdo, $snap, (int) ($_GET['x'] ?? 0)), 'site' => $site]);
     }
     if ($a === 'calendar') json_out(['releases' => showcase_calendar($pdo, $snap)]);
     if ($a === 'entry') { $r = showcase_entry($pdo, $snap, (int) ($_GET['id'] ?? 0)); if (!$r) json_out(['error' => 'Eintrag nicht gefunden.'], 404); json_out($r); }

@@ -21,9 +21,40 @@ function showcase_get(PDO $pdo, bool $force = false): array {
     try { $s = $pdo->prepare('SELECT data, TIMESTAMPDIFF(HOUR, fetched_at, NOW()) AS age FROM news_cache WHERE k=?'); $s->execute([SHOWCASE_KEY]); $row = $s->fetch(); } catch (Throwable $e) {}
     $d = $row ? json_decode((string) $row['data'], true) : null;
     if (!$force && is_array($d) && (int) $row['age'] < 8 * 24) return $d; // der Cron wählt montags neu, das hier ist nur das Sicherheitsnetz
-    try { $d = showcase_build($pdo); $pdo->prepare('REPLACE INTO news_cache (k,data) VALUES (?,?)')->execute([SHOWCASE_KEY, json_encode($d, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)]); }
+    try { $d = showcase_build($pdo); $pdo->prepare('REPLACE INTO news_cache (k,data) VALUES (?,?)')->execute([SHOWCASE_KEY, json_encode($d, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)]); showcase_series_remember($pdo, (array) ($d['ids']['series'] ?? [])); }
     catch (Throwable $e) { if (!is_array($d)) $d = ['ids' => array_fill_keys(SHOWCASE_TYPES, []), 'comm' => null, 'built' => '']; }
+    if (is_array($d) && !empty($d['ids']['series'])) { static $chk = false; if (!$chk) { $chk = true; $have = showcase_series_map($pdo); foreach ($d['ids']['series'] as $i) if (!isset($have[(int) $i])) { showcase_series_remember($pdo, $d['ids']['series']); break; } } } // Auswahl von vor den Serienseiten nachtragen
     return $d;
+}
+// Eigene Seiten je Serie (/einblick/serie/<id>-<name>): jede Serie, die einmal im Einblick war, behält ihre Seite (für Suchmaschinen und Links von außen).
+// Die Inhalte (Folgen, Termine, Bilder) kommen bei jedem Aufruf frisch aus der Datenbank, also so aktuell wie der Cron (alle 2 Stunden).
+const SHOWCASE_SERIES_KEY = 'showcase_series';
+/** Kennung => Datum der ersten Aufnahme, nur Serien, die es noch gibt. */
+function showcase_series_map(PDO $pdo): array {
+    static $m = null; if ($m !== null) return $m;
+    $m = [];
+    try { $s = $pdo->prepare('SELECT data FROM news_cache WHERE k=?'); $s->execute([SHOWCASE_SERIES_KEY]); $m = json_decode((string) $s->fetchColumn(), true) ?: []; } catch (Throwable $e) {}
+    $o = []; foreach ($m as $k => $v) $o[(int) $k] = (string) $v;
+    if ($o) { try { $ok = array_flip(array_map('intval', $pdo->query("SELECT id FROM subjects WHERE type='series' AND fetched_at IS NOT NULL AND id IN (" . implode(',', array_keys($o)) . ")")->fetchAll(PDO::FETCH_COLUMN))); $o = array_intersect_key($o, $ok); } catch (Throwable $e) {} }
+    return $m = $o;
+}
+function showcase_series_remember(PDO $pdo, array $ids): void {
+    $raw = [];
+    try { $s = $pdo->prepare('SELECT data FROM news_cache WHERE k=?'); $s->execute([SHOWCASE_SERIES_KEY]); $raw = json_decode((string) $s->fetchColumn(), true) ?: []; } catch (Throwable $e) {}
+    $ch = false; foreach ($ids as $i) { $i = (int) $i; if ($i > 0 && !isset($raw[$i])) { $raw[$i] = date('Y-m-d'); $ch = true; } }
+    if ($ch) try { $pdo->prepare('REPLACE INTO news_cache (k,data) VALUES (?,?)')->execute([SHOWCASE_SERIES_KEY, json_encode($raw)]); } catch (Throwable $e) {}
+}
+function showcase_series_ok(PDO $pdo, array $snap, int $id): bool { return in_array($id, array_map('intval', $snap['ids']['series'] ?? []), true) || isset(showcase_series_map($pdo)[$id]); }
+/** Adresse der Serienseite, z. B. /einblick/serie/12-the-last-of-us */
+function showcase_series_path(int $id, string $name): string {
+    $s = mb_strtolower($name); $s = strtr($s, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss', 'é' => 'e', 'è' => 'e', 'á' => 'a', 'à' => 'a', 'ó' => 'o', 'ñ' => 'n', 'ç' => 'c']);
+    $s = trim(preg_replace('/[^a-z0-9]+/', '-', $s), '-'); if (strlen($s) > 60) $s = rtrim(substr($s, 0, 60), '-');
+    return '/einblick/serie/' . $id . ($s !== '' ? '-' . $s : '');
+}
+/** Alle Serienseiten mit Namen (für Übersicht und Sitemap). */
+function showcase_series_pages(PDO $pdo): array {
+    $m = showcase_series_map($pdo); if (!$m) return [];
+    try { return $pdo->query("SELECT id,name FROM subjects WHERE id IN (" . implode(',', array_keys($m)) . ") ORDER BY name")->fetchAll(); } catch (Throwable $e) { return []; }
 }
 /** Für den Cron: einmal pro Woche (montags ab 4 Uhr) neu auswählen. */
 function showcase_weekly(PDO $pdo): string {
@@ -79,8 +110,9 @@ function showcase_community(): ?array {
 function showcase_all_ids(array $snap): array { $o = []; foreach ((array) ($snap['ids'] ?? []) as $l) foreach ($l as $i) $o[] = (int) $i; return array_values(array_unique($o)); }
 
 /** Einträge wie in data.php?a=list (gleiche Spalten), ohne Nutzerbezug. */
-function showcase_list(PDO $pdo, array $snap): array {
-    $ids = showcase_all_ids($snap); if (!$ids) return [];
+function showcase_list(PDO $pdo, array $snap, int $extra = 0): array {
+    $ids = showcase_all_ids($snap); if ($extra > 0 && !in_array($extra, $ids, true) && showcase_series_ok($pdo, $snap, $extra)) $ids[] = $extra; // Serienseite einer Serie, die gerade nicht in der Auswahl ist
+    if (!$ids) return [];
     $s = $pdo->query("SELECT s.id,s.type,s.name,s.summary,s.genres,s.fetched_at,1 AS bell,0 AS fav,
         (SELECT COUNT(*) FROM works w WHERE w.subject_id=s.id) AS works,
         (SELECT MIN(r.release_date) FROM releases r WHERE r.subject_id=s.id AND r.release_date>=CURDATE()) AS next_date,
@@ -103,12 +135,13 @@ function showcase_calendar(PDO $pdo, array $snap): array {
 }
 /** Seite einer Serie (nur Serien aus der Auswahl), Antwort wie data.php?a=entry, ohne Gesehen-Markierungen. */
 function showcase_entry(PDO $pdo, array $snap, int $id): ?array {
-    if (!in_array($id, array_map('intval', $snap['ids']['series'] ?? []), true)) return null;
+    if (!showcase_series_ok($pdo, $snap, $id)) return null;
     $s = $pdo->prepare('SELECT id,type,name,summary,genres,total_works,fetched_at,external_ids FROM subjects WHERE id=?'); $s->execute([$id]);
     $e = $s->fetch(); if (!$e) return null;
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = ''; $e['page'] = ''; $e['by'] = ''; unset($e['external_ids']);
     $e['kind'] = ''; $e['dirs'] = []; $e['watch'] = null;
+    try { require_once __DIR__ . '/pics.php'; $e['img'] = pic_out($x); } catch (Throwable $t) { $e['img'] = null; } // Banner wie in der App
     try { $q = $pdo->prepare("SELECT season,number,title,airdate,(summary IS NOT NULL AND summary<>'') AS has_sum FROM episodes WHERE subject_id=? ORDER BY season, number"); $q->execute([$id]); $eps = $q->fetchAll(); }
     catch (Throwable $t) { $q = $pdo->prepare('SELECT season,number,title,airdate FROM episodes WHERE subject_id=? ORDER BY season, number'); $q->execute([$id]); $eps = $q->fetchAll(); }
     foreach ($eps as &$y) $y['k'] = 'e' . (int) $y['season'] . 'x' . (int) $y['number']; unset($y);
@@ -120,7 +153,7 @@ function showcase_entry(PDO $pdo, array $snap, int $id): ?array {
 }
 /** Kurzfassung einer Folge: nur, was schon gespeichert ist (keine Übersetzung für Gäste, das würde das Kontingent belasten). */
 function showcase_episum(PDO $pdo, array $snap, int $id, int $se, int $nu): string {
-    if (!in_array($id, array_map('intval', $snap['ids']['series'] ?? []), true)) return '';
+    if (!showcase_series_ok($pdo, $snap, $id)) return '';
     try { $q = $pdo->prepare('SELECT summary,summary_de FROM episodes WHERE subject_id=? AND season=? AND number=?'); $q->execute([$id, $se, $nu]); $r = $q->fetch(); }
     catch (Throwable $e) { return ''; }
     if (!$r) return '';

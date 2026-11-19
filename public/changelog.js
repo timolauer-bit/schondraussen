@@ -1,6 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'F|Einblick (Vorschau, noch nicht öffentlich): Jede Serie aus dem Einblick hat eine eigene Seite unter /einblick/serie/… mit Banner, Beschreibung, kommenden Folgen und allen Staffeln. Die Seite bleibt bestehen, auch wenn die Serie aus der wöchentlichen Auswahl fällt, und ist immer so aktuell wie die Daten der Seite. Doppelte Linkzeile im Fuß des Einblicks entfernt.',
     'U|Community: „Top Bücher“ und „Meistgelesen Bücher“ zeigen jetzt einzelne Bücher statt Autor:innen und Reihen, gezählt nach Nutzern, die das Buch als gelesen markiert haben. Mit „+“ kommt die Autor:in bzw. Reihe auf deine Liste.',
     'A|Deutsche Nationalbibliothek: Ist sie nicht erreichbar, wartet die Seite bei jedem weiteren Fehlschlag doppelt so lange (30 Minuten bis höchstens 24 Stunden), bevor sie es erneut versucht.',
     'U|Kalender: Unter „Frühere Termine in diesem Monat“ und als Punkte in den Monatsansichten erscheinen jetzt die schon vergangenen Termine des laufenden Monats aus allen Kategorien, nicht nur Podcasts. Serienfolgen und Filmstarts sind ab Monatsanfang vollständig da; bei Büchern und Musik bleiben Termine ab jetzt nach dem Erscheinen bis Monatsende stehen.',

@@ -84,7 +84,7 @@
     if (data !== undefined) return null;
     var m = /^\/api\/(data|community)\.php\?a=([a-z_]+)(.*)$/.exec(url); if (!m) return null;
     var a = m[1] === 'community' ? (m[2] === 'overview' ? 'community' : '') : ({ list: 'list', calendar: 'calendar', entry: 'entry', episum: 'episum' })[m[2]];
-    return a ? '/api/showcase.php?a=' + a + m[3] : null;
+    return a ? '/api/showcase.php?a=' + a + m[3] + (a === 'list' && D.demo.extra ? '&x=' + (+D.demo.extra) : '') : null; // x: Serienseite einer Serie außerhalb der aktuellen Auswahl
   }
   // Was im Einblick bedienbar bleibt (ansehen, blättern, sortieren). Alles andere wird ausgegraut und zeigt beim Anklicken einen Hinweis wie beim sechsten Favoriten.
   var DEMO_OPEN = '.demo-open, .row-btn, .backlink, .pie, .epinfo, .strip .s, #filtBtn, .fopt, .fchip, .filtpop select, #srch, .sumtoggle';
@@ -356,8 +356,13 @@
   // Einblick: Adresse und Seitentitel passend zur Ansicht (/einblick/kalender, /serien, /community), Zurück-Taste des Browsers funktioniert
   var DEMOP = { cal: ['kalender', 'Neuerscheinungen im Kalender'], series: ['serien', 'Serien mit Staffeln, Folgen und Sendeterminen'], comm: ['community', 'Community'] };
   function demoKey() { return S.view === 'list' ? S.cat : S.view; }
-  function demoUrlSync() { var d = DEMOP[demoKey()]; if (!d) return; document.title = d[1] + ' – Schondraussen.de'; var path = '/einblick/' + d[0]; if (location.pathname !== path) try { history.pushState({ v: demoKey() }, '', path); } catch (_) {} }
-  if (D.demo) window.addEventListener('popstate', function () { var m = /\/einblick\/(kalender|serien|community)/.exec(location.pathname), k = m ? { kalender: 'cal', serien: 'series', community: 'comm' }[m[1]] : 'cal'; S.view = k === 'series' ? 'list' : k; S.cat = k; S.sel = null; render(); });
+  function demoSlug(n) { var s = String(n || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); if (s.length > 60) s = s.slice(0, 60).replace(/-+$/, ''); return s; }
+  function demoUrlSync() {
+    var d = DEMOP[demoKey()]; if (!d) return; var path = '/einblick/' + d[0], t = d[1];
+    if (S.view === 'list' && S.cat === 'series' && S.sel) { var en = S.entries.filter(function (x) { return x.id === String(S.sel); })[0]; if (en) { var sl = demoSlug(en.name); path = '/einblick/serie/' + en.id + (sl ? '-' + sl : ''); t = en.name + ': Staffeln, Folgen und Sendetermine'; } } // eigene Seite je Serie
+    document.title = t + ' – Schondraussen.de'; if (location.pathname !== path) try { history.pushState({ v: demoKey() }, '', path); } catch (_) {}
+  }
+  if (D.demo) window.addEventListener('popstate', function () { var ms = /\/einblick\/serie\/(\d+)/.exec(location.pathname); if (ms) { S.view = 'list'; S.cat = 'series'; S.sel = ms[1]; render(); return; } var m = /\/einblick\/(kalender|serien|community)/.exec(location.pathname), k = m ? { kalender: 'cal', serien: 'series', community: 'comm' }[m[1]] : 'cal'; S.view = k === 'series' ? 'list' : k; S.cat = k; S.sel = null; render(); });
   function render() {
     nav(); welcome(); mainEl.textContent = '';
     if (!S.ready) { mainEl.append(h('p', { class: 'state pulse' }, 'Lade deine Liste …')); return; }
@@ -2904,7 +2909,7 @@
     });
   }
   // Nach F5 wieder dort starten, wo man war (nur im selben Tab und höchstens 8 Stunden; sonst Kalender)
-  if (D.demo) { var dv = (D.demo.view || 'cal'); S.view = dv === 'series' ? 'list' : dv; S.cat = dv; try { history.replaceState({ v: dv }, '', location.pathname); } catch (_) {} load(function () { render(); }); return; }
+  if (D.demo) { var dv = (D.demo.view || 'cal'); S.view = dv === 'series' ? 'list' : dv; S.cat = dv; if (D.demo.sel) S.sel = String(D.demo.sel); try { history.replaceState({ v: dv }, '', location.pathname); } catch (_) {} load(function () { render(); }); return; }
   try {
     var sv = JSON.parse(sessionStorage.getItem('sd_view') || 'null');
     if (sv && Date.now() - sv.t < 8 * 3600 * 1000) {
