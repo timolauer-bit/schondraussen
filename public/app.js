@@ -1706,7 +1706,7 @@
       body.append(tabs);
       function hatch(w) { return h('span', { class: 'hatch', style: 'width:' + w + '%', 'aria-label': 'verborgen' }); }
       function rowList(rows, n, cat, opt) {
-        opt = opt || {}; var mx = rows.length ? Math.max.apply(null, rows.map(function (x) { return +x.c || 0; })) : 1, l = h('div', { class: 'clist' });
+        opt = opt || {}; var mx = rows.length ? Math.max.apply(null, rows.map(function (x) { return +x.c || 0; })) : 1, l = h('div', { class: 'clist' + (opt.lock || opt.noAct ? '' : ' hasact') }); // hasact: feste Spalten für Zahl und Knopf, damit die Balken gleich lang sind
         rows.slice(0, n).forEach(function (r, i) {
           var nm = opt.lock ? hatch(38 + (i * 17) % 40) : h('span', { class: 'cnm' }, r.name);
           var act = opt.lock || opt.noAct ? null : (+r.mine ? h('span', { class: 'cmine' }, ico(ICONS.check), 'auf deiner Liste') : (r.id > 0 ? adoptBtn(r) : null));

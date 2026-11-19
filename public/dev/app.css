@@ -1234,3 +1234,7 @@ a.go:hover{background:transparent;color:var(--ink)}
 .work.ep.today{border:1.5px solid var(--accent);border-radius:10px;padding-left:6px;padding-right:10px;margin:4px 0;background:var(--surface)}.work.ep.today+.work{border-top-color:transparent}.work.ep.today .ttl{font-weight:700}.work.ep.today .yr{color:var(--accent)}
 .work.ep .stat.tpill,.work .stat.tpill{background:var(--accent)!important;color:var(--accent-ink)!important;border-radius:999px!important;padding:2px 10px!important;font:600 12px var(--font-body)!important}
 .work.ep .stat.tmr,.work .stat.tmr{color:var(--accent)!important}
+
+/* Community-Ranglisten: Zahl und Knopf in festen Spalten, damit die Balken in allen Zeilen gleich lang sind */
+.clist .crow{grid-template-columns:26px minmax(0,1fr) 8em}.clist.hasact .crow{grid-template-columns:26px minmax(0,1fr) 8em 150px}.clist.hasact .ccnt{text-align:right}.clist.hasact .crow>:nth-child(4){justify-self:end}
+@media(max-width:760px){.clist .crow,.clist.hasact .crow{grid-template-columns:22px minmax(0,1fr) auto}.clist.hasact .crow>:nth-child(4){justify-self:start}}
