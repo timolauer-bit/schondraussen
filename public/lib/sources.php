@@ -488,7 +488,7 @@ function lobid_strings($v, array $skip, string $key = ''): array { // alle Textw
     return $o;
 }
 // Deutsche Nationalbibliothek (SRU, MARC21): nummerierte Bände einer Reihe, auch angekündigte (Erscheinungsjahr in der Zukunft).
-// Schonung der DNB: höchstens eine Anfrage pro Sekunde; nach „Too Many Requests“ (429) oder abgewiesener Verbindung 30 Minuten Pause
+// Schonung der DNB: höchstens eine Anfrage pro Sekunde; nach „Too Many Requests“ (429) oder abgewiesener Verbindung Pause (30 Minuten, bei jedem weiteren Fehlschlag doppelt so lang, höchstens 24 Stunden)
 // (gemeinsam für Cron und Nutzer, gespeichert in site_state 'dnb_pause'). Während der Pause wird gar nicht erst angefragt.
 $GLOBALS['dnb_failed'] = false; // true, sobald im laufenden Aufruf eine DNB-Anfrage gescheitert ist (nicht „keine Treffer“)
 function dnb_pause_until(): int {
@@ -507,13 +507,17 @@ function dnb_sru(string $query, int $start): array {
     $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch); $last = microtime(true);
     if ($raw === false || $code >= 400) {
         api_note($url, $code, $raw, $cerr); $GLOBALS['dnb_failed'] = true;
-        if ($code === 429 || $raw === false) { // Pause für alle weiteren DNB-Anfragen (Retry-After der DNB, sonst 30 Minuten)
-            $sec = isset($hdr['ra']) && ctype_digit($hdr['ra']) ? max(60, min(6 * 3600, (int) $hdr['ra'])) : 1800;
-            try { require_once __DIR__ . '/watchdog.php'; state_set(db(), 'dnb_pause', (string) (time() + $sec)); } catch (Throwable $e) {}
+        if ($code === 429 || $raw === false) { // Pause für alle weiteren DNB-Anfragen: Retry-After der DNB, sonst wachsend 30 Min → 1 h → 2 h … bis 24 h, solange die DNB nicht antwortet
+            try {
+                require_once __DIR__ . '/watchdog.php'; $n = (int) (state_get(db(), 'dnb_fails')['v'] ?? 0);
+                $sec = isset($hdr['ra']) && ctype_digit($hdr['ra']) ? max(60, min(6 * 3600, (int) $hdr['ra'])) : (int) min(86400, 1800 * (2 ** min($n, 6)));
+                state_set(db(), 'dnb_fails', (string) ($n + 1)); state_set(db(), 'dnb_pause', (string) (time() + $sec));
+            } catch (Throwable $e) {}
         }
         return ['err' => $raw === false ? 'Verbindungsfehler: ' . $cerr : 'Status ' . $code];
     }
     api_ok($url);
+    static $reset = false; if (!$reset) { $reset = true; try { require_once __DIR__ . '/watchdog.php'; if ((int) (state_get(db(), 'dnb_fails')['v'] ?? 0) > 0) state_set(db(), 'dnb_fails', '0'); } catch (Throwable $e) {} } // DNB antwortet wieder: Pausen wieder kurz
     $dom = new DOMDocument(); $prev = libxml_use_internal_errors(true); $ok = $dom->loadXML($raw); libxml_clear_errors(); libxml_use_internal_errors($prev);
     if (!$ok) return ['err' => 'Antwort nicht lesbar'];
     $xp = new DOMXPath($dom);

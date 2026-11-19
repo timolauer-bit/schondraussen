@@ -73,12 +73,23 @@ if ($a === 'overview') {
             HAVING COUNT(*) * 2 >= (SELECT COUNT(*) FROM episodes e2 WHERE e2.subject_id=d.subject_id AND e2.season=ep.season)
         ) $outer", [$u['id']]);
     // Musik: mindestens 5 Alben oder 20 % des Katalogs (das Kleinere, mindestens 1), damit auch kleine Diskografien zählen
-    // Bücher: pro Nutzer und Autor:in bzw. Reihe ein Punkt (mindestens ein gelesenes Buch); bei Gleichstand entscheidet die Zahl der gelesenen Bücher
-    $out['seen']['author'] = q_all($pdo, "SELECT s.id, s.name, COUNT(*) AS c, MAX(m.id IS NOT NULL) AS mine FROM (SELECT d.user_id, d.subject_id, COUNT(DISTINCT d.item_key) AS bk FROM user_done d
+    // Bücher: jedes Buch steht einzeln (Schlüssel aus Titel und Jahr, gleich in Autor- und Reiheneintrag), ein Punkt je Nutzer, der es als gelesen markiert hat.
+    // Dieselbe Rangliste steht auch unter „Top Bücher“, weil auf den Listen nur Autor:innen und Reihen stehen, keine einzelnen Bücher.
+    $books = q_all($pdo, "SELECT r.k, MIN(r.title) AS name, COUNT(DISTINCT r.user_id) AS c, MIN(r.sid) AS id, 0 AS mine FROM (SELECT d.user_id, d.item_key AS k, w.title, d.subject_id AS sid FROM user_done d
             JOIN subjects sb ON sb.id=d.subject_id AND sb.type='author'
             JOIN works w ON w.subject_id=d.subject_id AND $wk $join
-            WHERE $cons GROUP BY d.user_id, d.subject_id
-        ) r JOIN subjects s ON s.id=r.subject_id LEFT JOIN user_entries m ON m.subject_id=s.id AND m.user_id=? GROUP BY s.id, s.name ORDER BY c DESC, SUM(r.bk) DESC, s.name LIMIT 50", [$u['id']]);
+            WHERE $cons
+        ) r GROUP BY r.k ORDER BY c DESC, name LIMIT 50");
+    try { // „schon in deiner Liste“: das Buch gehört zu einer Autor:in oder Reihe auf deiner Liste; Übernehmen (+) legt sonst die Autor:in bzw. Reihe an
+        $ks = array_column($books, 'k'); $mine = [];
+        if ($ks) {
+            $in = implode(',', array_fill(0, count($ks), '?'));
+            foreach (q_all($pdo, "SELECT k, sid FROM (SELECT CONCAT('w', SUBSTRING(MD5(CONCAT(LOWER(TRIM(w.title)), '|', IFNULL(w.year, 0))), 1, 16)) AS k, w.subject_id AS sid FROM works w JOIN user_entries e ON e.subject_id=w.subject_id AND e.user_id=? JOIN subjects s ON s.id=w.subject_id AND s.type='author') x WHERE k IN ($in)", array_merge([$u['id']], $ks)) as $x) $mine[$x['k']] = (int) $x['sid'];
+        }
+        foreach ($books as &$r) { if (isset($mine[$r['k']])) { $r['mine'] = 1; $r['id'] = $mine[$r['k']]; } unset($r['k']); } unset($r);
+    } catch (Throwable $t) { foreach ($books as &$r) unset($r['k']); unset($r); }
+    $out['seen']['author'] = $books;
+    if (isset($out['top']['author'])) $out['top']['author'] = $books;
     // Filme: jeder Film steht einzeln (Kennung = TMDB-Nummer), ein Punkt je Nutzer, der ihn irgendwo als gesehen markiert hat, ob im Einzeleintrag, in einer Filmreihe oder bei der Regie.
     // Ältere Markierungen (Schlüssel aus Titel und Jahr) zählen weiter, bis der Eintrag das nächste Mal geöffnet wurde.
     $out['seen']['film'] = q_all($pdo, "SELECT 0 AS id, r.fid AS fid, MIN(r.title) AS name, COUNT(*) AS c, 0 AS mine FROM (

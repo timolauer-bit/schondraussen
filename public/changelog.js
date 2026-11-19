@@ -1,6 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 18, d: '19.11.2026', t: [
+    'U|Community: „Top Bücher“ und „Meistgelesen Bücher“ zeigen jetzt einzelne Bücher statt Autor:innen und Reihen, gezählt nach Nutzern, die das Buch als gelesen markiert haben. Mit „+“ kommt die Autor:in bzw. Reihe auf deine Liste.',
+    'A|Deutsche Nationalbibliothek: Ist sie nicht erreichbar, wartet die Seite bei jedem weiteren Fehlschlag doppelt so lange (30 Minuten bis höchstens 24 Stunden), bevor sie es erneut versucht.',
     'U|Kalender: Unter „Frühere Termine in diesem Monat“ und als Punkte in den Monatsansichten erscheinen jetzt die schon vergangenen Termine des laufenden Monats aus allen Kategorien, nicht nur Podcasts. Serienfolgen und Filmstarts sind ab Monatsanfang vollständig da; bei Büchern und Musik bleiben Termine ab jetzt nach dem Erscheinen bis Monatsende stehen.',
     'U|Neues Design für alle (Überarbeitung): Oben rechts stehen dein Profilknopf (Profilkarte, Einstellungen, Benachrichtigungen, Was ist neu?, Abmelden) und bei Testern der Versionsknopf. Ideen, Bugs, Info und Kontakt liegen gebündelt unter „Hilfe & Feedback“, Community steht in der Leiste zwischen News und Bücher.',
     'U|Kalender: links zwei Monate mit Punkten je Kategorie, rechts die Termine nach Tagen (Heute, Morgen, in N Tagen); vergangene Tage des Monats sind eingeklappt. Die Kategorie-Filter mit „Alle“ stehen oben neben der Überschrift.',

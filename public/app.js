@@ -1710,7 +1710,7 @@
         return l;
       }
       var mem = function (n) { return n === 1 ? 'Mitglied' : 'Mitglieder'; };
-      var SEENT = { series: ['Meistgesehen', 'mindestens eine halbe Staffel'], author: ['Meistgelesen', 'mindestens ein gelesenes Buch'], artist: ['Meistgehört', 'mindestens 5 Alben oder 20 %'], film: ['Meistgesehen', 'gesehen'], podcast: ['Meistgehört', 'mindestens 5 Folgen oder 20 %'] };
+      var SEENT = { series: ['Meistgesehen', 'mindestens eine halbe Staffel'], author: ['Meistgelesen', 'jedes Buch einzeln'], artist: ['Meistgehört', 'mindestens 5 Alben oder 20 %'], film: ['Meistgesehen', 'gesehen'], podcast: ['Meistgehört', 'mindestens 5 Folgen oder 20 %'] };
       var main = h('div', { class: 'cmainc' }), aside = h('aside', { class: 'caside' });
       if (C.cat === 'all') {
         var gr = h('div', { class: 'callgrid' });
@@ -1718,7 +1718,7 @@
         main.append(gr);
       } else {
         var t = C.cat, open = !!C.open['top' + t];
-        var top = h('section', { class: 'ccard big', style: '--cc:' + CATCOL[t] }, h('div', { class: 'cch' }, h('h3', null, 'Top ' + TYPES[t].plural, h('small', null, 'am häufigsten auf Listen'))), rowList(d.top[t] || [], open ? 50 : 10, t, { bars: true, unit: mem }));
+        var top = h('section', { class: 'ccard big', style: '--cc:' + CATCOL[t] }, h('div', { class: 'cch' }, h('h3', null, 'Top ' + TYPES[t].plural, h('small', null, t === 'author' ? 'einzelne Bücher, nach Gelesen-Markierungen' : 'am häufigsten auf Listen'))), rowList(d.top[t] || [], open ? 50 : 10, t, { bars: true, unit: mem }));
         if ((d.top[t] || []).length > 10) top.append(h('button', { class: 'linkbtn cmore', type: 'button', onclick: function () { C.open['top' + t] = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(50, (d.top[t] || []).length) + ' anzeigen'));
         var two = h('div', { class: 'ctwo' },
           h('section', { class: 'ccard' }, h('div', { class: 'cch' }, h('h3', null, 'Neu entdeckt', h('small', null, 'letzte 14 Tage'))), rowList(d['new'][t] || [], 8, t, { lock: lockedNew, plus: true, noAct: true }), lockedNew ? h('p', { class: 'clock' }, ico(ICONS.lock), 'Neu entdeckte Titel siehst du als Mitglied.') : null),

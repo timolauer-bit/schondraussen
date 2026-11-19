@@ -1591,16 +1591,16 @@
         if (us.length > 5) ub.append(h('button', { class: 'btn ghost small', type: 'button', onclick: function () { C.open.users = !open; drawOverview(); } }, open ? 'Weniger anzeigen' : 'Top ' + Math.min(20, us.length) + ' anzeigen'));
       }
       body.append(ub);
-      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
+      body.append(h('h3', { class: 'commh' }, 'Top'), h('p', { class: 'hint' }, 'Am häufigsten in Listen. Die Zahl zeigt, wie viele Nutzer den Eintrag haben, ohne Namen. Bei Büchern stehen einzelne Bücher, gezählt nach Nutzern, die sie gelesen haben (auf den Listen stehen nur Autor:innen und Reihen). Es zählen nur Nutzer, die der Community-Nutzung zugestimmt haben.'));
       var g = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g.append(rankTable('top' + t, 'Top ' + (C.open['top' + t] ? '50' : '15') + ' ' + TYPES[t].plural, d.top[t] || [], 'Nutzer', t)); });
       body.append(g, h('h3', { class: 'commh' }, 'Newcomer'), h('p', { class: 'hint' }, 'Am häufigsten in den letzten 14 Tagen hinzugefügt.' + (d.locked ? ' Bis du zustimmst, siehst du hier nur Platzhalter.' : '')));
       var g2 = h('div', { class: 'commgrid' });
       CT.forEach(function (t) { g2.append(rankTable('new' + t, 'Newcomer ' + TYPES[t].plural, d['new'][t] || [], 'in 14 Tagen hinzugefügt', t, !!d.locked)); });
       body.append(g2);
-      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'mindestens einem gelesenen Buch'], artist: ['Meistgehört Musik', 'mindestens 5 Alben oder 20 %'], film: ['Meistgesehen Filme', 'gesehen (jeder Film einzeln)'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
+      var SEENT = { series: ['Meistgesehen Serien', 'mindestens eine halbe Staffel'], author: ['Meistgelesen Bücher', 'gelesen (jedes Buch einzeln)'], artist: ['Meistgehört Musik', 'mindestens 5 Alben oder 20 %'], film: ['Meistgesehen Filme', 'gesehen (jeder Film einzeln)'], podcast: ['Meistgehört Podcasts', 'mindestens 5 Folgen oder 20 %'] };
       var g3 = h('div', { class: 'commgrid' }); CT.forEach(function (t) { g3.append(rankTable('seen' + t, SEENT[t][0], (d.seen || {})[t] || [], 'Nutzer mit ' + SEENT[t][1], t)); });
-      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Jeder Nutzer zählt pro Titel nur einmal, sobald er genug gesehen, gelesen oder gehört hat: Serien eine halbe Staffel, Bücher mindestens ein gelesenes Buch der Autor:in oder Reihe (bei Gleichstand entscheidet die Zahl der gelesenen Bücher), Musik mindestens 5 Alben oder 20 % des Katalogs, Filme einzeln, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
+      body.append(h('h3', { class: 'commh' }, 'Meistgesehen, gelesen, gehört'), h('p', { class: 'hint' }, 'Jeder Nutzer zählt pro Titel nur einmal, sobald er genug gesehen, gelesen oder gehört hat: Serien eine halbe Staffel, Bücher einzeln, sobald als gelesen markiert, Musik mindestens 5 Alben oder 20 % des Katalogs, Filme einzeln, Podcasts mindestens 5 Folgen oder 20 % (automatisch abgehakte Folgen beim Hinzufügen zählen nicht).'), g3);
     }
     function drawUser() {
       body.textContent = '';
