@@ -113,6 +113,12 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
   <button id="logout" type="button" class="ghost">Abmelden</button></div>
 <?php endif; ?>
 <?php else: ?>
+<?php if ($einblick): ?>  <section class="card land-peek" aria-labelledby="peek-h">
+    <h2 id="peek-h">Einblick ohne Anmeldung</h2>
+    <p>So sieht Schondraussen.de mit eigenem Konto aus, hier mit den Listen eines Beispielnutzers. Ansehen geht sofort, eigene Einträge brauchen ein kostenloses Konto.</p>
+    <div class="peeks"><a class="peek" href="/einblick/kalender"><b>Kalender</b><span>Kommende Bücher, Alben, Filme, Serienfolgen und Podcasts</span></a><a class="peek" href="/einblick/serien"><b>Serien</b><span>Staffeln, Folgen und Sendetermine</span></a><a class="peek" href="/einblick/community"><b>Community</b><span>Was andere am häufigsten verfolgen und gesehen haben</span></a></div>
+  </section>
+<?php endif; ?>
   <div class="land-grid<?= $einblick ? ' two' : '' ?>">
   <div class="card land-login">
 <?php if (approval_required()): ?>    <div class="note"><b>Hinweis:</b> Neue Konten sehen erst Inhalte, nachdem der Admin sie freigeschaltet hat.</div>
@@ -177,12 +183,6 @@ main.land{max-width:1180px;margin-top:5vh}main.land ~ footer{max-width:1180px}
     </div>
   </section><?php endif; ?>
   </div>
-<?php if ($einblick): ?>  <section class="card land-peek" aria-labelledby="peek-h">
-    <h2 id="peek-h">Einblick ohne Anmeldung</h2>
-    <p>So sieht Schondraussen.de mit eigenem Konto aus, hier mit den Listen eines Beispielnutzers. Ansehen geht sofort, eigene Einträge brauchen ein kostenloses Konto.</p>
-    <div class="peeks"><a class="peek" href="/einblick/kalender"><b>Kalender</b><span>Kommende Bücher, Alben, Filme, Serienfolgen und Podcasts</span></a><a class="peek" href="/einblick/serien"><b>Serien</b><span>Staffeln, Folgen und Sendetermine</span></a><a class="peek" href="/einblick/community"><b>Community</b><span>Was andere am häufigsten verfolgen und gesehen haben</span></a></div>
-  </section>
-<?php endif; ?>
   <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Bildansicht" hidden>
     <button type="button" class="lbx" id="lbx" aria-label="Schließen">×</button>
     <button type="button" class="lbn prev" id="lbp" aria-label="Vorheriges Bild">‹</button>
