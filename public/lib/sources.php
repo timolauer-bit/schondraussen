@@ -496,18 +496,24 @@ function dnb_pause_until(): int {
     require_once __DIR__ . '/watchdog.php'; $st = function_exists('db') ? state_get(db(), 'dnb_pause') : null;
     return $until = (int) ($st['v'] ?? 0);
 }
+const DNB_DAY_MAX = 300; // höchstens so viele DNB-Anfragen pro Tag
 function dnb_sru(string $query, int $start): array {
     static $last = 0.0;
     $pu = dnb_pause_until(); if ($pu > time()) { $GLOBALS['dnb_failed'] = true; return ['err' => 'DNB pausiert bis ' . (new DateTime('@' . $pu))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('H:i') . ' Uhr (zu viele Anfragen)']; }
+    try { // Tageslimit für alle DNB-Anfragen zusammen (Cron und Nutzer), damit die DNB den Server nicht wieder sperrt
+        require_once __DIR__ . '/watchdog.php'; $dd = explode('|', (string) (state_get(db(), 'dnb_day')['v'] ?? '')); $dn = ($dd[0] ?? '') === date('Y-m-d') ? (int) ($dd[1] ?? 0) : 0;
+        if ($dn >= DNB_DAY_MAX) { $GLOBALS['dnb_failed'] = true; return ['err' => 'Tageslimit von ' . DNB_DAY_MAX . ' DNB-Anfragen erreicht, weiter ab morgen']; }
+        state_set(db(), 'dnb_day', date('Y-m-d') . '|' . ($dn + 1));
+    } catch (Throwable $e) {}
     $wait = 1.0 - (microtime(true) - $last); if ($wait > 0) usleep((int) ($wait * 1e6));
     $url = 'https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&recordSchema=MARC21-xml&maximumRecords=100&startRecord=' . $start . '&query=' . rawurlencode($query);
     $hdr = [];
-    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)',
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de; Kontakt über das Impressum)',
         CURLOPT_HEADERFUNCTION => function ($c, $l) use (&$hdr) { if (stripos($l, 'Retry-After:') === 0) $hdr['ra'] = trim(substr($l, 12)); return strlen($l); }]);
     $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch); $last = microtime(true);
     if ($raw === false || $code >= 400) {
         api_note($url, $code, $raw, $cerr); $GLOBALS['dnb_failed'] = true;
-        if ($code === 429 || $raw === false) { // Pause für alle weiteren DNB-Anfragen: Retry-After der DNB, sonst wachsend 30 Min → 1 h → 2 h … bis 24 h, solange die DNB nicht antwortet
+        if ($code === 429 || $code === 403 || $raw === false) { // Pause (auch bei 403 „gesperrt“) für alle weiteren DNB-Anfragen: Retry-After der DNB, sonst wachsend 30 Min → 1 h → 2 h … bis 24 h, solange die DNB nicht antwortet
             try {
                 require_once __DIR__ . '/watchdog.php'; $n = (int) (state_get(db(), 'dnb_fails')['v'] ?? 0);
                 $sec = isset($hdr['ra']) && ctype_digit($hdr['ra']) ? max(60, min(6 * 3600, (int) $hdr['ra'])) : (int) min(86400, 1800 * (2 ** min($n, 6)));
@@ -543,12 +549,13 @@ function dnb_name_key(string $s): string {
     $s = mb_strtolower(preg_replace('/\s*[\(\[].*?[\)\]]/u', '', $s)); $s = strtr($s, ['ä' => 'a', 'ö' => 'o', 'ü' => 'u', 'ß' => 'ss', 'é' => 'e', 'è' => 'e', 'á' => 'a', 'à' => 'a', 'ó' => 'o', 'ñ' => 'n', 'ç' => 'c']);
     $t = preg_split('/[^a-z]+/', $s, -1, PREG_SPLIT_NO_EMPTY); sort($t); return implode(' ', $t);
 }
-function dnb_author_works(string $name): array {
+function dnb_author_works(string $name, bool $recent = false): array { // $recent: nur Erscheinungsjahre Vorjahr bis übernächstes Jahr (eine Anfrage statt bis zu 15)
     $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim(preg_replace('/[\x{0080}-\x{009F}\x{200B}-\x{200F}]/u', '', $s), " \t\n\r\0\x0B/:;,=-–")));
     $parts = preg_split('/\s+/u', trim(str_replace('"', '', $name))); if (count($parts) < 2) return [[], [], 'Name besteht nur aus einem Wort'];
     $last = array_pop($parts); $first = implode(' ', $parts); $want = dnb_name_key($name);
     $recs = []; $total = 0; $info = ''; $t0 = time();
-    foreach (['per="' . $last . ', ' . $first . '" and spr=ger', 'per="' . $first . ' ' . $last . '" and spr=ger'] as $query) {
+    $yy = (int) date('Y'); $jq = $recent ? ' and (jhr=' . ($yy - 1) . ' or jhr=' . $yy . ' or jhr=' . ($yy + 1) . ' or jhr=' . ($yy + 2) . ')' : '';
+    foreach (['per="' . $last . ', ' . $first . '" and spr=ger' . $jq, 'per="' . $first . ' ' . $last . '" and spr=ger' . $jq] as $query) {
         $recs = []; $total = 0;
         for ($st = 1; $st <= 1401; $st += 100) { // höchstens 1500 Katalogeinträge je Abruf
             $r = dnb_sru($query, $st);
@@ -711,8 +718,13 @@ function bookseries_refresh(PDO $pdo, array $sub, array $ext): array {
     $sid = (int) $sub['id']; $title = trim((string) $ext['gbs']);
     $works = []; $rel = []; $seen = []; $got = false; $today = date('Y-m-d');
     $key = trim((string) cfg('google_books_key', '')); $lastErr = ''; $nItems = 0; $nLang = 0; $nTitle = 0; $langs = []; $sample = [];
+    if ((int) ($ext['dnb_ser_t'] ?? 0) > time() - 3 * 86400) { // DNB schonen: Reihen höchstens alle 3 Tage neu abfragen, dazwischen bleibt der Stand
+        $c = $pdo->prepare('SELECT COUNT(*) FROM works WHERE subject_id=?'); $c->execute([$sid]);
+        if ((int) $c->fetchColumn() > 0) { $pdo->prepare('UPDATE subjects SET fetched_at=NOW() WHERE id=?')->execute([$sid]); return ['ok' => true, 'msg' => 'Stand der DNB vom ' . date('d.m.', (int) $ext['dnb_ser_t']) . ' bleibt (Abfrage höchstens alle 3 Tage)']; }
+    }
     $GLOBALS['dnb_failed'] = false;
-    [$works, $rel, $ldInfo] = dnb_series($title); // zuerst der Katalog der Deutschen Nationalbibliothek (SRU)
+    [$works, $rel, $ldInfo] = dnb_series($title);
+    if (($works || $rel) && !$GLOBALS['dnb_failed']) $ext['dnb_ser_t'] = time(); // zuerst der Katalog der Deutschen Nationalbibliothek (SRU)
     if (!$works && !$rel && $GLOBALS['dnb_failed']) { // DNB gerade nicht erreichbar oder Limit: bisherigen Stand behalten statt auf eine andere Quelle umzuschwenken
         $c = $pdo->prepare('SELECT COUNT(*) FROM works WHERE subject_id=?'); $c->execute([$sid]);
         if ((int) $c->fetchColumn() > 0) return ['ok' => false, 'msg' => 'Katalog der DNB gerade nicht erreichbar (' . $ldInfo . '). Der bisherige Stand bleibt, der nächste Versuch folgt automatisch.'];
@@ -850,11 +862,20 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         else $works[] = [$t, $yr ?: null, 'Buch'];
     }
     // Bevorzugt der DNB-Katalog (deutsche Titel); liefert er zu wenig oder bricht ab, bleibt es bei Open Library mit Sprachfilter.
-    $dn = []; $GLOBALS['dnb_failed'] = false; try { $dn = dnb_author_works((string) $sub['name']); } catch (Throwable $e) { $dn = [[], [], 'DNB: Fehler']; }
+    // DNB schonen: der vollständige Katalog einer Person nur alle 30 Tage, dazwischen nur die aktuellen Jahrgänge (Neues und Angekündigtes), der Rest kommt aus dem gespeicherten Stand
+    $dnRecent = ($ext['works_src'] ?? '') === 'DNB' && (int) ($ext['dnb_full_t'] ?? 0) > time() - 30 * 86400;
+    $dn = []; $GLOBALS['dnb_failed'] = false; try { $dn = dnb_author_works((string) $sub['name'], $dnRecent); } catch (Throwable $e) { $dn = [[], [], 'DNB: Fehler']; }
+    if ($dnRecent && !$GLOBALS['dnb_failed']) { // gespeicherte DNB-Bücher plus die frisch geladenen aktuellen Jahrgänge
+        $old = []; try { $q0 = $pdo->prepare('SELECT title,year FROM works WHERE subject_id=?'); $q0->execute([$sid]); foreach ($q0->fetchAll() as $o) $old[] = [(string) $o['title'], $o['year'] !== null ? (int) $o['year'] : null, 'Buch']; } catch (Throwable $e) {}
+        $ks = []; foreach (array_merge($dn[0] ?? [], $dn[1] ?? []) as $x) $ks[preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($x[0]))] = 1;
+        foreach ($old as $o) if (!isset($ks[preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($o[0]))])) $dn[0][] = $o;
+        $dn[2] = 'DNB (nur aktuelle Jahrgänge, voller Abruf alle 30 Tage): ' . (string) ($dn[2] ?? '');
+    }
+    if ($dnRecent && $GLOBALS['dnb_failed']) return ['ok' => false, 'msg' => 'Katalog der DNB gerade nicht erreichbar (' . (string) ($dn[2] ?? '') . '). Der bisherige Stand bleibt, der nächste Versuch folgt automatisch.'];
     if (count($dn[0] ?? []) + count($dn[1] ?? []) < 3 && $GLOBALS['dnb_failed'] && ($ext['works_src'] ?? '') === 'DNB') // DNB gerade nicht erreichbar: nicht auf Open Library umschwenken, bisherigen Stand behalten
         return ['ok' => false, 'msg' => 'Katalog der DNB gerade nicht erreichbar (' . (string) ($dn[2] ?? '') . '). Der bisherige Stand bleibt, der nächste Versuch folgt automatisch.'];
     $ext['works_src'] = 'Open Library'; $ext['works_info'] = (string) ($dn[2] ?? '');
-    if (count($dn[0] ?? []) + count($dn[1] ?? []) >= 3) { $works = $dn[0]; $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; }
+    if (count($dn[0] ?? []) + count($dn[1] ?? []) >= 3) { $works = $dn[0]; $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; if (!$dnRecent) $ext['dnb_full_t'] = time(); }
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
     $works = array_values(array_filter($works, fn($x) => !is_merch_title((string) $x[0]))); $rel = array_values(array_filter($rel, fn($x) => !is_merch_title((string) $x[0])));
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));

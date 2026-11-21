@@ -1,5 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 19, d: '21.11.2026', t: [
+    'A|Deutsche Nationalbibliothek entlastet: Bücher von Autor:innen werden nur noch alle 30 Tage vollständig abgefragt, dazwischen nur die aktuellen Jahrgänge (eine Anfrage statt bis zu 15); Reihen höchstens alle 3 Tage; insgesamt höchstens 300 Anfragen pro Tag; bei „gesperrt“ (403) pausiert die Seite wie bei „zu viele Anfragen“.',
+  ] },
   { v: 18, d: '19.11.2026', t: [
     'U|Bücher: Solange die Deutsche Nationalbibliothek nicht erreichbar ist, kommen Bücher von Autor:innen aus Open Library. Dort zählt jetzt nur noch, ob es eine deutsche Ausgabe gibt, und es erscheint deren deutscher Titel. Spanische, französische und andere fremdsprachige Ausgaben fallen weg.',
     'U|E-Mails in neuem Design passend zur Seite: Karte mit Logo, Überschriften je Abschnitt, jeder Titel mit Streifen und Bezeichnung in seiner Kategoriefarbe (Buch, Musik, Film, Serie, Podcast), Datum mit Wochentag und ein Knopf „Alles im Überblick ansehen“. Funktioniert in Gmail, Outlook und Apple Mail, auch im Dark Mode, und ist besser für Screenreader lesbar. Abmeldelink und Inhalte bleiben wie bisher.',
