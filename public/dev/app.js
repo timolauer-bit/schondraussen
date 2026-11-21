@@ -1547,13 +1547,31 @@
       var tc = (setCard('Themes', [h('div', { class: 'wide2' }, h('p', { class: 'hint', style: 'margin-top:0' }, 'Experimentell: Die Themes sind noch in Arbeit, manche Seiten können dabei etwas anders aussehen oder noch nicht ganz stimmig sein. Deine Farbwahl oben gilt auch für das Theme. Du kannst jederzeit zurück zu „Standard“ wechseln.'), row, tm)], 'solo'));
       if (optikC) optikC.after(tc); else st.append(tc);
     })();
+    (function () { // Schriftwahl: nur lokal installierte Schriften (keine Google Fonts), gemerkt im Browser (localStorage „sd_font“), angewendet im <head>
+      var F = [['current', 'Aktuelle Schrift', 'Wie bisher: Instrument Sans, falls installiert, sonst die Systemschrift.', "'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif"],
+        ['system', 'Systemschrift', 'Die Schrift deines Geräts, vertraut und sehr gut lesbar.', 'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif'],
+        ['humanist', 'Humanistisch', 'Weichere, handschriftnahe Formen, angenehm für längere Texte.', 'Seravek,"Gill Sans Nova",Ubuntu,Calibri,"DejaVu Sans",source-sans-pro,sans-serif'],
+        ['neo', 'Neo-Grotesk', 'Sachlich und neutral, klare Formen.', 'Inter,Roboto,"Helvetica Neue","Arial Nova","Nimbus Sans",Arial,sans-serif']];
+      var cur = document.documentElement.getAttribute('data-font') || 'current', row = h('div', { class: 'fontcards', role: 'group', 'aria-label': 'Schrift wählen' }), btns = [];
+      F.forEach(function (x) {
+        var b = h('button', { class: 'fontcard', type: 'button', 'aria-pressed': String(cur === x[0]), style: '--fpv:' + x[3], onclick: function () {
+          cur = x[0]; document.documentElement.setAttribute('data-font', cur);
+          try { if (cur === 'current') localStorage.removeItem('sd_font'); else localStorage.setItem('sd_font', cur); } catch (_) {}
+          btns.forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+        } }, h('span', { class: 'fpv', 'aria-hidden': 'true' }, 'Ag 1.234,56 €'), h('b', null, x[1]), h('small', null, x[2]));
+        btns.push(b); row.append(b);
+      });
+      var fc = setCard('Schrift', [h('div', { class: 'wide2' }, h('p', { class: 'hint', style: 'margin-top:0' }, 'Gilt für Überschriften, Texte und Zahlen. Es werden nur Schriften genutzt, die auf deinem Gerät vorhanden sind; nichts wird von fremden Servern geladen. Die Wahl wird nur in diesem Browser gespeichert.'), row)], 'solo');
+      devMark(fc, 'schrift');
+      if (optikC) optikC.after(fc); else st.append(fc);
+    })();
     var uiC = setCard('Oberflächenanpassungen', [uiBox], 'solo'), thC = [].slice.call(st.children).filter(function (c) { return c.querySelector('h3').textContent === 'Themes'; })[0];
     if (thC) thC.after(uiC); else if (optikC) optikC.after(uiC); else st.append(uiC);
     st.append(setCard('Privatsphäre', [K[8], K[10]], 'solo'));
     if (K[12]) st.append(setCard('Konto löschen', [K[12]], 'solo'));
     (function () { // Reiter wie im Admin-Bereich
       // Überarbeitung: Bereiche links statt Reiter oben
-      var T = [['Profil', ['Meine Daten', 'Benutzername', 'Profilkarte'], 'user'], ['Konto und Anmeldung', ['E-Mail und Wiederherstellung', 'Zwei-Faktor-Anmeldung', 'Konto löschen'], 'key'], ['Benachrichtigungen', ['E-Mail-Benachrichtigungen', 'Kalender-Abo'], 'bell'], ['Darstellung und Themes', ['Farbschemata', 'Themes', 'Oberflächenanpassungen'], 'eye'], ['Daten und Datenschutz', ['Import', 'Privatsphäre'], 'lock']];
+      var T = [['Profil', ['Meine Daten', 'Benutzername', 'Profilkarte'], 'user'], ['Konto und Anmeldung', ['E-Mail und Wiederherstellung', 'Zwei-Faktor-Anmeldung', 'Konto löschen'], 'key'], ['Benachrichtigungen', ['E-Mail-Benachrichtigungen', 'Kalender-Abo'], 'bell'], ['Darstellung und Themes', ['Farbschemata', 'Schrift', 'Themes', 'Oberflächenanpassungen'], 'eye'], ['Daten und Datenschutz', ['Import', 'Privatsphäre'], 'lock']];
       var cards = [].slice.call(st.children), cur = 'Profil', bar = h('nav', { class: 'admtabs setnav', role: 'tablist', 'aria-orientation': 'vertical', 'aria-label': 'Bereiche der Einstellungen' });
       try { var sv = sessionStorage.getItem('sd_settab'); if (sv && T.some(function (t) { return t[0] === sv; })) cur = sv; } catch (_) {}
       var btns = T.map(function (t) { var b = h('button', { class: 'admtab', type: 'button', role: 'tab', onclick: function () { cur = t[0]; try { sessionStorage.setItem('sd_settab', cur); } catch (_) {} show(); } }, ICONS[t[2]] ? ico(ICONS[t[2]]) : null, t[0]); bar.append(b); return b; });
