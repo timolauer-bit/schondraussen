@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/lib/seo.php'; header('Content-Type: text/html; charset=utf-8'); $seo = seo_head('/datenschutz.php', 'Datenschutzerklärung – Schondraussen.de'); ?><!doctype html>
+<?php require_once __DIR__ . '/lib/seo.php'; header('Content-Type: text/html; charset=utf-8'); $seo = seo_head('/datenschutz.php', 'Datenschutzerklärung – Schondraussen.de', 'Datenschutzerklärung von Schondraussen.de: welche Daten gespeichert werden, wofür und wie lange, und welche Rechte du hast.'); ?><!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Datenschutzerklärung – Schondraussen.de</title><?= $seo ?>
 <style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:6vh auto;padding:0 16px}h2{font-size:19px;margin:1.6em 0 .3em}h3{font-size:16px;margin:1.2em 0 .2em}</style></head><body>
 <h1>Datenschutzerklärung</h1>

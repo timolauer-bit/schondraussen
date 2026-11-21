@@ -3,7 +3,7 @@ require __DIR__ . '/lib/bootstrap.php';
 require_once __DIR__ . '/lib/mail.php';
 require_once __DIR__ . '/lib/seo.php';
 header('Content-Type: text/html; charset=utf-8'); header('Referrer-Policy: no-referrer');
-$seo = seo_head('/kontakt.php', 'Kontakt – Schondraussen.de');
+$seo = seo_head('/kontakt.php', 'Kontakt – Schondraussen.de', 'Kontakt zu Schondraussen.de: Fragen, Hinweise oder Feedback über das Kontaktformular schicken, auch ohne eigenes Konto.');
 $msg = ''; $ok = false; $name = ''; $mail = ''; $text = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim(preg_replace('/[\r\n]+/', ' ', mb_substr((string) ($_POST['name'] ?? ''), 0, 80)));
