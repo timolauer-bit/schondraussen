@@ -1508,6 +1508,10 @@
           guide: 'Trakt: „Settings“ → „Data“ → „Export Your Data“. Lade die ZIP-Datei oder einzelne JSON-Dateien daraus (z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Exporte anderer Dienste klappen oft auch, wenn Serien und Filme Felder „title“ und „ids“ haben.',
           detect: function (fs) { return fs.some(function (f) { return /\.json$/i.test(f.name) && /"(show|movie)"\s*:\s*\{/.test(f.text.slice(0, 50000)) && /"trakt"\s*:/.test(f.text.slice(0, 50000)); }); },
           parse: function (fs) { return { items: traktParse(fs.filter(function (f) { return /\.json$/i.test(f.name) || /^\s*[\[{]/.test(bom(f.text)); })), skipped: 0 }; } },
+        { id: 'serializd', name: 'Serializd', group: 'Filme und Serien', cats: ['series'], accept: '.csv,text/csv',
+          guide: 'Serializd hat selbst keinen Export. Nutze dafür die externe Seite Listizd (huggingface.co/spaces/Eleonora705/Listizd): dort deinen Serializd-Benutzernamen eingeben und die Liste als CSV herunterladen. Übernommen werden die Serien der Liste.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('serializd url') >= 0; }); },
+          parse: function (fs) { var t = tally(); heads(fs).forEach(function (x) { var n = x.c.head.indexOf('title'); if (n < 0 || x.c.head.indexOf('serializd url') < 0) return; x.c.rows.forEach(function (r) { t.add(r[n], 'series'); }); }); return { items: t.list(false), skipped: 0 }; } },
         { id: 'opml', name: 'Podcast-App (OPML)', group: 'Podcasts', cats: ['podcast'], accept: '.opml,.xml,text/xml,application/xml,text/x-opml',
           guide: 'Fast jede Podcast-App kann ihre Abos als OPML-Datei exportieren (z. B. Pocket Casts, Overcast, AntennaPod, Podcast Addict: meist unter Einstellungen → „Export“ oder „OPML“). Apple Podcasts und Spotify bieten das nicht; für Spotify nimm oben den Spotify-Import.',
           detect: function (fs) { return fs.some(function (f) { return /<opml[\s>]/i.test(f.text.slice(0, 2000)); }); },
@@ -2074,7 +2078,7 @@
       'Kalender aller angekündigten Veröffentlichungen mit Kategorie-Chips zum Ein- und Ausblenden und Vorschau je Tag, dazu ein persönliches Kalender-Abo (ICS)',
       'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
       'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',
-      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt und Podcast-Apps (OPML); Datenexport',
+      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt, Serializd und Podcast-Apps (OPML); Datenexport',
       'Ideen und Bugmeldungen (mit Kategorie, abstimmbar) und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
       'Mehrere Oberflächen (Skins), dazu experimentelle Themes (Standard, 8-Bit), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster und im Chat']));
     sec('Funktionen für den Admin', ul([
