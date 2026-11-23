@@ -66,11 +66,12 @@ if ($a === 'export') { // alle eigenen Daten, als JSON oder (nur die Liste) als 
     $msgs = []; try { $m = $pdo->prepare('SELECT from_admin,body,created_at FROM messages WHERE user_id=? ORDER BY id'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $msgs[] = ['von' => $r['from_admin'] ? 'Administrator' : 'du', 'text' => $r['body'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
     $fb = []; try { $m = $pdo->prepare('SELECT kind,title,body,created_at FROM feedback WHERE user_id=? ORDER BY id'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $fb[] = ['art' => $r['kind'] === 'bug' ? 'Bugmeldung' : 'Idee', 'titel' => $r['title'], 'text' => $r['body'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
     $dn = []; try { $m = $pdo->prepare('SELECT s.name, d.item_key, d.created_at FROM user_done d JOIN subjects s ON s.id=d.subject_id WHERE d.user_id=? ORDER BY s.name, d.item_key'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $dn[] = ['eintrag' => $r['name'], 'schluessel' => $r['item_key'], 'am' => $r['created_at']]; } catch (Throwable $e) {}
+    $bcv = []; try { $m = $pdo->prepare('SELECT code, type, name, product, created_at FROM barcode_votes WHERE user_id=? ORDER BY created_at'); $m->execute([$u['id']]); foreach ($m->fetchAll() as $r) $bcv[] = ['strichcode' => $r['code'], 'typ' => $typ[$r['type']] ?? $r['type'], 'eintrag' => $r['name'], 'produkt' => $r['product'], 'am' => $r['created_at']]; } catch (Throwable $e) {} // Tabelle fehlt vor Migration 089
     $out = ['exportiert_am' => date('c'), 'hinweis' => 'Hochgeladene Bilder sind nicht enthalten.',
         'konto' => ['email' => $u['email'], 'benutzername' => $u['username'] ?? null, 'mitgliedsnummer' => (int) $u['id'], 'rolle' => $u['role'], 'angelegt_am' => $u['created_at']],
         'einstellungen' => $set,
         'liste' => array_map(fn($r) => ['typ' => $typ[$r['type']] ?? $r['type'], 'name' => $r['name'], 'hinzugefuegt_am' => $r['added_at'], 'benachrichtigung' => (bool) $r['bell']], $list),
-        'erledigt_gesehen_gelesen_gehoert' => $dn, 'nachrichten' => $msgs, 'ideen_und_bugs' => $fb];
+        'erledigt_gesehen_gelesen_gehoert' => $dn, 'nachrichten' => $msgs, 'ideen_und_bugs' => $fb, 'strichcode_zuordnungen' => $bcv];
     header('Content-Type: application/json; charset=utf-8'); header('Content-Disposition: attachment; filename="schondraussen-daten-' . $stamp . '.json"');
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); exit;
 }
