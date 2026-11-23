@@ -68,3 +68,18 @@ CREATE TABLE alerts (
   sent_at DATETIME NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Strichcodes von DVDs, Blu-rays und CDs: Zuordnung durch Mitglieder (Migration 089)
+CREATE TABLE barcode_votes (
+  code VARCHAR(14) NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
+  type VARCHAR(10) NOT NULL,
+  ext_key VARCHAR(60) NOT NULL,
+  name VARCHAR(190) NOT NULL,
+  ext VARCHAR(400) NOT NULL,
+  product VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (code, user_id, type),
+  KEY idx_code (code, type),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

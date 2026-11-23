@@ -5,7 +5,7 @@ require_once __DIR__ . '/pics.php';
 /** Anzeigename der Quelle zu einer Adresse (für Fehlerprotokoll und „wieder erreichbar“). */
 function api_src(string $url): string {
     $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-    $map = ['itunes.apple.com' => 'Apple Podcasts', 'musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
+    $map = ['itunes.apple.com' => 'Apple Podcasts', 'musicbrainz.org' => 'MusicBrainz', 'listenbrainz.org' => 'ListenBrainz', 'tvmaze.com' => 'TVmaze', 'openlibrary.org' => 'Open Library', 'opengtindb.org' => 'Open-EAN-Datenbank', 'googleapis.com' => 'Google Books', 'deepl.com' => 'DeepL', 'dnb.de' => 'Deutsche Nationalbibliothek', 'lobid.org' => 'lobid.org', 'wikipedia.org' => 'Wikipedia', 'wikidata.org' => 'Wikidata', 'themoviedb.org' => 'TMDB', 'tmdb.org' => 'TMDB', 'news.google.com' => 'Google News'];
     foreach ($map as $d => $n) if ($host === $d || substr($host, -strlen($d) - 1) === '.' . $d) return $n;
     return $host;
 }
@@ -1042,4 +1042,55 @@ function isbn_lookup(string $isbn): ?array { // ['title','author','olid','series
         }
     }
     return $o['title'] !== '' || $o['author'] !== '' ? $o : null;
+}
+
+// Strichcodes (EAN-13, UPC-A, EAN-8) von CDs, DVDs und Blu-rays. Bücher (978/979) laufen über isbn_lookup.
+function barcode_norm(string $q): ?string { // 13 bzw. 8 Ziffern; null = kein Strichcode, '!' = Prüfziffer falsch
+    $d = preg_replace('/[\s\-]/', '', trim($q)); if (!preg_match('/^(\d{8}|\d{12}|\d{13})$/', $d)) return null;
+    if (strlen($d) === 12) $d = '0' . $d; // UPC-A (USA) als EAN-13
+    $sum = 0; $n = strlen($d); for ($i = 0; $i < $n - 1; $i++) $sum += (int) $d[$n - 2 - $i] * ($i % 2 ? 1 : 3);
+    return (10 - $sum % 10) % 10 === (int) $d[$n - 1] ? $d : '!';
+}
+function barcode_product(string $code): ?array { // Open-EAN-Datenbank (opengtindb.org, Zugangsnummer 'opengtindb_id' in config.php): ['name','detail','cat'] oder null
+    $id = trim((string) cfg('opengtindb_id', '')); if ($id === '') return null;
+    $url = 'https://opengtindb.org/?ean=' . $code . '&cmd=query&queryid=' . rawurlencode($id);
+    $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
+    $raw = curl_exec($ch); $hc = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $cerr = curl_error($ch); curl_close($ch);
+    if ($raw === false || $hc >= 400) { api_note(preg_replace('/queryid=[^&]*/', 'queryid=…', $url), $hc, $raw, $cerr); return null; }
+    if (!mb_check_encoding($raw, 'UTF-8')) $raw = mb_convert_encoding($raw, 'UTF-8', 'ISO-8859-15');
+    $kv = []; foreach (preg_split('/\r?\n/', $raw) as $l) { if ($l === '---' && isset($kv['name'])) break; if (preg_match('/^([a-z_]+)=(.*)$/', $l, $m) && !isset($kv[$m[1]])) $kv[$m[1]] = trim($m[2]); }
+    if ((string) ($kv['error'] ?? '') !== '0') { if (!in_array((string) ($kv['error'] ?? ''), ['1'], true)) api_note(preg_replace('/queryid=[^&]*/', 'queryid=…', $url), 'error ' . ($kv['error'] ?? '?'), $raw); else api_ok($url); return null; }
+    api_ok($url);
+    $name = trim(($kv['name'] ?? '') !== '' ? $kv['name'] : ($kv['detailname'] ?? '')); if ($name === '') return null;
+    return ['name' => $name, 'detail' => (string) ($kv['detailname'] ?? ''), 'cat' => trim(($kv['maincat'] ?? '') . ' ' . ($kv['subcat'] ?? ''))];
+}
+function barcode_title(string $s): string { // Produktname → Suchbegriff: Medium, Edition und Zusätze entfernen
+    $s = preg_replace('/\[[^\]]*\]|\((?:[^()]*(?:dvd|blu|uhd|4k|edition|steel|disc|cd|vinyl|lp|fsk|import|digipak|box|limited|special|collector|uncut|ov|omu)[^()]*)\)/iu', ' ', $s);
+    $s = preg_replace('/\b(?:4K\s*Ultra\s*HD|Ultra\s*HD|UHD|4K|Blu-?ray(?:\s*3D)?|3D|DVD|HD-DVD|Steelbook|Mediabook|Digipak|Doppel-?CD|2\s*CD|CD|Vinyl|LP|Special|Limited|Collector\'?s|Deluxe|Extended|Director\'?s\s*Cut|Kinofassung|Uncut|Edition|Box(?:set)?|Disc|Discs|FSK\s*\d+|Import)\b/iu', ' ', $s);
+    $s = preg_replace('/\b(?:Trilogie|Trilogy|Quadrilogie|Quadrilogy|Komplettbox|Gesamtbox|Collection|Sammlung)\b|\(\s*\)/iu', ' ', $s);
+    return trim(preg_replace('/\s+/u', ' ', trim(preg_replace('/\s+/u', ' ', $s), " \t-–:,/+&")));
+}
+function barcode_music(string $code): array { // MusicBrainz kennt die Strichcodes der Veröffentlichungen: Musiker:innen mit Album als Hinweis
+    $r = http_json('https://musicbrainz.org/ws/2/release/?fmt=json&limit=10&query=' . rawurlencode('barcode:' . ltrim($code, '0') . ' OR barcode:' . $code)) ?? [];
+    $out = []; $seen = [];
+    foreach ((array) ($r['releases'] ?? []) as $x) {
+        $bc = preg_replace('/\D/', '', (string) ($x['barcode'] ?? '')); if ($bc === '' || ltrim($bc, '0') !== ltrim($code, '0')) continue;
+        $a = $x['artist-credit'][0]['artist'] ?? null; if (!is_array($a) || empty($a['id']) || isset($seen[$a['id']])) continue; $seen[$a['id']] = 1;
+        if (($a['id'] ?? '') === '89ad4ac3-39f7-470e-963a-56509c546377') continue; // „Various Artists“ (Sampler)
+        $out[] = ['name' => (string) $a['name'], 'hint' => '„' . mb_substr((string) ($x['title'] ?? ''), 0, 80) . '“' . (!empty($x['date']) ? ' (' . substr((string) $x['date'], 0, 4) . ')' : ''), 'ext' => ['mbid' => (string) $a['id']]];
+    }
+    return $out;
+}
+function barcode_key(string $type, array $ext): string { // Schlüssel für die Zuordnung in barcode_votes
+    if ($type === 'film') return !empty($ext['tmdb_col']) ? 'c' . (int) $ext['tmdb_col'] : (!empty($ext['tmdb']) ? 'm' . (int) $ext['tmdb'] : '');
+    if ($type === 'series') return !empty($ext['tvmaze']) ? 'v' . (int) $ext['tvmaze'] : '';
+    if ($type === 'artist') return !empty($ext['mbid']) ? 'a' . preg_replace('/[^0-9a-f\-]/', '', (string) $ext['mbid']) : '';
+    return '';
+}
+function barcode_known(PDO $pdo, string $code, string $type): ?array { // häufigste Zuordnung der Nutzer zu diesem Strichcode
+    try {
+        $q = $pdo->prepare('SELECT ext_key, MAX(name) AS name, MAX(ext) AS ext, COUNT(*) AS n FROM barcode_votes WHERE code=? AND type=? GROUP BY ext_key ORDER BY n DESC, MAX(created_at) DESC LIMIT 1');
+        $q->execute([$code, $type]); $r = $q->fetch(); if (!$r) return null;
+        return ['name' => (string) $r['name'], 'ext' => json_decode((string) $r['ext'], true) ?: [], 'n' => (int) $r['n']];
+    } catch (Throwable $e) { return null; } // Tabelle fehlt noch (Migration 089)
 }

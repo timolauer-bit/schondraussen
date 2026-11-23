@@ -7,6 +7,9 @@ if (strlen($tok) < 20 || !hash_equals($tok, (string) ($_GET['token'] ?? ''))) { 
 $pdo = db();
 $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(80) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $M = [
+  '089_barcode_votes' => [ // Strichcodes von DVDs, Blu-rays und CDs: welche Mitglieder welchen Eintrag zugeordnet haben (eine Stimme je Mitglied)
+  "CREATE TABLE IF NOT EXISTS barcode_votes (code VARCHAR(14) NOT NULL, user_id INT UNSIGNED NOT NULL, type VARCHAR(10) NOT NULL, ext_key VARCHAR(60) NOT NULL, name VARCHAR(190) NOT NULL, ext VARCHAR(400) NOT NULL, product VARCHAR(255) NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (code, user_id, type), KEY idx_code (code, type), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+ ],
   '088_custom_colors_text' => [ // eigene Farben je Theme (Standard, 8-Bit …) brauchen mehr Platz
   "ALTER TABLE users MODIFY custom_colors TEXT NULL"
  ],

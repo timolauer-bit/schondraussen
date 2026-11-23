@@ -267,6 +267,32 @@ if ($a === 'search') {
         if (!$out && $b['title'] !== '') $out[] = ['name' => $b['title'] . ' (Buchtitel)', 'hint' => 'Zu diesem Buch ist keine Autor:in hinterlegt. Über den Titel suchen', 'title_search' => true, 'tq' => $b['title']];
         json_out(['results' => $out, 'isbn' => $isbn, 'book' => $t, 'src' => $b['src']]);
     }
+    if (in_array($type, ['film', 'series', 'artist'], true) && ($bc = barcode_norm($q)) !== null) { // Strichcode einer DVD, Blu-ray oder CD
+        if ($bc === '!') json_out(['results' => [], 'barcode' => true, 'error' => 'Die Nummer sieht wie ein Strichcode aus, aber die Prüfziffer stimmt nicht. Bitte noch einmal vergleichen.']);
+        if (preg_match('/^97[89]/', $bc)) json_out(['results' => [], 'barcode' => true, 'error' => 'Das ist die ISBN eines Buchs. Wechsle zu „Bücher“ und suche dort damit.']);
+        $known = barcode_known($pdo, $bc, $type); $res = ['results' => [], 'barcode' => $bc, 'confirm' => $type !== 'artist'];
+        if ($known) { $res['results'][] = ['name' => $known['name'], 'hint' => $known['n'] === 1 ? 'Von einem Mitglied zugeordnet' : 'Von ' . $known['n'] . ' Mitgliedern zugeordnet', 'ext' => $known['ext'] ?: (object) []]; $res['known'] = $known['n']; }
+        if ($type === 'artist') {
+            foreach (barcode_music($bc) as $x) if (!$known || barcode_key('artist', $x['ext']) !== barcode_key('artist', $known['ext'])) $res['results'][] = $x;
+            if ($res['results']) { $res['src'] = 'MusicBrainz'; json_out($res); }
+        }
+        if (!$known) {
+            $p = barcode_product($bc);
+            if ($p) {
+                $res['product'] = $p['name']; $term = barcode_title($p['name']);
+                if ($type === 'series') { $term = trim(preg_replace('/\b(?:Die\s+komplette\s+)?(?:Staffel|Season|Teil|Volume|Vol\.)\s*\d+.*$|\b(?:Die\s+)?komplette\s+Serie.*$/iu', '', $term), " -–:,"); }
+                if ($type === 'artist') { $term = trim(explode(' - ', $term)[0]); }
+                $res['term'] = $term;
+                if ($term !== '') {
+                    if ($type === 'film' && tmdb_enabled()) { $res['results'] = tmdb_search($term, false); if (!$res['results'] && preg_match('/^(.+?)\s+[-–]\s+/u', $term, $mm)) $res['results'] = tmdb_search($mm[1], false); } // ohne Treffer: nur der Teil vor „ - “ (deutscher Zusatztitel)
+                    elseif ($type === 'series') { $r = http_json('https://api.tvmaze.com/search/shows?q=' . rawurlencode($term)) ?? []; foreach (array_slice($r, 0, 6) as $x) { $s2 = $x['show'] ?? []; if (empty($s2['name'])) continue; $tm = pic_tvm_path($s2['image']['medium'] ?? ''); $res['results'][] = ['name' => $s2['name'], 'hint' => trim(substr((string) ($s2['premiered'] ?? ''), 0, 4) . ' ' . implode(', ', array_slice($s2['genres'] ?? [], 0, 2))), 'ext' => ['tvmaze' => (int) $s2['id']], 'img' => $tm !== '' ? 'm/' . $tm : null]; } }
+                    elseif ($type === 'artist') { $r = http_json('https://musicbrainz.org/ws/2/artist/?fmt=json&limit=5&query=' . rawurlencode($term)) ?? []; foreach (($r['artists'] ?? []) as $x) $res['results'][] = ['name' => $x['name'], 'hint' => (string) ($x['disambiguation'] ?? ''), 'ext' => ['mbid' => $x['id']]]; }
+                }
+            }
+        }
+        if (!$res['results']) $res['error'] = !empty($res['product']) ? 'Zum Strichcode habe ich „' . $res['product'] . '“ gefunden, aber keinen passenden Treffer.' : 'Diesen Strichcode kennt die Seite noch nicht' . (cfg('opengtindb_id', '') === '' ? '.' : ', und in der Open-EAN-Datenbank steht er auch nicht.');
+        json_out($res);
+    }
     if ($type === 'podcast') $out = podcast_search($q);
     elseif ($type === 'film') { if (!tmdb_enabled()) json_out(['results' => [], 'manual' => true]); $out = tmdb_search($q); }
     elseif ($type === 'series') {
@@ -347,6 +373,9 @@ if ($a === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$old) $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($ext), $sid]);
     }
     $pdo->prepare('INSERT IGNORE INTO user_entries (user_id,subject_id) VALUES (?,?)')->execute([$u['id'], $sid]);
+    if (!empty($b['barcode']) && in_array($type, ['film', 'series', 'artist'], true) && ($bc = barcode_norm((string) $b['barcode'])) !== null && $bc !== '!' && ($bk = barcode_key($type, $ext)) !== '') { // Strichcode-Zuordnung merken (eine Stimme je Mitglied und Strichcode)
+        try { $pdo->prepare('REPLACE INTO barcode_votes (code,user_id,type,ext_key,name,ext,product) VALUES (?,?,?,?,?,?,?)')->execute([$bc, $u['id'], $type, $bk, mb_substr($name, 0, 190), json_encode($ext), mb_substr((string) ($b['product'] ?? ''), 0, 255) ?: null]); } catch (Throwable $e) {}
+    }
     if ($type === 'podcast') { // bisherige Folgen gelten als gehört, nur neue Folgen sollen auffallen
         $fa = $pdo->prepare('SELECT fetched_at FROM subjects WHERE id=?'); $fa->execute([$sid]);
         $fat = $fa->fetchColumn(); if (!$fat || time() - strtotime((string) $fat) > 3600) refresh_subject($pdo, $sid);

@@ -15,6 +15,7 @@ return [
     'github_repo' => 'timolauer-bit/schondraussen',
     'deepl_key' => '', // optional: DeepL-API-Free-Schlüssel (endet auf :fx) für die Übersetzung englischer Beschreibungen
     'google_books_key' => '', // optional: Google-Books-API-Schlüssel, falls Anfragen wegen Begrenzung abgelehnt werden
+    'opengtindb_id' => '', // optional: Zugangsnummer (queryid) der Open-EAN-Datenbank opengtindb.org, für Strichcodes von DVDs, Blu-rays und CDs
     'mail' => [
         'from'      => 'benachrichtigung@schondraussen.de',
         'from_name' => 'Schondraussen.de',
