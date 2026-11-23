@@ -1302,3 +1302,16 @@ a{text-decoration-thickness:2px;text-underline-offset:3px}
 /* Community-Ranglisten: Zahl und Knopf in festen Spalten, damit die Balken in allen Zeilen gleich lang sind */
 .clist .crow{grid-template-columns:26px minmax(0,1fr) 8em}.clist.hasact .crow{grid-template-columns:26px minmax(0,1fr) 8em 150px}.clist.hasact .ccnt{text-align:right}.clist.hasact .crow>:nth-child(4){justify-self:end}
 @media(max-width:760px){.clist .crow,.clist.hasact .crow{grid-template-columns:22px minmax(0,1fr) auto}.clist.hasact .crow>:nth-child(4){justify-self:start}}
+
+/* Schriftwahl (Einstellungen → Darstellung → Schrift): Attribut data-font am <html>, gesetzt im <head> aus localStorage „sd_font“. Nur lokal installierte Schriften, nichts wird von außen geladen. */
+:root{--ff-system:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif;--ff-humanist:Seravek,"Gill Sans Nova",Ubuntu,Calibri,"DejaVu Sans",source-sans-pro,sans-serif;--ff-neo:Inter,Roboto,"Helvetica Neue","Arial Nova","Nimbus Sans",Arial,sans-serif;--ff-current:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+:root[data-font=system]{--font-display:var(--ff-system);--font-body:var(--ff-system);--font-mono:var(--ff-system)}
+:root[data-font=humanist]{--font-display:var(--ff-humanist);--font-body:var(--ff-humanist);--font-mono:var(--ff-humanist)}
+:root[data-font=neo]{--font-display:var(--ff-neo);--font-body:var(--ff-neo);--font-mono:var(--ff-neo)}
+body{font-variant-numeric:tabular-nums}
+:where(:root[data-font=system],:root[data-font=humanist],:root[data-font=neo]) :where(input,select,textarea,button){font-family:inherit}
+.fontcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.fontcard{display:grid;gap:4px;justify-items:start;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:12px 14px;cursor:pointer}
+.fontcard[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.fontcard .fpv{font-family:var(--fpv);font-size:26px;line-height:1.15;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-bottom:4px;white-space:nowrap}
+.fontcard b{font:600 14px var(--fpv)}.fontcard small{color:var(--muted);font:400 12.5px/1.4 var(--fpv)}

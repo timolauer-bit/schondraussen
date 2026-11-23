@@ -496,7 +496,7 @@
     var t = TYPES[S.cat], es = entriesOf(S.cat);
     var layout = h('div', { class: 'layout has-rail' }), rail = h('aside', { class: 'rail', id: 'rail', 'data-cat': S.cat, style: '--cc:' + CATCOL[S.cat] }), main = h('section', { class: 'main', id: 'content' });
     rail.append(h('section', null, h('p', { class: 'label' }, 'Neu hinzufügen'),
-      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph, oninput: localSugg }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen'), S.cat !== 'podcast' && canScan() ? devMark(h('button', { class: 'btn ghost', type: 'button', title: S.cat === 'author' ? 'ISBN-Strichcode mit der Kamera lesen' : 'Strichcode der Hülle mit der Kamera lesen', 'aria-label': S.cat === 'author' ? 'ISBN scannen' : 'Strichcode scannen', onclick: function () { codeScan(S.cat === 'author' ? 'isbn' : 'ean', function (code) { var q = $('q'); if (!q) return; q.value = code; $('addform').requestSubmit(); }); } }, 'Scannen'), 'scan') : null),
+      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph, oninput: localSugg }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen'), S.cat !== 'podcast' && canScan() ? h('button', { class: 'btn ghost', type: 'button', title: S.cat === 'author' ? 'ISBN-Strichcode mit der Kamera lesen' : 'Strichcode der Hülle mit der Kamera lesen', 'aria-label': S.cat === 'author' ? 'ISBN scannen' : 'Strichcode scannen', onclick: function () { codeScan(S.cat === 'author' ? 'isbn' : 'ean', function (code) { var q = $('q'); if (!q) return; q.value = code; $('addform').requestSubmit(); }); } }, 'Scannen') : null),
       h('p', { class: 'msg', id: 'msg', role: 'status' }), h('div', { id: 'sugg' })));
     rail.append(h('section', null, h('p', { class: 'label', id: 'listlbl' }, t.plural + ' · ' + es.length + ' / ' + MAXN),
       h('div', { class: 'srchrow' }, h('label', { class: 'field srch' }, h('input', { id: 'srch', type: 'search', maxlength: '80', 'aria-label': 'Einträge durchsuchen', placeholder: 'In der Liste filtern', value: S.filter, oninput: function () { S.filter = this.value; rows(); } })),
@@ -1591,7 +1591,7 @@
     var ILBL = { author: ['Autor:in oder Reihe', 'Autor:innen oder Reihen'], artist: ['Musiker:in', 'Musiker:innen'], film: ['Film', 'Filme'], series: ['Serie', 'Serien'], podcast: ['Podcast', 'Podcasts'] };
     function impCat(k) { return IMPCATS.filter(function (x) { return x[0] === k; })[0]; }
     // Import: eine Karte mit Auswahl der Quelle; die Formate stehen oben im Block IMPORTFORMATE (IMPF)
-    var imp = devMark(h('div', { class: 'wide2' }), 'import');
+    var imp = h('div', { class: 'wide2' });
     var iFmts = IMPF.formats.filter(function (f) { return !f.cats || f.cats.some(function (c) { return !!impCat(c); }); });
     var iSrc = h('select', { 'aria-label': 'Quelle' }), iCat = h('select', { 'aria-label': 'Kategorie' }), iCatRow = h('p', { style: 'margin:8px 0' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, 'Kategorie', iCat));
     var iGuide = h('p', { class: 'hint', style: 'margin:8px 0 4px' }), iBeta = h('p', { class: 'hint', hidden: true }, 'Neu: Dieses Format habe ich nach der Beschreibung des Anbieters gebaut, mit einer echten Datei ist es noch nicht geprüft. Klappt es nicht, melde dich gern über „Kontakt“ (Bugmeldung) mit einem kleinen Beispiel aus der Datei, ohne persönliche Daten.');
@@ -1829,7 +1829,6 @@
         btns.push(b); row.append(b);
       });
       var fc = setCard('Schrift', [h('div', { class: 'wide2' }, h('p', { class: 'hint', style: 'margin-top:0' }, 'Gilt für Überschriften, Texte und Zahlen. Es werden nur Schriften genutzt, die auf deinem Gerät vorhanden sind; nichts wird von fremden Servern geladen. Die Wahl wird nur in diesem Browser gespeichert.'), row)], 'solo');
-      devMark(fc, 'schrift');
       if (optikC) optikC.after(fc); else st.append(fc);
     })();
     var uiC = setCard('Oberflächenanpassungen', [uiBox], 'solo'), thC = [].slice.call(st.children).filter(function (c) { return c.querySelector('h3').textContent === 'Themes'; })[0];

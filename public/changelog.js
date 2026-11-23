@@ -6,6 +6,7 @@ window.CHANGELOG = [
     'F|Bücher: Im Suchfeld kannst du eine ISBN eingeben (mit oder ohne Bindestriche). Die Seite schlägt das Buch nach und bietet Autor:in und, wenn bekannt, die Reihe an.',
     'F|Musik, Filme und Serien: Die Nummer unter dem Strichcode einer CD, DVD oder Blu-ray führt zum passenden Eintrag. CDs kommen über MusicBrainz; bei Filmen und Serien fragt die Seite, ob der Treffer stimmt, und merkt sich deine Auswahl, damit der Eintrag beim nächsten Mal sofort erscheint.',
     'F|Scannen mit dem Handy: Neben „Suchen“ gibt es auf Handy und Tablet den Knopf „Scannen“. Er liest den Strichcode von Büchern, CDs, DVDs und Blu-rays mit der Kamera; das Bild bleibt auf deinem Gerät.',
+    'O|Neue Schriftwahl unter Einstellungen → Darstellung → Schrift: Aktuelle Schrift, Systemschrift, Humanistisch oder Neo-Grotesk, jeweils mit Vorschau. Es werden nur Schriften genutzt, die auf deinem Gerät vorhanden sind, nichts wird von fremden Servern geladen. Die Wahl merkt sich dein Browser. Zahlen haben jetzt überall die gleiche Breite und stehen dadurch sauber untereinander. Im 8-Bit-Theme bleibt bei „Aktuelle Schrift“ die Pixelschrift.',
     'D|Datenschutzerklärung ergänzt (Import, ISBN und Strichcodes, Kamera); deine Strichcode-Zuordnungen stehen jetzt auch in „Meine Daten herunterladen“.',
   ] },
   { v: 19, d: '21.11.2026', t: [

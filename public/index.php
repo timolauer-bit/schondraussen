@@ -29,7 +29,7 @@ try { require_once __DIR__ . '/lib/watchdog.php'; ops_watchdog(db()); } catch (T
 $seo = seo_head('/', SEO_TITLE, SEO_DESC, !$u && !$gast); // sendet ggf. X-Robots-Tag, daher vor der Ausgabe
 ?><!doctype html>
 <html lang="de"<?= $skin ? ' data-skin="' . $skin . '"' : '' ?>><head><meta charset="utf-8"><?= $skinCss !== '' ? '<style id="customskin">' . $skinCss . '</style>' : '' ?><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<?php if ($ap === '/dev'): ?><script nonce="<?= $nonce ?>">(function(){var f='current';try{var v=localStorage.getItem('sd_font');if(v==='system'||v==='humanist'||v==='neo')f=v;}catch(e){}document.documentElement.setAttribute('data-font',f);})();</script><?php endif; // Schriftwahl, vorerst nur Dev: vor dem Zeichnen setzen, damit nichts flackert ?>
+<script nonce="<?= $nonce ?>">(function(){var f='current';try{var v=localStorage.getItem('sd_font');if(v==='system'||v==='humanist'||v==='neo')f=v;}catch(e){}document.documentElement.setAttribute('data-font',f);})();</script><?php // Schriftwahl (alle Versionen): vor dem Zeichnen setzen, damit nichts flackert ?>
 <title><?= (!$u && seo_public()) ? SEO_TITLE : 'Schondraussen.de' ?></title>
 <?= $seo ?>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f3ead6"><link rel="apple-touch-icon" href="/appicons/apple-touch-icon.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" type="image/png" sizes="32x32" href="/appicons/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="/appicons/icon-192.png"><link rel="shortcut icon" href="/favicon.ico">
