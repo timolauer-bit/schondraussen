@@ -1,5 +1,13 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 20, d: '23.11.2026', t: [
+    'F|Import neu: Unter Einstellungen → Import wählst du die Quelle aus einer Liste oder lässt sie automatisch erkennen. Neu sind Goodreads, The StoryGraph, Apple Music (über TuneMyMusic), Last.fm, Letterboxd, Netflix, Simkl, Serializd (über Listizd) und Podcast-Apps (OPML), dazu wie bisher Spotify, IMDb, Trakt und eigene Listen. ZIP-Dateien gehen direkt, vor dem Import siehst du die Namen je Kategorie und kannst sie ändern.',
+    'U|Import bei Musik: Übernommen werden nur Musiker:innen, denen du folgst oder von denen du ein Album gespeichert oder gehört hast (ab 3 Titeln), nicht mehr alle Interpreten einzelner Songs. Lange Listen stehen nach Häufigkeit sortiert.',
+    'F|Bücher: Im Suchfeld kannst du eine ISBN eingeben (mit oder ohne Bindestriche). Die Seite schlägt das Buch nach und bietet Autor:in und, wenn bekannt, die Reihe an.',
+    'F|Musik, Filme und Serien: Die Nummer unter dem Strichcode einer CD, DVD oder Blu-ray führt zum passenden Eintrag. CDs kommen über MusicBrainz; bei Filmen und Serien fragt die Seite, ob der Treffer stimmt, und merkt sich deine Auswahl, damit der Eintrag beim nächsten Mal sofort erscheint.',
+    'F|Scannen mit dem Handy: Neben „Suchen“ gibt es auf Handy und Tablet den Knopf „Scannen“. Er liest den Strichcode von Büchern, CDs, DVDs und Blu-rays mit der Kamera; das Bild bleibt auf deinem Gerät.',
+    'D|Datenschutzerklärung ergänzt (Import, ISBN und Strichcodes, Kamera); deine Strichcode-Zuordnungen stehen jetzt auch in „Meine Daten herunterladen“.',
+  ] },
   { v: 19, d: '21.11.2026', t: [
     'A|Deutsche Nationalbibliothek entlastet: Bücher von Autor:innen werden nur noch alle 30 Tage vollständig abgefragt, dazwischen nur die aktuellen Jahrgänge (eine Anfrage statt bis zu 15); Reihen höchstens alle 3 Tage; insgesamt höchstens 300 Anfragen pro Tag; bei „gesperrt“ (403) pausiert die Seite wie bei „zu viele Anfragen“.',
   ] },
