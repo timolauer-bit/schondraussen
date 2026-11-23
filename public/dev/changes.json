@@ -1,7 +1,7 @@
 [
  "Info → neuer Reiter „FAQ“ (häufige Fragen, durchsuchbar). Admin → neuer Reiter „FAQ“ zum Bearbeiten, Anlegen, Löschen und Umsortieren von Themenbereichen und Beiträgen.",
  "Einstellungen → Darstellung → neue Karte „Schrift“: vier Schriftarten (Aktuell, Systemschrift, Humanistisch, Neo-Grotesk) mit Vorschau, gemerkt im Browser; Zahlen überall mit gleicher Ziffernbreite.",
- "Einstellungen → Import: eine Karte mit Auswahl „Quelle“ (Automatisch erkennen, Eigene Liste, Goodreads, StoryGraph, Spotify, Last.fm, IMDb, Letterboxd, Netflix, Trakt, Serializd über Listizd, Podcast-Apps per OPML) statt einzelner Knöpfe; Vorschau je Kategorie, ZIP-Dateien direkt.",
+ "Einstellungen → Import: eine Karte mit Auswahl „Quelle“ (Automatisch erkennen, Eigene Liste, Goodreads, StoryGraph, Spotify, Last.fm, Apple Music über TuneMyMusic, IMDb, Letterboxd, Netflix, Trakt, Serializd über Listizd, Podcast-Apps per OPML) statt einzelner Knöpfe; Vorschau je Kategorie, ZIP-Dateien direkt. Musik: nur Musiker:innen, denen man folgt oder von denen ein Album gespeichert/gehört ist (ab 3 Titeln), keine einzelnen Songs.",
  "Bücher → Suchfeld: ISBN eintippen (mit oder ohne Bindestriche) schlägt das Buch nach (DNB, sonst Open Library, Google Books) und bietet Autor:in und Reihe an; auf Handy und Tablet Knopf „Scannen“ für den Strichcode (Kamera, Bild bleibt im Gerät).",
  "Musik, Filme, Serien → Suchfeld und „Scannen“: Strichcode von CD, DVD oder Blu-ray. CDs über MusicBrainz; Filme und Serien über die eigene Strichcode-Tabelle (Migration 089) (Open-EAN-Datenbank vorbereitet, wartet auf eine Zugangsnummer). Rückfrage „Ist das der richtige Film?“, sonst Korrektur über die normale Suche; die Wahl wird als Zuordnung gespeichert (eine Stimme je Mitglied)."
 ]

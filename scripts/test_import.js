@@ -21,11 +21,12 @@ const fmt = items => items.map(i => i.k + ':' + i.n + (i.eps ? '[' + i.eps.lengt
 const CASES = [
   { files: ['goodreads_library_export.csv'], fmt: 'goodreads', items: ['author:Pierre Christin', 'author:Roger Leloup', 'author:Daniel Suarez', 'author:Stephen King'] }, // Aufbau aus einem echten Export (23.11.2026), Zeilen gekürzt
   { files: ['storygraph_export.csv'], fmt: 'storygraph', items: ['author:Terry Pratchett', 'author:Neil Gaiman'] },
-  { files: ['StreamingHistory_music_0.json', 'StreamingHistory_podcast_0.json'], fmt: 'spotify', items: ['artist:Radiohead', 'artist:Nightwish', 'podcast:Lage der Nation'] },
-  { files: ['YourLibrary.json'], fmt: 'spotify', items: ['artist:Kraftwerk', 'podcast:Fest & Flauschig', 'artist:Blind Guardian', 'artist:Nightwish'] },
-  { files: ['exportify_playlist.csv'], fmt: 'spotify', items: ['artist:Radiohead', 'artist:Tyler, The Creator', 'artist:Frank Ocean'] },
-  { files: ['lastfm_ghan.csv'], fmt: 'lastfm', items: ['artist:Radiohead', 'artist:Portishead'] },
-  { files: ['lastfm_scrobbles_noheader.csv'], fmt: 'lastfm', items: ['artist:Radiohead', 'artist:Portishead'] },
+  { files: ['StreamingHistory_music_0.json', 'StreamingHistory_podcast_0.json'], fmt: 'spotify', items: ['artist:Radiohead', 'podcast:Lage der Nation'], skipped: 1 }, // Nightwish nur ein Song
+  { files: ['YourLibrary.json'], fmt: 'spotify', items: ['artist:Nightwish', 'artist:Kraftwerk', 'podcast:Fest & Flauschig'], skipped: 1 }, // Blind Guardian nur ein Lieblingssong
+  { files: ['exportify_playlist.csv'], fmt: 'spotify', items: ['artist:Radiohead'], skipped: 1 },
+  { files: ['lastfm_ghan.csv'], fmt: 'lastfm', items: ['artist:Radiohead'], skipped: 1 },
+  { files: ['lastfm_scrobbles_noheader.csv'], fmt: 'lastfm', items: ['artist:Portishead'], skipped: 1 },
+  { files: ['tunemymusic_applemusic.csv'], fmt: 'tunemymusic', items: ['artist:Blind Guardian'], skipped: 1 }, // Aufbau angenommen, noch ohne echten Export
   { files: ['imdb_watchlist.csv'], fmt: 'imdb', items: ['film:Der Pate', 'series:Dark'], skipped: 2 },
   { files: ['letterboxd-export.zip'], fmt: 'letterboxd', items: ['film:The Godfather', 'film:Alien', 'film:Dune: Part Two'] },
   { files: ['NetflixViewingHistory.csv'], fmt: 'netflix', items: ['series:Dark', 'series:Haus des Geldes', 'film:Star Wars: Episode IV – Eine neue Hoffnung', 'series:Stranger Things', 'film:Der Schuh des Manitu'] },

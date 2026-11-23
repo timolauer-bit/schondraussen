@@ -1,4 +1,6 @@
 uts,utc_time,artist,artist_mbid,album,album_mbid,track,track_mbid
-1700000000,"14 Nov 2023, 22:13",Radiohead,,OK Computer,,Airbag,
-1700000300,"14 Nov 2023, 22:18",Radiohead,,OK Computer,,Paranoid Android,
-1700000600,"14 Nov 2023, 22:23",Portishead,,Dummy,,Roads,
+1700000000,"x",Radiohead,,OK Computer,,Airbag,
+1700000001,"x",Radiohead,,OK Computer,,Paranoid Android,
+1700000002,"x",Portishead,,Dummy,,Roads,
+1700000003,"x",Radiohead,,OK Computer,,Lucky,
+1700000004,"x",Radiohead,,Kid A,,Idioteque,

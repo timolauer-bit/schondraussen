@@ -1415,6 +1415,21 @@
         return order.map(function (k) { var x = map[k], o = { n: x.name, k: x.type }, e = Object.keys(x.eps).map(function (y) { return x.eps[y]; }); if (e.length) o.eps = e; return o; });
       }
       function xmlText(s) { return String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(+n); }).replace(/&#x([0-9a-f]+);/gi, function (_, n) { return String.fromCharCode(parseInt(n, 16)); }).replace(/&amp;/g, '&'); }
+      var MUSIC_MIN = 3; // ab so vielen verschiedenen Titeln eines Albums (ohne Albumangabe: der Musiker:in) gilt das Album als gehört
+      function music() { // Musiker:innen nur übernehmen, wenn man ihnen folgt, ein Album gespeichert hat oder ein Album gehört hat; einzelne Songs zählen nicht
+        var A = {}, order = [];
+        function get(n) { n = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); if (!n) return null; var k = n.toLowerCase(); if (!A[k]) { A[k] = { n: n, d: false, al: {}, tr: {}, c: 0, i: order.length }; order.push(k); } return A[k]; }
+        return {
+          direct: function (n) { var a = get(n); if (a) { a.d = true; a.c += 5; } },
+          track: function (n, album, title) { var a = get(n); if (!a) return; a.c++; var tk = String(title || '').toLowerCase().trim() || ('#' + a.c), ak = String(album || '').toLowerCase().trim(); a.tr[tk] = 1; if (ak) { (a.al[ak] = a.al[ak] || {})[tk] = 1; } },
+          result: function (extra) {
+            var ok = [], sk = 0;
+            order.forEach(function (k) { var a = A[k], albums = Object.keys(a.al), hasAl = albums.some(function (x) { return Object.keys(a.al[x]).length >= MUSIC_MIN; }); if (a.d || hasAl || (!albums.length && Object.keys(a.tr).length >= MUSIC_MIN)) ok.push(a); else sk++; });
+            ok.sort(function (x, y) { return y.c - x.c || x.i - y.i; });
+            return { items: ok.map(function (a) { return { n: a.n, k: 'artist' }; }).concat(extra || []), skipped: sk, note: sk ? 'Musiker:innen mit nur einzelnen Songs weggelassen' : '' };
+          }
+        };
+      }
       var NFX_SER = /^(staffel|season|teil|part|volume|vol\.|kapitel|chapter|buch|book|limited series|miniserie|mini-serie|serie|series|collection)\b|^(folge|episode)\s*\d/i;
       var F = [
         { id: 'list', name: 'Eigene Liste (Text, CSV oder JSON)', group: 'Allgemein', cats: null, accept: '.json,.csv,.txt,text/plain,application/json,text/csv',
@@ -1429,41 +1444,52 @@
           detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('authors') >= 0 && x.c.head.indexOf('read status') >= 0; }); },
           parse: function (fs) { var t = tally(); heads(fs).forEach(function (x) { var a = x.c.head.indexOf('authors'); if (a < 0) return; x.c.rows.forEach(function (r) { String(r[a] || '').split(/\s*[,&]\s*/).forEach(function (n) { t.add(n, 'author'); }); }); }); return { items: t.list(true), skipped: 0 }; } },
         { id: 'spotify', name: 'Spotify', group: 'Musik', cats: ['artist', 'podcast'], accept: '.zip,.json,.csv,application/zip,application/json,text/csv',
-          guide: 'Spotify: Konto → „Account privacy“ (Datenschutz) → „Download your data“, dort „Account data“ anfordern. Nach ein paar Tagen kommt eine Mail mit einer ZIP-Datei; die kannst du direkt hier laden (oder einzelne Dateien wie YourLibrary.json, StreamingHistory_music_0.json, Playlist1.json). Auch CSV-Dateien von Exportify gehen. Übernommen werden Musiker:innen und gehörte Podcasts, sortiert nach Häufigkeit.',
+          guide: 'Spotify: Konto → „Account privacy“ (Datenschutz) → „Download your data“, dort „Account data“ anfordern. Nach ein paar Tagen kommt eine Mail mit einer ZIP-Datei; die kannst du direkt hier laden (oder einzelne Dateien wie YourLibrary.json, StreamingHistory_music_0.json, Playlist1.json). Auch CSV-Dateien von Exportify gehen. Übernommen werden Musiker:innen, denen du folgst oder von denen du ein Album gespeichert oder gehört hast (mindestens 3 Titel), dazu gehörte Podcasts.',
           detect: function (fs) { return fs.some(function (f) { return /StreamingHistory|Streaming_History|YourLibrary|Playlist\d*\.json/i.test(f.name) || /"(artistName|master_metadata_album_artist_name|podcastName)"/.test(f.text.slice(0, 20000)); }) || heads(fs).some(function (x) { return x.c.head.indexOf('artist name(s)') >= 0; }); },
           parse: function (fs) {
-            var t = tally();
+            var m = music(), t = tally();
             fs.forEach(function (f) {
               var j = json(f);
               if (j) {
                 var lib = /YourLibrary/i.test(f.name);
                 walk(j, function (o) {
-                  ['artistName', 'master_metadata_album_artist_name'].forEach(function (k) { if (typeof o[k] === 'string') t.add(o[k], 'artist'); });
+                  if (typeof o.master_metadata_album_artist_name === 'string') m.track(o.master_metadata_album_artist_name, o.master_metadata_album_album_name, o.master_metadata_track_name);
+                  else if (typeof o.artistName === 'string') m.track(o.artistName, o.albumName, o.trackName);
                   ['podcastName', 'episode_show_name'].forEach(function (k) { if (typeof o[k] === 'string') t.add(o[k], 'podcast'); });
                   if (lib) {
-                    if (typeof o.artist === 'string') t.add(o.artist, 'artist');
-                    (Array.isArray(o.artists) ? o.artists : []).forEach(function (a) { if (a && typeof a.name === 'string') t.add(a.name, 'artist', 3); });
-                    (Array.isArray(o.shows) ? o.shows : []).forEach(function (s) { if (s && typeof s.name === 'string') t.add(s.name, 'podcast', 3); });
+                    (Array.isArray(o.tracks) ? o.tracks : []).forEach(function (x) { if (x && typeof x.artist === 'string') m.track(x.artist, x.album, x.track); });
+                    (Array.isArray(o.albums) ? o.albums : []).forEach(function (x) { if (x && typeof x.artist === 'string') m.direct(x.artist); });
+                    (Array.isArray(o.artists) ? o.artists : []).forEach(function (a) { if (a && typeof a.name === 'string') m.direct(a.name); });
+                    (Array.isArray(o.shows) ? o.shows : []).forEach(function (x) { if (x && typeof x.name === 'string') t.add(x.name, 'podcast', 3); });
                     (Array.isArray(o.episodes) ? o.episodes : []).forEach(function (e) { if (e && typeof e.show === 'string') t.add(e.show, 'podcast'); });
+                    return false;
                   }
                 });
                 return;
               }
-              if (isCsv(f)) { var c = csv(f.text), a = col(c.head, ['artist name(s)', 'artist name', 'artist']); if (a >= 0) c.rows.forEach(function (r) { String(r[a] || '').split(/;\s*/).forEach(function (n) { t.add(n, 'artist'); }); }); }
+              if (isCsv(f)) { var c = csv(f.text), a = col(c.head, ['artist name(s)', 'artist name', 'artist']), al = col(c.head, ['album name', 'album']), tr = col(c.head, ['track name', 'track']); if (a >= 0) c.rows.forEach(function (r) { var n = String(r[a] || '').split(/;\s*/)[0]; m.track(n, al >= 0 ? r[al] : '', tr >= 0 ? r[tr] : ''); }); }
             });
-            return { items: t.list(true), skipped: 0 };
+            return m.result(t.list(true));
           } },
         { id: 'lastfm', name: 'Last.fm', group: 'Musik', cats: ['artist'], accept: '.csv,text/csv', beta: true,
-          guide: 'Last.fm hat selbst keinen Export. Gängig sind Exportseiten wie lastfm.ghan.nl/export (dort „CSV“ wählen) oder lastfm-to-csv; beide liefern eine CSV mit deinen Scrobbles. Übernommen werden die Musiker:innen, sortiert nach Zahl der Wiedergaben.',
+          guide: 'Last.fm hat selbst keinen Export. Gängig sind Exportseiten wie lastfm.ghan.nl/export (dort „CSV“ wählen) oder lastfm-to-csv; beide liefern eine CSV mit deinen Scrobbles. Übernommen werden Musiker:innen, von denen du ein Album gehört hast (mindestens 3 Titel), sortiert nach Zahl der Wiedergaben.',
           detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('artist') >= 0 && x.c.head.indexOf('track') >= 0; }) || fs.some(function (f) { return /lastfm|last\.fm|scrobble/i.test(f.name); }); },
           parse: function (fs) {
-            var t = tally();
+            var m = music();
             fs.filter(isCsv).forEach(function (f) {
-              var c = csv(f.text), a = c.head.indexOf('artist');
-              if (a >= 0 && c.head.indexOf('track') >= 0) c.rows.forEach(function (r) { t.add(r[a], 'artist'); });
-              else if (c.head.length === 4) { t.add(splitCsv(bom(f.text).split(/\r?\n/, 1)[0], ',')[0], 'artist'); c.rows.forEach(function (r) { t.add(r[0], 'artist'); }); } // ohne Kopfzeile: Musiker, Album, Titel, Datum
+              var c = csv(f.text), a = c.head.indexOf('artist'), al = c.head.indexOf('album'), tr = c.head.indexOf('track');
+              if (a >= 0 && tr >= 0) c.rows.forEach(function (r) { m.track(r[a], al >= 0 ? r[al] : '', r[tr]); });
+              else if (c.head.length === 4) { var r0 = splitCsv(bom(f.text).split(/\r?\n/, 1)[0], ','); m.track(r0[0], r0[1], r0[2]); c.rows.forEach(function (r) { m.track(r[0], r[1], r[2]); }); } // ohne Kopfzeile: Musiker, Album, Titel, Datum
             });
-            return { items: t.list(true), skipped: 0 };
+            return m.result([]);
+          } },
+        { id: 'tunemymusic', name: 'Apple Music (über TuneMyMusic)', group: 'Musik', cats: ['artist'], accept: '.csv,text/csv', beta: true,
+          guide: 'Apple Music hat selbst keinen Export. Über TuneMyMusic (tunemymusic.com/de/transfer/apple-music-to-file) kannst du deine Mediathek oder Playlists als Datei (CSV) speichern. Das geht auch mit anderen Diensten als Quelle (z. B. Deezer, Tidal, YouTube Music, Amazon Music). Übernommen werden Musiker:innen, von denen mindestens 3 Titel eines Albums in der Datei stehen.',
+          detect: function (fs) { return heads(fs).some(function (x) { var h = x.c.head; return (h.indexOf('track name') >= 0 || h.indexOf('track') >= 0) && (h.indexOf('artist name') >= 0) && h.indexOf('playlist name') >= 0; }); },
+          parse: function (fs) {
+            var m = music();
+            heads(fs).forEach(function (x) { var h = x.c.head, a = col(h, ['artist name', 'artist']), al = col(h, ['album', 'album name']), tr = col(h, ['track name', 'track']); if (a < 0) return; x.c.rows.forEach(function (r) { m.track(String(r[a] || '').split(/\s*[,;]\s*(?=\S)/)[0], al >= 0 ? r[al] : '', tr >= 0 ? r[tr] : ''); }); });
+            return m.result([]);
           } },
         { id: 'imdb', name: 'IMDb', group: 'Filme und Serien', cats: ['film', 'series'], accept: '.csv,text/csv',
           guide: 'IMDb: Watchlist, Bewertungen oder eine eigene Liste öffnen → Menü (drei Punkte) → „Exportieren“. Die CSV-Datei findest du danach unter „Exporte“ in deinem Profil. Filme und Serien kommen automatisch in die richtige Liste, einzelne Folgen und Spiele werden übersprungen.',
@@ -2078,7 +2104,7 @@
       'Kalender aller angekündigten Veröffentlichungen mit Kategorie-Chips zum Ein- und Ausblenden und Vorschau je Tag, dazu ein persönliches Kalender-Abo (ICS)',
       'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
       'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',
-      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt, Serializd und Podcast-Apps (OPML); Datenexport',
+      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Apple Music (über TuneMyMusic), Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt, Serializd und Podcast-Apps (OPML); Datenexport',
       'Ideen und Bugmeldungen (mit Kategorie, abstimmbar) und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
       'Mehrere Oberflächen (Skins), dazu experimentelle Themes (Standard, 8-Bit), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster und im Chat']));
     sec('Funktionen für den Admin', ul([
