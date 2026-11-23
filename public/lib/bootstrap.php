@@ -34,7 +34,7 @@ function security_headers(): void {
     if (headers_sent()) return;
     header('X-Content-Type-Options: nosniff');
     header('Strict-Transport-Security: max-age=31536000');
-    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+    header('Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
 }
 function origin_guard(): void {
     $m = $_SERVER['REQUEST_METHOD'] ?? 'GET';

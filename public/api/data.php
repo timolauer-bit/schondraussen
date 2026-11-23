@@ -257,6 +257,16 @@ if ($a === 'search') {
     $type = $_GET['type'] ?? ''; $q = trim((string) ($_GET['q'] ?? ''));
     if (!in_array($type, $TYPES, true) || mb_strlen($q) < 2) json_out(['results' => []]);
     $out = [];
+    if ($type === 'author' && ($isbn = isbn_norm($q)) !== null) { // ISBN eingetippt oder gescannt: Buch nachschlagen, Autor:in und Reihe anbieten
+        if ($isbn === '!') json_out(['results' => [], 'isbn' => true, 'error' => 'Die Nummer sieht wie eine ISBN aus, aber die Prüfziffer stimmt nicht. Bitte noch einmal vergleichen.']);
+        $b = isbn_lookup($isbn);
+        if (!$b) json_out(['results' => [], 'isbn' => true, 'error' => 'Zur ISBN ' . $isbn . ' habe ich bei der Deutschen Nationalbibliothek, Open Library und Google Books kein Buch gefunden. Versuch es mit dem Namen der Autorin oder des Autors oder mit dem Buchtitel.']);
+        $t = $b['title'] !== '' ? '„' . mb_substr($b['title'], 0, 80) . '“' . ($b['year'] !== '' ? ' (' . $b['year'] . ')' : '') : '';
+        if ($b['author'] !== '') $out[] = ['name' => $b['author'], 'hint' => $t !== '' ? 'Autor:in von ' . $t : 'Autor:in', 'ext' => $b['olid'] !== '' ? ['olid' => $b['olid']] : (object) []];
+        if ($b['series'] !== '') { $vol = trim(preg_replace('/^(Band|Bd\.?|Vol\.?|Nr\.?)\s*/iu', '', $b['vol'])); $out[] = ['name' => $b['series'] . ' (Reihe)', 'hint' => 'Reihe' . ($vol !== '' ? ', dieses Buch ist Band ' . $vol : '') . ' · deutsche Ausgaben aus dem Katalog der DNB', 'ext' => ['gbs' => $b['series']]]; }
+        if (!$out && $b['title'] !== '') $out[] = ['name' => $b['title'] . ' (Buchtitel)', 'hint' => 'Zu diesem Buch ist keine Autor:in hinterlegt. Über den Titel suchen', 'title_search' => true, 'tq' => $b['title']];
+        json_out(['results' => $out, 'isbn' => $isbn, 'book' => $t, 'src' => $b['src']]);
+    }
     if ($type === 'podcast') $out = podcast_search($q);
     elseif ($type === 'film') { if (!tmdb_enabled()) json_out(['results' => [], 'manual' => true]); $out = tmdb_search($q); }
     elseif ($type === 'series') {

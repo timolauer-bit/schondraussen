@@ -12,7 +12,7 @@
   var CL = window.CHANGELOG || [], LATEST = CL.length ? CL[0].v : 1;
   var LOGTOTAL = CL.reduce(function (a, c) { return a + (c.base ? 0 : c.t.length); }, 0);
   var TYPES = {
-    author: { label: 'Bücher', plural: 'Bücher', who: 'Autor:innen', ph: 'z. B. Terry Pratchett', idx: 'stripbooks', work: 'Bücher' },
+    author: { label: 'Bücher', plural: 'Bücher', who: 'Autor:innen', ph: 'z. B. Terry Pratchett oder eine ISBN', idx: 'stripbooks', work: 'Bücher' },
     artist: { label: 'Musik', plural: 'Musik', who: 'Musiker:innen', ph: 'z. B. Radiohead', idx: 'music', work: 'Alben' },
     film: { label: 'Film', plural: 'Filme', who: 'Filme', ph: 'z. B. Dune', idx: 'video', work: 'Filme' },
     series: { label: 'Serie', plural: 'Serien', who: 'Serien', ph: 'z. B. Severance', idx: 'video', work: 'Staffeln' },
@@ -496,7 +496,7 @@
     var t = TYPES[S.cat], es = entriesOf(S.cat);
     var layout = h('div', { class: 'layout has-rail' }), rail = h('aside', { class: 'rail', id: 'rail', 'data-cat': S.cat, style: '--cc:' + CATCOL[S.cat] }), main = h('section', { class: 'main', id: 'content' });
     rail.append(h('section', null, h('p', { class: 'label' }, 'Neu hinzufügen'),
-      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph, oninput: localSugg }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen')),
+      h('form', { class: 'add', id: 'addform', autocomplete: 'off', onsubmit: addSubmit }, h('input', { id: 'q', type: 'text', maxlength: '80', 'aria-label': 'Name', placeholder: t.ph, oninput: localSugg }), h('button', { class: 'btn', id: 'addbtn', type: 'submit' }, 'Suchen'), S.cat === 'author' && canScan() ? devMark(h('button', { class: 'btn ghost', type: 'button', title: 'ISBN-Strichcode mit der Kamera lesen', 'aria-label': 'ISBN scannen', onclick: function () { isbnScan(function (code) { var q = $('q'); if (!q) return; q.value = code; $('addform').requestSubmit(); }); } }, 'Scannen'), 'isbn') : null),
       h('p', { class: 'msg', id: 'msg', role: 'status' }), h('div', { id: 'sugg' })));
     rail.append(h('section', null, h('p', { class: 'label', id: 'listlbl' }, t.plural + ' · ' + es.length + ' / ' + MAXN),
       h('div', { class: 'srchrow' }, h('label', { class: 'field srch' }, h('input', { id: 'srch', type: 'search', maxlength: '80', 'aria-label': 'Einträge durchsuchen', placeholder: 'In der Liste filtern', value: S.filter, oninput: function () { S.filter = this.value; rows(); } })),
@@ -961,11 +961,52 @@
       if (x.ok) load(function () { S.ready = true; if (S.view === 'list') { nav(); if ($('list')) { filt(); rows(); content(); } } }); else { var st = $('st'); if (st) { st.classList.remove('pulse'); st.textContent = x.msg || x.error || 'Das hat nicht geklappt.'; } if (b) { b.disabled = false; b.lastChild.textContent = 'Aktualisieren'; } load(function () { nav(); }); }
     });
   }
+  /* ISBN-Scan mit der Handykamera: BarcodeDetector (Chrome/Android), sonst ZXing (vendor/zxing.min.js, nur bei Bedarf geladen). Das Bild bleibt im Browser. */
+  function canScan() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.matchMedia && matchMedia('(pointer: coarse)').matches; }
+  var zxingP = null;
+  function loadZxing() { if (window.ZXing) return Promise.resolve(window.ZXing); if (!zxingP) zxingP = new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = '/vendor/zxing.min.js'; sc.onload = function () { ok(window.ZXing); }; sc.onerror = function () { zxingP = null; no(new Error('Der Scanner konnte nicht geladen werden.')); }; document.head.append(sc); }); return zxingP; }
+  function isbnScan(done) {
+    var vid = h('video', { playsinline: true, muted: true, autoplay: true, style: 'width:100%;max-height:60vh;background:#000;border-radius:8px;display:block' });
+    var msg = h('p', { class: 'msg', role: 'status', style: 'margin:8px 0 0' }, 'Kamera wird gestartet …'), stream = null, stop = false, timer = 0;
+    var dlg = h('div', { class: 'unmodal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'scanh' },
+      h('div', { class: 'unbox', style: 'max-width:480px;padding:16px' }, h('h2', { id: 'scanh', style: 'margin:0 0 6px;font-size:20px' }, 'ISBN scannen'), h('p', { class: 'hint', style: 'margin:0 0 8px' }, 'Halte den Strichcode auf der Rückseite des Buchs ruhig vor die Kamera (meist mit „978“ oder „979“). Das Bild bleibt auf deinem Gerät.'), vid, msg,
+        h('p', { style: 'margin:10px 0 0' }, h('button', { class: 'btn ghost', type: 'button', onclick: close }, 'Abbrechen'))));
+    function close() { stop = true; clearTimeout(timer); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); dlg.remove(); document.removeEventListener('keydown', esc); }
+    function esc(ev) { if (ev.key === 'Escape') close(); }
+    document.addEventListener('keydown', esc); document.body.append(dlg);
+    function hit(code) { code = String(code || '').replace(/\D/g, ''); if (/^97[89]\d{10}$/.test(code)) { close(); done(code); return true; } if (code.length >= 8) msg.textContent = 'Das ist kein ISBN-Strichcode (' + code + '). Bei Büchern beginnt er mit 978 oder 979.'; return false; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false }).then(function (st) {
+      if (stop) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+      stream = st; vid.srcObject = st; return vid.play().catch(function () {}).then(function () {
+        msg.textContent = 'Suche Strichcode …';
+        if ('BarcodeDetector' in window) {
+          var bd = new window.BarcodeDetector({ formats: ['ean_13'] });
+          (function tick() { if (stop) return; bd.detect(vid).then(function (r) { if (stop) return; if (r && r[0] && hit(r[0].rawValue)) return; timer = setTimeout(tick, 200); }).catch(function () { timer = setTimeout(tick, 400); }); })();
+          return;
+        }
+        return loadZxing().then(function (Z) {
+          var hints = new Map(); hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13]); hints.set(Z.DecodeHintType.TRY_HARDER, true);
+          var rd = new Z.MultiFormatReader(); rd.setHints(hints); var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+          (function tick() {
+            if (stop) return;
+            var w = vid.videoWidth, hh = vid.videoHeight;
+            if (w && hh) { var sw = Math.min(w, 960), sh = Math.round(hh * sw / w); cv.width = sw; cv.height = sh; cx.drawImage(vid, 0, 0, sw, sh);
+              try { var res = rd.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)))); if (hit(res.getText())) return; } catch (_) {} }
+            timer = setTimeout(tick, 250);
+          })();
+        });
+      });
+    }).catch(function (e) {
+      msg.className = 'msg err';
+      msg.textContent = e && e.name === 'NotAllowedError' ? 'Die Kamera ist nicht freigegeben. Erlaube den Zugriff in den Einstellungen des Browsers für diese Seite oder tippe die ISBN ins Suchfeld.' : e && e.name === 'NotFoundError' ? 'Keine Kamera gefunden. Tippe die ISBN einfach ins Suchfeld.' : ((e && e.message) || 'Die Kamera konnte nicht gestartet werden.') + ' Du kannst die ISBN auch ins Suchfeld tippen.';
+    });
+  }
   /* Hinzufügen mit Suche */
   var locT = 0, locSeq = 0;
   function localSugg() { // Sofort beim Tippen: Treffer aus den schon vorhandenen Einträgen der Seite; Enter sucht wie bisher im Netz
     var v = this.value.trim(), cat = S.cat; clearTimeout(locT); var my = ++locSeq;
     if (v.length < 2) { if (S.sugg && S.sugg.local) { S.sugg = null; drawSugg(); } return; }
+    if (cat === 'author' && looksIsbn(v)) { S.sugg = { local: true, isbnHint: true, q: v, cat: cat, list: [] }; drawSugg(); return; }
     locT = setTimeout(function () {
       api('/api/data.php?a=suggest_local&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) {
         if (my !== locSeq || cat !== S.cat) return; var q = $('q'); if (!q || q.value.trim() !== v) return;
@@ -973,10 +1014,11 @@
       });
     }, 150);
   }
+  function looksIsbn(v) { var d = String(v).replace(/^\s*isbn(-1[03])?:?\s*/i, '').replace(/[\s-]/g, ''); return /^(97[89]\d{10}|\d{9}[\dxX])$/.test(d); }
   function addSubmit(ev) {
     ev.preventDefault(); locSeq++; clearTimeout(locT); var v = $('q').value.trim(); if (!v) { say('Gib erst einen Namen ein.', true); return; }
     S.sugg = { loading: true }; drawSugg(); say(''); var cat = S.cat, my = ++srchSeq; // späte Antworten (Kategorie gewechselt, neue Suche) verwerfen
-    api('/api/data.php?a=search&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) { if (my !== srchSeq || cat !== S.cat) return; S.sugg = { q: v, cat: cat, list: r.results || [], manual: !!r.manual, err: r.error || '' }; drawSugg(); });
+    api('/api/data.php?a=search&type=' + cat + '&q=' + encodeURIComponent(v)).then(function (r) { if (my !== srchSeq || cat !== S.cat) return; S.sugg = { q: v, cat: cat, list: r.results || [], manual: !!r.manual, err: r.error || '', isbn: r.isbn || '', book: r.book || '', src: r.src || '' }; drawSugg(); });
   }
   var srchSeq = 0;
   function addNow(name, ext, cat) {
@@ -994,6 +1036,7 @@
   function drawSugg() {
     var box = $('sugg'); if (!box) return; box.textContent = ''; var s = S.sugg; if (!s) return;
     if (s.loading) { box.append(h('p', { class: 'hint pulse' }, 'Suche …')); return; }
+    if (s.local && s.isbnHint) { box.append(h('p', { class: 'hint' }, 'Das sieht nach einer ISBN aus. Drücke Enter oder „Suchen“, dann schlage ich das Buch nach.')); return; }
     if (s.local) {
       box.append(h('p', { class: 'hint' }, s.list.length ? 'Schon auf der Seite vorhanden. Passt keiner, drücke Enter, dann wird im Netz gesucht.' : 'Noch nicht auf der Seite vorhanden. Drücke Enter, um im Netz zu suchen.'));
       if (s.list.length) { var ll = h('div', { class: 'suggest' });
@@ -1002,12 +1045,13 @@
       return;
     }
     if (s.err && !s.list.length) { box.append(h('p', { class: 'warnbox' }, s.err)); return; }
-    box.append(h('p', { class: 'hint' }, s.manual ? 'Für Filme gibt es noch keine Suche. Der Titel wird so übernommen, wie du ihn eingegeben hast.' : s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
+    if (s.isbn) box.append(h('p', { class: 'hint' }, s.list.length ? 'Gefunden über die ISBN' + (s.book ? ': ' + s.book : '') + (s.src ? ' (Quelle: ' + s.src + ')' : '') + '. Was soll auf deine Liste?' : 'Keine Treffer.'));
+    else box.append(h('p', { class: 'hint' }, s.manual ? 'Für Filme gibt es noch keine Suche. Der Titel wird so übernommen, wie du ihn eingegeben hast.' : s.list.length ? (s.byTitle ? 'Bücher mit diesem Titel. Welche Autor:in ist gemeint?' : 'Welcher Treffer ist gemeint?') : (s.byTitle ? 'Kein Buch mit diesem Titel gefunden.' : 'Keine Treffer.')));
     var list = h('div', { class: 'suggest' });
     s.list.forEach(function (x) { list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () {
-      if (x.title_search) { S.sugg = { loading: true }; drawSugg(); var my2 = ++srchSeq; api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(s.q)).then(function (r) { if (my2 !== srchSeq || S.cat !== 'author') return; S.sugg = { q: s.q, cat: 'author', list: r.results || [], byTitle: true }; drawSugg(); }); return; }
+      if (x.title_search) { S.sugg = { loading: true }; drawSugg(); var my2 = ++srchSeq; api('/api/data.php?a=search&type=author&mode=title&q=' + encodeURIComponent(x.tq || s.q)).then(function (r) { if (my2 !== srchSeq || S.cat !== 'author') return; S.sugg = { q: x.tq || s.q, cat: 'author', list: r.results || [], byTitle: true }; drawSugg(); }); return; }
       addNow(x.name, x.ext, s.cat); } }, sthumb(x, s.cat), h('span', { class: 'nm' }, x.name), h('span', { class: 'tp' }, x.hint || ''))); });
-    list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}, s.cat); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
+    if (!s.isbn) list.append(h('button', { class: 'row-btn', type: 'button', onclick: function () { addNow(s.q, {}, s.cat); } }, h('span', { class: 'tp' }, '„' + s.q + '“ trotzdem so hinzufügen')));
     box.append(list);
   }
 

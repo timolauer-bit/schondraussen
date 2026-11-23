@@ -996,3 +996,50 @@ function looks_english_title(string $t): bool {
     if (preg_match('/[éèêëàâçñíìîóòôúùûãõœ¿¡ıİşŞğĞłąęćńśźżčřšžěůýÿ]/u', $l)) return true;
     return preg_match('/ (el|los|las|del|una|por|que|les|des|du|une|pour|avec|dans|sur|est|il|gli|della|degli|che|per|os|das|dos|uma|para|com|het|een|van|voor|naar) /', $l) === 1;
 }
+
+// ISBN: Prüfen und Buch nachschlagen (Suche bei Bücher, auch per Handy-Scan). Reihenfolge: DNB, Open Library, Google Books.
+function isbn_norm(string $q): ?string { // nur Ziffern (ISBN-10 darf auf X enden); null = keine ISBN, '!' = ISBN mit falscher Prüfziffer
+    $s = strtoupper(preg_replace('/^\s*ISBN(?:-1[03])?:?\s*/i', '', trim($q)));
+    if (!preg_match('/^[\d\s\-]{9,17}X?$/', $s)) return null;
+    $d = str_replace([' ', '-'], '', $s);
+    if (preg_match('/^\d{9}[\dX]$/', $d)) { $sum = 0; for ($i = 0; $i < 10; $i++) $sum += ($d[$i] === 'X' ? 10 : (int) $d[$i]) * (10 - $i); return $sum % 11 === 0 ? $d : '!'; }
+    if (preg_match('/^97[89]\d{10}$/', $d)) { $sum = 0; for ($i = 0; $i < 13; $i++) $sum += (int) $d[$i] * ($i % 2 ? 3 : 1); return $sum % 10 === 0 ? $d : '!'; }
+    return null;
+}
+function isbn_lookup(string $isbn): ?array { // ['title','author','olid','series','vol','year','src'] oder null
+    $flip = fn(string $n): string => preg_match('/^([^,]+),\s*(.+)$/u', trim($n), $m) ? trim($m[2]) . ' ' . trim($m[1]) : trim($n);
+    $clean = fn(string $s): string => trim(preg_replace('/\s+/u', ' ', trim(preg_replace('/[\x{0080}-\x{009F}\x{200B}-\x{200F}]/u', '', $s), " \t\n\r\0\x0B/:;,=-–")));
+    $o = ['title' => '', 'author' => '', 'olid' => '', 'series' => '', 'vol' => '', 'year' => '', 'src' => ''];
+    $r = dnb_sru('num=' . $isbn, 1);
+    if (!isset($r['err']) && !empty($r['recs'][0])) {
+        $x = $r['recs'][0];
+        $o['title'] = $clean($x['a'] . ($x['n'] !== '' ? ' ' . $x['n'] : '') . ($x['p'] !== '' ? ': ' . $x['p'] : ''));
+        if (!empty($x['aut'][0])) $o['author'] = $flip($x['aut'][0]);
+        if (!empty($x['ser'][0])) { $o['series'] = $clean(preg_replace('/\s*;.*$/u', '', $x['ser'][0])); $o['vol'] = $clean((string) ($x['serv'][0] ?? '')); }
+        if (preg_match('/\d{4}/', (string) $x['year'], $m)) $o['year'] = $m[0];
+        $o['src'] = 'DNB';
+    }
+    if ($o['author'] === '' || $o['title'] === '') { // Open Library liefert auch die Kennung der Autor:in
+        $j = http_json('https://openlibrary.org/api/books?format=json&jscmd=data&bibkeys=ISBN:' . $isbn, 8) ?? [];
+        $b = $j['ISBN:' . $isbn] ?? null;
+        if (is_array($b)) {
+            if ($o['title'] === '') $o['title'] = $clean((string) ($b['title'] ?? ''));
+            $a = $b['authors'][0] ?? null;
+            if ($o['author'] === '' && is_array($a) && !empty($a['name'])) { $o['author'] = trim((string) $a['name']); if (preg_match('~/authors/(OL\d+A)~', (string) ($a['url'] ?? ''), $m)) $o['olid'] = $m[1]; }
+            if ($o['year'] === '' && preg_match('/\d{4}/', (string) ($b['publish_date'] ?? ''), $m)) $o['year'] = $m[0];
+            if ($o['src'] === '') $o['src'] = 'Open Library';
+        }
+    }
+    if ($o['author'] === '' || $o['title'] === '') {
+        $key = trim((string) cfg('google_books_key', ''));
+        $g = http_json('https://www.googleapis.com/books/v1/volumes?maxResults=1&q=isbn:' . $isbn . ($key !== '' ? '&key=' . rawurlencode($key) : ''), 8) ?? [];
+        $v = $g['items'][0]['volumeInfo'] ?? null;
+        if (is_array($v)) {
+            if ($o['title'] === '') $o['title'] = $clean((string) ($v['title'] ?? ''));
+            if ($o['author'] === '' && !empty($v['authors'][0])) $o['author'] = trim((string) $v['authors'][0]);
+            if ($o['year'] === '' && preg_match('/\d{4}/', (string) ($v['publishedDate'] ?? ''), $m)) $o['year'] = $m[0];
+            if ($o['src'] === '') $o['src'] = 'Google Books';
+        }
+    }
+    return $o['title'] !== '' || $o['author'] !== '' ? $o : null;
+}
