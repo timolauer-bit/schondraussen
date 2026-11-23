@@ -1423,10 +1423,10 @@
           direct: function (n) { var a = get(n); if (a) { a.d = true; a.c += 5; } },
           track: function (n, album, title) { var a = get(n); if (!a) return; a.c++; var tk = String(title || '').toLowerCase().trim() || ('#' + a.c), ak = String(album || '').toLowerCase().trim(); a.tr[tk] = 1; if (ak) { (a.al[ak] = a.al[ak] || {})[tk] = 1; } },
           result: function (extra) {
-            var ok = [], sk = 0;
-            order.forEach(function (k) { var a = A[k], albums = Object.keys(a.al), hasAl = albums.some(function (x) { return Object.keys(a.al[x]).length >= MUSIC_MIN; }); if (a.d || hasAl || (!albums.length && Object.keys(a.tr).length >= MUSIC_MIN)) ok.push(a); else sk++; });
-            ok.sort(function (x, y) { return y.c - x.c || x.i - y.i; });
-            return { items: ok.map(function (a) { return { n: a.n, k: 'artist' }; }).concat(extra || []), skipped: sk, note: sk ? 'Musiker:innen mit nur einzelnen Songs weggelassen' : '' };
+            var ok = [], rest = [], by = function (x, y) { return y.c - x.c || x.i - y.i; };
+            order.forEach(function (k) { var a = A[k], albums = Object.keys(a.al), hasAl = albums.some(function (x) { return Object.keys(a.al[x]).length >= MUSIC_MIN; }); if (a.d || hasAl || (!albums.length && Object.keys(a.tr).length >= MUSIC_MIN)) ok.push(a); else rest.push(a); });
+            ok.sort(by); rest.sort(by); var pick = function (a) { return { n: a.n, k: 'artist' }; };
+            return { items: ok.map(pick).concat(extra || []), skipped: rest.length, note: rest.length ? 'Musiker:innen mit nur einzelnen Songs weggelassen' : '', rest: rest.map(pick) };
           }
         };
       }
@@ -1483,7 +1483,7 @@
             });
             return m.result([]);
           } },
-        { id: 'tunemymusic', name: 'Apple Music (über TuneMyMusic)', group: 'Musik', cats: ['artist'], accept: '.csv,text/csv', beta: true,
+        { id: 'tunemymusic', name: 'Apple Music (über TuneMyMusic)', group: 'Musik', cats: ['artist'], accept: '.csv,text/csv',
           guide: 'Apple Music hat selbst keinen Export. Über TuneMyMusic (tunemymusic.com/de/transfer/apple-music-to-file) kannst du deine Mediathek oder Playlists als Datei (CSV) speichern. Das geht auch mit anderen Diensten als Quelle (z. B. Deezer, Tidal, YouTube Music, Amazon Music). Übernommen werden Musiker:innen, von denen mindestens 3 Titel eines Albums in der Datei stehen.',
           detect: function (fs) { return heads(fs).some(function (x) { var h = x.c.head; return (h.indexOf('track name') >= 0 || h.indexOf('track') >= 0) && (h.indexOf('artist name') >= 0) && h.indexOf('playlist name') >= 0; }); },
           parse: function (fs) {
@@ -1644,8 +1644,11 @@
         var cnt = {}; items.forEach(function (it) { cnt[it.k] = (cnt[it.k] || 0) + 1; });
         var parts = ALLC.filter(function (k) { return cnt[k]; }).map(function (k) { return pl(cnt[k], ILBL[k][0], ILBL[k][1]); });
         var eps = Object.keys(iEps).reduce(function (a, k) { return a + iEps[k].length; }, 0);
+        var rest = (r.rest || []).filter(function (it) { return impCat(it.k); });
+        if (rest.length) { var rb = h('button', { class: 'btn ghost small', type: 'button', style: 'margin-top:10px' }, 'Weggelassene trotzdem hinzufügen (' + rest.length + ')'); rb.addEventListener('click', function () { var k = rest[0].k, ta = iBoxes[k], add = rest.map(function (x) { return x.n; }); if (ta) { ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + add.join('\n'); ta.dispatchEvent(new Event('input')); } else iBox(k, add); rb.remove(); }); iPrev.append(rb); }
+        if (!items.length && rest.length) { iMsg.className = 'msg'; iMsg.textContent = found + 'Alle ' + pl(rest.length, 'Musiker:in', 'Musiker:innen') + ' kommen in der Datei nur mit einzelnen Songs vor (zum Beispiel in einer Playlist), deshalb habe ich niemanden vorausgewählt. Mit „Weggelassene trotzdem hinzufügen“ übernimmst du sie in die Liste darunter und kannst sie dort prüfen.'; return; }
         if (!items.length) { iMsg.className = 'msg err'; iMsg.textContent = found + 'In der Datei habe ich nichts Passendes gefunden.' + (f.id !== 'list' ? ' Stimmt die Quelle? Mit „Automatisch erkennen“ probiere ich alle Formate.' : ''); return; }
-        iMsg.className = 'msg'; iMsg.textContent = found + 'Gefunden: ' + parts.join(', ') + (eps ? ' und ' + pl(eps, 'gesehene Folge', 'gesehene Folgen') : '') + (r.skipped ? '; ' + r.skipped + ' übersprungen' : '') + (r.note ? ' (' + r.note + ')' : '') + '. Prüfe die Namen unten und lösche, was du nicht willst; lange Listen stehen nach Häufigkeit sortiert, das Wichtigste oben.';
+        iMsg.className = 'msg'; iMsg.textContent = found + 'Gefunden: ' + parts.join(', ') + (eps ? ' und ' + pl(eps, 'gesehene Folge', 'gesehene Folgen') : '') + (r.skipped ? '; ' + r.skipped + ' übersprungen' : '') + (r.note ? ' (' + r.note + (rest.length ? ', per Knopf unten trotzdem übernehmbar' : '') + ')' : '') + '. Prüfe die Namen unten und lösche, was du nicht willst; lange Listen stehen nach Häufigkeit sortiert, das Wichtigste oben.';
       }).catch(function (e) { iMsg.className = 'msg err'; iMsg.textContent = e.message || 'Die Datei konnte nicht gelesen werden.'; });
     });
     iGo.addEventListener('click', function () {

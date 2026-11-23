@@ -26,7 +26,8 @@ const CASES = [
   { files: ['exportify_playlist.csv'], fmt: 'spotify', items: ['artist:Radiohead'], skipped: 1 },
   { files: ['lastfm_ghan.csv'], fmt: 'lastfm', items: ['artist:Radiohead'], skipped: 1 },
   { files: ['lastfm_scrobbles_noheader.csv'], fmt: 'lastfm', items: ['artist:Portishead'], skipped: 1 },
-  { files: ['tunemymusic_applemusic.csv'], fmt: 'tunemymusic', items: ['artist:Blind Guardian'], skipped: 1 }, // Aufbau angenommen, noch ohne echten Export
+  { files: ['tunemymusic_applemusic.csv'], fmt: 'tunemymusic', items: ['artist:Blind Guardian'], skipped: 1 },
+  { files: ['apple_music_tunemymusic.csv'], fmt: 'tunemymusic', items: [], skipped: 84 }, // echter Export (Playlist, nur einzelne Songs), 23.11.2026
   { files: ['imdb_watchlist.csv'], fmt: 'imdb', items: ['film:Der Pate', 'series:Dark'], skipped: 2 },
   { files: ['letterboxd-export.zip'], fmt: 'letterboxd', items: ['film:The Godfather', 'film:Alien', 'film:Dune: Part Two'] },
   { files: ['NetflixViewingHistory.csv'], fmt: 'netflix', items: ['series:Dark', 'series:Haus des Geldes', 'film:Star Wars: Episode IV – Eine neue Hoffnung', 'series:Stranger Things', 'film:Der Schuh des Manitu'] },
