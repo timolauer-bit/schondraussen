@@ -1534,6 +1534,17 @@
           guide: 'Trakt: „Settings“ → „Data“ → „Export Your Data“. Lade die ZIP-Datei oder einzelne JSON-Dateien daraus (z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Exporte anderer Dienste klappen oft auch, wenn Serien und Filme Felder „title“ und „ids“ haben.',
           detect: function (fs) { return fs.some(function (f) { return /\.json$/i.test(f.name) && /"(show|movie)"\s*:\s*\{/.test(f.text.slice(0, 50000)) && /"trakt"\s*:/.test(f.text.slice(0, 50000)); }); },
           parse: function (fs) { return { items: traktParse(fs.filter(function (f) { return /\.json$/i.test(f.name) || /^\s*[\[{]/.test(bom(f.text)); })), skipped: 0 }; } },
+        { id: 'simkl', name: 'Simkl', group: 'Filme und Serien', cats: ['film', 'series'], accept: '.zip,.csv,application/zip,text/csv',
+          guide: 'Simkl: Einstellungen → „Import & Export“ (bzw. „Data“) → Backup als CSV herunterladen. Serien und Anime kommen zu Serien, Filme zu Filmen. Einträge, die du auf Simkl abgebrochen hast („dropped“), werden übersprungen.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('simkl_id') >= 0; }); },
+          parse: function (fs) {
+            var t = tally(), sk = 0;
+            heads(fs).forEach(function (x) {
+              var h = x.c.head, ti = h.indexOf('title'), ty = h.indexOf('type'), wl = h.indexOf('watchlist'); if (ti < 0 || h.indexOf('simkl_id') < 0) return;
+              x.c.rows.forEach(function (r) { var n = (r[ti] || '').trim(), k = (r[ty] || '').toLowerCase(); if (!n) return; if (wl >= 0 && /dropped/i.test(r[wl] || '')) { sk++; return; } t.add(n, /movie|film/.test(k) ? 'film' : 'series'); });
+            });
+            return { items: t.list(false), skipped: sk, note: sk ? 'abgebrochene Einträge übersprungen' : '' };
+          } },
         { id: 'serializd', name: 'Serializd', group: 'Filme und Serien', cats: ['series'], accept: '.csv,text/csv',
           guide: 'Serializd hat selbst keinen Export. Nutze dafür die externe Seite Listizd (huggingface.co/spaces/Eleonora705/Listizd): dort deinen Serializd-Benutzernamen eingeben und die Liste als CSV herunterladen. Übernommen werden die Serien der Liste.',
           detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('serializd url') >= 0; }); },
@@ -2104,7 +2115,7 @@
       'Kalender aller angekündigten Veröffentlichungen mit Kategorie-Chips zum Ein- und Ausblenden und Vorschau je Tag, dazu ein persönliches Kalender-Abo (ICS)',
       'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
       'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',
-      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Apple Music (über TuneMyMusic), Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt, Serializd und Podcast-Apps (OPML); Datenexport',
+      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Apple Music (über TuneMyMusic), Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt, Simkl, Serializd und Podcast-Apps (OPML); Datenexport',
       'Ideen und Bugmeldungen (mit Kategorie, abstimmbar) und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
       'Mehrere Oberflächen (Skins), dazu experimentelle Themes (Standard, 8-Bit), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster und im Chat']));
     sec('Funktionen für den Admin', ul([

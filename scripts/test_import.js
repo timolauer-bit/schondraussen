@@ -32,6 +32,7 @@ const CASES = [
   { files: ['NetflixViewingHistory.csv'], fmt: 'netflix', items: ['series:Dark', 'series:Haus des Geldes', 'film:Star Wars: Episode IV – Eine neue Hoffnung', 'series:Stranger Things', 'film:Der Schuh des Manitu'] },
   { files: ['ViewingActivity.csv'], fmt: 'netflix', items: ['series:Dark', 'film:Alien'], skipped: 1 },
   { files: ['trakt_watched-shows.json', 'trakt_watchlist-movies.json'], fmt: 'trakt', items: ['series:Severance[2]', 'film:Alien'] },
+  { files: ['SimklBackup.csv'], fmt: 'simkl', items: ['series:The Simpsons', 'series:Sousou no Frieren', 'film:The Dog Stars'] }, // echter Export (23.11.2026)
   { files: ['serializd-list.csv'], fmt: 'serializd', items: ['series:The Lord of the Rings: The Rings of Power'] }, // echter Export über Listizd (23.11.2026)
   { files: ['podcasts.opml'], fmt: 'opml', items: ['podcast:Lage der Nation', 'podcast:Fest & Flauschig'] },
   { files: ['eigene_liste.txt'], fmt: null, list: 'artist', items: ['artist:Radiohead', 'artist:Blind Guardian', 'artist:Nightwish'] },
