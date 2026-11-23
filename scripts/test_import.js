@@ -19,7 +19,7 @@ async function load(names) {
 }
 const fmt = items => items.map(i => i.k + ':' + i.n + (i.eps ? '[' + i.eps.length + ']' : ''));
 const CASES = [
-  { files: ['goodreads_library_export.csv'], fmt: 'goodreads', items: ['author:Marc-Uwe Kling', 'author:Daniel Suarez'] },
+  { files: ['goodreads_library_export.csv'], fmt: 'goodreads', items: ['author:Pierre Christin', 'author:Roger Leloup', 'author:Daniel Suarez', 'author:Stephen King'] }, // Aufbau aus einem echten Export (23.11.2026), Zeilen gekürzt
   { files: ['storygraph_export.csv'], fmt: 'storygraph', items: ['author:Terry Pratchett', 'author:Neil Gaiman'] },
   { files: ['StreamingHistory_music_0.json', 'StreamingHistory_podcast_0.json'], fmt: 'spotify', items: ['artist:Radiohead', 'artist:Nightwish', 'podcast:Lage der Nation'] },
   { files: ['YourLibrary.json'], fmt: 'spotify', items: ['artist:Kraftwerk', 'podcast:Fest & Flauschig', 'artist:Blind Guardian', 'artist:Nightwish'] },
