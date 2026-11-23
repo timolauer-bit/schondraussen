@@ -39,5 +39,10 @@ Erlaubte Knopfklassen (Stand 17.11.2026):
 
 Neue Klassen nur, wenn keine dieser Arten passt, und dann hier eintragen. Bei einer kompletten Neugestaltung des Designs diese Liste mit Timo durchgehen (er möchte dann daran erinnert werden).
 
+## Import-Formate
+Alle Import-Formate stehen in `app.js` im Block zwischen `// IMPORTFORMATE-START` und `// IMPORTFORMATE-ENDE` (Variable `IMPF`), ohne Abhängigkeit zum Rest der Seite. Jedes Format ist ein Eintrag mit `id`, `name`, `group` (Überschrift im Dropdown), `cats`, `accept`, `guide` (Anleitung, wie man an den Export kommt), `beta` (noch nicht mit echter Datei geprüft, zeigt „(neu)“), `detect(files)` und `parse(files, cat)`. Die Datei wird nur im Browser gelesen, an den Server gehen Namen über `a=import` (bei gesehenen Folgen `a=trakt`).
+
+Neues Format: anonymisierte Beispieldatei nach `tests/import/` legen, Fall in `scripts/test_import.js` ergänzen, Eintrag in `IMPF` anlegen und `node scripts/test_import.js` laufen lassen (prüft standardmäßig `public/dev/app.js`). Reihenfolge in `F` ist auch die Reihenfolge der automatischen Erkennung. Sobald ein Format mit einer echten Datei geprüft ist, `beta` entfernen.
+
 ## Pushen nur auf Freigabe (ab 16.11.2026)
 Jeder Push löst einen Deploy aus (seit 17.11.2026 ohne Wartungsseite; während der 3–4 Minuten können einzelne Bereiche kurz Fehler zeigen, vor allem wenn neue Dateien dazukommen). Änderungen werden deshalb nur lokal committet und gesammelt. Gepusht wird erst, wenn Timo es ausdrücklich freigibt („hochladen“, „pushen“).

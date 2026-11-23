@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<opml version="1.0">
+  <head><title>Pocket Casts Feeds</title></head>
+  <body>
+    <outline text="feeds">
+      <outline type="rss" text="Lage der Nation" xmlUrl="https://example.org/ldn.xml" />
+      <outline text="Fest &amp; Flauschig" title="Fest &amp; Flauschig" type="rss" xmlUrl='https://example.org/ff.xml'/>
+    </outline>
+  </body>
+</opml>

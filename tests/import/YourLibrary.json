@@ -1,0 +1,34 @@
+{
+  "tracks": [
+    {
+      "artist": "Blind Guardian",
+      "album": "Imaginations",
+      "track": "Bright Eyes",
+      "uri": "spotify:track:x"
+    }
+  ],
+  "albums": [
+    {
+      "artist": "Nightwish",
+      "album": "Oceanborn",
+      "uri": "spotify:album:y"
+    }
+  ],
+  "shows": [
+    {
+      "name": "Fest & Flauschig",
+      "publisher": "Spotify Studios",
+      "uri": "spotify:show:z"
+    }
+  ],
+  "episodes": [],
+  "bannedTracks": [],
+  "artists": [
+    {
+      "name": "Kraftwerk",
+      "uri": "spotify:artist:k"
+    }
+  ],
+  "bannedArtists": [],
+  "other": []
+}

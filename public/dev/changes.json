@@ -1,4 +1,5 @@
 [
  "Info → neuer Reiter „FAQ“ (häufige Fragen, durchsuchbar). Admin → neuer Reiter „FAQ“ zum Bearbeiten, Anlegen, Löschen und Umsortieren von Themenbereichen und Beiträgen.",
- "Einstellungen → Darstellung → neue Karte „Schrift“: vier Schriftarten (Aktuell, Systemschrift, Humanistisch, Neo-Grotesk) mit Vorschau, gemerkt im Browser; Zahlen überall mit gleicher Ziffernbreite."
+ "Einstellungen → Darstellung → neue Karte „Schrift“: vier Schriftarten (Aktuell, Systemschrift, Humanistisch, Neo-Grotesk) mit Vorschau, gemerkt im Browser; Zahlen überall mit gleicher Ziffernbreite.",
+ "Einstellungen → Import: eine Karte mit Auswahl „Quelle“ (Automatisch erkennen, Eigene Liste, Goodreads, StoryGraph, Spotify, Last.fm, IMDb, Letterboxd, Netflix, Trakt, Podcast-Apps per OPML) statt einzelner Knöpfe; Vorschau je Kategorie, ZIP-Dateien direkt."
 ]

@@ -1277,145 +1277,300 @@
     box.append(h('div', { class: 'wide2' }, h('p', { class: 'label' }, 'E-Mail-Benachrichtigungen'), D.email ? null : h('p', { class: 'warnbox', style: 'margin:0 0 10px' }, 'Dein Konto hat keine E-Mail-Adresse, deshalb bekommst du keine Benachrichtigungen per Mail. Den Kalender und die Einträge siehst du weiter hier auf der Seite.'), h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Du bekommst Mails nur zu Einträgen, bei denen die Glocke an ist (sie sitzt im Kopf jedes Eintrags). Jede Mail enthält einen Abmeldelink.'),
       h('label', { style: 'display:flex;gap:8px;align-items:center' }, cb, 'E-Mail-Benachrichtigungen einschalten'), opts,
       h('p', { style: 'margin:14px 0 0' }, h('button', { class: 'btn ghost small', type: 'button', onclick: function () { tm.className = 'msg'; tm.textContent = 'Sende …'; api('/api/data.php?a=testmail', {}).then(function (r) { tm.className = 'msg' + (r.ok ? '' : ' err'); tm.textContent = r.msg || r.error || ''; }); } }, 'Vorschau-Mail an mich senden'), ' ', tm)));
-    var imp = h('div', { class: 'wide2' }), impBtns = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }), impPanels = h('div'); imp.append(impBtns, impPanels);
-    function splitCsv(l, dl) { var o = [], cur = '', q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === dl && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; }
-    function unwrapRow(l) { return (l.length > 1 && l[0] === '"' && l[l.length - 1] === '"' && l.indexOf('""') > -1) ? l.slice(1, -1).replace(/""/g, '"') : l; }
-    function imdbFrom(text) { // IMDb-Export (Listen/Bewertungen als CSV): Titel samt Art (Film oder Serie), Folgen und Spiele werden übersprungen
-      var ls = text.replace(/^﻿/, '').split(/\r?\n/).filter(function (x) { return x.trim(); }); if (ls.length < 2) return null;
-      var hd = splitCsv(unwrapRow(ls[0]), ',').map(function (x) { return x.trim().toLowerCase(); }), ti = hd.indexOf('title'), ty = hd.indexOf('title type'); if (ti < 0 || ty < 0) return null;
-      var items = [], skipped = 0;
-      ls.slice(1).forEach(function (l) {
-        var c = splitCsv(unwrapRow(l), ','), n = (c[ti] || '').trim(), t = (c[ty] || '').toLowerCase(); if (!n) return;
-        if (/episode|folge|spiel|game/.test(t)) { skipped++; return; }
-        items.push({ n: n, k: /serie|series/.test(t) ? 'series' : 'film' });
-      });
-      return { items: items, skipped: skipped };
-    }
-    function namesFrom(text, fname) {
-      var out = [];
-      function add(v) { if (typeof v === 'string' && v.trim()) out.push(v.trim()); }
-      var t = text.replace(/^\ufeff/, '');
-      if (/\.json$/i.test(fname) || /^\s*[\[{]/.test(t)) { try { (function walk(o) { if (Array.isArray(o)) o.forEach(function (x) { if (typeof x === 'string') add(x); else walk(x); }); else if (o && typeof o === 'object') { var hit = false, hasArr = Object.keys(o).some(function (k) { return Array.isArray(o[k]); }); ['artistName', 'artist_name', 'artist', 'name', 'Artist Name(s)'].forEach(function (k) { if (k === 'name' && hasArr) return; if (!hit && typeof o[k] === 'string') { add(o[k]); hit = true; } else if (!hit && o[k] && typeof o[k] === 'object' && typeof o[k].name === 'string') { add(o[k].name); hit = true; } }); if (!hit) Object.keys(o).forEach(function (k) { walk(o[k]); }); } })(JSON.parse(t)); return out; } catch (_) {} }
-      var lines = t.split(/\r?\n/).filter(function (l) { return l.trim(); });
-      if (/\.csv$/i.test(fname) || (lines[0] && lines[0].indexOf(',') > -1 && /artist|name|interpret/i.test(lines[0]))) {
-        var dl = lines[0].indexOf(',') > -1 ? ',' : (lines[0].indexOf('\t') > -1 ? '\t' : ';'), hd = lines[0].split(dl).map(function (x) { return x.replace(/^"|"$/g, '').toLowerCase(); }), ci = 0; hd.forEach(function (x, i) { if (/artist|interpret|name/.test(x) && !ci && i >= 0 && ci === 0 && /artist|interpret/.test(x)) ci = i; });
-        if (!ci) hd.forEach(function (x, i) { if (!ci && x === 'name') ci = i; });
-        lines.slice(1).forEach(function (l) { var c = splitCsv(unwrapRow(l), dl)[ci] || ''; c = c.replace(/^"|"$/g, ''); c.split(/;\s*/).forEach(add); });
-        return out;
-      }
-      lines.forEach(add); return out;
-    }
-    var IMPCATS = [['author', 'Bücher', 'Titel', 'Titel von Büchern', 'Der Name der Reihe\nDie Känguru-Chroniken'], ['artist', 'Musik', 'Musiker:in', 'Namen von Musiker:innen', 'Radiohead\nBlind Guardian\nNightwish'], ['film', 'Filme', 'Film', 'Titel von Filmen', 'Der Pate\nAlien'], ['series', 'Serien', 'Serie', 'Titel von Serien', 'Dark\nBreaking Bad']];
-    function mkImporter(label, fixed, hintFn, cls) {
-      var ifile = h('input', { type: 'file', accept: '.json,.csv,.txt,text/plain,application/json,text/csv', 'aria-label': 'Datei laden' }), itext = h('textarea', { rows: '6', 'aria-label': 'Namen, einer pro Zeile', style: 'width:100%;margin-top:8px' }), imsg = h('span', { class: 'msg', style: 'margin:0' }), ipanel = h('div', { hidden: true, style: 'margin-top:10px' }), sel = null, hint = h('p', { class: 'hint' });
-      var kindOf = {};
-      function cat() { var v = fixed || (sel ? sel.value : 'artist'); return IMPCATS.filter(function (x) { return x[0] === v; })[0]; }
-      function refresh() { var c = cat(); hint.textContent = hintFn(c); itext.placeholder = c[4]; }
-      if (!fixed) { sel = h('select', { 'aria-label': 'Kategorie', onchange: refresh }); IMPCATS.forEach(function (x) { sel.append(h('option', { value: x[0] }, x[1])); }); sel.value = 'artist'; }
-      ifile.addEventListener('change', function () {
-        var f = ifile.files && ifile.files[0]; if (!f) return;
-        if (f.size > 5 * 1024 * 1024) { imsg.className = 'msg err'; imsg.textContent = 'Die Datei ist größer als 5 MB.'; return; }
-        var rd = new FileReader(); rd.onload = function () {
-          var im = fixed ? null : imdbFrom(String(rd.result || '')); kindOf = {};
-          if (im) { var nm = [], sn = {}, nF = 0, nS = 0; im.items.forEach(function (it) { var k = it.n.toLowerCase(); if (sn[k]) return; sn[k] = 1; kindOf[k] = it.k; nm.push(it.n); if (it.k === 'series') nS++; else nF++; }); itext.value = nm.join('\n'); imsg.className = 'msg'; imsg.textContent = nm.length ? (pl(nF, 'Film', 'Filme') + ' und ' + pl(nS, 'Serie', 'Serien') + ' erkannt' + (im.skipped ? ', ' + im.skipped + ' übersprungen (Folgen, Spiele)' : '') + '. Filme und Serien kommen beim Importieren automatisch in die richtige Liste. Du kannst sie unten noch ändern.') : 'In der Datei habe ich keine Titel gefunden.'; return; }
-          var l = namesFrom(String(rd.result || ''), f.name), seen = {}; l = l.filter(function (x) { var k = x.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; }); itext.value = l.join('\n'); imsg.className = 'msg'; imsg.textContent = l.length ? ((l.length === 1 ? '1 Name erkannt. Du kannst ihn unten noch ändern.' : l.length + ' Namen erkannt. Du kannst sie unten noch ändern.')) : 'In der Datei habe ich keine Namen gefunden.'; };
-        rd.onerror = function () { imsg.className = 'msg err'; imsg.textContent = 'Die Datei konnte nicht gelesen werden.'; }; rd.readAsText(f);
-      });
-      var kids = [hint];
-      if (sel) kids.push(h('p', { style: 'margin:8px 0' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, 'Kategorie', sel)));
-      kids.push(ifile, itext, h('p', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0' }, h('button', { class: 'btn', type: 'button', onclick: function () {
-        var l = itext.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean); if (!l.length) { imsg.className = 'msg err'; imsg.textContent = 'Keine Namen gefunden.'; return; }
-        var c = cat(); imsg.className = 'msg'; imsg.textContent = 'Importiere …';
-        var groups = {}, order = []; l.forEach(function (x) { var k = kindOf[x.toLowerCase()] || c[0]; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(x); });
-        var parts = [], failed = null;
-        function runGroup(i) {
-          if (i >= order.length) { imsg.className = 'msg' + (failed ? ' err' : ''); imsg.textContent = failed || (parts.join(' ') || 'Nichts hinzugefügt.'); if (!failed) itext.value = ''; load(function () { nav(); }); return; }
-          var k = order[i], cc = IMPCATS.filter(function (x) { return x[0] === k; })[0];
-          api('/api/data.php?a=import', { names: groups[k], type: k }).then(function (r) {
-            if (!r.ok) { failed = (parts.length ? parts.join(' ') + ' ' : '') + (cc[1] + ': ' + (r.msg || r.error || 'Das hat nicht geklappt.')); runGroup(order.length); return; }
-            parts.push(cc[1] + ': ' + r.added + ' hinzugefügt' + (r.had ? ', ' + r.had + ' schon auf der Liste' : '') + (r.over ? ', ' + r.over + ' nicht mehr möglich (Grenze 1.000 pro Liste)' : '') + '.'); runGroup(i + 1);
-          });
+    // IMPORTFORMATE-START – eigenständiger Block (keine Seitenfunktionen), getestet mit scripts/test_import.js und den Beispielen in tests/import/
+    // Neues Format: Eintrag in F mit id, name, group, cats, accept, guide, beta, detect(files), parse(files, cat). files = [{ name, text }] (ZIP-Dateien sind schon entpackt).
+    // parse liefert { items: [{ n: Name, k: Kategorie, eps?: [[Staffel, Folge], …] }], skipped: Zahl, note: Text }.
+    var IMPF = (function () {
+      function bom(t) { return String(t || '').replace(/^﻿/, ''); }
+      function splitCsv(l, dl) { var o = [], cur = '', q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === dl && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; }
+      function unwrapRow(l) { return (l.length > 1 && l[0] === '"' && l[l.length - 1] === '"' && l.indexOf('""') > -1) ? l.slice(1, -1).replace(/""/g, '"') : l; }
+      function csv(text) { // { head: Spaltennamen klein, rows: [[…]] }; Zeilenumbrüche in Anführungszeichen erlaubt, Trenner , ; oder Tab
+        var t = bom(text), first = t.split(/\r?\n/, 1)[0] || '', dl = [',', ';', '\t'].sort(function (a, b) { return splitCsv(first, b).length - splitCsv(first, a).length; })[0];
+        var rows = [], row = [], cur = '', q = false;
+        for (var i = 0; i < t.length; i++) {
+          var ch = t[i];
+          if (q) { if (ch === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; continue; }
+          if (ch === '"' && cur === '') q = true;
+          else if (ch === dl) { row.push(cur); cur = ''; }
+          else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(function (c) { return c.trim(); })) rows.push(row); row = []; }
+          else cur += ch;
         }
-        runGroup(0);
-      } }, 'Importieren'), imsg));
-      ipanel.append.apply(ipanel, kids); refresh();
-      impBtns.append(h('button', { class: 'btn ghost small' + (cls ? ' ' + cls : ''), type: 'button', 'aria-expanded': 'false', onclick: function () { var open = ipanel.hidden; document.querySelectorAll('.imppanel').forEach(function (p) { p.hidden = true; }); ipanel.hidden = !open; impBtns.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); }); if (open) this.setAttribute('aria-expanded', 'true'); } }, label)); impPanels.append(ipanel);
-      ipanel.classList.add('imppanel');
-    }
-    mkImporter('Listen importieren', null, function (c) { return 'Wähle die Kategorie und füge ' + c[3] + ' ein, einen pro Zeile, oder lade eine Datei (JSON, CSV oder Text). Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern. Die Angaben dazu werden danach nach und nach geladen, bei langen Listen kann das einige Stunden dauern.'; });
-    mkImporter('Spotify-Import', 'artist', function () { return 'Importiere die Musiker:innen aus deinem Spotify-Datenexport (JSON oder CSV). Die erkannten Namen erscheinen unten, du kannst sie vor dem Import prüfen und ändern. Eine ausführliche Schritt-für-Schritt-Anleitung folgt in Kürze.'; });
-    box.append(imp);
-    // Trakt-Import (Export-ZIP oder einzelne JSON-Dateien), alles im Browser ausgewertet
-    var tImp = h('div', { class: 'wide2' }), tFile = h('input', { type: 'file', multiple: true, accept: '.zip,.json,application/zip,application/json', 'aria-label': 'Trakt-Export laden' }), tMsg = h('p', { class: 'msg', role: 'status' }), tGo = h('button', { class: 'btn', type: 'button', hidden: true }, 'Importieren'), tPanel = h('div', { hidden: true, style: 'margin-top:10px' }), tItems = [];
-    function zipRead(buf) {
-      var dv = new DataView(buf), u8 = new Uint8Array(buf), out = [], eocd = -1, i;
-      for (i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 70000); i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
-      if (eocd < 0) return Promise.reject(new Error('Das ist keine gültige ZIP-Datei.'));
-      var n = dv.getUint16(eocd + 10, true), p0 = dv.getUint32(eocd + 16, true), jobs = [];
-      for (i = 0; i < n && i < 500; i++) {
-        if (dv.getUint32(p0, true) !== 0x02014b50) break;
-        var meth = dv.getUint16(p0 + 10, true), cs = dv.getUint32(p0 + 20, true), us = dv.getUint32(p0 + 24, true), nl = dv.getUint16(p0 + 28, true), el = dv.getUint16(p0 + 30, true), cl = dv.getUint16(p0 + 32, true), lo = dv.getUint32(p0 + 42, true);
-        var name = new TextDecoder().decode(u8.subarray(p0 + 46, p0 + 46 + nl)); p0 += 46 + nl + el + cl;
-        if (!/\.json$/i.test(name) || us > 60 * 1024 * 1024) continue;
-        var ds = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), data = u8.subarray(ds, ds + cs);
-        (function (nm, m, d) {
-          if (m === 0) jobs.push(Promise.resolve({ name: nm, text: new TextDecoder().decode(d) }));
-          else if (m === 8 && window.DecompressionStream) jobs.push(new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text().then(function (t) { return { name: nm, text: t }; }));
-        })(name, meth, data);
+        row.push(cur); if (row.some(function (c) { return c.trim(); })) rows.push(row);
+        rows = rows.map(function (r) { return r.length === 1 && r[0].indexOf(dl) > -1 ? splitCsv(unwrapRow(r[0]), dl) : r; }); // ganze Zeile in Anführungszeichen (Excel)
+        var head = (rows.shift() || []).map(function (x) { return x.trim().toLowerCase(); });
+        return { head: head, rows: rows };
       }
-      if (!jobs.length) return Promise.reject(new Error(window.DecompressionStream ? 'In der ZIP-Datei habe ich keine JSON-Dateien gefunden.' : 'Dein Browser kann ZIP-Dateien nicht entpacken. Entpacke sie bitte selbst und wähle die JSON-Dateien aus.'));
-      return Promise.all(jobs);
-    }
-    function traktParse(docs) {
-      var map = {}, order = [];
-      function get(type, name, year) { var k = type + '|' + name.toLowerCase(); if (!map[k]) { map[k] = { type: type, name: name, year: year || null, eps: {} }; order.push(k); } return map[k]; }
-      function walk(o, hint) {
-        if (Array.isArray(o)) { o.forEach(function (x) { walk(x, hint); }); return; }
-        if (!o || typeof o !== 'object') return;
-        if (o.show && typeof o.show.title === 'string') {
-          var it = get('series', o.show.title, o.show.year);
-          if (o.episode && typeof o.episode.number === 'number') it.eps[(o.episode.season | 0) + 'x' + o.episode.number] = [o.episode.season | 0, o.episode.number];
-          (o.seasons || []).forEach(function (sn) { (sn.episodes || []).forEach(function (ep) { if (typeof ep.number === 'number') it.eps[(sn.number | 0) + 'x' + ep.number] = [sn.number | 0, ep.number]; }); });
-          return;
+      function col(hd, names) { for (var i = 0; i < names.length; i++) { var j = hd.indexOf(names[i]); if (j >= 0) return j; } return -1; }
+      function isCsv(f) { return /\.(csv|tsv|txt)$/i.test(f.name) || (!/^\s*[\[{<]/.test(bom(f.text)) && bom(f.text).split(/\r?\n/, 1)[0].indexOf(',') > -1); }
+      function json(f) { if (!/\.json$/i.test(f.name) && !/^\s*[\[{]/.test(bom(f.text))) return null; try { return JSON.parse(bom(f.text)); } catch (_) { return null; } }
+      function heads(files) { return files.filter(isCsv).map(function (f) { return { f: f, c: csv(f.text) }; }); }
+      function tally() { // Zähler: gleiche Namen (ohne Groß/klein) zusammenfassen, nach Häufigkeit sortieren
+        var m = {}, order = [];
+        return {
+          add: function (n, k, w) { n = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); if (!n) return; var key = k + '|' + n.toLowerCase(); if (!m[key]) { m[key] = { n: n, k: k, c: 0, i: order.length }; order.push(key); } m[key].c += w || 1; return m[key]; },
+          list: function (sorted) { var a = order.map(function (x) { return m[x]; }); if (sorted) a.sort(function (x, y) { return y.c - x.c || x.i - y.i; }); return a.map(function (x) { var o = { n: x.n, k: x.k }; if (x.eps) o.eps = x.eps; return o; }); }
+        };
+      }
+      function walk(o, fn) { if (Array.isArray(o)) o.forEach(function (x) { walk(x, fn); }); else if (o && typeof o === 'object') { if (fn(o) !== false) Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') walk(o[k], fn); }); } }
+      function namesFrom(text, fname) { // allgemeine Liste: Text (eine Zeile pro Name), CSV mit Namensspalte oder JSON
+        var out = [];
+        function add(v) { if (typeof v === 'string' && v.trim()) out.push(v.trim()); }
+        var t = bom(text);
+        if (/\.json$/i.test(fname) || /^\s*[\[{]/.test(t)) { try { (function w(o) { if (Array.isArray(o)) o.forEach(function (x) { if (typeof x === 'string') add(x); else w(x); }); else if (o && typeof o === 'object') { var hit = false, hasArr = Object.keys(o).some(function (k) { return Array.isArray(o[k]); }); ['artistName', 'artist_name', 'artist', 'name', 'title', 'Artist Name(s)'].forEach(function (k) { if ((k === 'name' || k === 'title') && hasArr) return; if (!hit && typeof o[k] === 'string') { add(o[k]); hit = true; } else if (!hit && o[k] && typeof o[k] === 'object' && typeof o[k].name === 'string') { add(o[k].name); hit = true; } }); if (!hit) Object.keys(o).forEach(function (k) { w(o[k]); }); } })(JSON.parse(t)); return out; } catch (_) {} }
+        var lines = t.split(/\r?\n/).filter(function (l) { return l.trim(); });
+        if (/\.(csv|tsv)$/i.test(fname) || (lines[0] && /[,;\t]/.test(lines[0]) && /artist|name|interpret|titel|title|autor|author/i.test(lines[0]))) {
+          var c = csv(t), hd = c.head, ci = -1;
+          hd.forEach(function (x, i) { if (ci < 0 && /artist|interpret|autor|author/.test(x)) ci = i; });
+          if (ci < 0) ci = col(hd, ['name', 'titel', 'title']); if (ci < 0) ci = 0;
+          c.rows.forEach(function (r) { (r[ci] || '').split(/;\s*/).forEach(add); });
+          return out;
         }
-        if (o.movie && typeof o.movie.title === 'string') { get('film', o.movie.title, o.movie.year); return; }
-        if (typeof o.title === 'string' && o.ids && typeof o.ids === 'object' && (hint === 'film' || hint === 'series')) { get(hint, o.title, o.year); return; }
-        Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') walk(o[k], hint); });
+        lines.forEach(add); return out;
       }
-      docs.forEach(function (d) { var hint = /movie|film/i.test(d.name) ? 'film' : /show|serie|episode/i.test(d.name) ? 'series' : ''; try { walk(JSON.parse(d.text.replace(/^﻿/, '')), hint); } catch (_) {} });
-      return order.map(function (k) { var x = map[k]; return { type: x.type, name: x.name, year: x.year, eps: Object.keys(x.eps).map(function (e) { return x.eps[e]; }) }; });
+      function traktParse(docs) {
+        var map = {}, order = [];
+        function get(type, name, year) { var k = type + '|' + name.toLowerCase(); if (!map[k]) { map[k] = { type: type, name: name, year: year || null, eps: {} }; order.push(k); } return map[k]; }
+        function w(o, hint) {
+          if (Array.isArray(o)) { o.forEach(function (x) { w(x, hint); }); return; }
+          if (!o || typeof o !== 'object') return;
+          if (o.show && typeof o.show.title === 'string') {
+            var it = get('series', o.show.title, o.show.year);
+            if (o.episode && typeof o.episode.number === 'number') it.eps[(o.episode.season | 0) + 'x' + o.episode.number] = [o.episode.season | 0, o.episode.number];
+            (o.seasons || []).forEach(function (sn) { (sn.episodes || []).forEach(function (ep) { if (typeof ep.number === 'number') it.eps[(sn.number | 0) + 'x' + ep.number] = [sn.number | 0, ep.number]; }); });
+            return;
+          }
+          if (o.movie && typeof o.movie.title === 'string') { get('film', o.movie.title, o.movie.year); return; }
+          if (typeof o.title === 'string' && o.ids && typeof o.ids === 'object' && (hint === 'film' || hint === 'series')) { get(hint, o.title, o.year); return; }
+          Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') w(o[k], hint); });
+        }
+        docs.forEach(function (d) { var hint = /movie|film/i.test(d.name) ? 'film' : /show|serie|episode/i.test(d.name) ? 'series' : ''; var j = json(d); if (j) w(j, hint); });
+        return order.map(function (k) { var x = map[k], o = { n: x.name, k: x.type }, e = Object.keys(x.eps).map(function (y) { return x.eps[y]; }); if (e.length) o.eps = e; return o; });
+      }
+      function xmlText(s) { return String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(+n); }).replace(/&#x([0-9a-f]+);/gi, function (_, n) { return String.fromCharCode(parseInt(n, 16)); }).replace(/&amp;/g, '&'); }
+      var NFX_SER = /^(staffel|season|teil|part|volume|vol\.|kapitel|chapter|buch|book|limited series|miniserie|mini-serie|serie|series|collection)\b|^(folge|episode)\s*\d/i;
+      var F = [
+        { id: 'list', name: 'Eigene Liste (Text, CSV oder JSON)', group: 'Allgemein', cats: null, accept: '.json,.csv,.txt,text/plain,application/json,text/csv',
+          guide: 'Füge Namen ein, einen pro Zeile, oder lade eine Datei (Text, CSV oder JSON). Wähle dazu die Kategorie. Die erkannten Namen erscheinen unten, du kannst sie vor dem Import ändern.',
+          parse: function (files, cat) { var t = tally(); files.forEach(function (f) { namesFrom(f.text, f.name).forEach(function (n) { t.add(n, cat); }); }); return { items: t.list(false), skipped: 0 }; } },
+        { id: 'goodreads', name: 'Goodreads', group: 'Bücher', cats: ['author'], accept: '.csv,text/csv',
+          guide: 'Goodreads: „My Books“ → „Import and export“ → „Export Library“. Nach kurzer Zeit erscheint der Link zur CSV-Datei. Übernommen werden die Autor:innen deiner Bücher, sortiert nach Zahl der Bücher.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('book id') >= 0 && x.c.head.indexOf('author') >= 0; }); },
+          parse: function (fs) { var t = tally(); heads(fs).forEach(function (x) { var a = x.c.head.indexOf('author'); if (a < 0 || x.c.head.indexOf('book id') < 0) return; x.c.rows.forEach(function (r) { t.add(r[a], 'author'); }); }); return { items: t.list(true), skipped: 0 }; } },
+        { id: 'storygraph', name: 'The StoryGraph', group: 'Bücher', cats: ['author'], accept: '.csv,text/csv', beta: true,
+          guide: 'The StoryGraph: Profil → „Manage Account“ → „Export StoryGraph Library“. Übernommen werden die Autor:innen deiner Bücher, sortiert nach Zahl der Bücher.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('authors') >= 0 && x.c.head.indexOf('read status') >= 0; }); },
+          parse: function (fs) { var t = tally(); heads(fs).forEach(function (x) { var a = x.c.head.indexOf('authors'); if (a < 0) return; x.c.rows.forEach(function (r) { String(r[a] || '').split(/\s*[,&]\s*/).forEach(function (n) { t.add(n, 'author'); }); }); }); return { items: t.list(true), skipped: 0 }; } },
+        { id: 'spotify', name: 'Spotify', group: 'Musik', cats: ['artist', 'podcast'], accept: '.zip,.json,.csv,application/zip,application/json,text/csv',
+          guide: 'Spotify: Konto → „Account privacy“ (Datenschutz) → „Download your data“, dort „Account data“ anfordern. Nach ein paar Tagen kommt eine Mail mit einer ZIP-Datei; die kannst du direkt hier laden (oder einzelne Dateien wie YourLibrary.json, StreamingHistory_music_0.json, Playlist1.json). Auch CSV-Dateien von Exportify gehen. Übernommen werden Musiker:innen und gehörte Podcasts, sortiert nach Häufigkeit.',
+          detect: function (fs) { return fs.some(function (f) { return /StreamingHistory|Streaming_History|YourLibrary|Playlist\d*\.json/i.test(f.name) || /"(artistName|master_metadata_album_artist_name|podcastName)"/.test(f.text.slice(0, 20000)); }) || heads(fs).some(function (x) { return x.c.head.indexOf('artist name(s)') >= 0; }); },
+          parse: function (fs) {
+            var t = tally();
+            fs.forEach(function (f) {
+              var j = json(f);
+              if (j) {
+                var lib = /YourLibrary/i.test(f.name);
+                walk(j, function (o) {
+                  ['artistName', 'master_metadata_album_artist_name'].forEach(function (k) { if (typeof o[k] === 'string') t.add(o[k], 'artist'); });
+                  ['podcastName', 'episode_show_name'].forEach(function (k) { if (typeof o[k] === 'string') t.add(o[k], 'podcast'); });
+                  if (lib) {
+                    if (typeof o.artist === 'string') t.add(o.artist, 'artist');
+                    (Array.isArray(o.artists) ? o.artists : []).forEach(function (a) { if (a && typeof a.name === 'string') t.add(a.name, 'artist', 3); });
+                    (Array.isArray(o.shows) ? o.shows : []).forEach(function (s) { if (s && typeof s.name === 'string') t.add(s.name, 'podcast', 3); });
+                    (Array.isArray(o.episodes) ? o.episodes : []).forEach(function (e) { if (e && typeof e.show === 'string') t.add(e.show, 'podcast'); });
+                  }
+                });
+                return;
+              }
+              if (isCsv(f)) { var c = csv(f.text), a = col(c.head, ['artist name(s)', 'artist name', 'artist']); if (a >= 0) c.rows.forEach(function (r) { String(r[a] || '').split(/;\s*/).forEach(function (n) { t.add(n, 'artist'); }); }); }
+            });
+            return { items: t.list(true), skipped: 0 };
+          } },
+        { id: 'lastfm', name: 'Last.fm', group: 'Musik', cats: ['artist'], accept: '.csv,text/csv', beta: true,
+          guide: 'Last.fm hat selbst keinen Export. Gängig sind Exportseiten wie lastfm.ghan.nl/export (dort „CSV“ wählen) oder lastfm-to-csv; beide liefern eine CSV mit deinen Scrobbles. Übernommen werden die Musiker:innen, sortiert nach Zahl der Wiedergaben.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('artist') >= 0 && x.c.head.indexOf('track') >= 0; }) || fs.some(function (f) { return /lastfm|last\.fm|scrobble/i.test(f.name); }); },
+          parse: function (fs) {
+            var t = tally();
+            fs.filter(isCsv).forEach(function (f) {
+              var c = csv(f.text), a = c.head.indexOf('artist');
+              if (a >= 0 && c.head.indexOf('track') >= 0) c.rows.forEach(function (r) { t.add(r[a], 'artist'); });
+              else if (c.head.length === 4) { t.add(splitCsv(bom(f.text).split(/\r?\n/, 1)[0], ',')[0], 'artist'); c.rows.forEach(function (r) { t.add(r[0], 'artist'); }); } // ohne Kopfzeile: Musiker, Album, Titel, Datum
+            });
+            return { items: t.list(true), skipped: 0 };
+          } },
+        { id: 'imdb', name: 'IMDb', group: 'Filme und Serien', cats: ['film', 'series'], accept: '.csv,text/csv',
+          guide: 'IMDb: Watchlist, Bewertungen oder eine eigene Liste öffnen → Menü (drei Punkte) → „Exportieren“. Die CSV-Datei findest du danach unter „Exporte“ in deinem Profil. Filme und Serien kommen automatisch in die richtige Liste, einzelne Folgen und Spiele werden übersprungen.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('title type') >= 0 && x.c.head.indexOf('title') >= 0; }); },
+          parse: function (fs) {
+            var t = tally(), sk = 0;
+            heads(fs).forEach(function (x) {
+              var ti = x.c.head.indexOf('title'), ty = x.c.head.indexOf('title type'); if (ti < 0 || ty < 0) return;
+              x.c.rows.forEach(function (r) { var n = (r[ti] || '').trim(), k = (r[ty] || '').toLowerCase(); if (!n) return; if (/episode|folge|spiel|game/.test(k)) { sk++; return; } t.add(n, /serie|series/.test(k) ? 'series' : 'film'); });
+            });
+            return { items: t.list(false), skipped: sk, note: sk ? 'Folgen und Spiele übersprungen' : '' };
+          } },
+        { id: 'letterboxd', name: 'Letterboxd', group: 'Filme und Serien', cats: ['film'], accept: '.zip,.csv,application/zip,text/csv',
+          guide: 'Letterboxd: „Settings“ → „Data“ → „Export your data“. Du bekommst eine ZIP-Datei, die du direkt hier laden kannst (oder einzelne Dateien daraus wie watched.csv und watchlist.csv). Die Titel sind meist englisch; danach hilft „Doppelte Einträge prüfen“.',
+          detect: function (fs) { return heads(fs).some(function (x) { return x.c.head.indexOf('letterboxd uri') >= 0 && x.c.head.indexOf('name') >= 0; }); },
+          parse: function (fs) {
+            var t = tally();
+            heads(fs).forEach(function (x) { var n = x.c.head.indexOf('name'); if (n < 0 || x.c.head.indexOf('letterboxd uri') < 0) return; x.c.rows.forEach(function (r) { t.add(r[n], 'film'); }); });
+            return { items: t.list(false), skipped: 0 };
+          } },
+        { id: 'netflix', name: 'Netflix', group: 'Filme und Serien', cats: ['film', 'series'], accept: '.zip,.csv,application/zip,text/csv', beta: true,
+          guide: 'Netflix: Konto → Profil wählen → „Wiedergabeaktivität“ → ganz unten „Alle herunterladen“ (NetflixViewingHistory.csv). Alternativ aus dem Datenexport („Persönliche Daten herunterladen“) die Datei ViewingActivity.csv. Serien werden aus Titeln wie „Dark: Staffel 1: …“ erkannt, sortiert nach Zahl der gesehenen Folgen.',
+          detect: function (fs) { return heads(fs).some(function (x) { var h = x.c.head; return (h.length === 2 && h[0] === 'title' && h[1] === 'date') || (h.indexOf('profile name') >= 0 && h.indexOf('supplemental video type') >= 0); }); },
+          parse: function (fs) {
+            var t = tally(), sk = 0, prof = {};
+            heads(fs).forEach(function (x) {
+              var h = x.c.head, ti = h.indexOf('title'), sv = h.indexOf('supplemental video type'), pn = h.indexOf('profile name');
+              if (ti < 0 || !((h.length === 2 && h[1] === 'date') || sv >= 0)) return;
+              x.c.rows.forEach(function (r) {
+                var n = (r[ti] || '').trim(); if (!n) return;
+                if (sv >= 0 && (r[sv] || '').trim()) { sk++; return; } // Trailer, Vorschauen
+                if (pn >= 0 && r[pn]) prof[r[pn].trim()] = 1;
+                var seg = n.split(/:\s+/), cut = -1;
+                for (var i = 1; i < seg.length; i++) if (NFX_SER.test(seg[i])) { cut = i; break; }
+                if (cut > 0) t.add(seg.slice(0, cut).join(': '), 'series'); else t.add(n, 'film');
+              });
+            });
+            var ps = Object.keys(prof);
+            return { items: t.list(true), skipped: sk, note: (sk ? 'Trailer und Vorschauen übersprungen' : '') + (ps.length > 1 ? (sk ? '. ' : '') + 'Die Datei enthält mehrere Profile (' + ps.join(', ') + '); entferne unten, was nicht zu dir gehört' : '') };
+          } },
+        { id: 'trakt', name: 'Trakt', group: 'Filme und Serien', cats: ['film', 'series'], accept: '.zip,.json,application/zip,application/json',
+          guide: 'Trakt: „Settings“ → „Data“ → „Export Your Data“. Lade die ZIP-Datei oder einzelne JSON-Dateien daraus (z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Exporte anderer Dienste klappen oft auch, wenn Serien und Filme Felder „title“ und „ids“ haben.',
+          detect: function (fs) { return fs.some(function (f) { return /\.json$/i.test(f.name) && /"(show|movie)"\s*:\s*\{/.test(f.text.slice(0, 50000)) && /"trakt"\s*:/.test(f.text.slice(0, 50000)); }); },
+          parse: function (fs) { return { items: traktParse(fs.filter(function (f) { return /\.json$/i.test(f.name) || /^\s*[\[{]/.test(bom(f.text)); })), skipped: 0 }; } },
+        { id: 'opml', name: 'Podcast-App (OPML)', group: 'Podcasts', cats: ['podcast'], accept: '.opml,.xml,text/xml,application/xml,text/x-opml',
+          guide: 'Fast jede Podcast-App kann ihre Abos als OPML-Datei exportieren (z. B. Pocket Casts, Overcast, AntennaPod, Podcast Addict: meist unter Einstellungen → „Export“ oder „OPML“). Apple Podcasts und Spotify bieten das nicht; für Spotify nimm oben den Spotify-Import.',
+          detect: function (fs) { return fs.some(function (f) { return /<opml[\s>]/i.test(f.text.slice(0, 2000)); }); },
+          parse: function (fs) {
+            var t = tally();
+            fs.forEach(function (f) {
+              (f.text.match(/<outline\b[^>]*>/gi) || []).forEach(function (tag) {
+                if (!/\bxmlUrl\s*=/i.test(tag) && !/\btype\s*=\s*["']rss/i.test(tag)) return;
+                var m = tag.match(/\btext\s*=\s*"([^"]*)"/i) || tag.match(/\btext\s*=\s*'([^']*)'/i) || tag.match(/\btitle\s*=\s*"([^"]*)"/i) || tag.match(/\btitle\s*=\s*'([^']*)'/i);
+                if (m) t.add(xmlText(m[1]), 'podcast');
+              });
+            });
+            return { items: t.list(false), skipped: 0 };
+          } }
+      ];
+      function detect(files) { for (var i = 0; i < F.length; i++) if (F[i].detect && F[i].detect(files)) return F[i]; return null; }
+      function zipRead(buf, want) { // ZIP im Browser entpacken (ohne Bibliothek); want: Regex für die gewünschten Dateinamen
+        var dv = new DataView(buf), u8 = new Uint8Array(buf), eocd = -1, i;
+        for (i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 70000); i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+        if (eocd < 0) return Promise.reject(new Error('Das ist keine gültige ZIP-Datei.'));
+        var n = dv.getUint16(eocd + 10, true), p0 = dv.getUint32(eocd + 16, true), jobs = [];
+        for (i = 0; i < n && i < 2000; i++) {
+          if (dv.getUint32(p0, true) !== 0x02014b50) break;
+          var meth = dv.getUint16(p0 + 10, true), cs = dv.getUint32(p0 + 20, true), us = dv.getUint32(p0 + 24, true), nl = dv.getUint16(p0 + 28, true), el = dv.getUint16(p0 + 30, true), cl = dv.getUint16(p0 + 32, true), lo = dv.getUint32(p0 + 42, true);
+          var name = new TextDecoder().decode(u8.subarray(p0 + 46, p0 + 46 + nl)); p0 += 46 + nl + el + cl;
+          if (!want.test(name) || /(^|\/)(__MACOSX|\.)/.test(name) || us > 60 * 1024 * 1024) continue;
+          var ds = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), data = u8.subarray(ds, ds + cs);
+          (function (nm, m, d) {
+            if (m === 0) jobs.push(Promise.resolve({ name: nm, text: new TextDecoder().decode(d) }));
+            else if (m === 8 && typeof DecompressionStream !== 'undefined') jobs.push(new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text().then(function (t) { return { name: nm, text: t }; }));
+          })(name, meth, data);
+        }
+        if (!jobs.length) return Promise.reject(new Error(typeof DecompressionStream !== 'undefined' ? 'In der ZIP-Datei habe ich keine passenden Dateien gefunden.' : 'Dein Browser kann ZIP-Dateien nicht entpacken. Entpacke sie bitte selbst und wähle die Dateien daraus aus.'));
+        return Promise.all(jobs);
+      }
+      return { formats: F, byId: function (id) { return F.filter(function (f) { return f.id === id; })[0] || null; }, detect: detect, zipRead: zipRead, csv: csv };
+    })();
+    // IMPORTFORMATE-ENDE
+    var IMPCATS = [['author', 'Bücher', 'Titel', 'Titel von Büchern', 'Der Name der Reihe\nDie Känguru-Chroniken'], ['artist', 'Musik', 'Musiker:in', 'Namen von Musiker:innen', 'Radiohead\nBlind Guardian\nNightwish'], ['film', 'Filme', 'Film', 'Titel von Filmen', 'Der Pate\nAlien'], ['series', 'Serien', 'Serie', 'Titel von Serien', 'Dark\nBreaking Bad'], ['podcast', 'Podcasts', 'Podcast', 'Namen von Podcasts', 'Lage der Nation\nFest & Flauschig']].filter(function (c) { return ORDER.indexOf(c[0]) >= 0; });
+    var ILBL = { author: ['Autor:in oder Reihe', 'Autor:innen oder Reihen'], artist: ['Musiker:in', 'Musiker:innen'], film: ['Film', 'Filme'], series: ['Serie', 'Serien'], podcast: ['Podcast', 'Podcasts'] };
+    function impCat(k) { return IMPCATS.filter(function (x) { return x[0] === k; })[0]; }
+    // Import: eine Karte mit Auswahl der Quelle; die Formate stehen oben im Block IMPORTFORMATE (IMPF)
+    var imp = devMark(h('div', { class: 'wide2' }), 'import');
+    var iFmts = IMPF.formats.filter(function (f) { return !f.cats || f.cats.some(function (c) { return !!impCat(c); }); });
+    var iSrc = h('select', { 'aria-label': 'Quelle' }), iCat = h('select', { 'aria-label': 'Kategorie' }), iCatRow = h('p', { style: 'margin:8px 0' }, h('label', { style: 'display:flex;gap:8px;align-items:center' }, 'Kategorie', iCat));
+    var iGuide = h('p', { class: 'hint', style: 'margin:8px 0 4px' }), iBeta = h('p', { class: 'hint', hidden: true }, 'Neu: Dieses Format habe ich nach der Beschreibung des Anbieters gebaut, mit einer echten Datei ist es noch nicht geprüft. Klappt es nicht, melde dich gern über „Kontakt“ (Bugmeldung) mit einem kleinen Beispiel aus der Datei, ohne persönliche Daten.');
+    var iFile = h('input', { type: 'file', multiple: true, 'aria-label': 'Datei laden', style: 'margin:6px 0 2px' }), iMsg = h('p', { class: 'msg', role: 'status' }), iPrev = h('div'), iGo = h('button', { class: 'btn', type: 'button' }, 'Importieren');
+    var iEps = {}, iBoxes = {};
+    iSrc.append(h('option', { value: 'auto' }, 'Automatisch erkennen'));
+    var iGroups = {}; iFmts.forEach(function (f) { if (!iGroups[f.group]) { iGroups[f.group] = h('optgroup', { label: f.group }); iSrc.append(iGroups[f.group]); } iGroups[f.group].append(h('option', { value: f.id }, f.name + (f.beta ? ' (neu)' : ''))); });
+    IMPCATS.forEach(function (c) { iCat.append(h('option', { value: c[0] }, c[1])); }); if (impCat('artist')) iCat.value = 'artist';
+    function iFmt() { return IMPF.byId(iSrc.value); }
+    function iBox(k, names) { // Textfeld je Kategorie, vor dem Import änderbar
+      var c = impCat(k); if (!c) return null;
+      var ta = h('textarea', { rows: String(Math.min(10, Math.max(4, names.length + 1))), 'aria-label': c[1] + ', ein Name pro Zeile', placeholder: c[4], style: 'width:100%;margin-top:4px' }); ta.value = names.join('\n');
+      var cnt = h('span', { class: 'hint' });
+      function upd() { var n = ta.value.split(/\r?\n/).filter(function (x) { return x.trim(); }).length; cnt.textContent = ' (' + n + ')'; }
+      ta.addEventListener('input', upd); upd(); iBoxes[k] = ta;
+      iPrev.append(h('div', { style: 'margin-top:10px' }, h('label', { class: 'label', style: 'display:block' }, c[1], cnt), ta)); iGo.hidden = false;
+      return ta;
     }
-    tFile.addEventListener('change', function () {
-      var fs = [].slice.call(tFile.files || []); if (!fs.length) return; tGo.hidden = true; tItems = [];
-      tMsg.className = 'msg'; tMsg.textContent = 'Lese Datei …';
-      Promise.all(fs.map(function (f) {
+    function iShow(items) { // Vorschau: Namen nach Kategorie, gesehene Folgen (Trakt) bleiben am Namen hängen
+      iPrev.textContent = ''; iBoxes = {}; iEps = {}; var by = {}, order = [];
+      items.forEach(function (it) { if (!impCat(it.k)) return; if (!by[it.k]) { by[it.k] = []; order.push(it.k); } by[it.k].push(it.n); if (it.eps) iEps[it.k + '|' + it.n.toLowerCase()] = it.eps; });
+      ALLC.forEach(function (k) { if (by[k]) iBox(k, by[k]); });
+      return order.length;
+    }
+    function iSetSrc(keepFile) {
+      var f = iFmt(), list = f && f.id === 'list';
+      iGuide.textContent = f ? f.guide : 'Lade einen Export (ZIP, CSV, JSON, OPML oder Text); ich erkenne, von welcher Seite er stammt. Oder wähle die Quelle aus der Liste, dann steht hier, wie du an den Export kommst.';
+      iBeta.hidden = !(f && f.beta); iCatRow.hidden = !list;
+      iFile.setAttribute('accept', f ? f.accept : '.zip,.json,.csv,.txt,.opml,.xml');
+      if (!keepFile) { iFile.value = ''; iMsg.textContent = ''; iMsg.className = 'msg'; } iPrev.textContent = ''; iBoxes = {}; iEps = {}; iGo.hidden = true;
+      if (list) iBox(iCat.value, []);
+    }
+    iSrc.addEventListener('change', function () { iSetSrc(); });
+    iCat.addEventListener('change', function () { var old = iPrev.querySelector('textarea'), v = old ? old.value : ''; iPrev.textContent = ''; iBoxes = {}; var ta = iBox(iCat.value, []); if (ta) { ta.value = v; ta.dispatchEvent(new Event('input')); } });
+    function iRead(fl) { // Dateien lesen, ZIP-Dateien entpacken
+      return Promise.all(fl.map(function (f) {
         if (f.size > 80 * 1024 * 1024) return Promise.reject(new Error('Eine Datei ist größer als 80 MB.'));
-        return /\.zip$/i.test(f.name) ? f.arrayBuffer().then(zipRead) : f.text().then(function (t) { return [{ name: f.name, text: t }]; });
-      })).then(function (parts) {
-        tItems = traktParse([].concat.apply([], parts));
-        var ns = tItems.filter(function (x) { return x.type === 'series'; }).length, nf = tItems.length - ns, ne = tItems.reduce(function (a, x) { return a + x.eps.length; }, 0);
-        if (!tItems.length) { tMsg.className = 'msg err'; tMsg.textContent = 'Ich habe keine Serien oder Filme gefunden. Wähle die ZIP-Datei aus dem Trakt-Export oder JSON-Dateien daraus (z. B. Watchlist und Verlauf).'; return; }
-        tMsg.className = 'msg'; tMsg.textContent = 'Erkannt: ' + pl(ns, 'Serie', 'Serien') + ', ' + pl(nf, 'Film', 'Filme') + (ne ? ' und ' + pl(ne, 'gesehene Folge', 'gesehene Folgen') : '') + '. Pro Liste passen höchstens 1.000 Einträge, der Rest wird übersprungen.'; tGo.hidden = false;
-      }).catch(function (e) { tMsg.className = 'msg err'; tMsg.textContent = e.message || 'Die Datei konnte nicht gelesen werden.'; });
+        return /\.zip$/i.test(f.name) ? f.arrayBuffer().then(function (b) { return IMPF.zipRead(b, /\.(json|csv|tsv|txt|opml|xml)$/i); }) : f.text().then(function (t) { return [{ name: f.name, text: t }]; });
+      })).then(function (parts) { return [].concat.apply([], parts); });
+    }
+    iFile.addEventListener('change', function () {
+      var fl = [].slice.call(iFile.files || []); if (!fl.length) return;
+      iMsg.className = 'msg'; iMsg.textContent = 'Lese Datei …';
+      iRead(fl).then(function (files) {
+        var f = iFmt(), found = '';
+        if (!f) { f = IMPF.detect(files); if (f && iFmts.indexOf(f) >= 0) found = 'Erkannt: ' + f.name + '. '; else { f = IMPF.byId('list'); found = 'Kein bekanntes Format erkannt, ich lese die Datei als einfache Liste; wähle dazu die passende Kategorie. '; } iSrc.value = f.id; iSetSrc(true); }
+        var r = f.parse(files, iCat.value), items = r.items.filter(function (it) { return impCat(it.k); });
+        if (f.id === 'list') { iPrev.textContent = ''; iBoxes = {}; iBox(iCat.value, items.map(function (x) { return x.n; })); }
+        else iShow(items);
+        var cnt = {}; items.forEach(function (it) { cnt[it.k] = (cnt[it.k] || 0) + 1; });
+        var parts = ALLC.filter(function (k) { return cnt[k]; }).map(function (k) { return pl(cnt[k], ILBL[k][0], ILBL[k][1]); });
+        var eps = Object.keys(iEps).reduce(function (a, k) { return a + iEps[k].length; }, 0);
+        if (!items.length) { iMsg.className = 'msg err'; iMsg.textContent = found + 'In der Datei habe ich nichts Passendes gefunden.' + (f.id !== 'list' ? ' Stimmt die Quelle? Mit „Automatisch erkennen“ probiere ich alle Formate.' : ''); return; }
+        iMsg.className = 'msg'; iMsg.textContent = found + 'Gefunden: ' + parts.join(', ') + (eps ? ' und ' + pl(eps, 'gesehene Folge', 'gesehene Folgen') : '') + (r.skipped ? '; ' + r.skipped + ' übersprungen' : '') + (r.note ? ' (' + r.note + ')' : '') + '. Prüfe die Namen unten und lösche, was du nicht willst; lange Listen stehen nach Häufigkeit sortiert, das Wichtigste oben.';
+      }).catch(function (e) { iMsg.className = 'msg err'; iMsg.textContent = e.message || 'Die Datei konnte nicht gelesen werden.'; });
     });
-    tGo.addEventListener('click', function () {
-      var items = tItems.slice(), tot = { series: { added: 0, had: 0, over: 0 }, film: { added: 0, had: 0, over: 0 }, eps: 0 }; tGo.disabled = true; tMsg.className = 'msg'; tMsg.textContent = 'Importiere …';
-      (function next() {
-        if (!items.length) {
-          tGo.disabled = false; tGo.hidden = true; tItems = [];
-          function part(k, one, many) { var o = tot[k]; return pl(o.added, one, many) + ' neu' + (o.had ? ', ' + o.had + ' schon vorhanden' : '') + (o.over ? ', ' + o.over + ' wegen der Grenze von 100 übersprungen' : ''); }
-          tMsg.textContent = 'Fertig: ' + part('series', 'Serie', 'Serien') + '; ' + part('film', 'Film', 'Filme') + '; ' + pl(tot.eps, 'Folge', 'Folgen') + ' als gesehen markiert. Die Angaben werden nach und nach geladen.';
+    iGo.addEventListener('click', function () {
+      var jobs = [];
+      ALLC.forEach(function (k) {
+        var ta = iBoxes[k]; if (!ta) return; var seen = {}, names = ta.value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(function (x) { var l = x.toLowerCase(); if (!x || seen[l]) return false; seen[l] = 1; return true; });
+        if (!names.length) return;
+        var withEps = (k === 'series' || k === 'film') && names.some(function (n) { return iEps[k + '|' + n.toLowerCase()]; });
+        for (var i = 0; i < names.length; i += withEps ? 40 : 500) jobs.push({ k: k, eps: withEps, names: names.slice(i, i + (withEps ? 40 : 500)) });
+      });
+      if (!jobs.length) { iMsg.className = 'msg err'; iMsg.textContent = 'Keine Namen gefunden.'; return; }
+      var tot = {}, epsDone = 0, failed = ''; iGo.disabled = true; iMsg.className = 'msg'; iMsg.textContent = 'Importiere …';
+      function add(k, r) { var o = tot[k] || (tot[k] = { added: 0, had: 0, over: 0 }); o.added += r.added || 0; o.had += r.had || 0; o.over += r.over || 0; }
+      (function next(i) {
+        if (i >= jobs.length || failed) {
+          iGo.disabled = false;
+          var txt = ALLC.filter(function (k) { return tot[k]; }).map(function (k) { var o = tot[k]; return impCat(k)[1] + ': ' + o.added + ' hinzugefügt' + (o.had ? ', ' + o.had + ' schon auf der Liste' : '') + (o.over ? ', ' + o.over + ' nicht mehr möglich (Grenze ' + MAXN.toLocaleString('de-DE') + ' pro Liste)' : '') + '.'; }).join(' ') + (epsDone ? ' ' + pl(epsDone, 'Folge', 'Folgen') + ' als gesehen markiert.' : '');
+          iMsg.className = 'msg' + (failed ? ' err' : ''); iMsg.textContent = (txt ? txt + ' ' : '') + (failed || 'Die Angaben werden nach und nach geladen, bei langen Listen kann das einige Stunden dauern.');
+          if (!failed) { iPrev.textContent = ''; iBoxes = {}; iEps = {}; iFile.value = ''; iGo.hidden = true; if (iSrc.value === 'list') iBox(iCat.value, []); }
           load(function () { nav(); }); return;
         }
-        api('/api/data.php?a=trakt', { items: items.splice(0, 40).map(function (x) { return { type: x.type, name: x.name, eps: x.eps }; }) }).then(function (r) {
-          if (!r.ok) { tGo.disabled = false; tMsg.className = 'msg err'; tMsg.textContent = r.error || 'Das hat nicht geklappt.'; return; }
-          ['series', 'film'].forEach(function (k) { ['added', 'had', 'over'].forEach(function (f) { tot[k][f] += r[k][f]; }); }); tot.eps += r.eps; next();
+        var j = jobs[i], c = impCat(j.k);
+        var req = j.eps ? api('/api/data.php?a=trakt', { items: j.names.map(function (n) { return { type: j.k, name: n, eps: iEps[j.k + '|' + n.toLowerCase()] || [] }; }) }) : api('/api/data.php?a=import', { names: j.names, type: j.k });
+        req.then(function (r) {
+          if (!r || r.ok === false || r.error) { failed = c[1] + ': ' + ((r && (r.msg || r.error)) || 'Das hat nicht geklappt.'); next(jobs.length); return; }
+          if (j.eps) { add(j.k, r[j.k] || {}); epsDone += r.eps || 0; } else add(j.k, r);
+          next(i + 1);
         });
-      })();
+      })(0);
     });
-    tPanel.append(h('p', { class: 'hint' }, 'Lade deinen Datenexport von Trakt hoch (die ZIP-Datei oder einzelne JSON-Dateien daraus, z. B. Watchlist und Verlauf). Serien und Filme kommen auf deine Liste, bei Serien werden die gesehenen Folgen abgehakt. Die Datei wird nur in deinem Browser gelesen, übertragen werden die Titel und gesehenen Folgen. Die Angaben zu den Titeln werden danach nach und nach geladen.'), h('p', { class: 'hint' }, 'Erlaubt sind ZIP- und JSON-Dateien (bis 80 MB), keine CSV-Dateien. Gelesen werden Serien und Filme im Aufbau von Trakt. Exporte anderer Dienste können ebenfalls klappen, wenn sie ähnlich aufgebaut sind: Serien und Filme als eigene Einträge mit den Feldern „title“ und „ids“, am besten in Dateien, deren Name „show“, „serie“, „movie“ oder „film“ enthält. Ob etwas erkannt wurde, siehst du vor dem Import. Klappt es nicht, melde dich gern über „Kontakt“ (Bugmeldung) mit dem Namen der Seite und einem kleinen Beispiel aus der Datei, ohne persönliche Daten.'), tFile, h('p', { style: 'margin:8px 0 0' }, tGo), tMsg);
-    tImp.append(h('button', { class: 'btn ghost small', type: 'button', 'aria-expanded': 'false', onclick: function () { tPanel.hidden = !tPanel.hidden; this.setAttribute('aria-expanded', String(!tPanel.hidden)); } }, 'Trakt-Export importieren'), tPanel);
-    tImp.style.marginTop = '12px'; imp.append(tImp); // gehört in dieselbe Karte „Import“ (die Karten werden über die Reihenfolge der Blöcke zugeordnet)
+    imp.append(h('label', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, 'Quelle', iSrc), iGuide, iBeta, iCatRow, iFile, iPrev, h('p', { style: 'margin:10px 0 0' }, iGo), iMsg,
+      h('p', { class: 'hint', style: 'margin-top:8px' }, 'Die Datei wird nur in deinem Browser gelesen, an die Seite gehen nur die Namen (und bei Trakt die gesehenen Folgen). Fehlt dir ein Dienst, schick über „Kontakt“ (Idee) den Namen und ein kleines Beispiel aus dem Export, ohne persönliche Daten.'));
+    iSetSrc();
+    box.append(imp);
     // Doppelte Einträge (dieselbe Serie oder derselbe Film unter zwei Namen, z. B. nach dem Trakt-Import mit englischen Titeln)
     var dImp = h('div', { class: 'wide2', style: 'margin-top:12px' }), dPanel = h('div', { hidden: true, style: 'margin-top:10px' }), dMsg = h('p', { class: 'msg', role: 'status' }), dList = h('div');
     function dupLoad() {
@@ -1851,7 +2006,7 @@
       'Kalender aller angekündigten Veröffentlichungen mit Kategorie-Chips zum Ein- und Ausblenden und Vorschau je Tag, dazu ein persönliches Kalender-Abo (ICS)',
       'Bücher auch als Reihe über den Titel (zum Beispiel Manga), Hinweis „neu hinzugefügt“ für Bücher der letzten 4 Wochen',
       'Benachrichtigungen per Mail: morgens bei Neuigkeiten, morgens plus Wochenübersicht oder nur die Wochenübersicht; mit Kurzinfo und bis zu zwei aktuellen Schlagzeilen je Titel, Abmeldelink in jeder Mail',
-      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Trakt und Spotify; Datenexport',
+      'Vorschläge ähnlicher Künstler:innen, Autor:innen und Serien; Import aus Spotify, Last.fm, Goodreads, StoryGraph, IMDb, Letterboxd, Netflix, Trakt und Podcast-Apps (OPML); Datenexport',
       'Ideen und Bugmeldungen (mit Kategorie, abstimmbar) und Kontakt-Chat mit dem Betreiber; öffentliches Kontaktformular ohne Konto',
       'Mehrere Oberflächen (Skins), dazu experimentelle Themes (Standard, 8-Bit), Nutzung als App auf dem Handy, Systemnachrichten des Betreibers als Fenster und im Chat']));
     sec('Funktionen für den Admin', ul([
