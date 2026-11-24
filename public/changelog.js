@@ -1,5 +1,8 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
+  { v: 21, d: '24.11.2026', t: [
+    'B|Serien: Erscheinen zwei Folgen am selben Tag, haben jetzt beide Einträge ihren Rahmen und etwas mehr Abstand.',
+  ] },
   { v: 20, d: '23.11.2026', t: [
     'F|Import neu: Unter Einstellungen → Import wählst du die Quelle aus einer Liste oder lässt sie automatisch erkennen. Neu sind Goodreads, The StoryGraph, Apple Music (über TuneMyMusic), Last.fm, Letterboxd, Netflix, Simkl, Serializd (über Listizd) und Podcast-Apps (OPML), dazu wie bisher Spotify, IMDb, Trakt und eigene Listen. ZIP-Dateien gehen direkt, vor dem Import siehst du die Namen je Kategorie und kannst sie ändern.',
     'U|Import bei Musik: Übernommen werden nur Musiker:innen, denen du folgst oder von denen du ein Album gespeichert oder gehört hast (ab 3 Titeln), nicht mehr alle Interpreten einzelner Songs; die Weggelassenen lassen sich per Knopf trotzdem übernehmen. Lange Listen stehen nach Häufigkeit sortiert.',
