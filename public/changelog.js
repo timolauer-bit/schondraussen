@@ -1,7 +1,7 @@
 window.CHANGELOG = [
 // Neue Einträge als 'X|Text' schreiben: F Neue Funktionen, O Optionen, U Oberfläche, B Bugfixes, A Admin, D Datenschutz und Sicherheit, T Technik
   { v: 21, d: '24.11.2026', t: [
-    'F|Bücher: Oben auf der Seite einer Autorin oder eines Autors steht jetzt ein Banner mit Foto und den Covern der neuesten Bücher (nur deutsche Ausgaben), bei Reihen mit den Covern der ersten Bände. Quelle ist Open Library.',
+    'F|Bücher: Oben auf der Seite einer Autorin oder eines Autors steht jetzt ein Banner mit Foto und den Covern der bekanntesten Bücher (nur deutsche Ausgaben), bei Reihen mit den Covern der ersten Bände. Quelle ist Open Library.',
     'F|Musik: Oben auf der Seite von Musiker:innen zeigt ein Banner die Cover der fünf neuesten Veröffentlichungen. Quelle ist das Cover Art Archive.',
     'U|Die Bilder passen sich der Fensterbreite an; auf dem Handy sind es höchstens vier. Abschalten lassen sie sich wie bei Filmen und Serien unter Einstellungen → Darstellung („Bilder anzeigen“).',
     'D|Datenschutzerklärung: Open Library und das Cover Art Archive als Bildquellen ergänzt. Auch diese Bilder liefert schondraussen.de selbst aus, dein Browser hat keinen Kontakt zu den Diensten.',

@@ -90,7 +90,7 @@ function pic_film(array &$ext, array $m): void {
  * Gibt true zurück, wenn sich etwas geändert hat.
  */
 function pic_book(array &$ext, string $name): bool {
-    if ((int) ($ext['olimg_v'] ?? 1) === 3 && (int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false; // olimg_v 3: nur Werke mit deutscher Ausgabe (ältere Stände neu holen)
+    if ((int) ($ext['olimg_v'] ?? 1) === 4 && (int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false; // olimg_v 4: nur Werke mit deutscher Ausgabe, bekannteste zuerst (ältere Stände neu holen)
     $old = $ext['olimg'] ?? null; $img = []; $covers = [];
     $fields = 'title,cover_i,editions,editions.cover_i,editions.language';
     $pick = function (array $docs, ?callable $ok = null) use (&$covers) {
@@ -111,16 +111,16 @@ function pic_book(array &$ext, string $name): bool {
         $num = function ($d) { return preg_match('/(\d+)\s*$/', (string) ($d['title'] ?? ''), $m) ? (int) $m[1] : 9999; };
         usort($docs, fn($a, $b) => $num($a) <=> $num($b)); // Band 1, 2, 3 … zuerst
         $pick($docs, fn($d) => mb_stripos((string) ($d['title'] ?? ''), $t) !== false);
-    } elseif (!empty($ext['olid'])) { // Autor:in: Foto aus dem Open-Library-Profil, dazu Cover der neuesten Bücher
+    } elseif (!empty($ext['olid'])) { // Autor:in: Foto aus dem Open-Library-Profil, dazu Cover der bekanntesten Bücher
         $ol = basename((string) $ext['olid']);
         $a = http_json('https://openlibrary.org/authors/' . rawurlencode($ol) . '.json', 10);
         if ($a === null) return false;
         foreach ((array) ($a['photos'] ?? []) as $ph) if ((int) $ph > 0) { $img['a'] = (int) $ph; break; }
-        $r = http_json('https://openlibrary.org/search.json?limit=40&lang=de&sort=new&fields=' . $fields . '&author=' . rawurlencode($ol), 10);
+        $r = http_json('https://openlibrary.org/search.json?limit=100&lang=de&sort=editions&fields=' . $fields . '&author=' . rawurlencode($ol), 12); // bekannteste Werke zuerst (meiste Ausgaben): die haben am ehesten eine deutsche Ausgabe mit Cover
         if ($r !== null) $pick((array) ($r['docs'] ?? []));
     } else return false;
     if ($covers) $img['c'] = $covers;
-    $ext['olimg_t'] = time(); $ext['olimg_v'] = 3;
+    $ext['olimg_t'] = time(); $ext['olimg_v'] = 4;
     if ($img) $ext['olimg'] = $img; else unset($ext['olimg']);
     return ($ext['olimg'] ?? null) !== $old;
 }
