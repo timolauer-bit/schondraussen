@@ -630,19 +630,19 @@
   function picsOn() { try { return localStorage.getItem('sd_pics') !== '0'; } catch (_) { return true; } }
   function picUrl(rel) { return '/bilder/' + rel; }
   function picHide(ev) { var el = ev.currentTarget; (el.closest('.ebanner') || el).remove(); }
-  function bookBanner(e) { // Bücher: Autorenfoto und Cover von Open Library; Hintergrund ist das erste Bild, weichgezeichnet
+  function bookBanner(e) { // Bücher: Autorenfoto und Cover von Open Library; Musik: Albumcover vom Cover Art Archive; Hintergrund ist das erste Bild, weichgezeichnet
     var px = D.theme === '8bit' || D.design === '8bit', list = [];
     if (e.img.a) list.push({ src: e.img.a, cls: 'bphoto' });
     (e.img.c || []).forEach(function (c) { list.push({ src: c, cls: 'bcover' }); });
     if (!list.length) return null;
-    var row = h('div', { class: 'brow' }), box = h('div', { class: 'ebanner bookb' + (px ? ' px' : ''), 'aria-hidden': 'true' }, h('img', { class: 'bbg', src: picUrl(list[0].src), alt: '', decoding: 'async', onerror: function (ev) { ev.currentTarget.remove(); } }), row);
+    var row = h('div', { class: 'brow' }), box = h('div', { class: 'ebanner bookb' + (e.img.kind === 'music' ? ' music' : '') + (px ? ' px' : ''), 'aria-hidden': 'true' }, h('img', { class: 'bbg', src: picUrl(list[0].src), alt: '', decoding: 'async', onerror: function (ev) { ev.currentTarget.remove(); } }), row);
     function gone(ev) { var f = ev.currentTarget; f.remove(); if (!row.querySelector('img')) box.remove(); }
     list.forEach(function (x) { row.append(h('img', { class: x.cls, src: picUrl(x.src), alt: '', loading: 'lazy', decoding: 'async', onerror: gone, onload: function (ev) { ev.currentTarget.classList.add('ok'); box.classList.add('ok'); } })); });
-    devMark(box, 'buchbanner');
+    devMark(box, e.img.kind === 'music' ? 'musikbanner' : 'buchbanner');
     return box;
   }
   function heroBox(e) {
-    if (e.img && e.img.kind === 'book') return picsOn() ? bookBanner(e) : null;
+    if (e.img && (e.img.kind === 'book' || e.img.kind === 'music')) return picsOn() ? bookBanner(e) : null;
     if (!e.img || !e.img.b || !picsOn()) return null;
     if (D.theme === '8bit' || D.design === '8bit') { var px = picUrl(String(e.img.bs || e.img.b).replace(/^t\/w\d+/, 't/w300')); return h('div', { class: 'ebanner px', 'aria-hidden': 'true' }, h('img', { src: px, alt: '', decoding: 'async', onerror: picHide, onload: function (ev) { ev.currentTarget.parentNode.classList.add('ok'); } })); } // 8-Bit: kleines Bild, grob vergrößert
     return h('div', { class: 'ebanner', 'aria-hidden': 'true' }, h('img', { src: picUrl(e.img.bs || e.img.b), srcset: picUrl(e.img.bs || e.img.b) + ' 780w, ' + picUrl(e.img.b) + ' 1280w', sizes: '(max-width: 760px) 100vw, 960px', alt: '', decoding: 'async', onerror: picHide, onload: function (ev) { ev.currentTarget.parentNode.classList.add('ok'); } }));

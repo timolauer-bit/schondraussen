@@ -403,15 +403,17 @@ function musicbrainz_refresh(PDO $pdo, array $sub): array {
         }
         $onlySingles = (bool) $groups;
     }
-    $works = []; $rel = [];
+    $works = []; $rel = []; $caa = [];
     foreach ($groups as $g) {
         $d = (string) ($g['first-release-date'] ?? '');
         $sec = array_map(fn($x) => $x, $g['secondary-types'] ?? []);
         if (array_intersect($sec, ['Compilation', 'Live', 'Remix', 'Demo', 'DJ-mix', 'Mixtape/Street', 'Soundtrack', 'Spokenword', 'Interview', 'Audiobook'])) { if (!date_is_future($d)) continue; }
         $kind = $g['primary-type'] ?? 'Album';
         if (date_is_future($d)) $rel[] = [$g['title'], $d, $kind];
-        elseif ($d !== '') $works[] = [$g['title'], (int) substr($d, 0, 4), $kind];
+        elseif ($d !== '') { $works[] = [$g['title'], (int) substr($d, 0, 4), $kind]; if (preg_match('/^[0-9a-f-]{36}$/', (string) ($g['id'] ?? ''))) $caa[] = [$d, $kind === 'Album' ? 1 : 0, $g['id']]; }
     }
+    usort($caa, fn($x, $y) => strcmp($y[0], $x[0]) ?: $y[1] <=> $x[1]); // Banner: Cover der neuesten Veröffentlichungen (Cover Art Archive), Alben vor EPs/Singles desselben Datums
+    $ext['caa'] = array_values(array_unique(array_column(array_slice($caa, 0, 8), 2))); if (!$ext['caa']) unset($ext['caa']);
     usort($works, fn($x, $y) => $y[1] <=> $x[1]);
     usort($rel, fn($x, $y) => strcmp($x[1], $y[1]));
     $pdo->beginTransaction();

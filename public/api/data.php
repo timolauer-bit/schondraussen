@@ -671,7 +671,7 @@ if ($a === 'entry') {
     $e = $s->fetch(); if ($e && !in_array($e['type'], $TYPES, true)) json_out(['error' => 'Eintrag nicht gefunden.'], 404);
     $e['genres'] = json_decode($e['genres'] ?: '[]', true);
     $x = json_decode($e['external_ids'] ?: '{}', true) ?: []; $e['tvmaze'] = $x['tvmaze'] ?? null; $e['tv_status'] = $x['tv_status'] ?? ''; $e['err'] = (string) ($x['err'] ?? ''); $e['page'] = $e['type'] === 'podcast' && preg_match('~^https://(podcasts|itunes)\.apple\.com/~', (string) ($x['page'] ?? '')) ? $x['page'] : ''; $e['by'] = (string) ($x['by'] ?? ''); unset($e['external_ids']);
-    $e['kind'] = ''; $e['dirs'] = []; $e['watch'] = null; $e['img'] = in_array($e['type'], ['film', 'series'], true) ? pic_out($x) : ($e['type'] === 'author' ? pic_book_out($x) : null);
+    $e['kind'] = ''; $e['dirs'] = []; $e['watch'] = null; $e['img'] = in_array($e['type'], ['film', 'series'], true) ? pic_out($x) : ($e['type'] === 'author' ? pic_book_out($x) : ($e['type'] === 'artist' ? pic_music_out($x) : null));
     if ($e['type'] === 'film') { // Film, Filmreihe oder Regie-Eintrag
         $e['kind'] = !empty($x['tmdb_person']) ? 'person' : (!empty($x['tmdb_col']) ? 'col' : 'movie');
         foreach ((array) ($x['dir'] ?? []) as $dd) if (!empty($dd['id']) && !empty($dd['name'])) $e['dirs'][] = ['id' => (int) $dd['id'], 'name' => (string) $dd['name']];

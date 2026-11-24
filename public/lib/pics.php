@@ -1,5 +1,5 @@
 <?php
-// Bilder von Filmen und Serien (TMDB, TVmaze) und Büchern (Open Library). Der Server holt jedes Bild einmal und liefert es von der eigenen Domain aus:
+// Bilder von Filmen und Serien (TMDB, TVmaze), Büchern (Open Library) und Musik (Cover Art Archive). Der Server holt jedes Bild einmal und liefert es von der eigenen Domain aus:
 // Besucher-IP-Adressen gehen so nicht an TMDB/TVmaze. Gespeicherte Bilder werden nach 90 Tagen gelöscht und bei Bedarf neu geholt
 // (TMDB erlaubt Zwischenspeichern höchstens 6 Monate). Quellenangabe TMDB steht auf der Info-Seite.
 const PIC_DIR = __DIR__ . '/../bilder';
@@ -10,6 +10,7 @@ const PIC_TMDB_SIZES = ['w92', 'w185', 'w300', 'w780', 'w1280'];
 function pic_source(string $rel): ?string {
     if (preg_match('~^t/(w\d{2,4})/([A-Za-z0-9]{6,64}\.(?:jpg|png))$~', $rel, $m) && in_array($m[1], PIC_TMDB_SIZES, true)) return 'https://image.tmdb.org/t/p/' . $m[1] . '/' . $m[2];
     if (preg_match('~^m/((?:medium_portrait|medium_landscape|original_untouched)/\d{1,5}/\d{1,10}\.(?:jpg|png))$~', $rel, $m)) return 'https://static.tvmaze.com/uploads/images/' . $m[1];
+    if (preg_match('~^c/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-250\.jpg$~', $rel, $m)) return 'https://coverartarchive.org/release-group/' . $m[1] . '/front-250'; // Cover Art Archive: Albumcover über die MusicBrainz-Nummer
     if (preg_match('~^o/([ab])/([1-9]\d{0,11})-([SML])\.jpg$~', $rel, $m)) return 'https://covers.openlibrary.org/' . $m[1] . '/id/' . $m[2] . '-' . $m[3] . '.jpg?default=false'; // Open Library: Buchcover (b) und Autorenfotos (a) über die Cover-Nummer
     return null;
 }
@@ -20,13 +21,13 @@ function pic_file(string $rel): string { return PIC_DIR . '/' . $rel; }
 function pic_fetch(string $rel): ?string {
     $src = pic_source($rel); if (!$src) return null;
     $raw = false; $code = 0;
-    for ($hop = 0; $hop < 3; $hop++) { // Open Library leitet Cover an archive.org weiter: nur HTTPS-Ziele bei openlibrary.org/archive.org folgen
+    for ($hop = 0; $hop < 6; $hop++) { // Open Library und Cover Art Archive leiten an archive.org weiter: nur HTTPS-Zielen dieser Dienste folgen
         $ch = curl_init($src);
         curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12, CURLOPT_FOLLOWLOCATION => false, CURLOPT_MAXFILESIZE => 3 * 1024 * 1024,
             CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
         $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $loc = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL); curl_close($ch);
-        if ($code < 300 || $code >= 400 || $rel[0] !== 'o') break;
-        if (!preg_match('~^https://([a-z0-9-]+\.)*(openlibrary\.org|archive\.org)/~i', $loc)) return null;
+        if ($code < 300 || $code >= 400 || !in_array($rel[0], ['o', 'c'], true)) break;
+        if (!preg_match('~^https://([a-z0-9-]+\.)*(openlibrary\.org|archive\.org|coverartarchive\.org)/~i', $loc)) return null;
         $src = $loc;
     }
     if (!is_string($raw) || $code !== 200 || strlen($raw) < 100 || strlen($raw) > 3 * 1024 * 1024) return null;
@@ -129,6 +130,11 @@ function pic_book_out(array $x): ?array {
     if (!empty($i['a'])) $o['a'] = 'o/a/' . (int) $i['a'] . '-M.jpg';
     foreach (array_slice((array) ($i['c'] ?? []), 0, 5) as $c) if ((int) $c > 0) $o['c'][] = 'o/b/' . (int) $c . '-M.jpg';
     return (isset($o['a']) || !empty($o['c'])) ? $o : null;
+}
+/** Albumcover für den Browser (Cover Art Archive): ['kind' => 'music', 'c' => [Cover…]] als relative Pfade, oder null. */
+function pic_music_out(array $x): ?array {
+    $c = []; foreach (array_slice((array) ($x['caa'] ?? []), 0, 8) as $id) if (preg_match('/^[0-9a-f-]{36}$/', (string) $id)) $c[] = 'c/' . $id . '-250.jpg';
+    return $c ? ['kind' => 'music', 'c' => $c] : null;
 }
 /** Für die Ausgabe an den Browser: relative Bildpfade (Banner groß/klein, Vorschaubild) oder null. */
 function pic_out(array $x): ?array {
