@@ -880,7 +880,9 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     if (count($dn[0] ?? []) + count($dn[1] ?? []) < 3 && $GLOBALS['dnb_failed'] && ($ext['works_src'] ?? '') === 'DNB') // DNB gerade nicht erreichbar: nicht auf Open Library umschwenken, bisherigen Stand behalten
         return ['ok' => false, 'msg' => 'Katalog der DNB gerade nicht erreichbar (' . (string) ($dn[2] ?? '') . '). Der bisherige Stand bleibt, der nächste Versuch folgt automatisch.'];
     $ext['works_src'] = 'Open Library'; $ext['works_info'] = (string) ($dn[2] ?? '');
-    if (count($dn[0] ?? []) + count($dn[1] ?? []) >= 3) { $works = $dn[0]; $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; if (!$dnRecent) $ext['dnb_full_t'] = time(); }
+    $nDn = count($dn[0] ?? []) + count($dn[1] ?? []);
+    if ($nDn >= 3 || ($nDn >= 1 && $nDn > count($works) + count($rel))) { $works = $dn[0]; // DNB auch mit 1–2 Büchern, wenn Open Library weniger deutsche Titel liefert (z. B. Sylvain Neuvel)
+        $rel = $dn[1]; $seen = []; foreach (array_merge($works, $rel) as $x) $seen[mb_strtolower($x[0])] = 1; $ext['works_src'] = 'DNB'; if (!$dnRecent) $ext['dnb_full_t'] = time(); }
     foreach (googlebooks_upcoming($sub['name'], $seen) as $x) $rel[] = $x; // angekündigte Bücher mit Datum
     $works = array_values(array_filter($works, fn($x) => !is_merch_title((string) $x[0]))); $rel = array_values(array_filter($rel, fn($x) => !is_merch_title((string) $x[0])));
     usort($works, fn($a, $b) => ($b[1] ?? 0) <=> ($a[1] ?? 0));
@@ -901,7 +903,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE subjects SET external_ids=?, summary=?, genres=?, total_works=?, fetched_at=NOW() WHERE id=?')
-            ->execute([json_encode($ext), $summary, !empty($ext['gen']) ? json_encode($ext['gen'], JSON_UNESCAPED_UNICODE) : ($sub['genres'] ?: '[]'), ($ext['works_src'] === 'DNB' ? count($works) : (int) ($r['numFound'] ?? count($works))), $sid]);
+            ->execute([json_encode($ext), $summary, !empty($ext['gen']) ? json_encode($ext['gen'], JSON_UNESCAPED_UNICODE) : ($sub['genres'] ?: '[]'), count($works), $sid]); // Zahl der angezeigten Bücher (numFound von Open Library zählt auch Werke ohne deutsche Ausgabe)
         $pdo->prepare('DELETE FROM works WHERE subject_id=?')->execute([$sid]);
         rel_clear($pdo, $sid);
         $w = $pdo->prepare('INSERT INTO works (subject_id,title,year,kind,note) VALUES (?,?,?,?,?)');
@@ -910,7 +912,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         foreach (array_slice($rel, 0, 30) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3] ?? null]);
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
-    return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt' . (!empty($ext['olimg_info']) ? ' · Banner: ' . $ext['olimg_info'] : '')];
+    return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt (Quelle: ' . $ext['works_src'] . ')' . (!$works && !$rel ? ' · ' . $ext['works_info'] : '') . (!empty($ext['olimg_info']) ? ' · Banner: ' . $ext['olimg_info'] : '')];
 }
 
 

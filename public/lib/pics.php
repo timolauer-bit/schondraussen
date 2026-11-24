@@ -90,27 +90,17 @@ function pic_film(array &$ext, array $m): void {
  * Gibt true zurück, wenn neu abgefragt wurde (dann speichern).
  */
 function pic_book(array &$ext, string $name): bool {
-    if ((int) ($ext['olimg_v'] ?? 1) === 5 && (int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false; // olimg_v 5: nur Werke mit deutscher Ausgabe, bekannteste zuerst (ältere Stände neu holen)
+    if ((int) ($ext['olimg_v'] ?? 1) === 6 && (int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false; // olimg_v 6: nur Werke mit deutscher Ausgabe, bekannteste zuerst (ältere Stände neu holen)
     $img = []; $covers = [];
-    $fields = 'title,cover_i,editions,editions.cover_i,editions.language';
-    $pick = function (array $docs, ?callable $ok = null) use (&$covers) {
-        foreach ($docs as $d) { // nur Cover deutscher Ausgaben, passend zu den deutschen Titeln auf der Seite
-            if (count($covers) >= 5) return;
-            if ($ok && !$ok($d)) continue;
-            $ed = $d['editions']['docs'][0] ?? []; $de = in_array('ger', (array) ($ed['language'] ?? []), true);
-            if (!$de) continue;
-            $c = (int) (!empty($ed['cover_i']) ? $ed['cover_i'] : ($d['cover_i'] ?? 0)); // Ausgaben liefern oft keine Cover-Nummer: dann das Cover des Werks (Werk mit deutscher Ausgabe)
-            if ($c > 0 && !in_array($c, $covers, true)) $covers[] = $c;
-        }
-    };
-    if (!empty($ext['gbs'])) { // Reihe: Werke mit dem Reihentitel im Titel
+    if (!empty($ext['gbs'])) { // Reihe: Werke mit dem Reihentitel im Titel und deutscher Ausgabe, Band 1, 2, 3 … zuerst
         $t = trim((string) $ext['gbs']);
-        $r = http_json('https://openlibrary.org/search.json?limit=40&lang=de&fields=' . $fields . '&title=' . rawurlencode($t), 10);
+        $r = http_json('https://openlibrary.org/search.json?limit=100&fields=title,cover_i&q=' . rawurlencode('title:"' . str_replace('"', '', $t) . '" language:ger'), 12);
         if ($r === null) return false; // Quelle nicht erreichbar: beim nächsten Lauf erneut
-        $docs = (array) ($r['docs'] ?? []);
+        $docs = array_values(array_filter((array) ($r['docs'] ?? []), fn($d) => mb_stripos((string) ($d['title'] ?? ''), $t) !== false));
         $num = function ($d) { return preg_match('/(\d+)\s*$/', (string) ($d['title'] ?? ''), $m) ? (int) $m[1] : 9999; };
-        usort($docs, fn($a, $b) => $num($a) <=> $num($b)); // Band 1, 2, 3 … zuerst
-        $pick($docs, fn($d) => mb_stripos((string) ($d['title'] ?? ''), $t) !== false);
+        usort($docs, fn($a, $b) => $num($a) <=> $num($b));
+        foreach ($docs as $d) { if (count($covers) >= 5) break; $c = (int) ($d['cover_i'] ?? 0); if ($c > 0 && !in_array($c, $covers, true)) $covers[] = $c; }
+        $info = 'Bände mit deutscher Ausgabe ' . count($docs) . ', Cover ' . count($covers);
     } elseif (!empty($ext['olid'])) { // Autor:in: Foto aus dem Open-Library-Profil, dazu Cover der bekanntesten Werke mit deutscher Ausgabe
         $ol = basename((string) $ext['olid']);
         $a = http_json('https://openlibrary.org/authors/' . rawurlencode($ol) . '.json', 10);
@@ -124,7 +114,7 @@ function pic_book(array &$ext, string $name): bool {
     } else return false;
     if ($covers) $img['c'] = $covers;
     $ext['olimg_info'] = $info ?? ('Cover ' . count($covers));
-    $ext['olimg_t'] = time(); $ext['olimg_v'] = 5;
+    $ext['olimg_t'] = time(); $ext['olimg_v'] = 6;
     if ($img) $ext['olimg'] = $img; else unset($ext['olimg']);
     return true; // abgefragt: Stand und Diagnose speichern
 }
