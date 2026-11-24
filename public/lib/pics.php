@@ -90,7 +90,7 @@ function pic_film(array &$ext, array $m): void {
  * Gibt true zurück, wenn sich etwas geändert hat.
  */
 function pic_book(array &$ext, string $name): bool {
-    if ((int) ($ext['olimg_v'] ?? 1) === 2 && (int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false; // olimg_v 2: nur deutsche Ausgaben (ältere Stände neu holen)
+    if ((int) ($ext['olimg_v'] ?? 1) === 3 && (int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false; // olimg_v 3: nur Werke mit deutscher Ausgabe (ältere Stände neu holen)
     $old = $ext['olimg'] ?? null; $img = []; $covers = [];
     $fields = 'title,cover_i,editions,editions.cover_i,editions.language';
     $pick = function (array $docs, ?callable $ok = null) use (&$covers) {
@@ -99,7 +99,7 @@ function pic_book(array &$ext, string $name): bool {
             if ($ok && !$ok($d)) continue;
             $ed = $d['editions']['docs'][0] ?? []; $de = in_array('ger', (array) ($ed['language'] ?? []), true);
             if (!$de) continue;
-            $c = (int) ($ed['cover_i'] ?? 0);
+            $c = (int) (!empty($ed['cover_i']) ? $ed['cover_i'] : ($d['cover_i'] ?? 0)); // Ausgaben liefern oft keine Cover-Nummer: dann das Cover des Werks (Werk mit deutscher Ausgabe)
             if ($c > 0 && !in_array($c, $covers, true)) $covers[] = $c;
         }
     };
@@ -120,7 +120,7 @@ function pic_book(array &$ext, string $name): bool {
         if ($r !== null) $pick((array) ($r['docs'] ?? []));
     } else return false;
     if ($covers) $img['c'] = $covers;
-    $ext['olimg_t'] = time(); $ext['olimg_v'] = 2;
+    $ext['olimg_t'] = time(); $ext['olimg_v'] = 3;
     if ($img) $ext['olimg'] = $img; else unset($ext['olimg']);
     return ($ext['olimg'] ?? null) !== $old;
 }
