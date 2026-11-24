@@ -20,9 +20,9 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^lib/ - [F,L]
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-# Bilder von Filmen und Serien: fehlt die Datei, holt pic.php sie einmal
+# Bilder von Filmen, Serien und Büchern: fehlt die Datei, holt pic.php sie einmal
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^bilder/((t|m)/.+)$ pic.php?p=$1 [L,QSA]
+RewriteRule ^bilder/((t|m|o)/.+)$ pic.php?p=$1 [L,QSA]
 # Einblick für Gäste (Beispielnutzer)
 RewriteRule ^einblick/?$ einblick.php?s=kalender [L,QSA]
 RewriteRule ^einblick/(kalender|serien|community)/?$ einblick.php?s=$1 [L,QSA]

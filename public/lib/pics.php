@@ -1,5 +1,5 @@
 <?php
-// Bilder von Filmen und Serien (TMDB, TVmaze). Der Server holt jedes Bild einmal und liefert es von der eigenen Domain aus:
+// Bilder von Filmen und Serien (TMDB, TVmaze) und Büchern (Open Library). Der Server holt jedes Bild einmal und liefert es von der eigenen Domain aus:
 // Besucher-IP-Adressen gehen so nicht an TMDB/TVmaze. Gespeicherte Bilder werden nach 90 Tagen gelöscht und bei Bedarf neu geholt
 // (TMDB erlaubt Zwischenspeichern höchstens 6 Monate). Quellenangabe TMDB steht auf der Info-Seite.
 const PIC_DIR = __DIR__ . '/../bilder';
@@ -10,6 +10,7 @@ const PIC_TMDB_SIZES = ['w92', 'w185', 'w300', 'w780', 'w1280'];
 function pic_source(string $rel): ?string {
     if (preg_match('~^t/(w\d{2,4})/([A-Za-z0-9]{6,64}\.(?:jpg|png))$~', $rel, $m) && in_array($m[1], PIC_TMDB_SIZES, true)) return 'https://image.tmdb.org/t/p/' . $m[1] . '/' . $m[2];
     if (preg_match('~^m/((?:medium_portrait|medium_landscape|original_untouched)/\d{1,5}/\d{1,10}\.(?:jpg|png))$~', $rel, $m)) return 'https://static.tvmaze.com/uploads/images/' . $m[1];
+    if (preg_match('~^o/([ab])/([1-9]\d{0,11})-([SML])\.jpg$~', $rel, $m)) return 'https://covers.openlibrary.org/' . $m[1] . '/id/' . $m[2] . '-' . $m[3] . '.jpg?default=false'; // Open Library: Buchcover (b) und Autorenfotos (a) über die Cover-Nummer
     return null;
 }
 /** Dateiname im Speicher zum Bildpfad (nur Bilder aus pic_source). */
@@ -18,10 +19,16 @@ function pic_file(string $rel): string { return PIC_DIR . '/' . $rel; }
 /** Holt ein Bild und legt es ab. Gibt den Dateipfad zurück oder null. */
 function pic_fetch(string $rel): ?string {
     $src = pic_source($rel); if (!$src) return null;
-    $ch = curl_init($src);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12, CURLOPT_FOLLOWLOCATION => false, CURLOPT_MAXFILESIZE => 3 * 1024 * 1024,
-        CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
-    $raw = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    $raw = false; $code = 0;
+    for ($hop = 0; $hop < 3; $hop++) { // Open Library leitet Cover an archive.org weiter: nur HTTPS-Ziele bei openlibrary.org/archive.org folgen
+        $ch = curl_init($src);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12, CURLOPT_FOLLOWLOCATION => false, CURLOPT_MAXFILESIZE => 3 * 1024 * 1024,
+            CURLOPT_USERAGENT => 'Schondraussen.de/1.0 (+https://schondraussen.de)']);
+        $raw = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); $loc = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL); curl_close($ch);
+        if ($code < 300 || $code >= 400 || $rel[0] !== 'o') break;
+        if (!preg_match('~^https://([a-z0-9-]+\.)*(openlibrary\.org|archive\.org)/~i', $loc)) return null;
+        $src = $loc;
+    }
     if (!is_string($raw) || $code !== 200 || strlen($raw) < 100 || strlen($raw) > 3 * 1024 * 1024) return null;
     $info = @getimagesizefromstring($raw);
     if (!$info || !in_array($info[2] ?? 0, [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) return null;
@@ -75,6 +82,53 @@ function pic_film(array &$ext, array $m): void {
     if (($b = pic_tmdb_path($m['backdrop_path'] ?? '')) !== '') $img['b'] = $b;
     if (($p = pic_tmdb_path($m['poster_path'] ?? '')) !== '') $img['p'] = $p;
     if ($img) $ext['img'] = $img; else unset($ext['img']);
+}
+/**
+ * Bilder für Bücher (nur Open Library): Autorenfoto und bis zu 5 Cover von Autor:innen bzw. Bänden einer Reihe.
+ * Gespeichert werden nur die Cover-Nummern in $ext['olimg'] (['a' => Foto, 'c' => [Cover…]]); neu abgefragt höchstens alle 30 Tage.
+ * Gibt true zurück, wenn sich etwas geändert hat.
+ */
+function pic_book(array &$ext, string $name): bool {
+    if ((int) ($ext['olimg_t'] ?? 0) > time() - 30 * 86400) return false;
+    $old = $ext['olimg'] ?? null; $img = []; $covers = [];
+    $fields = 'title,cover_i,editions,editions.cover_i,editions.language';
+    $pick = function (array $docs, ?callable $ok = null) use (&$covers) { // je Werk bevorzugt das Cover der deutschen Ausgabe
+        foreach ([true, false] as $deOnly) foreach ($docs as $d) {
+            if (count($covers) >= 5) return;
+            if ($ok && !$ok($d)) continue;
+            $ed = $d['editions']['docs'][0] ?? []; $de = in_array('ger', (array) ($ed['language'] ?? []), true);
+            if ($deOnly && !$de) continue;
+            $c = (int) ($de && !empty($ed['cover_i']) ? $ed['cover_i'] : ($d['cover_i'] ?? 0));
+            if ($c > 0 && !in_array($c, $covers, true)) $covers[] = $c;
+        }
+    };
+    if (!empty($ext['gbs'])) { // Reihe: Werke mit dem Reihentitel im Titel
+        $t = trim((string) $ext['gbs']);
+        $r = http_json('https://openlibrary.org/search.json?limit=40&lang=de&fields=' . $fields . '&title=' . rawurlencode($t), 10);
+        if ($r === null) return false; // Quelle nicht erreichbar: beim nächsten Lauf erneut
+        $docs = (array) ($r['docs'] ?? []);
+        $num = function ($d) { return preg_match('/(\d+)\s*$/', (string) ($d['title'] ?? ''), $m) ? (int) $m[1] : 9999; };
+        usort($docs, fn($a, $b) => $num($a) <=> $num($b)); // Band 1, 2, 3 … zuerst
+        $pick($docs, fn($d) => mb_stripos((string) ($d['title'] ?? ''), $t) !== false);
+    } elseif (!empty($ext['olid'])) { // Autor:in: Foto aus dem Open-Library-Profil, dazu Cover der neuesten Bücher
+        $ol = basename((string) $ext['olid']);
+        $a = http_json('https://openlibrary.org/authors/' . rawurlencode($ol) . '.json', 10);
+        if ($a === null) return false;
+        foreach ((array) ($a['photos'] ?? []) as $ph) if ((int) $ph > 0) { $img['a'] = (int) $ph; break; }
+        $r = http_json('https://openlibrary.org/search.json?limit=40&lang=de&sort=new&fields=' . $fields . '&author=' . rawurlencode($ol), 10);
+        if ($r !== null) $pick((array) ($r['docs'] ?? []));
+    } else return false;
+    if ($covers) $img['c'] = $covers;
+    $ext['olimg_t'] = time();
+    if ($img) $ext['olimg'] = $img; else unset($ext['olimg']);
+    return ($ext['olimg'] ?? null) !== $old;
+}
+/** Buchbilder für den Browser: ['kind' => 'book', 'a' => Foto, 'c' => [Cover…]] als relative Pfade, oder null. */
+function pic_book_out(array $x): ?array {
+    $i = (array) ($x['olimg'] ?? []); $o = ['kind' => 'book'];
+    if (!empty($i['a'])) $o['a'] = 'o/a/' . (int) $i['a'] . '-M.jpg';
+    foreach (array_slice((array) ($i['c'] ?? []), 0, 5) as $c) if ((int) $c > 0) $o['c'][] = 'o/b/' . (int) $c . '-M.jpg';
+    return (isset($o['a']) || !empty($o['c'])) ? $o : null;
 }
 /** Für die Ausgabe an den Browser: relative Bildpfade (Banner groß/klein, Vorschaubild) oder null. */
 function pic_out(array $x): ?array {

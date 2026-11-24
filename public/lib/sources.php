@@ -807,6 +807,9 @@ function author_genres(string $qid, string $olid): array {
 function openlibrary_refresh(PDO $pdo, array $sub): array {
     $sid = (int) $sub['id'];
     $ext = json_decode($sub['external_ids'] ?: '{}', true) ?: [];
+    try { // Banner: Autorenfoto und Cover von Open Library (höchstens alle 30 Tage); sofort speichern, weil Reihen den Rest oft überspringen
+        if (pic_book($ext, (string) $sub['name'])) { $pdo->prepare('UPDATE subjects SET external_ids=? WHERE id=?')->execute([json_encode($ext, JSON_UNESCAPED_UNICODE), $sid]); $sub['external_ids'] = json_encode($ext, JSON_UNESCAPED_UNICODE); }
+    } catch (Throwable $e) {}
     if (!empty($ext['gbs'])) return bookseries_refresh($pdo, $sub, $ext);
     $summary = $sub['summary'];
     if (empty($ext['olid'])) {
