@@ -1224,17 +1224,18 @@ a.go:hover{background:transparent;color:var(--ink)}
 .ebanner.ok img{opacity:.92}
 .ebanner::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,color-mix(in srgb,var(--bg) 55%,transparent) 80%,var(--bg) 100%)}
 @media (prefers-reduced-motion:reduce){.ebanner img{transition:none}}
-/* Bücher und Musik: Banner aus Autorenfoto und Covern (Open Library, Cover Art Archive) */
+/* Bücher und Musik: Banner aus Autorenfoto und Covern (Open Library, Cover Art Archive); Bildgröße passt sich an Höhe und Breite an, damit alle Bilder hineinpassen */
 .ebanner.bookb .bbg{position:absolute;inset:-24px;width:calc(100% + 48px);height:calc(100% + 48px);object-fit:cover;filter:blur(22px) saturate(.9);opacity:0;transform:scale(1.05)}
 .ebanner.bookb.ok .bbg{opacity:.55}
-.ebanner.bookb .brow{position:relative;z-index:1;display:flex;align-items:flex-end;gap:clamp(8px,1.4vw,14px);height:100%;padding:clamp(14px,2vw,22px) clamp(14px,2.4vw,26px) clamp(18px,2.4vw,26px);box-sizing:border-box;overflow:hidden}
-.ebanner.bookb .brow img{width:auto;height:86%;max-height:190px;aspect-ratio:2/3;object-fit:cover;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.28);opacity:0;filter:none;flex:0 0 auto}
+.ebanner.bookb .brow{--bgap:clamp(8px,1.4vw,14px);--bn:6;position:relative;z-index:1;display:flex;align-items:flex-end;gap:var(--bgap);height:100%;padding:clamp(14px,2vw,22px) clamp(14px,2.4vw,26px) clamp(18px,2.4vw,26px);box-sizing:border-box;overflow:hidden;container-type:size}
+.ebanner.bookb .brow img{height:auto;width:min(calc(100cqh * 2 / 3),127px,calc((100cqw - (var(--bn) - 1) * var(--bgap)) / var(--bn)));aspect-ratio:2/3;object-fit:cover;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.28);opacity:0;filter:none;flex:0 0 auto}
 .ebanner.bookb .brow img.ok{opacity:1}
-.ebanner.bookb .brow img.bphoto{aspect-ratio:3/4;border-radius:10px;margin-right:clamp(4px,1vw,12px)}
+.ebanner.bookb .brow img.bphoto{aspect-ratio:3/4;width:min(calc(100cqh * 3 / 4),143px,calc((100cqw - (var(--bn) - 1) * var(--bgap)) / var(--bn)));border-radius:10px}
 .ebanner.bookb::after{background:linear-gradient(180deg,transparent 60%,color-mix(in srgb,var(--bg) 40%,transparent) 100%);z-index:0}
-@media (max-width:760px){.ebanner.bookb .brow img:nth-child(n+5){display:none}}
-.ebanner.bookb.music .brow img{aspect-ratio:1/1;height:80%}
+.ebanner.bookb.music .brow{--bn:5;justify-content:center}
+.ebanner.bookb.music .brow img{aspect-ratio:1/1;width:min(100cqh,calc((100cqw - 4 * var(--bgap)) / 5))}
 .ebanner.bookb.music .brow img:nth-child(n+6){display:none} /* bis zu 8 Kandidaten, fehlende Cover fallen weg, sichtbar bleiben die ersten 5 */
+@media (max-width:760px){.ebanner.bookb .brow{--bn:4}.ebanner.bookb .brow img:nth-child(n+5){display:none}.ebanner.bookb.music .brow img{width:min(100cqh,calc((100cqw - 3 * var(--bgap)) / 4))}}
 .ebanner.bookb.px .brow img{border-radius:0;image-rendering:pixelated;box-shadow:4px 4px 0 var(--ink)}
 .ebanner.bookb.px .bbg{image-rendering:pixelated;filter:blur(6px)}
 /* Vorschaubilder in der Suche (nur am Computer) */
