@@ -910,7 +910,7 @@ function openlibrary_refresh(PDO $pdo, array $sub): array {
         foreach (array_slice($rel, 0, 30) as $x) $q->execute([$sid, mb_substr($x[0], 0, 255), $x[1], $x[2], $x[3] ?? null]);
         $pdo->commit();
     } catch (Throwable $e) { $pdo->rollBack(); return ['ok' => false, 'msg' => 'Speichern fehlgeschlagen']; }
-    return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt'];
+    return ['ok' => true, 'msg' => count($works) . ' Bücher, ' . count($rel) . ' angekündigt' . (!empty($ext['olimg_info']) ? ' · Banner: ' . $ext['olimg_info'] : '')];
 }
 
 
